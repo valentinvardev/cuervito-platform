@@ -1,0 +1,248 @@
+// Prisma schema — cuervito.app
+// Sports / event photography marketplace.
+
+generator client {
+    provider = "prisma-client-js"
+    output   = "../generated/prisma"
+}
+
+datasource db {
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_URL")
+}
+
+// ─── NextAuth ──────────────────────────────────────────────────────────────
+
+model Account {
+    id                       String  @id @default(cuid())
+    userId                   String
+    type                     String
+    provider                 String
+    providerAccountId        String
+    refresh_token            String?
+    access_token             String?
+    expires_at               Int?
+    token_type               String?
+    scope                    String?
+    id_token                 String?
+    session_state            String?
+    user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    refresh_token_expires_in Int?
+
+    @@unique([provider, providerAccountId])
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
+}
+
+// ─── Domain ────────────────────────────────────────────────────────────────
+
+enum UserRole {
+    BUYER
+    PHOTOGRAPHER
+    ORGANIZER
+    ADMIN
+}
+
+enum PhotographerStatus {
+    PENDING
+    APPROVED
+    REJECTED
+    SUSPENDED
+}
+
+enum EventStatus {
+    DRAFT
+    ACTIVE
+    PROCESSING
+    FINISHED
+    ARCHIVED
+}
+
+enum Sport {
+    RUNNING
+    CYCLING
+    TRIATHLON
+    SWIMMING
+    FOOTBALL
+    BASKETBALL
+    TENNIS
+    MOTORSPORTS
+    OTHER
+}
+
+enum OrderStatus {
+    PENDING
+    PAID
+    FAILED
+    REFUNDED
+}
+
+enum PayoutStatus {
+    REQUESTED
+    PROCESSING
+    PAID
+    REJECTED
+}
+
+model User {
+    id            String    @id @default(cuid())
+    name          String?
+    email         String?   @unique
+    emailVerified DateTime?
+    image         String?
+    role          UserRole  @default(BUYER)
+    createdAt     DateTime  @default(now())
+
+    accounts     Account[]
+    sessions     Session[]
+    photographer Photographer?
+    organizer    Organizer?
+    orders       Order[]
+}
+
+model Photographer {
+    id            String             @id @default(cuid())
+    userId        String             @unique
+    user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+    displayName   String
+    bio           String?
+    avatarUrl     String?
+    coverUrl      String?
+    instagram     String?
+    website       String?
+    sports        Sport[]
+    serviceArea   String?
+    portfolio     String[]           @default([])
+    status        PhotographerStatus @default(PENDING)
+    commissionPct Decimal            @default(10.00) @db.Decimal(5, 2)
+    payoutAccount PayoutAccount?
+    events        Event[]            @relation("EventPhotographers")
+    photos        Photo[]
+    payouts       Payout[]
+    createdAt     DateTime           @default(now())
+    updatedAt     DateTime           @updatedAt
+}
+
+model Organizer {
+    id        String   @id @default(cuid())
+    userId    String   @unique
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    orgName   String
+    contact   String?
+    events    Event[]
+    createdAt DateTime @default(now())
+}
+
+model PayoutAccount {
+    id             String       @id @default(cuid())
+    photographerId String       @unique
+    photographer   Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
+    holderName     String
+    country        String
+    cbu            String?
+    cuit           String?
+    bankName       String?
+    iban           String?
+    swift          String?
+    createdAt      DateTime     @default(now())
+}
+
+model Event {
+    id             String      @id @default(cuid())
+    slug           String      @unique
+    name           String
+    description    String?
+    sport          Sport
+    startsAt       DateTime
+    endsAt         DateTime?
+    city           String
+    country        String      @default("AR")
+    latitude       Float?
+    longitude      Float?
+    coverUrl       String?
+    basePriceCents Int         @default(150000) // ARS, in cents
+    status         EventStatus @default(DRAFT)
+    organizerId    String?
+    organizer      Organizer?  @relation(fields: [organizerId], references: [id])
+    photographers  Photographer[] @relation("EventPhotographers")
+    photos         Photo[]
+    createdAt      DateTime    @default(now())
+    updatedAt      DateTime    @updatedAt
+
+    @@index([sport, startsAt])
+    @@index([city])
+}
+
+model Photo {
+    id              String       @id @default(cuid())
+    eventId         String
+    event           Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    photographerId  String
+    photographer    Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
+    storageKey      String       @unique // path in Supabase Storage
+    previewUrl      String?      // watermarked preview
+    width           Int?
+    height          Int?
+    takenAt         DateTime?
+    bibNumbers      String[]     @default([])
+    faceEmbeddings  Bytes?
+    priceCents      Int
+    purchases       OrderItem[]
+    createdAt       DateTime     @default(now())
+
+    @@index([eventId, photographerId])
+    @@index([bibNumbers])
+}
+
+model Order {
+    id             String      @id @default(cuid())
+    userId         String?
+    user           User?       @relation(fields: [userId], references: [id])
+    buyerEmail     String
+    totalCents     Int
+    feeCents       Int         // 10% Cuervito take
+    currency       String      @default("ARS")
+    status         OrderStatus @default(PENDING)
+    paymentRef     String?     // Stripe / MercadoPago id
+    items          OrderItem[]
+    createdAt      DateTime    @default(now())
+    paidAt         DateTime?
+}
+
+model OrderItem {
+    id        String @id @default(cuid())
+    orderId   String
+    order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+    photoId   String
+    photo     Photo  @relation(fields: [photoId], references: [id])
+    priceCents Int
+
+    @@unique([orderId, photoId])
+}
+
+model Payout {
+    id             String       @id @default(cuid())
+    photographerId String
+    photographer   Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
+    amountCents    Int
+    currency       String       @default("ARS")
+    status         PayoutStatus @default(REQUESTED)
+    requestedAt    DateTime     @default(now())
+    paidAt         DateTime?
+    note           String?
+}

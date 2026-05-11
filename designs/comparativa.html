@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cuervito vs el resto · Comparativa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="panel-anim.css" />
+<style>
+  body { background: var(--bg-base); }
+
+  /* === Nav (slim) === */
+  .nav {
+    position: sticky; top: 0; z-index: 30;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    background: rgba(15,13,11,0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .nav-left { display: flex; align-items: center; gap: 16px; }
+  .nav-back {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border-radius: 8px;
+    color: var(--text-secondary); font-size: 13px;
+    transition: all 150ms;
+  }
+  .nav-back:hover { background: var(--bg-surface); color: var(--text-primary); }
+  .nav-div { width: 1px; height: 24px; background: var(--border-subtle); }
+  .nav-cta { display: flex; gap: 10px; align-items: center; }
+  .nav-cta .btn { height: 38px; padding: 0 16px; font-size: 13px; }
+  @media (max-width: 600px) { .nav-cta .btn-outline { display: none; } }
+
+  /* === Hero === */
+  .hero {
+    padding: 80px 0 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(245,130,10,0.10), transparent 70%);
+    pointer-events: none;
+  }
+  .hero-inner { position: relative; text-align: center; max-width: 820px; margin: 0 auto; }
+  .hero .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-bottom: 22px;
+  }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(36px, 6vw, 68px);
+    letter-spacing: -0.035em;
+    line-height: 1.02;
+    margin-bottom: 18px;
+  }
+  .hero h1 .accent { color: var(--accent); }
+  .hero .lede {
+    font-size: clamp(16px, 1.7vw, 19px);
+    line-height: 1.55;
+    color: var(--text-secondary);
+    max-width: 620px;
+    margin: 0 auto 36px;
+  }
+  .hero .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .hero .cta-row .btn { height: 50px; padding: 0 22px; font-size: 14.5px; }
+
+  /* === Comparison table === */
+  .compare {
+    padding: 40px 0 100px;
+  }
+  .compare-wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  .compare-head {
+    display: grid;
+    grid-template-columns: minmax(200px, 1.6fr) repeat(2, minmax(150px, 1fr));
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .compare-head > div {
+    padding: 22px 18px;
+    text-align: center;
+    border-right: 1px solid var(--border-subtle);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .compare-head > div:first-child { text-align: left; align-items: start; justify-content: end; }
+  .compare-head > div:last-child { border-right: none; }
+  .compare-head .platform-name {
+    font-family: var(--font-display);
+    font-weight: 700; font-size: 18px;
+    letter-spacing: -0.02em;
+  }
+  .compare-head .platform-tag {
+    font-size: 11.5px;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+  }
+  .compare-head .cuervito-col {
+    background: linear-gradient(180deg, var(--accent-deep) 0%, transparent 100%);
+    border-bottom: 2px solid var(--accent);
+    position: relative;
+  }
+  .compare-head .cuervito-col .platform-name { color: var(--accent); }
+  .compare-head .cuervito-col::before {
+    content: 'NUESTRA PLATAFORMA';
+    position: absolute; top: 6px; left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    opacity: 0.7;
+  }
+
+  .compare-row {
+    display: grid;
+    grid-template-columns: minmax(200px, 1.6fr) repeat(2, minmax(150px, 1fr));
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background 150ms;
+  }
+  .compare-row:last-child { border-bottom: none; }
+  .compare-row:hover { background: rgba(245,130,10,0.03); }
+  .compare-row > div {
+    padding: 16px 18px;
+    text-align: center;
+    border-right: 1px solid var(--border-subtle);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    min-height: 56px;
+  }
+  .compare-row > div:first-child {
+    text-align: left;
+    justify-content: start;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  .compare-row > div:last-child { border-right: none; }
+  .compare-row .cuervito-col {
+    background: rgba(245,130,10,0.04);
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  .compare-row .cuervito-col.win { color: var(--accent); }
+
+  .yes { display: inline-flex; align-items: center; gap: 6px; color: var(--success); }
+  .no  { display: inline-flex; align-items: center; gap: 6px; color: var(--text-tertiary); }
+  .yes i { font-size: 18px; }
+  .no  i { font-size: 16px; }
+  .compare-row .commission-bad { color: var(--error); font-weight: 600; }
+  .compare-row .commission-good { color: var(--success); font-weight: 600; }
+
+  /* Section divider */
+  .compare-section {
+    grid-column: 1 / -1;
+    padding: 12px 18px !important;
+    background: var(--bg-base);
+    text-align: left !important;
+    justify-content: start !important;
+    font-family: var(--font-mono) !important;
+    font-size: 10.5px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary) !important;
+    border-right: none !important;
+    min-height: auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px;
+  }
+  .compare-section i { font-size: 13px; color: var(--accent); }
+
+  /* === Experience boxes (just below the hero CTAs) === */
+  .try-boxes {
+    max-width: 980px;
+    margin: 50px auto 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 760px) { .try-boxes { grid-template-columns: 1fr; max-width: 420px; } }
+  .try-eyebrow {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 4px;
+  }
+  .try-box {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 22px;
+    text-align: left;
+    display: flex; flex-direction: column;
+    gap: 10px;
+    text-decoration: none; color: inherit;
+    transition: all 200ms ease;
+    position: relative;
+  }
+  .try-box:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+    background: var(--bg-elevated);
+  }
+  .try-box .ic {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--accent-deep);
+    color: var(--accent);
+    border: 1px solid var(--border-accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .try-box .tag {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .try-box .ttl {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 17px; letter-spacing: -0.015em;
+  }
+  .try-box .desc {
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    line-height: 1.5;
+    flex: 1;
+  }
+  .try-box .go {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 4px;
+    transition: gap 150ms ease;
+  }
+  .try-box:hover .go { gap: 8px; }
+
+  /* Mobile: tighter columns */
+  @media (max-width: 600px) {
+    .compare-head, .compare-row {
+      grid-template-columns: 1.8fr repeat(2, 1fr);
+    }
+    .compare-head .platform-name { font-size: 14px; }
+    .compare-head .platform-tag { font-size: 10px; }
+    .compare-row > div { padding: 12px 10px; font-size: 13px; min-height: 48px; }
+    .compare-row > div:first-child { font-size: 13px; padding-left: 14px; }
+    .yes i, .no i { font-size: 16px; }
+    .yes span, .no span { display: none; }
+    .compare-head .cuervito-col::before { font-size: 8px; }
+  }
+
+  /* === Where we win section === */
+  .why-win { padding: 80px 0; }
+  .why-head { text-align: center; max-width: 640px; margin: 0 auto 50px; }
+  .why-head .eyebrow { display: inline-flex; margin-bottom: 14px; }
+  .why-head h2 {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(28px, 4.4vw, 44px);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 14px;
+  }
+  .why-head p { color: var(--text-secondary); font-size: 16px; line-height: 1.55; }
+
+  .win-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  @media (max-width: 880px) { .win-grid { grid-template-columns: 1fr; } }
+  .win-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 28px 24px;
+    transition: all 200ms ease;
+  }
+  .win-card:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+  }
+  .win-card .ic {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    background: var(--accent-deep);
+    color: var(--accent);
+    border: 1px solid var(--border-accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+  .win-card h3 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 19px; letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .win-card p { color: var(--text-secondary); font-size: 14.5px; line-height: 1.55; margin-bottom: 14px; }
+  .win-card .micro {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* === Pricing impact === */
+  .pricing-impact {
+    padding: 80px 0;
+    background: linear-gradient(180deg, transparent, rgba(245,130,10,0.04));
+  }
+  .pi-inner { max-width: 880px; margin: 0 auto; text-align: center; }
+  .pi-inner .eyebrow { display: inline-flex; margin-bottom: 14px; }
+  .pi-inner h2 {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(28px, 4.4vw, 44px);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 16px;
+  }
+  .pi-inner .lede { color: var(--text-secondary); font-size: 16px; margin-bottom: 36px; }
+
+  .pi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    text-align: left;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  @media (max-width: 760px) { .pi-grid { grid-template-columns: 1fr; } }
+  .pi-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 24px;
+    position: relative;
+  }
+  .pi-card.us {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .pi-card .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    margin-bottom: 6px;
+  }
+  .pi-card .name {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 18px; letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  .pi-card .name .pct {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    margin-left: 6px;
+    font-size: 14px;
+  }
+  .pi-card.bad .name .pct { color: var(--error); }
+  .pi-card .breakdown {
+    display: flex; flex-direction: column; gap: 8px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .pi-card .row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 13.5px;
+  }
+  .pi-card .row .k { color: var(--text-tertiary); }
+  .pi-card .row .v { font-family: var(--font-mono); color: var(--text-primary); font-weight: 500; }
+  .pi-card .net {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .pi-card .net .k {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .pi-card .net .v {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: 22px; letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+  .pi-card.us .net .v { color: var(--accent); }
+  .pi-card.bad .net .v { color: var(--error); }
+
+  /* === Final CTA === */
+  .final-cta { padding: 80px 0 120px; }
+  .final-card {
+    max-width: 900px; margin: 0 auto;
+    background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(245,130,10,0.10) 100%);
+    border: 1px solid var(--border-accent);
+    border-radius: 20px;
+    padding: 60px 40px;
+    text-align: center;
+  }
+  .final-card h2 {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(28px, 4.4vw, 44px);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 14px;
+  }
+  .final-card h2 .accent { color: var(--accent); }
+  .final-card p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    line-height: 1.55;
+    max-width: 520px;
+    margin: 0 auto 28px;
+  }
+  .final-card .ctas { display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .final-card .ctas .btn { height: 52px; padding: 0 22px; font-size: 15px; }
+  @media (max-width: 540px) {
+    .final-card { padding: 40px 24px; }
+    .final-card .ctas .btn { width: 100%; }
+  }
+</style>
+</head>
+<body data-screen-label="Comparativa">
+
+  <nav class="nav">
+    <div class="nav-left">
+      <a href="index.html" class="nav-back">
+        <i class="ti ti-arrow-left" style="font-size: 16px;"></i><span>Volver</span>
+      </a>
+      <div class="nav-div"></div>
+      <a href="index.html" class="logo">cuerv<span class="logo-dot"></span>to</a>
+    </div>
+    <div class="nav-cta">
+      <a href="onboarding.html" class="btn btn-outline">Soy fotógrafo</a>
+      <a href="onboarding.html" class="btn btn-primary">Sumarme</a>
+    </div>
+  </nav>
+
+  <!-- ============ Hero ============ -->
+  <header class="hero">
+    <div class="container hero-inner">
+      <span class="eyebrow"><i class="ti ti-versus" style="font-size: 14px;"></i>Comparativa</span>
+      <h1>
+        Misma comisión.<br /><span class="accent">Mejor todo lo demás.</span>
+      </h1>
+      <p class="lede">
+        Somos una plataforma diseñada con criterio profesional, priorizando la experiencia del usuario.
+        El fotógrafo vende más porque sus clientes encuentran y compran más rápido — y el atleta
+        se lleva una experiencia de compra premium, no un trámite.
+      </p>
+      <p class="lede" style="margin-top: -18px;">
+        Mejor diseño, mejor UX, mejor tasa de conversión. Las fotos se entregan al instante
+        por <strong style="color: var(--text-primary);">email y WhatsApp</strong> —
+        aunque no hace falta esperar: <strong style="color: var(--text-primary);">se descargan
+        directo apenas se confirma el pago</strong>.
+      </p>
+      <div class="cta-row">
+        <a href="#tabla" class="btn btn-primary"><i class="ti ti-table"></i>Ver comparativa</a>
+        <a href="onboarding.html" class="btn btn-outline">Cambiar a Cuervito</a>
+      </div>
+
+      <!-- Experience boxes — probá los procesos en vivo -->
+      <div class="try-boxes">
+        <span class="try-eyebrow">No nos creas — probá vos</span>
+
+        <a class="try-box" href="event.html?id=mba">
+          <div class="ic"><i class="ti ti-cloud-upload"></i></div>
+          <span class="tag">Lado fotógrafo</span>
+          <div class="ttl">Subida de fotos</div>
+          <div class="desc">Drag &amp; drop masivo, watermark automático, progreso en vivo y modal con la lista de archivos.</div>
+          <span class="go">Probar el flujo<i class="ti ti-arrow-right"></i></span>
+        </a>
+
+        <a class="try-box" href="cobertura.html?event=mba&p=ana-liotta">
+          <div class="ic"><i class="ti ti-shopping-cart-plus"></i></div>
+          <span class="tag">Lado comprador</span>
+          <div class="ttl">Compra del lado del usuario</div>
+          <div class="desc">Búsqueda por dorsal o selfie, carrito con upsell en vivo, descuentos automáticos y checkout en 2 pasos.</div>
+          <span class="go">Probar el flujo<i class="ti ti-arrow-right"></i></span>
+        </a>
+
+        <a class="try-box" href="descarga.html?email=test@x.com&name=Ana&photos=6&token=demo">
+          <div class="ic"><i class="ti ti-download"></i></div>
+          <span class="tag">Lado comprador</span>
+          <div class="ttl">Descarga del lado del usuario</div>
+          <div class="desc">Confirmación visual, descarga inmediata y flujo guiado paso a paso optimizado para iPhone.</div>
+          <span class="go">Probar el flujo<i class="ti ti-arrow-right"></i></span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ Comparison table ============ -->
+  <section class="compare" id="tabla">
+    <div class="container">
+      <div class="compare-wrap">
+        <!-- Header row -->
+        <div class="compare-head">
+          <div>
+            <span style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);">Plataforma</span>
+          </div>
+          <div class="cuervito-col">
+            <span class="platform-name">Cuervito</span>
+            <span class="platform-tag">10% · ilimitado</span>
+          </div>
+          <div>
+            <span class="platform-name">Competidor</span>
+            <span class="platform-tag">10–20% comisión</span>
+          </div>
+        </div>
+
+        <!-- ===== Pricing ===== -->
+        <div class="compare-row">
+          <div class="compare-section"><i class="ti ti-cash"></i>Cobros</div>
+        </div>
+        <div class="compare-row">
+          <div>Comisión por venta</div>
+          <div class="cuervito-col win"><span class="commission-good mono">10%</span></div>
+          <div><span class="commission-bad mono">10–20%</span></div>
+        </div>
+        <div class="compare-row">
+          <div>Cuota mensual</div>
+          <div class="cuervito-col win"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Gratis</span></span></div>
+          <div><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Gratis</span></span></div>
+        </div>
+        <div class="compare-row">
+          <div>Acreditación inmediata vía Mercado Pago</div>
+          <div class="cuervito-col win"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="no"><i class="ti ti-help-circle"></i><span>—</span></span></div>
+        </div>
+
+        <!-- ===== Almacenamiento ===== -->
+        <div class="compare-row">
+          <div class="compare-section"><i class="ti ti-database"></i>Almacenamiento y límites</div>
+        </div>
+        <div class="compare-row">
+          <div>Almacenamiento</div>
+          <div class="cuervito-col win"><strong>Ilimitado</strong></div>
+          <div>100 GB</div>
+        </div>
+        <div class="compare-row">
+          <div>Álbumes / eventos</div>
+          <div class="cuervito-col win"><strong>Sin límite</strong></div>
+          <div>Hasta 100</div>
+        </div>
+        <div class="compare-row">
+          <div>Tamaño máximo por foto</div>
+          <div class="cuervito-col win"><strong>50 MB</strong></div>
+          <div>30 MB</div>
+        </div>
+        <div class="compare-row">
+          <div>Video por archivo</div>
+          <div class="cuervito-col"><strong>2 GB</strong></div>
+          <div>1 GB</div>
+        </div>
+
+        <!-- ===== Reconocimiento ===== -->
+        <div class="compare-row">
+          <div class="compare-section"><i class="ti ti-scan-eye"></i>Reconocimiento</div>
+        </div>
+        <div class="compare-row">
+          <div>Reconocimiento facial automático</div>
+          <div class="cuervito-col"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+        </div>
+        <div class="compare-row">
+          <div>Reconocimiento de dorsal (OCR)</div>
+          <div class="cuervito-col"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+        </div>
+        <div class="compare-row">
+          <div>Marca de agua automática</div>
+          <div class="cuervito-col"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+        </div>
+
+        <!-- ===== Página y marca ===== -->
+        <div class="compare-row">
+          <div class="compare-section"><i class="ti ti-template"></i>Página de venta y marca personal</div>
+        </div>
+        <div class="compare-row">
+          <div>Página de venta personalizable</div>
+          <div class="cuervito-col win"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="no"><i class="ti ti-x"></i><span>No</span></span></div>
+        </div>
+        <div class="compare-row">
+          <div>Plantillas editables</div>
+          <div class="cuervito-col win"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>4 plantillas</span></span></div>
+          <div><span class="no"><i class="ti ti-x"></i><span>No</span></span></div>
+        </div>
+        <div class="compare-row">
+          <div>Dominio propio</div>
+          <div class="cuervito-col win"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="no"><i class="ti ti-x"></i><span>No</span></span></div>
+        </div>
+        <div class="compare-row">
+          <div>Color de marca personalizable</div>
+          <div class="cuervito-col win"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="no"><i class="ti ti-x"></i><span>No</span></span></div>
+        </div>
+
+        <!-- ===== UX / UI ===== -->
+        <div class="compare-row">
+          <div class="compare-section"><i class="ti ti-sparkles"></i>Experiencia (lo que realmente cambia)</div>
+        </div>
+        <div class="compare-row">
+          <div>Interfaz moderna 2026</div>
+          <div class="cuervito-col win"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="no"><i class="ti ti-x"></i><span>No</span></span></div>
+        </div>
+        <div class="compare-row">
+          <div>Animaciones premium</div>
+          <div class="cuervito-col win"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="no"><i class="ti ti-x"></i><span>No</span></span></div>
+        </div>
+        <div class="compare-row">
+          <div>Búsqueda en vivo del evento</div>
+          <div class="cuervito-col win"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="no"><i class="ti ti-x"></i><span>No</span></span></div>
+        </div>
+        <div class="compare-row">
+          <div>Flujo iOS paso a paso para descargar</div>
+          <div class="cuervito-col win"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="no"><i class="ti ti-x"></i><span>No</span></span></div>
+        </div>
+        <div class="compare-row">
+          <div>Carteles de upsell en vivo en el carrito</div>
+          <div class="cuervito-col win"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="no"><i class="ti ti-x"></i><span>No</span></span></div>
+        </div>
+
+        <!-- ===== Ventas ===== -->
+        <div class="compare-row">
+          <div class="compare-section"><i class="ti ti-shopping-cart"></i>Herramientas de venta</div>
+        </div>
+        <div class="compare-row">
+          <div>Packs / ventas por paquete</div>
+          <div class="cuervito-col"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+        </div>
+        <div class="compare-row">
+          <div>Descuentos por cantidad</div>
+          <div class="cuervito-col"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+        </div>
+        <div class="compare-row">
+          <div>Códigos de descuento (% o $ fijo)</div>
+          <div class="cuervito-col win"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="no"><i class="ti ti-x"></i><span>No</span></span></div>
+        </div>
+        <div class="compare-row">
+          <div>Colaboradores (varios fotógrafos)</div>
+          <div class="cuervito-col"><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+          <div><span class="yes"><i class="ti ti-circle-check-filled"></i><span>Sí</span></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Where we really win ============ -->
+  <section class="why-win">
+    <div class="container">
+      <div class="why-head reveal">
+        <span class="eyebrow"><i class="ti ti-sparkles" style="font-size: 14px;"></i>Dónde realmente ganamos</span>
+        <h2>Las features son iguales. La experiencia, no.</h2>
+        <p>
+          Todas las plataformas reconocen caras y dorsales. Lo que cambia es <strong style="color: var(--text-primary);">cómo se siente usarlas</strong> —
+          tanto para vos como para tu cliente.
+        </p>
+      </div>
+
+      <div class="win-grid">
+        <article class="win-card reveal">
+          <div class="ic"><i class="ti ti-template"></i></div>
+          <h3>Tu página, tu marca.</h3>
+          <p>
+            Mientras otras plataformas te dejan en una galería genérica con su logo, vos tenés
+            tu propia página con plantilla editable, color personalizable y dominio propio.
+          </p>
+          <div class="micro">Único en esta categoría</div>
+        </article>
+
+        <article class="win-card reveal">
+          <div class="ic"><i class="ti ti-wand"></i></div>
+          <h3>Experiencia premium.</h3>
+          <p>
+            Animaciones, transiciones, búsqueda en vivo, flujo iOS paso a paso, upsells en el carrito.
+            La interfaz que tus clientes esperan en 2026 — no la del 2018.
+          </p>
+          <div class="micro">Diseñado con criterio editorial</div>
+        </article>
+
+        <article class="win-card reveal">
+          <div class="ic"><i class="ti ti-rocket"></i></div>
+          <h3>Onboarding en 60 segundos.</h3>
+          <p>
+            Conectás Mercado Pago, subís fotos y empezás a vender el mismo día.
+            Sin formularios eternos ni revisión manual de 48 horas.
+          </p>
+          <div class="micro">Otras plataformas: hasta 48 hs · Cuervito: al toque</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Pricing impact ============ -->
+  <section class="pricing-impact">
+    <div class="container pi-inner reveal">
+      <span class="eyebrow"><i class="ti ti-calculator" style="font-size: 14px;"></i>Impacto real en tu bolsillo</span>
+      <h2>Si vendés $100.000 por mes…</h2>
+      <p class="lede">Esto se queda cada plataforma, y esto te llevás vos.</p>
+
+      <div class="pi-grid">
+        <div class="pi-card us">
+          <div class="label">Tu mejor opción</div>
+          <div class="name">Cuervito<span class="pct">· 10%</span></div>
+          <div class="breakdown">
+            <div class="row"><span class="k">Comisión</span><span class="v">$10.000</span></div>
+            <div class="row"><span class="k">Storage / setup</span><span class="v">$0</span></div>
+          </div>
+          <div class="net"><span class="k">Te llevás</span><span class="v">$90.000</span></div>
+        </div>
+
+        <div class="pi-card bad">
+          <div class="label">Otra plataforma</div>
+          <div class="name">Competidor<span class="pct">· 10–20%</span></div>
+          <div class="breakdown">
+            <div class="row"><span class="k">Comisión</span><span class="v">$10.000–$20.000</span></div>
+            <div class="row"><span class="k">Storage / setup</span><span class="v">$0</span></div>
+          </div>
+          <div class="net"><span class="k">Te llevás</span><span class="v">$80.000–$90.000</span></div>
+        </div>
+      </div>
+
+      <p style="margin-top: 30px; font-size: 14px; color: var(--text-tertiary);">
+        En el peor caso te llevás <strong style="color: var(--accent);">hasta $10.000 más por mes</strong>, solo por elegir bien.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ Final CTA ============ -->
+  <section class="final-cta">
+    <div class="container">
+      <div class="final-card reveal">
+        <h2>Cambiate a <span class="accent">Cuervito</span> hoy.</h2>
+        <p>
+          Te ayudamos a portar tu evento actual sin perder ni una venta.
+          Tomamos 30 minutos por WhatsApp y migrás.
+        </p>
+        <div class="ctas">
+          <a href="onboarding.html" class="btn btn-primary">
+            <i class="ti ti-arrow-right"></i>Empezar gratis
+          </a>
+          <a href="https://wa.me/" class="btn btn-outline" target="_blank" rel="noopener">
+            <i class="ti ti-brand-whatsapp"></i>Hablamos por WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Reveal observer (same as index)
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  </script>
+</body>
+</html>

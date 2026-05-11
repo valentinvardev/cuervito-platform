@@ -1,0 +1,2270 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Evento · cuervito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="panel-anim.css" />
+<style>
+  body { background: var(--bg-base); }
+
+  .top {
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(15,13,11,0.85);
+    backdrop-filter: blur(10px);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .top-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 8px;
+    color: var(--text-secondary); font-size: 14px;
+    transition: all 150ms;
+  }
+  .back-btn:hover { background: var(--bg-surface); color: var(--text-primary); }
+  .top-divider { width: 1px; height: 24px; background: var(--border-subtle); }
+  .top-actions { display: flex; align-items: center; gap: 10px; }
+  .top .avatar {
+    width: 36px; height: 36px; font-size: 13px; cursor: pointer;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #F5820A, #ff9a3a);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #1a0d00; font-family: var(--font-display); font-weight: 800;
+  }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 24px 32px 80px;
+  }
+  @media (max-width: 700px) { .wrap { padding: 16px 18px 60px; } }
+
+  /* ==== Cover ==== */
+  .ev-cover {
+    position: relative;
+    aspect-ratio: 16/6;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 700px) {
+    .ev-cover { aspect-ratio: 16/11; }
+  }
+  @media (max-width: 480px) {
+    .ev-cover { aspect-ratio: 4/3; }
+  }
+  /* Drag-over feedback when dropping an image on the cover */
+  .ev-cover.drag-over::after {
+    content: 'Soltá la foto para usarla como portada';
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(15, 13, 11, 0.72);
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    z-index: 10;
+    pointer-events: none;
+    outline: 2px dashed var(--accent);
+    outline-offset: -10px;
+    border-radius: 16px;
+    backdrop-filter: blur(4px);
+  }
+  .ev-cover .overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 30%, rgba(15,13,11,0.92) 100%);
+  }
+  .ev-cover .meta {
+    position: absolute; left: 24px; right: 24px; bottom: 22px;
+    z-index: 2;
+    display: flex; align-items: end; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+  }
+  .ev-cover h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(24px, 3.6vw, 36px);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+  }
+  .ev-cover .sub {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    font-size: 13.5px; color: var(--text-secondary);
+  }
+  .ev-cover .sub .sep { width: 3px; height: 3px; background: var(--text-tertiary); border-radius: 50%; opacity: 0.7; }
+  .ev-cover .cover-actions {
+    position: absolute; top: 14px; right: 14px;
+    z-index: 3;
+    display: flex; gap: 8px;
+  }
+  .ev-cover .cover-btn {
+    background: rgba(15,13,11,0.85);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 6px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: all 150ms;
+  }
+  .ev-cover .cover-btn:hover { border-color: var(--border-accent); }
+  .ev-cover .cover-btn.primary {
+    background: var(--accent);
+    color: var(--text-on-accent);
+    border-color: var(--accent);
+  }
+  .ev-cover .cover-btn.primary:hover { background: var(--accent-bright); border-color: var(--accent-bright); }
+
+  .share-pop {
+    position: fixed;
+    z-index: 60;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    padding: 14px;
+    width: 320px;
+    max-width: calc(100vw - 24px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+    display: none;
+  }
+  .share-pop.open { display: block; animation: scaleIn 180ms ease-out; }
+  .share-pop .label-mono {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .share-pop .url-row {
+    display: flex; gap: 6px;
+    padding: 8px 10px;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .share-pop .url-row input {
+    flex: 1; min-width: 0;
+    background: transparent; border: none; outline: none;
+    color: var(--text-primary);
+    font-family: var(--font-mono); font-size: 12.5px;
+  }
+  .share-pop .url-row .copy {
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 12px; font-weight: 500;
+    flex-shrink: 0;
+  }
+  .share-pop .url-row .copy:hover { background: var(--accent-deep); }
+  .share-pop .qrow { display: flex; gap: 6px; }
+  .share-pop .qbtn {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    transition: all 150ms;
+  }
+  .share-pop .qbtn:hover { color: var(--text-primary); border-color: var(--border-default); }
+
+  /* ==== Toggle cards (sections) ==== */
+  .toggle-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 760px) { .toggle-cards { grid-template-columns: 1fr; } }
+
+  .tc {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all 200ms ease;
+    text-align: left;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 12px;
+    align-items: center;
+    width: 100%;
+    color: inherit; font: inherit;
+    position: relative;
+  }
+  .tc:hover { border-color: var(--border-default); transform: translateY(-1px); }
+  .tc.active {
+    border-color: var(--border-accent);
+    background: linear-gradient(140deg, var(--bg-surface) 0%, rgba(245,130,10,0.06) 100%);
+  }
+  .tc-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    transition: all 200ms ease;
+  }
+  .tc.active .tc-icon {
+    background: var(--accent-deep);
+    color: var(--accent);
+    border-color: var(--border-accent);
+  }
+  .tc-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.015em;
+    margin-bottom: 2px;
+  }
+  .tc-sub { font-size: 12px; color: var(--text-tertiary); }
+
+  /* ==== Sections ==== */
+  .section { display: none; animation: rise 280ms ease-out both; }
+  .section.active { display: block; }
+
+  /* ---- Galería section ---- */
+  .gallery-head {
+    display: flex; justify-content: space-between; align-items: end;
+    gap: 12px; flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .gallery-head h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+  }
+  .gallery-head .meta { font-size: 13px; color: var(--text-tertiary); }
+
+  .upload-zone {
+    border: 1.5px dashed var(--border-default);
+    border-radius: 14px;
+    padding: 28px 20px;
+    text-align: center;
+    background: var(--bg-surface);
+    transition: border-color 200ms, background 200ms, padding 280ms cubic-bezier(.2,.7,.2,1);
+    cursor: pointer;
+    margin-bottom: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--border-accent); background: var(--accent-deep); }
+  /* states */
+  .upload-zone.uploading,
+  .upload-zone.done {
+    cursor: default;
+    text-align: left;
+    padding: 18px 18px 16px;
+    border-style: solid;
+    border-color: var(--border-accent);
+    background: var(--bg-surface);
+  }
+  .upload-zone.done { border-color: rgba(76,175,125,0.40); }
+
+  .upload-zone .idle-view {
+    display: block;
+    transition: opacity 220ms ease, transform 280ms cubic-bezier(.2,.7,.2,1);
+  }
+  .upload-zone .upload-progress { display: none; }
+  .upload-zone.uploading .idle-view,
+  .upload-zone.done .idle-view { display: none; }
+  .upload-zone.uploading .upload-progress,
+  .upload-zone.done .upload-progress {
+    display: block;
+    animation: rise 320ms cubic-bezier(.2,.7,.2,1) both;
+  }
+
+  .upload-zone .icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    background: var(--accent-deep);
+    color: var(--accent);
+    border: 1px solid var(--border-accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    margin: 0 auto 12px;
+  }
+  .upload-zone h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.015em;
+    margin-bottom: 4px;
+  }
+  .upload-zone p { color: var(--text-secondary); font-size: 13px; margin-bottom: 14px; }
+  .upload-meta { display: flex; justify-content: center; gap: 16px; font-size: 12px; color: var(--text-tertiary); flex-wrap: wrap; }
+  .upload-meta span { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* === Progress UI === */
+  .up-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 12px;
+  }
+  .up-head .title {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 15px; letter-spacing: -0.015em;
+  }
+  .up-head .title .ic {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--accent-deep);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: all 240ms ease;
+  }
+  .upload-zone.done .up-head .title .ic {
+    background: rgba(76,175,125,0.18); color: var(--success);
+  }
+  .up-head .stats {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+  .up-head .stats .accent { color: var(--accent); }
+  .upload-zone.done .up-head .stats .accent { color: var(--success); }
+
+  .up-bar {
+    height: 6px;
+    background: var(--bg-base);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .up-bar > span {
+    display: block; height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 320ms cubic-bezier(.2,.7,.2,1), background 240ms ease;
+  }
+  .upload-zone.done .up-bar > span { background: var(--success); }
+
+  .up-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 2px;
+  }
+  .up-item {
+    aspect-ratio: 1/1;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    animation: rise 320ms cubic-bezier(.2,.7,.2,1) both;
+  }
+  .up-item img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: opacity 280ms ease, filter 280ms ease;
+    opacity: 0.55;
+    filter: grayscale(0.35);
+  }
+  .up-item.loading img { opacity: 0.4; filter: grayscale(0.5) brightness(0.85); }
+  .up-item.complete img { opacity: 1; filter: none; }
+  .up-item .badge-progress {
+    position: absolute; left: 6px; bottom: 6px;
+    background: rgba(15,13,11,0.85);
+    backdrop-filter: blur(6px);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  .up-item.complete .badge-progress {
+    background: rgba(76,175,125,0.85);
+    color: #0F0D0B;
+  }
+  .up-item .check-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(15,13,11,0.0);
+    opacity: 0;
+    color: var(--success);
+    font-size: 22px;
+    transition: opacity 220ms ease;
+    pointer-events: none;
+  }
+  .up-item.complete .check-overlay { opacity: 1; }
+
+  .up-spinner {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    border-top-color: transparent;
+    animation: spin 0.9s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .up-foot {
+    margin-top: 14px;
+    display: flex; gap: 8px; justify-content: flex-end;
+  }
+  .up-foot .btn { height: 36px; padding: 0 14px; font-size: 13px; }
+
+  /* Done message */
+  .up-done-msg {
+    display: none;
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(76,175,125,0.10);
+    border: 1px solid rgba(76,175,125,0.30);
+    border-radius: 10px;
+    color: var(--success);
+    font-size: 13.5px;
+    display: flex; gap: 10px; align-items: center;
+    animation: rise 320ms cubic-bezier(.2,.7,.2,1) both;
+  }
+  .upload-zone:not(.done) .up-done-msg { display: none; }
+
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 880px) { .photo-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 600px) { .photo-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; } }
+
+  .photo-cell {
+    aspect-ratio: 4/3;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: transform 150ms ease;
+  }
+  .photo-cell:hover { transform: scale(1.02); }
+
+  .load-more {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 16px;
+    padding: 12px 18px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    font-size: 14px; font-weight: 500;
+    cursor: pointer;
+    transition: all 150ms;
+  }
+  .load-more:hover {
+    border-color: var(--border-accent);
+    color: var(--accent);
+    background: var(--accent-deep);
+  }
+  .load-more .count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-left: 4px;
+  }
+
+  /* ---- Info section ---- */
+  .form-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 22px;
+  }
+  .form-row { margin-bottom: 16px; }
+  .form-row:last-child { margin-bottom: 0; }
+  .form-row label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .form-row input, .form-row textarea, .form-row select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    padding: 11px 14px;
+    border-radius: 9px;
+    font: inherit;
+    font-size: 14px;
+    transition: border-color 150ms;
+  }
+  /* iOS Safari: date inputs use intrinsic content-based width.
+     Force explicit width and reset appearance to shrink correctly. */
+  .form-row input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+  }
+  .form-row input:focus, .form-row textarea:focus, .form-row select:focus {
+    border-color: var(--border-accent); outline: none;
+  }
+  .form-row textarea { resize: vertical; min-height: 90px; }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 540px) { .form-grid-2 { grid-template-columns: 1fr; } }
+  .form-actions {
+    display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 22px; padding-top: 18px;
+    border-top: 1px solid var(--border-subtle);
+    flex-wrap: wrap;
+  }
+  .form-actions .danger { color: var(--error); margin-right: auto; }
+
+  @media (max-width: 540px) {
+    .form-actions {
+      flex-direction: column;
+      gap: 8px;
+    }
+    .form-actions .btn { width: 100%; justify-content: center; }
+    .form-actions .btn-primary { order: 1; }
+    .form-actions .btn-outline { order: 2; }
+    .form-actions .danger {
+      order: 3;
+      margin-right: 0;
+      margin-top: 6px;
+    }
+  }
+
+  /* ---- Stats section ---- */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } }
+  .stat {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .stat .label {
+    font-size: 11px; color: var(--text-tertiary);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .stat .value {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 26px; letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .stat .value.accent { color: var(--accent); font-family: var(--font-mono); font-weight: 500; font-size: 22px; }
+  .stat .delta { font-family: var(--font-mono); font-size: 12px; color: var(--success); margin-top: 4px; display: inline-flex; align-items: center; gap: 4px; }
+
+  .insight {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 14px 16px;
+    background: var(--bg-surface);
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    display: flex; gap: 10px; align-items: start;
+  }
+  .insight .ti { color: var(--accent); font-size: 18px; flex-shrink: 0; }
+
+  /* ---- Descuentos ---- */
+  .discount-head {
+    display: flex; justify-content: space-between; align-items: end;
+    gap: 12px; flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .discount-head h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+  }
+  .discount-head .muted-sub { color: var(--text-tertiary); font-size: 13px; margin-top: 2px; }
+
+  .discount-list { display: flex; flex-direction: column; gap: 10px; }
+  .disc-item {
+    display: grid;
+    grid-template-columns: 40px 1fr auto auto;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    align-items: center;
+  }
+  .disc-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--accent-deep);
+    color: var(--accent);
+    border: 1px solid var(--border-accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .disc-info .ttl {
+    font-family: var(--font-display);
+    font-weight: 700; font-size: 14.5px;
+    letter-spacing: -0.015em; margin-bottom: 3px;
+  }
+  .disc-info .meta { font-size: 12.5px; color: var(--text-tertiary); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .disc-info .meta .sep { width: 3px; height: 3px; background: var(--text-tertiary); border-radius: 50%; opacity: 0.6; }
+  .disc-info .code {
+    font-family: var(--font-mono);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    padding: 1px 7px;
+    border-radius: 5px;
+    font-size: 11.5px;
+    border: 1px solid var(--border-subtle);
+  }
+  .disc-actions { display: flex; gap: 4px; }
+  .disc-iconbtn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    color: var(--text-tertiary);
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 150ms;
+  }
+  .disc-iconbtn:hover { background: var(--bg-elevated); color: var(--text-primary); }
+  .disc-iconbtn.danger:hover { color: var(--error); }
+
+  .discount-empty {
+    text-align: center;
+    padding: 30px 20px;
+    background: var(--bg-surface);
+    border: 1px dashed var(--border-default);
+    border-radius: 14px;
+    color: var(--text-tertiary);
+    font-size: 13.5px;
+  }
+
+  /* ---- Modal: Crear descuento ---- */
+  .mb {
+    position: fixed; inset: 0;
+    background: rgba(8, 6, 5, 0.72);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 200ms ease;
+  }
+  .mb.open { opacity: 1; pointer-events: auto; }
+  .modal {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 18px;
+    width: 100%; max-width: 540px;
+    max-height: calc(100vh - 48px);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    transform: translateY(12px) scale(0.98);
+    transition: transform 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+  .mb.open .modal { transform: translateY(0) scale(1); }
+
+  .modal-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+  }
+  .modal-head .back {
+    width: 32px; height: 32px; border-radius: 8px;
+    color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .modal-head .back:hover { background: var(--bg-elevated); color: var(--text-primary); }
+  .modal-head h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16.5px;
+    letter-spacing: -0.02em;
+    flex: 1;
+  }
+  .modal-head .sub { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+  .modal-close {
+    width: 34px; height: 34px; border-radius: 8px;
+    color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .modal-close:hover { background: var(--bg-elevated); color: var(--text-primary); }
+  .modal-body { padding: 18px; overflow-y: auto; flex: 1; }
+  .modal-foot {
+    padding: 14px 18px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex; gap: 10px; justify-content: flex-end;
+    flex-shrink: 0;
+  }
+
+  /* Step 1 — type cards */
+  .type-list { display: flex; flex-direction: column; gap: 10px; }
+  .type-card {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 180ms;
+    align-items: center;
+    width: 100%;
+    color: inherit; font: inherit;
+  }
+  .type-card:hover { border-color: var(--border-accent); background: var(--bg-elevated); }
+  .type-card .ic {
+    width: 44px; height: 44px;
+    border-radius: 11px;
+    background: var(--accent-deep);
+    color: var(--accent);
+    border: 1px solid var(--border-accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .type-card .ttl {
+    font-family: var(--font-display);
+    font-weight: 700; font-size: 14.5px;
+    letter-spacing: -0.015em; margin-bottom: 3px;
+  }
+  .type-card .desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.45; }
+  .type-card .chev { color: var(--text-tertiary); }
+
+  /* Step 2 — segmented */
+  .seg {
+    display: flex;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: 9px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .seg button {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 7px;
+    font-size: 13px; font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 120ms;
+  }
+  .seg button.active {
+    background: var(--bg-elevated);
+    color: var(--accent);
+  }
+
+  .input-with-suffix {
+    position: relative;
+  }
+  .input-with-suffix input { padding-right: 38px; }
+  .input-with-suffix .suffix {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--text-tertiary);
+    font-family: var(--font-mono); font-size: 13px;
+  }
+  .input-with-prefix { position: relative; }
+  .input-with-prefix input { padding-left: 26px; }
+  .input-with-prefix .prefix {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--text-tertiary);
+    font-family: var(--font-mono); font-size: 13px;
+  }
+
+  /* "+X" more tile */
+  .up-item.more {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 2px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    cursor: pointer;
+    transition: all 150ms ease;
+    color: var(--accent);
+  }
+  .up-item.more:hover {
+    border-color: var(--border-accent);
+    background: var(--accent-deep);
+    transform: translateY(-1px);
+  }
+  .up-item.more .lab-num {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .up-item.more .lab-text {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+
+  /* === Celebration view (replaces grid when done) === */
+  .upload-zone .up-celebration { display: none; }
+  .upload-zone.done .up-head,
+  .upload-zone.done .up-bar,
+  .upload-zone.done .up-list,
+  .upload-zone.done .up-done-msg,
+  .upload-zone.done .up-foot { display: none; }
+  .upload-zone.done .up-celebration {
+    display: flex;
+    flex-direction: column; align-items: center;
+    text-align: center;
+    padding: 12px 14px 6px;
+    animation: cel-rise 480ms cubic-bezier(.2, .9, .3, 1) both;
+  }
+  @keyframes cel-rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .cel-circle {
+    position: relative;
+    width: 84px; height: 84px;
+    border-radius: 50%;
+    background: rgba(76,175,125,0.14);
+    border: 2px solid var(--success);
+    color: var(--success);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px;
+    animation: cel-pop 540ms cubic-bezier(.18, 1.4, .65, 1) both 80ms;
+  }
+  .cel-circle i { font-size: 44px; animation: cel-check-draw 380ms ease-out both 360ms; }
+  .cel-circle::before,
+  .cel-circle::after {
+    content: '';
+    position: absolute; inset: -6px;
+    border-radius: 50%;
+    border: 2px solid var(--success);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .cel-circle::before { animation: cel-ring 1100ms ease-out 280ms both; }
+  .cel-circle::after  { animation: cel-ring 1100ms ease-out 460ms both; }
+  @keyframes cel-pop {
+    0%   { opacity: 0; transform: scale(0.4); }
+    60%  { opacity: 1; transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  @keyframes cel-check-draw {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes cel-ring {
+    0%   { opacity: 0.6; transform: scale(0.6); }
+    100% { opacity: 0;   transform: scale(1.7); }
+  }
+
+  .cel-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(24px, 4vw, 32px);
+    letter-spacing: -0.025em;
+    line-height: 1;
+    margin-bottom: 8px;
+    animation: cel-fade 420ms ease-out both 320ms;
+  }
+  .cel-sub {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 18px;
+    animation: cel-fade 420ms ease-out both 420ms;
+  }
+  .cel-sub strong { color: var(--accent); font-weight: 500; font-family: var(--font-mono); }
+  .cel-actions {
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    animation: cel-fade 420ms ease-out both 520ms;
+  }
+  .cel-actions .btn { height: 40px; padding: 0 18px; font-size: 13.5px; }
+  .cel-link {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 14px;
+    animation: cel-fade 420ms ease-out both 600ms;
+    background: none; border: none; padding: 4px;
+  }
+  .cel-link:hover { text-decoration: underline; }
+  @keyframes cel-fade {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === Files modal === */
+  .fb {
+    position: fixed; inset: 0;
+    background: rgba(8,6,5,0.72);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 220ms ease;
+  }
+  .fb.open { opacity: 1; pointer-events: auto; }
+  .files-modal {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 560px;
+    max-height: calc(100vh - 48px);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+    transform: translateY(10px) scale(0.98);
+    transition: transform 240ms cubic-bezier(.2, .9, .3, 1);
+  }
+  .fb.open .files-modal { transform: none; }
+  .files-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .files-head h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.02em;
+  }
+  .files-summary {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex; align-items: center; gap: 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .files-summary strong { color: var(--text-primary); font-weight: 500; }
+  .files-summary .accent { color: var(--accent); font-family: var(--font-mono); }
+  .files-summary .bar {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-base);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .files-summary .bar > span {
+    display: block; height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 320ms cubic-bezier(.2,.7,.2,1), background 240ms ease;
+  }
+  .files-modal.done .files-summary .bar > span { background: var(--success); }
+
+  .files-list { overflow-y: auto; flex: 1; }
+  .file-row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto 22px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .file-row:last-child { border-bottom: none; }
+  .file-row .thumb {
+    width: 36px; height: 36px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+  }
+  .file-row .thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0.65; }
+  .file-row.complete .thumb img { opacity: 1; }
+  .file-row .name {
+    font-size: 13px;
+    color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .file-row .size {
+    font-size: 11.5px;
+    color: var(--text-tertiary);
+    margin-top: 1px;
+  }
+  .file-row .pct {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--accent);
+  }
+  .file-row.complete .pct { color: var(--success); }
+  .file-row .status-ic {
+    color: var(--text-tertiary);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .file-row.complete .status-ic { color: var(--success); }
+
+  /* ===== Delete confirmation modal ===== */
+  .del-modal {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    width: 100%; max-width: 440px;
+    padding: 26px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+    transform: translateY(10px) scale(0.98);
+    transition: transform 220ms cubic-bezier(.2, .9, .3, 1);
+  }
+  .mb.open .del-modal { transform: none; }
+  .del-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    background: rgba(224, 85, 85, 0.12);
+    border: 1px solid rgba(224, 85, 85, 0.32);
+    color: var(--error);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
+  .del-modal h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .del-modal p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.55;
+    margin-bottom: 22px;
+  }
+  .del-modal p strong { color: var(--text-primary); font-weight: 500; }
+  .del-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .del-actions .btn { height: 44px; padding: 0 18px; font-size: 14px; }
+  .btn-confirm-del {
+    background: var(--error);
+    color: #fff;
+    border: 1px solid var(--error);
+    transition: background 200ms ease, border-color 200ms ease, color 200ms ease, opacity 200ms ease;
+  }
+  .btn-confirm-del:hover:not(:disabled) { background: #c14545; border-color: #c14545; }
+  .btn-confirm-del:disabled {
+    background: transparent;
+    color: var(--text-tertiary);
+    border-color: var(--border-default);
+    cursor: progress;
+    opacity: 0.75;
+  }
+  .btn-confirm-del .countdown {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    opacity: 0.85;
+    margin-left: 2px;
+  }
+  @media (max-width: 540px) {
+    .del-actions { flex-direction: column-reverse; }
+    .del-actions .btn { width: 100%; justify-content: center; }
+  }
+
+  /* ===== Status pill below title ===== */
+  .ev-status-row { margin-bottom: 10px; }
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #0F0D0B;
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    backdrop-filter: blur(6px);
+  }
+  .status-pill.processing { color: var(--warning); }
+  .status-pill.processing .spin-ring {
+    width: 10px; height: 10px;
+    border: 1.6px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: status-spin 0.9s linear infinite;
+    flex-shrink: 0;
+  }
+  .status-pill.uploaded { color: var(--success); }
+  .status-pill.uploaded i { font-size: 13px; }
+  .status-pill.draft i { font-size: 12px; color: var(--text-tertiary); }
+  @keyframes status-spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body data-screen-label="Evento (detalle)">
+
+  <header class="top">
+    <div class="top-left">
+      <a href="events.html" class="back-btn">
+        <i class="ti ti-arrow-left" style="font-size: 18px;"></i>
+        <span>Eventos</span>
+      </a>
+      <div class="top-divider"></div>
+      <a href="index.html" class="logo">cuerv<span class="logo-dot"></span>to</a>
+    </div>
+    <div class="top-actions">
+      <a href="perfil.html" class="avatar" title="Perfil">AL</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- Cover -->
+    <div class="ev-cover" id="evCover">
+      <div class="cover-actions">
+        <button class="cover-btn" id="coverBtn" type="button" onclick="document.getElementById('coverInput').click()">
+          <i class="ti ti-photo-edit"></i>Cambiar portada
+        </button>
+        <button class="cover-btn primary" id="shareBtn" onclick="toggleShare(event)">
+          <i class="ti ti-share-3"></i>Compartir mi página
+        </button>
+      </div>
+      <input type="file" accept="image/*" id="coverInput" hidden />
+
+      <div class="overlay"></div>
+      <div class="meta">
+        <div>
+          <div id="evStatusBadge" class="ev-status-row"></div>
+          <h1 id="evTitle">—</h1>
+          <div class="sub">
+            <span id="evDate">—</span><span class="sep"></span>
+            <span id="evLoc">—</span><span class="sep"></span>
+            <span id="evDisc">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Share popover lives outside .ev-cover so it isn't clipped by overflow:hidden -->
+    <div class="share-pop" id="sharePop" onclick="event.stopPropagation()">
+      <div class="label-mono">Tu link público para este evento</div>
+      <div class="url-row">
+        <input id="shareUrl" readonly />
+        <button class="copy" onclick="copyShare()" id="copyBtn">Copiar</button>
+      </div>
+      <div class="qrow">
+        <a class="qbtn" id="shareWa"  target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i>WhatsApp</a>
+        <a class="qbtn" id="shareIg"  target="_blank" rel="noopener"><i class="ti ti-brand-instagram"></i>Historia</a>
+        <a class="qbtn" id="sharePreview" target="_blank" rel="noopener"><i class="ti ti-external-link"></i>Ver</a>
+      </div>
+    </div>
+
+    <!-- Toggle cards -->
+    <div class="toggle-cards" role="tablist">
+      <button class="tc active" data-section="galeria" role="tab">
+        <div class="tc-icon"><i class="ti ti-photo"></i></div>
+        <div>
+          <div class="tc-title">Galería</div>
+          <div class="tc-sub" id="tc-gal-sub">2.840 fotos · subidas hace 3hs</div>
+        </div>
+      </button>
+
+      <button class="tc" data-section="monetizacion" role="tab">
+        <div class="tc-icon"><i class="ti ti-coin"></i></div>
+        <div>
+          <div class="tc-title">Monetización</div>
+          <div class="tc-sub">Descuentos, estadísticas</div>
+        </div>
+      </button>
+
+      <button class="tc" data-section="info" role="tab">
+        <div class="tc-icon"><i class="ti ti-info-circle"></i></div>
+        <div>
+          <div class="tc-title">Info</div>
+          <div class="tc-sub">Título, fecha, precio y descripción</div>
+        </div>
+      </button>
+    </div>
+
+    <!-- ===== Galería ===== -->
+    <section class="section active" id="sec-galeria">
+      <div class="gallery-head">
+        <h2>Galería</h2>
+        <span class="meta" id="gal-meta">2.840 fotos · subidas hace 3 horas</span>
+      </div>
+
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept="image/*" multiple hidden />
+
+        <!-- Idle view -->
+        <div class="idle-view">
+          <div class="icon"><i class="ti ti-cloud-upload"></i></div>
+          <h4>Arrastrá fotos acá</h4>
+          <p>O hacé click para elegir. Procesamos ~1.000 fotos en 8 minutos.</p>
+          <button class="btn btn-primary" id="pickBtn" type="button">
+            <i class="ti ti-folder"></i>Elegir archivos
+          </button>
+          <div class="upload-meta" style="margin-top: 16px;">
+            <span><i class="ti ti-photo" style="font-size: 13px;"></i>JPG · RAW · HEIC</span>
+            <span><i class="ti ti-database" style="font-size: 13px;"></i>Hasta 5.000 fotos</span>
+            <span><i class="ti ti-shield-check" style="font-size: 13px;"></i>Watermark automático</span>
+          </div>
+        </div>
+
+        <!-- Progress view -->
+        <div class="upload-progress">
+          <div class="up-head">
+            <div class="title">
+              <span class="ic"><span id="upHeadIcon"><span class="up-spinner"></span></span></span>
+              <span id="upHeadText">Subiendo fotos…</span>
+            </div>
+            <div class="stats">
+              <span class="accent" id="upDone">0</span> / <span id="upTotal">0</span>
+              <span id="upPct"> · 0%</span>
+            </div>
+          </div>
+          <div class="up-bar"><span id="upBar" style="width: 0%"></span></div>
+          <div class="up-list" id="upList"></div>
+
+          <div class="up-foot">
+            <button class="btn btn-ghost" id="upCancelBtn" type="button">Cancelar</button>
+          </div>
+
+          <!-- Celebration (shown when done) -->
+          <div class="up-celebration" id="upCelebration">
+            <div class="cel-circle"><i class="ti ti-check"></i></div>
+            <div class="cel-title">¡Listo!</div>
+            <div class="cel-sub">
+              <strong id="celCount">0</strong> fotos cargadas con watermark automático
+            </div>
+            <div class="cel-actions">
+              <button class="btn btn-primary" id="upMoreBtn" type="button">
+                <i class="ti ti-cloud-upload"></i>Subir más fotos
+              </button>
+              <button class="btn btn-outline" id="celCopyLinkBtn" type="button">
+                <i class="ti ti-link" id="celCopyIcon"></i><span id="celCopyLabel">Copiar link del evento</span>
+              </button>
+            </div>
+            <button class="cel-link" id="celViewListBtn" type="button">
+              Ver lista completa<i class="ti ti-arrow-right" style="font-size: 13px;"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="photo-grid" id="photoGrid"></div>
+
+      <button class="load-more" id="loadMoreBtn" type="button">
+        <i class="ti ti-chevron-down"></i>
+        <span>Cargar más fotos</span>
+        <span class="count" id="loadMoreCount"></span>
+      </button>
+    </section>
+
+    <!-- ===== Info ===== -->
+    <section class="section" id="sec-info">
+      <div class="form-card">
+        <div class="form-row">
+          <label>Título</label>
+          <input type="text" id="evf-title" />
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label>Fecha</label>
+            <input type="date" id="evf-date" />
+          </div>
+          <div class="form-row">
+            <label>Ubicación</label>
+            <input type="text" id="evf-loc" />
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label>Disciplina</label>
+            <select id="evf-disc">
+              <option>Running</option>
+              <option>Trail</option>
+              <option>Ciclismo</option>
+              <option>Triatlón</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Precio por foto</label>
+            <input type="text" id="evf-price" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Descripción</label>
+          <textarea id="evf-desc" placeholder="Contale a los corredores qué van a encontrar…"></textarea>
+        </div>
+        <div class="form-row">
+          <label>Estado</label>
+          <select id="evf-status">
+            <option>Activo</option>
+            <option>Procesando</option>
+            <option>Finalizado</option>
+            <option>Borrador</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-ghost danger" type="button" onclick="openDelModal()">Eliminar evento</button>
+          <button class="btn btn-outline">Cancelar</button>
+          <button class="btn btn-primary">Guardar cambios</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Monetización ===== -->
+    <section class="section" id="sec-monetizacion">
+      <div class="stats-grid">
+        <div class="stat">
+          <div class="label">Recaudado</div>
+          <div class="value accent" id="evf-stat-rev">$988.800</div>
+          <div class="delta"><i class="ti ti-trending-up" style="font-size: 12px;"></i>+18% vs mes anterior</div>
+        </div>
+        <div class="stat">
+          <div class="label">Fotos vendidas</div>
+          <div class="value mono" id="evf-stat-sold">412</div>
+          <div class="delta"><i class="ti ti-trending-up" style="font-size: 12px;"></i>+12%</div>
+        </div>
+        <div class="stat">
+          <div class="label">Conversión</div>
+          <div class="value mono" id="evf-stat-conv">14.5%</div>
+          <div class="delta"><i class="ti ti-minus" style="font-size: 12px; color: var(--text-tertiary);"></i><span style="color: var(--text-tertiary);">estable</span></div>
+        </div>
+      </div>
+      <!-- Descuentos -->
+      <div class="discount-head">
+        <div>
+          <h3>Descuentos</h3>
+          <div class="muted-sub">Códigos y promos aplicables a este evento.</div>
+        </div>
+        <button class="btn btn-primary" onclick="openDiscountModal()">
+          <i class="ti ti-plus"></i>Crear descuento
+        </button>
+      </div>
+
+      <div class="discount-list" id="discountList"></div>
+    </section>
+
+  </main>
+
+  <!-- ============ MODAL: Eliminar evento ============ -->
+  <div class="mb" id="deleteBackdrop" onclick="closeDeleteOnBackdrop(event)">
+    <div class="del-modal" onclick="event.stopPropagation()">
+      <div class="del-icon"><i class="ti ti-trash"></i></div>
+      <h3>¿Eliminar evento?</h3>
+      <p>
+        Esta acción <strong>no se puede deshacer</strong>. Se van a borrar las
+        <strong id="delPhotoCount">— fotos</strong> y todas las ventas asociadas al evento.
+      </p>
+      <div class="del-actions">
+        <button class="btn btn-outline" type="button" onclick="closeDelModal()">Cancelar</button>
+        <button class="btn btn-confirm-del" type="button" id="delConfirmBtn" disabled onclick="doDelete()">
+          <i class="ti ti-trash"></i>
+          <span>Eliminar evento</span>
+          <span class="countdown" id="delCountdown">(2)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: Lista de archivos en upload ============ -->
+  <div class="fb" id="filesBackdrop" onclick="closeFilesOnBackdrop(event)">
+    <div class="files-modal" id="filesModal" onclick="event.stopPropagation()">
+      <div class="files-head">
+        <h3 id="filesTitle">Archivos en proceso</h3>
+        <button class="modal-close" onclick="closeFilesModal()" aria-label="Cerrar">
+          <i class="ti ti-x" style="font-size: 18px;"></i>
+        </button>
+      </div>
+      <div class="files-summary">
+        <span><strong class="accent" id="filesDone">0</strong> de <strong id="filesTotal">0</strong></span>
+        <span class="bar"><span id="filesBar" style="width: 0%"></span></span>
+        <span id="filesPct" style="font-family: var(--font-mono); font-size: 12px;">0%</span>
+      </div>
+      <div class="files-list" id="filesList"></div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: Crear descuento ============ -->
+  <div class="mb" id="discountBackdrop" onclick="closeDiscountOnBackdrop(event)">
+    <div class="modal" id="discountModal" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <button class="back" id="discBack" style="display: none;" onclick="discountStep(1)"><i class="ti ti-arrow-left"></i></button>
+        <div style="flex: 1;">
+          <h3 id="discTitle">Crear descuento</h3>
+          <div class="sub" id="discSub">Elegí el tipo de descuento.</div>
+        </div>
+        <button class="modal-close" onclick="closeDiscountModal()"><i class="ti ti-x"></i></button>
+      </div>
+
+      <!-- Step 1 — pick type -->
+      <div class="modal-body" id="discStep1">
+        <div class="type-list">
+          <button class="type-card" data-type="code">
+            <div class="ic"><i class="ti ti-ticket"></i></div>
+            <div>
+              <div class="ttl">Código de descuento</div>
+              <div class="desc">Porcentaje o monto fijo. El comprador ingresa el código en el checkout.</div>
+            </div>
+            <i class="ti ti-chevron-right chev"></i>
+          </button>
+
+          <button class="type-card" data-type="bundle">
+            <div class="ic"><i class="ti ti-package"></i></div>
+            <div>
+              <div class="ttl">Lleva X y pagás Y por unidad</div>
+              <div class="desc">Por ejemplo: lleva 5 fotos y pagás $1.500 cada una en lugar de $2.400.</div>
+            </div>
+            <i class="ti ti-chevron-right chev"></i>
+          </button>
+
+          <button class="type-card" data-type="qtypct">
+            <div class="ic"><i class="ti ti-percentage"></i></div>
+            <div>
+              <div class="ttl">Llevás X y % de descuento</div>
+              <div class="desc">Por ejemplo: lleva 3 fotos o más y obtenés 20% off sobre el total.</div>
+            </div>
+            <i class="ti ti-chevron-right chev"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2 — form -->
+      <div class="modal-body" id="discStep2" style="display: none;">
+
+        <!-- code form -->
+        <div class="disc-form" id="form-code" style="display: none;">
+          <div class="form-row">
+            <label>Código</label>
+            <input type="text" id="code-code" placeholder="Ej: VERANO20" style="text-transform: uppercase;" />
+          </div>
+          <div class="form-row">
+            <label>Tipo de descuento</label>
+            <div class="seg" id="code-kind">
+              <button class="active" data-kind="pct">Porcentaje</button>
+              <button data-kind="fixed">Monto fijo</button>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-row" id="code-pct-wrap">
+              <label>Valor</label>
+              <div class="input-with-suffix">
+                <input type="number" id="code-pct" placeholder="20" min="1" max="99" />
+                <span class="suffix">%</span>
+              </div>
+            </div>
+            <div class="form-row" id="code-fixed-wrap" style="display: none;">
+              <label>Valor</label>
+              <div class="input-with-prefix">
+                <span class="prefix">$</span>
+                <input type="number" id="code-fixed" placeholder="500" min="1" />
+              </div>
+            </div>
+            <div class="form-row">
+              <label>Vence (opcional)</label>
+              <input type="date" id="code-expires" />
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom: 0;">
+            <label>Usos máximos (opcional)</label>
+            <input type="number" id="code-max" placeholder="Sin límite" min="1" />
+          </div>
+        </div>
+
+        <!-- bundle form: lleva X paga Y/unidad -->
+        <div class="disc-form" id="form-bundle" style="display: none;">
+          <div class="form-grid-2">
+            <div class="form-row">
+              <label>Lleva (cantidad)</label>
+              <div class="input-with-suffix">
+                <input type="number" id="bundle-qty" placeholder="5" min="2" />
+                <span class="suffix">fotos</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>Pagás por unidad</label>
+              <div class="input-with-prefix">
+                <span class="prefix">$</span>
+                <input type="number" id="bundle-price" placeholder="1500" min="1" />
+              </div>
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom: 0;">
+            <label>Vence (opcional)</label>
+            <input type="date" id="bundle-expires" />
+          </div>
+        </div>
+
+        <!-- qtypct form: lleva X y % -->
+        <div class="disc-form" id="form-qtypct" style="display: none;">
+          <div class="form-grid-2">
+            <div class="form-row">
+              <label>A partir de (cantidad)</label>
+              <div class="input-with-suffix">
+                <input type="number" id="qtypct-qty" placeholder="3" min="2" />
+                <span class="suffix">fotos</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>Descuento</label>
+              <div class="input-with-suffix">
+                <input type="number" id="qtypct-pct" placeholder="20" min="1" max="99" />
+                <span class="suffix">%</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom: 0;">
+            <label>Vence (opcional)</label>
+            <input type="date" id="qtypct-expires" />
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-foot" id="discFoot" style="display: none;">
+        <button class="btn btn-outline" onclick="closeDiscountModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveDiscount()">Crear descuento</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const EVENTS = {
+      mba:  { title: 'Maratón Internacional Buenos Aires', date: '12 nov 2025', dateInput: '2025-11-12', loc: 'Buenos Aires', disc: 'Running', price: '$2.400', desc: 'Maratón oficial de Buenos Aires. Cubrimos largada, KM 10, KM 21, KM 35 y llegada en Plaza de Mayo.', status: 'Procesando', photos: 2840, sold: 412,  rev: '$988.800',   conv: '14.5%', warm: true },
+      tpat: { title: 'Trail Patagonia 50K',                date: '22 oct 2025', dateInput: '2025-10-22', loc: 'Bariloche',    disc: 'Trail',   price: '$2.400', desc: 'Trail de montaña a través de Cerro Catedral. Paisajes únicos en cada KM.', status: 'Activo',     photos: 2140, sold: 1840, rev: '$4.416.000', conv: '86%',   cool: true },
+      gfa:  { title: 'Gran Fondo Andes 200K',              date: '5 nov 2025',  dateInput: '2025-11-05', loc: 'Mendoza',      disc: 'Ciclismo',price: '$2.400', desc: 'Gran fondo de ciclismo de ruta cruzando los Andes. 200km de pura montaña.', status: 'Activo',     photos: 3890, sold: 2103, rev: '$5.047.200', conv: '54%' },
+      '10k':{ title: '10K Nocturna Palermo',               date: '28 oct 2025', dateInput: '2025-10-28', loc: 'Buenos Aires', disc: 'Running', price: '$2.400', desc: 'Carrera nocturna de 10K por los bosques de Palermo. Ambiente de fiesta.', status: 'Finalizado', photos: 1240, sold: 1180, rev: '$2.832.000', conv: '95%',   warm: true },
+    };
+
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id') || 'mba';
+    const ev = EVENTS[id] ?? EVENTS.mba;
+
+    function buildStatusPill(s) {
+      if (s === 'Procesando') return `<span class="status-pill processing"><span class="spin-ring"></span>Procesando</span>`;
+      if (s === 'Activo' || s === 'Finalizado') return `<span class="status-pill uploaded"><i class="ti ti-circle-check-filled"></i>Subido</span>`;
+      if (s === 'Borrador') return `<span class="status-pill draft"><i class="ti ti-pencil"></i>Borrador</span>`;
+      return `<span class="status-pill">${s}</span>`;
+    }
+
+    // populate cover
+    document.getElementById('evTitle').textContent = ev.title;
+    document.getElementById('evDate').textContent  = ev.date;
+    document.getElementById('evLoc').textContent   = ev.loc;
+    document.getElementById('evDisc').textContent  = ev.disc;
+    document.getElementById('evStatusBadge').innerHTML = buildStatusPill(ev.status);
+
+    const cover = document.getElementById('evCover');
+    cover.classList.add('photo-ph');
+    if (ev.warm) cover.classList.add('photo-ph-warm');
+    else if (ev.cool) cover.classList.add('photo-ph-cool');
+    cover.setAttribute('data-label', '');
+
+    // ===== Share popover =====
+    const PHOTOG_SLUG = 'ana-liotta'; // demo: from logged-in photographer
+    const shareUrl = `${location.origin}/cobertura.html?event=${id}&p=${PHOTOG_SLUG}`;
+    const sharePop = document.getElementById('sharePop');
+    const urlInput = document.getElementById('shareUrl');
+    urlInput.value = shareUrl;
+    document.getElementById('sharePreview').href = shareUrl;
+    document.getElementById('shareWa').href =
+      `https://wa.me/?text=${encodeURIComponent(`Mirá las fotos del ${ev.title}: ${shareUrl}`)}`;
+    document.getElementById('shareIg').href = shareUrl; // IG no acepta share por URL — esto al menos abre la página
+
+    function positionSharePop() {
+      const btn = document.getElementById('shareBtn');
+      const rect = btn.getBoundingClientRect();
+      sharePop.style.top = (rect.bottom + 8) + 'px';
+      sharePop.style.right = (window.innerWidth - rect.right) + 'px';
+    }
+    function toggleShare(e) {
+      e.stopPropagation();
+      const willOpen = !sharePop.classList.contains('open');
+      if (willOpen) positionSharePop();
+      sharePop.classList.toggle('open');
+    }
+    function copyShare() {
+      urlInput.select();
+      navigator.clipboard?.writeText(shareUrl);
+      const btn = document.getElementById('copyBtn');
+      const old = btn.textContent;
+      btn.textContent = 'Copiado';
+      setTimeout(() => { btn.textContent = old; }, 1500);
+    }
+    document.addEventListener('click', (e) => {
+      if (!sharePop.contains(e.target) && e.target.closest('#shareBtn') === null) {
+        sharePop.classList.remove('open');
+      }
+    });
+    // Reposition on resize, close on scroll (fixed pos would drift)
+    window.addEventListener('resize', () => {
+      if (sharePop.classList.contains('open')) positionSharePop();
+    });
+    window.addEventListener('scroll', () => {
+      sharePop.classList.remove('open');
+    }, { passive: true });
+
+    // ===== Change cover (file input + drag & drop) =====
+    const coverInput = document.getElementById('coverInput');
+    function applyCoverImage(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        // Replace placeholder with real image
+        cover.classList.remove('photo-ph', 'photo-ph-warm', 'photo-ph-cool');
+        cover.style.background = `#1a1612 url('${ev.target.result}') center / cover no-repeat`;
+      };
+      reader.readAsDataURL(file);
+    }
+    coverInput.addEventListener('change', (e) => {
+      const f = e.target.files?.[0];
+      if (f) applyCoverImage(f);
+      coverInput.value = '';
+    });
+    ['dragenter', 'dragover'].forEach(t => {
+      cover.addEventListener(t, (e) => {
+        if (e.dataTransfer?.types?.includes('Files')) {
+          e.preventDefault(); e.stopPropagation();
+          cover.classList.add('drag-over');
+        }
+      });
+    });
+    ['dragleave', 'drop'].forEach(t => {
+      cover.addEventListener(t, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        cover.classList.remove('drag-over');
+      });
+    });
+    cover.addEventListener('drop', (e) => {
+      const f = e.dataTransfer?.files?.[0];
+      if (f) applyCoverImage(f);
+    });
+    // Prevent the page from navigating away if a stray drop happens outside the cover
+    ['dragover', 'drop'].forEach(t => {
+      window.addEventListener(t, (e) => {
+        if (e.dataTransfer?.types?.includes('Files') && !cover.contains(e.target)) {
+          e.preventDefault();
+        }
+      });
+    });
+
+    // ===== Delete event confirmation modal =====
+    const delBackdrop = document.getElementById('deleteBackdrop');
+    const delConfirmBtn = document.getElementById('delConfirmBtn');
+    const delCountdownEl = document.getElementById('delCountdown');
+    let delTimer = null;
+
+    function openDelModal() {
+      document.getElementById('delPhotoCount').textContent =
+        `${ev.photos.toLocaleString('es-AR')} fotos`;
+      delBackdrop.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      startDelCountdown(2);
+    }
+    function closeDelModal() {
+      delBackdrop.classList.remove('open');
+      document.body.style.overflow = '';
+      clearInterval(delTimer);
+    }
+    function closeDeleteOnBackdrop(e) {
+      if (e.target === delBackdrop) closeDelModal();
+    }
+    function startDelCountdown(seconds) {
+      delConfirmBtn.disabled = true;
+      let n = seconds;
+      delCountdownEl.textContent = `(${n})`;
+      delTimer = setInterval(() => {
+        n--;
+        if (n <= 0) {
+          clearInterval(delTimer);
+          delConfirmBtn.disabled = false;
+          delCountdownEl.textContent = '';
+        } else {
+          delCountdownEl.textContent = `(${n})`;
+        }
+      }, 1000);
+    }
+    function doDelete() {
+      if (delConfirmBtn.disabled) return;
+      closeDelModal();
+      alert('Demo: evento eliminado. En producción navega de vuelta a /events.');
+    }
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && delBackdrop.classList.contains('open')) closeDelModal();
+    });
+
+    // toggle-card subtitles
+    document.getElementById('tc-gal-sub').textContent =
+      `${ev.photos.toLocaleString('es-AR')} fotos · subidas hace 3hs`;
+    document.getElementById('gal-meta').textContent =
+      `${ev.photos.toLocaleString('es-AR')} fotos · subidas hace 3 horas`;
+
+    // info form
+    document.getElementById('evf-title').value  = ev.title;
+    document.getElementById('evf-date').value   = ev.dateInput;
+    document.getElementById('evf-loc').value    = ev.loc;
+    document.getElementById('evf-disc').value   = ev.disc;
+    document.getElementById('evf-price').value  = ev.price;
+    document.getElementById('evf-desc').value   = ev.desc;
+    document.getElementById('evf-status').value = ev.status;
+
+    // stats
+    document.getElementById('evf-stat-rev').textContent  = ev.rev;
+    document.getElementById('evf-stat-sold').textContent = ev.sold.toLocaleString('es-AR');
+    document.getElementById('evf-stat-conv').textContent = ev.conv;
+
+    // photo grid — paginated to save bandwidth
+    const PAGE_SIZE = 16;
+    const variants = ['photo-ph-warm', 'photo-ph-cool', '', 'photo-ph-warm', 'photo-ph-cool'];
+    const grid = document.getElementById('photoGrid');
+    const loadBtn = document.getElementById('loadMoreBtn');
+    const loadCount = document.getElementById('loadMoreCount');
+    let shown = 0;
+
+    function appendPage() {
+      const remaining = ev.photos - shown;
+      const batch = Math.min(PAGE_SIZE, remaining);
+      const html = Array.from({ length: batch }).map((_, i) => `
+        <div class="photo-cell photo-ph ${variants[(shown + i) % variants.length]}" data-label=""></div>
+      `).join('');
+      grid.insertAdjacentHTML('beforeend', html);
+      shown += batch;
+      const left = ev.photos - shown;
+      if (left <= 0) {
+        loadBtn.style.display = 'none';
+      } else {
+        loadCount.textContent = `· quedan ${left.toLocaleString('es-AR')}`;
+      }
+    }
+    appendPage();
+    loadBtn.addEventListener('click', appendPage);
+
+    // ============ UPLOAD FLOW ============
+    const MAX_PREVIEW = 11; // grid shows up to 11 tiles + 1 "+X" tile
+    const upZone     = document.getElementById('uploadZone');
+    const fileInput  = document.getElementById('fileInput');
+    const pickBtn    = document.getElementById('pickBtn');
+    const upList     = document.getElementById('upList');
+    const upBar      = document.getElementById('upBar');
+    const upDoneEl   = document.getElementById('upDone');
+    const upTotalEl  = document.getElementById('upTotal');
+    const upPctEl    = document.getElementById('upPct');
+    const upHeadIcon = document.getElementById('upHeadIcon');
+    const upHeadText = document.getElementById('upHeadText');
+    const upMoreBtn  = document.getElementById('upMoreBtn');
+    const upCancelBtn = document.getElementById('upCancelBtn');
+    const celCount   = document.getElementById('celCount');
+    const celViewListBtn = document.getElementById('celViewListBtn');
+
+    // Files modal
+    const filesBackdrop = document.getElementById('filesBackdrop');
+    const filesModal    = document.getElementById('filesModal');
+    const filesListEl   = document.getElementById('filesList');
+    const filesDoneEl   = document.getElementById('filesDone');
+    const filesTotalEl  = document.getElementById('filesTotal');
+    const filesBarEl    = document.getElementById('filesBar');
+    const filesPctEl    = document.getElementById('filesPct');
+    const filesTitleEl  = document.getElementById('filesTitle');
+
+    let uploadCancelled = false;
+    let uploadTimers = [];
+    let uploadItems  = [];
+
+    function fmtSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+      return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+    }
+
+    function clearUploadState() {
+      uploadCancelled = false;
+      uploadTimers.forEach(t => clearTimeout(t));
+      uploadTimers = [];
+      uploadItems  = [];
+      upList.innerHTML = '';
+      filesListEl.innerHTML = '';
+      upBar.style.width = '0%';
+      filesBarEl.style.width = '0%';
+      upDoneEl.textContent = '0';
+      upTotalEl.textContent = '0';
+      filesDoneEl.textContent = '0';
+      filesTotalEl.textContent = '0';
+      filesPctEl.textContent = '0%';
+      upPctEl.textContent = ' · 0%';
+      upHeadIcon.innerHTML = '<span class="up-spinner"></span>';
+      upHeadText.textContent = 'Subiendo fotos…';
+      upZone.classList.remove('done');
+      filesModal.classList.remove('done');
+    }
+
+    function startUpload(files) {
+      if (!files || files.length === 0) return;
+      clearUploadState();
+      upZone.classList.add('uploading');
+      upTotalEl.textContent = files.length;
+      filesTotalEl.textContent = files.length;
+
+      // Decide which files get a grid tile (cap to MAX_PREVIEW + "more" tile)
+      const arr = Array.from(files);
+      const showAll = arr.length <= MAX_PREVIEW + 1;
+      const visibleCount = showAll ? arr.length : MAX_PREVIEW;
+      const hiddenCount  = showAll ? 0 : arr.length - MAX_PREVIEW;
+
+      // Build items + grid tiles + modal rows
+      uploadItems = arr.map((f, i) => {
+        // Modal row (always built — it's the source of truth)
+        const row = document.createElement('div');
+        row.className = 'file-row';
+        row.innerHTML = `
+          <div class="thumb"><img alt="" /></div>
+          <div class="info">
+            <div class="name">${f.name}</div>
+            <div class="size">${fmtSize(f.size)}</div>
+          </div>
+          <span class="pct">0%</span>
+          <span class="status-ic"><span class="up-spinner"></span></span>`;
+        filesListEl.appendChild(row);
+        const rowImg = row.querySelector('img');
+
+        // Grid tile (only for visible ones)
+        let tile = null, tileBadge = null, tileImg = null;
+        if (i < visibleCount) {
+          tile = document.createElement('div');
+          tile.className = 'up-item loading';
+          tile.style.animationDelay = `${i * 30}ms`;
+          tile.innerHTML = `
+            <img alt="" />
+            <span class="badge-progress">0%</span>
+            <span class="check-overlay"><i class="ti ti-check"></i></span>`;
+          tileBadge = tile.querySelector('.badge-progress');
+          tileImg   = tile.querySelector('img');
+          upList.appendChild(tile);
+        }
+
+        // Set thumbnail (FileReader) on both
+        if (f.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            rowImg.src = ev.target.result;
+            if (tileImg) tileImg.src = ev.target.result;
+          };
+          reader.readAsDataURL(f);
+        }
+
+        return {
+          file: f, idx: i,
+          tile, tileBadge,
+          row, rowPct: row.querySelector('.pct'), rowStatus: row.querySelector('.status-ic'),
+          completed: false,
+        };
+      });
+
+      // Append "+X" tile if there are hidden items
+      if (hiddenCount > 0) {
+        const more = document.createElement('div');
+        more.className = 'up-item more';
+        more.style.animationDelay = `${visibleCount * 30}ms`;
+        more.classList.add('loading'); // reuse rise animation
+        more.innerHTML = `
+          <span class="lab-num">+${hiddenCount}</span>
+          <span class="lab-text">ver lista</span>`;
+        more.addEventListener('click', () => openFilesModal());
+        upList.appendChild(more);
+      }
+
+      // Per-file simulated progress
+      let doneCount = 0;
+      uploadItems.forEach((it, i) => {
+        let pct = 0;
+        const totalSteps = 10 + Math.floor(Math.random() * 6); // 10..15 ticks
+        const tickMs = 80 + Math.floor(Math.random() * 80);   // 80..160 ms
+        const startDelay = i * 70 + Math.random() * 60;
+
+        const tick = () => {
+          if (uploadCancelled) return;
+          pct += Math.ceil(100 / totalSteps);
+          if (pct >= 100) {
+            pct = 100;
+            it.completed = true;
+            if (it.tileBadge) it.tileBadge.textContent = '100%';
+            if (it.tile) { it.tile.classList.remove('loading'); it.tile.classList.add('complete'); }
+            it.row.classList.add('complete');
+            it.rowPct.textContent = '100%';
+            it.rowStatus.innerHTML = '<i class="ti ti-circle-check-filled" style="font-size: 16px;"></i>';
+            doneCount++;
+            updateAggregate(doneCount, uploadItems.length);
+            if (doneCount === uploadItems.length) finishUpload(uploadItems.length);
+          } else {
+            if (it.tileBadge) it.tileBadge.textContent = pct + '%';
+            it.rowPct.textContent = pct + '%';
+            uploadTimers.push(setTimeout(tick, tickMs));
+          }
+        };
+        uploadTimers.push(setTimeout(tick, startDelay));
+      });
+    }
+
+    function updateAggregate(done, total) {
+      upDoneEl.textContent  = done;
+      filesDoneEl.textContent = done;
+      const pct = Math.round((done / total) * 100);
+      upBar.style.width    = pct + '%';
+      filesBarEl.style.width = pct + '%';
+      upPctEl.textContent  = ' · ' + pct + '%';
+      filesPctEl.textContent = pct + '%';
+    }
+
+    function finishUpload(total) {
+      upZone.classList.add('done');
+      filesModal.classList.add('done');
+      filesTitleEl.textContent = 'Archivos cargados';
+      celCount.textContent = total;
+    }
+
+    pickBtn.addEventListener('click', () => fileInput.click());
+    upZone.addEventListener('click', (e) => {
+      if (upZone.classList.contains('uploading') || upZone.classList.contains('done')) return;
+      if (e.target.closest('button')) return;
+      fileInput.click();
+    });
+    fileInput.addEventListener('change', (e) => {
+      const files = e.target.files;
+      if (files && files.length) startUpload(files);
+      fileInput.value = '';
+    });
+
+    // Drag & drop
+    ['dragenter', 'dragover'].forEach(ev =>
+      upZone.addEventListener(ev, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        if (!upZone.classList.contains('uploading') && !upZone.classList.contains('done')) {
+          upZone.classList.add('drag');
+        }
+      }));
+    ['dragleave', 'drop'].forEach(ev =>
+      upZone.addEventListener(ev, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        upZone.classList.remove('drag');
+      }));
+    upZone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer?.files;
+      if (files && files.length) startUpload(files);
+    });
+
+    upCancelBtn.addEventListener('click', () => {
+      uploadCancelled = true;
+      uploadTimers.forEach(t => clearTimeout(t));
+      uploadTimers = [];
+      upZone.classList.remove('uploading', 'done');
+      closeFilesModal();
+    });
+    upMoreBtn.addEventListener('click', () => {
+      upZone.classList.remove('uploading', 'done');
+      setTimeout(() => fileInput.click(), 280);
+    });
+    celViewListBtn.addEventListener('click', () => openFilesModal());
+
+    // Copy event link from celebration view (uses shareUrl built in cover-share)
+    const celCopyBtn   = document.getElementById('celCopyLinkBtn');
+    const celCopyIcon  = document.getElementById('celCopyIcon');
+    const celCopyLabel = document.getElementById('celCopyLabel');
+    celCopyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard?.writeText(shareUrl);
+      } catch {
+        // fallback: select hidden input
+        urlInput.select();
+        document.execCommand?.('copy');
+      }
+      celCopyIcon.className = 'ti ti-check';
+      celCopyLabel.textContent = 'Link copiado';
+      celCopyBtn.style.borderColor = 'rgba(76,175,125,0.45)';
+      celCopyBtn.style.color = 'var(--success)';
+      setTimeout(() => {
+        celCopyIcon.className = 'ti ti-link';
+        celCopyLabel.textContent = 'Copiar link del evento';
+        celCopyBtn.style.borderColor = '';
+        celCopyBtn.style.color = '';
+      }, 1800);
+    });
+
+    // Files modal open/close
+    function openFilesModal() {
+      filesBackdrop.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeFilesModal() {
+      filesBackdrop.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function closeFilesOnBackdrop(e) {
+      if (e.target === filesBackdrop) closeFilesModal();
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && filesBackdrop.classList.contains('open')) closeFilesModal();
+    });
+
+    // ===== Toggle cards behavior =====
+    const SECTIONS = ['galeria', 'info', 'monetizacion'];
+    function setSection(name) {
+      document.querySelectorAll('.tc').forEach(t => {
+        t.classList.toggle('active', t.dataset.section === name);
+      });
+      SECTIONS.forEach(n => {
+        document.getElementById('sec-' + n).classList.toggle('active', n === name);
+      });
+      history.replaceState(null, '', `?id=${id}#${name}`);
+    }
+    document.querySelectorAll('.tc').forEach(t => {
+      t.addEventListener('click', () => setSection(t.dataset.section));
+    });
+
+    // restore section from hash, default galeria
+    const initial = (location.hash || '#galeria').slice(1);
+    if (SECTIONS.includes(initial)) setSection(initial);
+
+    // ===== Discounts =====
+    const DISCOUNTS = [
+      { type: 'code',   code: 'VERANO20', kind: 'pct',   value: 20,   expires: '2025-12-31', uses: '128 / sin límite' },
+      { type: 'bundle', qty: 5,           price: 1500,                expires: null,         uses: '42 ventas' },
+    ];
+
+    function renderDiscounts() {
+      const list = document.getElementById('discountList');
+      if (DISCOUNTS.length === 0) {
+        list.innerHTML = `<div class="discount-empty">Todavía no creaste descuentos para este evento.</div>`;
+        return;
+      }
+      list.innerHTML = DISCOUNTS.map((d, idx) => {
+        let icon, ttl, meta;
+        if (d.type === 'code') {
+          icon = 'ti-ticket';
+          ttl  = d.kind === 'pct' ? `${d.value}% off con código` : `$${d.value} off con código`;
+          meta = `<span class="code">${d.code}</span><span class="sep"></span>` +
+                 (d.expires ? `<span>Vence ${d.expires}</span><span class="sep"></span>` : '') +
+                 `<span>${d.uses}</span>`;
+        } else if (d.type === 'bundle') {
+          icon = 'ti-package';
+          ttl  = `Lleva ${d.qty} y pagás $${d.price.toLocaleString('es-AR')} c/u`;
+          meta = (d.expires ? `<span>Vence ${d.expires}</span><span class="sep"></span>` : '') +
+                 `<span>${d.uses}</span>`;
+        } else {
+          icon = 'ti-percentage';
+          ttl  = `Llevá ${d.qty}+ y obtené ${d.value}% off`;
+          meta = (d.expires ? `<span>Vence ${d.expires}</span><span class="sep"></span>` : '') +
+                 `<span>${d.uses}</span>`;
+        }
+        return `
+          <div class="disc-item">
+            <div class="disc-icon"><i class="ti ${icon}"></i></div>
+            <div class="disc-info">
+              <div class="ttl">${ttl}</div>
+              <div class="meta">${meta}</div>
+            </div>
+            <span class="badge badge-success badge-dot" style="font-size: 11px;">Activo</span>
+            <div class="disc-actions">
+              <button class="disc-iconbtn" title="Editar" data-edit="${idx}"><i class="ti ti-pencil"></i></button>
+              <button class="disc-iconbtn danger" title="Eliminar" data-remove="${idx}"><i class="ti ti-trash"></i></button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+    renderDiscounts();
+
+    // Delegate edit / remove clicks (re-renders blow inline handlers, delegation survives)
+    document.getElementById('discountList').addEventListener('click', (e) => {
+      const editBtn = e.target.closest('[data-edit]');
+      if (editBtn) { editDiscount(Number(editBtn.dataset.edit)); return; }
+      const rmBtn = e.target.closest('[data-remove]');
+      if (rmBtn) { removeDiscount(Number(rmBtn.dataset.remove)); return; }
+    });
+
+    function removeDiscount(idx) {
+      const d = DISCOUNTS[idx];
+      if (!d) return;
+      const label = d.type === 'code' ? `el código "${d.code}"` : 'este descuento';
+      if (!confirm(`¿Eliminar ${label}?`)) return;
+      DISCOUNTS.splice(idx, 1);
+      renderDiscounts();
+    }
+
+    // ===== Discount modal =====
+    const dBackdrop = document.getElementById('discountBackdrop');
+    let pickedType = null;
+    let editingIndex = null;     // null = creating, number = editing existing
+
+    function openDiscountModal() {
+      pickedType = null;
+      editingIndex = null;
+      resetForms();
+      discountStep(1);
+      dBackdrop.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeDiscountModal() {
+      dBackdrop.classList.remove('open');
+      document.body.style.overflow = '';
+      editingIndex = null;
+    }
+    function closeDiscountOnBackdrop(e) {
+      if (e.target === dBackdrop) closeDiscountModal();
+    }
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && dBackdrop.classList.contains('open')) closeDiscountModal();
+    });
+
+    function resetForms() {
+      ['code-code','code-pct','code-fixed','code-expires','code-max',
+       'bundle-qty','bundle-price','bundle-expires',
+       'qtypct-qty','qtypct-pct','qtypct-expires'
+      ].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      // reset segmented to pct
+      document.querySelectorAll('#code-kind button').forEach(b =>
+        b.classList.toggle('active', b.dataset.kind === 'pct'));
+      document.getElementById('code-pct-wrap').style.display = 'block';
+      document.getElementById('code-fixed-wrap').style.display = 'none';
+    }
+
+    function discountStep(n) {
+      document.getElementById('discStep1').style.display = n === 1 ? 'block' : 'none';
+      document.getElementById('discStep2').style.display = n === 2 ? 'block' : 'none';
+      document.getElementById('discFoot').style.display  = n === 2 ? 'flex'  : 'none';
+      // Hide back button when editing (no step 1 to go back to)
+      document.getElementById('discBack').style.display  = (n === 2 && editingIndex === null) ? 'flex' : 'none';
+
+      const isEdit = editingIndex !== null;
+      const saveBtn = document.querySelector('#discFoot .btn-primary');
+      if (saveBtn) saveBtn.textContent = isEdit ? 'Guardar cambios' : 'Crear descuento';
+
+      if (n === 1) {
+        document.getElementById('discTitle').textContent = 'Crear descuento';
+        document.getElementById('discSub').textContent   = 'Elegí el tipo de descuento.';
+      } else {
+        const map = {
+          code:   { ttl: 'Código de descuento', sub: 'Porcentaje o monto fijo aplicado al checkout.' },
+          bundle: { ttl: 'Lleva X y pagás Y',   sub: 'Precio especial por unidad al alcanzar la cantidad.' },
+          qtypct: { ttl: 'Llevás X y % off',    sub: 'Descuento porcentual sobre el total al alcanzar la cantidad.' },
+        }[pickedType];
+        document.getElementById('discTitle').textContent = (isEdit ? 'Editar · ' : '') + map.ttl;
+        document.getElementById('discSub').textContent   = map.sub;
+        ['code','bundle','qtypct'].forEach(t => {
+          document.getElementById('form-' + t).style.display = (t === pickedType) ? 'block' : 'none';
+        });
+      }
+    }
+
+    document.querySelectorAll('.type-card').forEach(c => {
+      c.addEventListener('click', () => {
+        pickedType = c.dataset.type;
+        discountStep(2);
+      });
+    });
+
+    // Code form: pct vs fixed
+    document.querySelectorAll('#code-kind button').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('#code-kind button').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        const pct = b.dataset.kind === 'pct';
+        document.getElementById('code-pct-wrap').style.display   = pct ? 'block' : 'none';
+        document.getElementById('code-fixed-wrap').style.display = pct ? 'none'  : 'block';
+      });
+    });
+
+    function editDiscount(idx) {
+      const d = DISCOUNTS[idx];
+      if (!d) return;
+      editingIndex = idx;
+      pickedType = d.type;
+      resetForms();
+
+      if (d.type === 'code') {
+        document.getElementById('code-code').value = d.code || '';
+        // pick segmented
+        document.querySelectorAll('#code-kind button').forEach(b =>
+          b.classList.toggle('active', b.dataset.kind === d.kind));
+        const pct = d.kind === 'pct';
+        document.getElementById('code-pct-wrap').style.display   = pct ? 'block' : 'none';
+        document.getElementById('code-fixed-wrap').style.display = pct ? 'none'  : 'block';
+        if (pct) document.getElementById('code-pct').value = d.value;
+        else     document.getElementById('code-fixed').value = d.value;
+        document.getElementById('code-expires').value = d.expires || '';
+      } else if (d.type === 'bundle') {
+        document.getElementById('bundle-qty').value     = d.qty;
+        document.getElementById('bundle-price').value   = d.price;
+        document.getElementById('bundle-expires').value = d.expires || '';
+      } else {
+        document.getElementById('qtypct-qty').value     = d.qty;
+        document.getElementById('qtypct-pct').value     = d.value;
+        document.getElementById('qtypct-expires').value = d.expires || '';
+      }
+
+      discountStep(2);
+      dBackdrop.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function saveDiscount() {
+      let d;
+      if (pickedType === 'code') {
+        const kind = document.querySelector('#code-kind button.active').dataset.kind;
+        const existing = editingIndex !== null ? DISCOUNTS[editingIndex] : null;
+        d = {
+          type: 'code',
+          code: (document.getElementById('code-code').value || 'NEWCODE').toUpperCase(),
+          kind,
+          value: kind === 'pct'
+            ? Number(document.getElementById('code-pct').value || 10)
+            : Number(document.getElementById('code-fixed').value || 500),
+          expires: document.getElementById('code-expires').value || null,
+          uses: existing?.uses ?? ('0 / ' + (document.getElementById('code-max').value || 'sin límite')),
+        };
+      } else if (pickedType === 'bundle') {
+        const existing = editingIndex !== null ? DISCOUNTS[editingIndex] : null;
+        d = {
+          type: 'bundle',
+          qty: Number(document.getElementById('bundle-qty').value || 5),
+          price: Number(document.getElementById('bundle-price').value || 1500),
+          expires: document.getElementById('bundle-expires').value || null,
+          uses: existing?.uses ?? '0 ventas',
+        };
+      } else {
+        const existing = editingIndex !== null ? DISCOUNTS[editingIndex] : null;
+        d = {
+          type: 'qtypct',
+          qty: Number(document.getElementById('qtypct-qty').value || 3),
+          value: Number(document.getElementById('qtypct-pct').value || 20),
+          expires: document.getElementById('qtypct-expires').value || null,
+          uses: existing?.uses ?? '0 ventas',
+        };
+      }
+      if (editingIndex !== null) DISCOUNTS[editingIndex] = d;
+      else                       DISCOUNTS.push(d);
+      renderDiscounts();
+      closeDiscountModal();
+    }
+  </script>
+  <script src="panel-anim.js" defer></script>
+</body>
+</html>

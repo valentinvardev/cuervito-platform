@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mi perfil · cuervito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="panel-anim.css" />
+<style>
+  body { background: var(--bg-base); }
+  .top {
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(15,13,11,0.85);
+    backdrop-filter: blur(10px);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .top-left { display: flex; align-items: center; gap: 16px; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 8px;
+    color: var(--text-secondary); font-size: 14px;
+    transition: all 150ms;
+  }
+  .back-btn:hover { background: var(--bg-surface); color: var(--text-primary); }
+  .top-divider { width: 1px; height: 24px; background: var(--border-subtle); }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 32px 32px 80px; }
+  @media (max-width: 700px) { .wrap { padding: 22px 18px 60px; } }
+
+  .head { margin-bottom: 22px; }
+  .head h1 {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.03em;
+    margin-bottom: 4px;
+  }
+  .head .sub { color: var(--text-secondary); font-size: 14px; }
+
+  .form-card {
+    background: var(--bg-surface); border: 1px solid var(--border-subtle);
+    border-radius: 14px; padding: 22px;
+  }
+  .profile-pic-row { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+  .profile-pic {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #F5820A, #ff9a3a);
+    display: flex; align-items: center; justify-content: center;
+    color: #1a0d00; font-family: var(--font-display);
+    font-weight: 800; font-size: 24px;
+  }
+
+  .form-row { margin-bottom: 16px; }
+  .form-row:last-child { margin-bottom: 0; }
+  .form-row label {
+    display: block; font-size: 12px; color: var(--text-tertiary);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;
+  }
+  .form-row input, .form-row textarea, .form-row select {
+    width: 100%;
+    background: var(--bg-base); border: 1px solid var(--border-subtle);
+    color: var(--text-primary); padding: 11px 14px;
+    border-radius: 9px; font: inherit; font-size: 14px;
+    transition: border-color 150ms;
+  }
+  .form-row input:focus, .form-row textarea:focus, .form-row select:focus {
+    border-color: var(--border-accent); outline: none;
+  }
+  .form-row textarea { resize: vertical; min-height: 90px; }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 540px) { .form-grid-2 { grid-template-columns: 1fr; } }
+
+  .form-actions {
+    display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 22px; padding-top: 18px;
+    border-top: 1px solid var(--border-subtle);
+  }
+</style>
+</head>
+<body data-screen-label="Perfil">
+  <header class="top">
+    <div class="top-left">
+      <a href="dashboard.html" class="back-btn"><i class="ti ti-arrow-left" style="font-size: 18px;"></i><span>Panel</span></a>
+      <div class="top-divider"></div>
+      <a href="index.html" class="logo">cuerv<span class="logo-dot"></span>to</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="head">
+      <h1>Mi perfil</h1>
+      <div class="sub">Datos personales, especialidad y cobros.</div>
+    </div>
+
+    <div class="form-card">
+      <div class="profile-pic-row">
+        <div class="profile-pic">AL</div>
+        <div style="flex: 1;">
+          <div style="font-weight: 600;">Ana Liotta</div>
+          <div style="font-size: 13px; color: var(--text-tertiary); margin-top: 2px;">Fotógrafa · Buenos Aires</div>
+        </div>
+        <button class="btn btn-outline" style="padding: 8px 12px; font-size: 13px; height: 36px;">Cambiar foto</button>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label>Nombre</label>
+          <input type="text" value="Ana" />
+        </div>
+        <div class="form-row">
+          <label>Apellido</label>
+          <input type="text" value="Liotta" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Email</label>
+        <input type="email" value="ana.liotta@gmail.com" />
+      </div>
+      <div class="form-row">
+        <label>Especialidad</label>
+        <select>
+          <option>Running &amp; Trail</option>
+          <option>Ciclismo</option>
+          <option>Triatlón</option>
+          <option>Multidisciplina</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Bio (aparece en tu perfil público)</label>
+        <textarea rows="3">Fotógrafa de running y trail desde 2018. Especializada en momentos de meta y emoción pura.</textarea>
+      </div>
+      <div class="form-row">
+        <label>Cobros · Mercado Pago</label>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--bg-base); border: 1px solid var(--border-subtle); border-radius: 9px;">
+          <i class="ti ti-circle-check-filled" style="color: var(--success); font-size: 20px;"></i>
+          <div style="flex: 1;">
+            <div style="font-size: 14px; font-weight: 500;">Cuenta vinculada</div>
+            <div style="font-size: 12px; color: var(--text-tertiary);">ana.liotta · transferencias automáticas activadas</div>
+          </div>
+          <button class="btn btn-ghost" style="padding: 6px 10px; font-size: 12px; height: auto;">Cambiar</button>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="dashboard.html" class="btn btn-outline">Cancelar</a>
+        <button class="btn btn-primary">Guardar cambios</button>
+      </div>
+    </div>
+  </main>
+  <script src="panel-anim.js" defer></script>
+</body>
+</html>

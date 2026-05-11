@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Procesando tu pago · cuervito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="panel-anim.css" />
+<style>
+  body { background: var(--bg-base); }
+
+  /* Shared element across pago (pending → approved) → descarga */
+  .ring { view-transition-name: payment-circle; }
+  ::view-transition-old(payment-circle),
+  ::view-transition-new(payment-circle) {
+    animation-duration: 520ms;
+    animation-timing-function: cubic-bezier(.2, .7, .2, 1);
+  }
+  /* Slow the root crossfade slightly for a cinematic feel */
+  ::view-transition-old(root) { animation-duration: 320ms; }
+  ::view-transition-new(root) { animation-duration: 420ms; }
+
+  .nav {
+    height: 64px;
+    display: flex; align-items: center;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(15,13,11,0.85);
+    backdrop-filter: blur(10px);
+  }
+
+  .wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 60px 32px 80px;
+    text-align: center;
+    min-height: calc(100vh - 64px);
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  @media (max-width: 540px) { .wrap { padding: 40px 22px 60px; } }
+
+  /* ===== Status ring ===== */
+  .ring {
+    width: 120px; height: 120px;
+    margin: 0 auto 28px;
+    position: relative;
+  }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring .track { fill: none; stroke: var(--border-subtle); stroke-width: 4; }
+  .ring .indeterminate {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 4;
+    stroke-linecap: round;
+    /* circumference for r=54 ≈ 339.3 → use 340; offset 255 ≈ 25% arc visible */
+    stroke-dasharray: 340;
+    stroke-dashoffset: 255;
+    transform-origin: center;
+    transform: rotate(90deg); /* counter the parent rotation visually */
+    animation: spin 1.4s linear infinite;
+    /* When state flips to approved these transition smoothly */
+    transition: stroke-dashoffset 820ms cubic-bezier(.2, .7, .2, 1),
+                stroke           520ms ease 120ms;
+  }
+  .ring .check {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--success);
+    opacity: 0;
+    transform: scale(0.4);
+    /* Check appears AFTER the ring finishes filling (delay matches fill duration) */
+    transition: opacity 280ms ease 720ms,
+                transform 420ms cubic-bezier(.2, .9, .3, 1) 720ms;
+  }
+  .ring .check i { font-size: 64px; }
+
+  body[data-state="approved"] .ring .indeterminate {
+    stroke: var(--success);
+    stroke-dashoffset: 0;
+  }
+  body[data-state="approved"] .ring .check {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(36px, 6vw, 52px);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 12px;
+  }
+  .lede {
+    font-size: 16px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin-bottom: 32px;
+  }
+  .lede strong { color: var(--text-primary); font-weight: 500; }
+
+  /* Smooth text swap when state changes */
+  #state-title, #state-lede, #state-foot {
+    transition: opacity 260ms ease, transform 260ms ease;
+  }
+  .swap-out { opacity: 0; transform: translateY(-4px); }
+
+  /* ===== Order summary ===== */
+  .summary {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 18px 22px;
+    text-align: left;
+    margin-bottom: 24px;
+  }
+  .summary .row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 6px 0;
+    font-size: 13.5px;
+    color: var(--text-secondary);
+  }
+  .summary .row strong { color: var(--text-primary); font-weight: 500; font-family: var(--font-mono); }
+  .summary .row.total {
+    margin-top: 6px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  .summary .row.total .amt {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 24px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  body[data-state="approved"] .summary .row.total .amt { color: var(--success); }
+
+  .footnote {
+    font-size: 12.5px;
+    color: var(--text-tertiary);
+    line-height: 1.5;
+    margin-top: 8px;
+  }
+  .footnote a { color: var(--accent); }
+</style>
+</head>
+<body data-state="pending" data-screen-label="Pago — pendiente">
+
+  <header class="nav">
+    <a href="index.html" class="logo">cuerv<span class="logo-dot"></span>to</a>
+  </header>
+
+  <main class="wrap">
+    <div class="ring">
+      <svg viewBox="0 0 120 120">
+        <circle class="track"         cx="60" cy="60" r="54" />
+        <circle class="indeterminate" cx="60" cy="60" r="54" />
+      </svg>
+      <div class="check"><i class="ti ti-circle-check-filled"></i></div>
+    </div>
+
+    <h1 id="state-title">Estamos confirmando<br />tu compra.</h1>
+    <p class="lede" id="state-lede">
+      Apenas Mercado Pago aprueba el pago, te enviamos las fotos a
+      <strong id="state-email">tu correo</strong>.
+      Esto suele tardar entre 5 y 30 segundos.
+    </p>
+
+    <div class="summary">
+      <div class="row"><span>Comprador</span><span id="sum-name">—</span></div>
+      <div class="row"><span>Email</span><span id="sum-email">—</span></div>
+      <div class="row"><span>Fotos</span><strong id="sum-photos">—</strong></div>
+      <div class="row total"><span>Total pagado</span><span class="amt" id="sum-total">$0</span></div>
+    </div>
+
+    <p class="footnote" id="state-foot">
+      Podés cerrar esta página — te avisamos por mail.<br />
+      ¿Algo no anda? <a href="ayuda.html">Escribinos</a>.
+    </p>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const email  = params.get('email')  || 'tu@correo.com';
+    const name   = params.get('name')   || 'Comprador';
+    const total  = parseInt(params.get('total')  || '0', 10);
+    const photos = parseInt(params.get('photos') || '0', 10);
+    const eventId = params.get('event') || 'mba';
+    const photogSlug = params.get('p') || 'ana-liotta';
+
+    document.getElementById('state-email').textContent = email;
+    document.getElementById('sum-name').textContent  = name;
+    document.getElementById('sum-email').textContent = email;
+    document.getElementById('sum-photos').textContent = photos.toLocaleString('es-AR');
+    document.getElementById('sum-total').textContent = '$' + total.toLocaleString('es-AR');
+
+    // ===== Demo timeline =====
+    // 0..2.4s: pending state (spinner)
+    // 2.4s: approved state -> ring fills + checkmark + copy update (animated transition)
+    // 4.6s: redirect to descarga.html (cross-doc transition)
+
+    const titleEl = document.getElementById('state-title');
+    const ledeEl  = document.getElementById('state-lede');
+    const footEl  = document.getElementById('state-foot');
+
+    function applyApproved() {
+      // 1) Trigger ring fill + color via CSS transitions
+      document.body.dataset.state = 'approved';
+
+      // 2) Fade texts out in parallel with the ring fill
+      [titleEl, ledeEl, footEl].forEach(el => el.classList.add('swap-out'));
+
+      // 3) Halfway through the fill, swap copy and fade back in
+      setTimeout(() => {
+        titleEl.innerHTML = '¡Listo! Pago<br />aprobado.';
+        ledeEl.innerHTML  =
+          `Estamos preparando tus <strong>${photos.toLocaleString('es-AR')} ${photos === 1 ? 'foto' : 'fotos'}</strong>. ` +
+          `En segundos te llevamos a la descarga.`;
+        footEl.innerHTML =
+          `También te enviamos el link a <strong style="color: var(--text-primary);">${email}</strong>.`;
+        [titleEl, ledeEl, footEl].forEach(el => el.classList.remove('swap-out'));
+      }, 280);
+
+      // 4) Stop the spin once the ring is fully drawn (saves CPU, no visible jump)
+      setTimeout(() => {
+        const ind = document.querySelector('.ring .indeterminate');
+        if (ind) ind.style.animationPlayState = 'paused';
+      }, 900);
+    }
+
+    setTimeout(applyApproved, 2400);
+
+    setTimeout(() => {
+      const out = new URLSearchParams({
+        token: 'demo-' + Math.random().toString(36).slice(2, 10),
+        email, name,
+        photos: String(photos),
+        total: String(total),
+        event: eventId,
+        p: photogSlug,
+      });
+      location.href = `descarga.html?${out.toString()}`;
+    }, 4600);
+  </script>
+</body>
+</html>

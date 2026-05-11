@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Página de venta · cuervito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="panel-anim.css" />
+<style>
+  body { background: var(--bg-base); }
+
+  .top {
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(15,13,11,0.85);
+    backdrop-filter: blur(10px);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .top-left { display: flex; align-items: center; gap: 16px; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 8px;
+    color: var(--text-secondary); font-size: 14px;
+    transition: all 150ms;
+  }
+  .back-btn:hover { background: var(--bg-surface); color: var(--text-primary); }
+  .top-divider { width: 1px; height: 24px; background: var(--border-subtle); }
+  .top-actions { display: flex; gap: 10px; align-items: center; }
+  .top-actions .btn { height: 36px; padding: 0 14px; font-size: 13px; }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 32px 80px; }
+  @media (max-width: 700px) { .wrap { padding: 22px 18px 60px; } }
+
+  .head { margin-bottom: 28px; }
+  .head h1 {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.03em;
+    margin-bottom: 4px;
+  }
+  .head .sub { color: var(--text-secondary); font-size: 14px; }
+
+  /* Section */
+  .section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+  }
+  .section-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 12px; flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .section-head h2 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 17px; letter-spacing: -0.02em;
+  }
+  .section-head .sub { color: var(--text-tertiary); font-size: 12.5px; }
+
+  /* ===== Domain section ===== */
+  .domain-row {
+    display: flex; gap: 12px; align-items: center;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+  }
+  .domain-row .url {
+    flex: 1; min-width: 0;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .domain-row .url .accent { color: var(--accent); }
+  .domain-row .badge-cuervito {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    border: 1px solid var(--border-subtle);
+    padding: 3px 8px;
+    border-radius: 5px;
+    flex-shrink: 0;
+  }
+  .domain-row .copy {
+    color: var(--accent);
+    font-size: 12.5px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .domain-row .copy:hover { background: var(--accent-deep); }
+  .domain-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .domain-actions .btn { height: 40px; padding: 0 14px; font-size: 13.5px; }
+
+  /* ===== Color section ===== */
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .color-tile {
+    aspect-ratio: 1/1;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    position: relative;
+    transition: all 150ms ease;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25);
+  }
+  .color-tile:hover { transform: translateY(-2px); }
+  .color-tile.active {
+    border-color: var(--text-primary);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25), 0 0 0 3px rgba(240,235,227,0.18);
+  }
+  .color-tile.active::after {
+    content: '\f4f3'; /* check (tabler) */
+    font-family: 'tabler-icons';
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.92);
+    font-size: 22px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+  .color-hint {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: 10px;
+  }
+  .color-hint .accent { color: var(--accent); font-weight: 500; }
+
+  /* ===== Template gallery ===== */
+  .tpl-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+  }
+  .tpl-card {
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 180ms ease;
+    text-align: left;
+    font: inherit; color: inherit;
+    display: flex; flex-direction: column;
+  }
+  .tpl-card:hover { transform: translateY(-2px); border-color: var(--border-default); }
+  .tpl-card.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .tpl-preview {
+    aspect-ratio: 4/3;
+    background: var(--bg-elevated);
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  /* Mini-preview shapes — each template has different layout */
+  .tpl-preview .mini {
+    position: absolute; inset: 0;
+    padding: 14px;
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .tpl-preview .mini .bar {
+    height: 8px;
+    background: var(--bg-subtle);
+    border-radius: 3px;
+  }
+  .tpl-preview .mini .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    flex: 1;
+  }
+  .tpl-preview .mini .cell {
+    background: linear-gradient(135deg, #4a2a14 0%, #2a1a10 60%, #6a3a18 100%);
+    border-radius: 3px;
+  }
+  .tpl-preview .mini .cell.cool {
+    background: linear-gradient(135deg, #1a2630 0%, #0f1a22 60%, #2a3848 100%);
+  }
+  .tpl-preview .mini .accent-bar {
+    background: var(--accent);
+    height: 4px;
+    width: 30%;
+    border-radius: 2px;
+  }
+
+  /* Template variants */
+  .tpl-editorial .grid-3 { grid-template-columns: 1fr; gap: 5px; }
+  .tpl-editorial .grid-3 .cell { aspect-ratio: 16/5; }
+  .tpl-minimal .grid-3 { grid-template-columns: repeat(4, 1fr); }
+  .tpl-magazine .grid-3 {
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .tpl-magazine .grid-3 .cell:first-child { grid-row: 1 / span 2; }
+  .tpl-bold .grid-3 { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tpl-bold .grid-3 .cell { aspect-ratio: 1/1; }
+
+  .tpl-body { padding: 12px 14px; }
+  .tpl-body .name {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 14.5px; letter-spacing: -0.02em;
+    margin-bottom: 2px;
+  }
+  .tpl-body .desc { font-size: 12px; color: var(--text-tertiary); }
+  .tpl-card.active .tpl-body .name { color: var(--accent); }
+
+  /* Footer CTA */
+  .edit-cta {
+    display: flex; gap: 12px; align-items: center; justify-content: space-between;
+    background: linear-gradient(140deg, var(--bg-surface) 0%, rgba(245,130,10,0.08) 100%);
+    border: 1px solid var(--border-accent);
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .edit-cta .info { min-width: 0; }
+  .edit-cta .info .ttl {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 16px; letter-spacing: -0.015em;
+    margin-bottom: 2px;
+  }
+  .edit-cta .info .sub { color: var(--text-secondary); font-size: 13px; }
+  .edit-cta .actions { display: flex; gap: 10px; }
+  .edit-cta .actions .btn { height: 42px; padding: 0 18px; font-size: 14px; }
+
+  /* Connect domain modal */
+  .mb {
+    position: fixed; inset: 0;
+    background: rgba(8, 6, 5, 0.72);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 200ms ease;
+  }
+  .mb.open { opacity: 1; pointer-events: auto; }
+  .dom-modal {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    width: 100%; max-width: 480px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+    transform: translateY(10px) scale(0.98);
+    transition: transform 220ms cubic-bezier(.2,.9,.3,1);
+  }
+  .mb.open .dom-modal { transform: none; }
+  .dom-modal h3 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 18px; letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .dom-modal p { color: var(--text-secondary); font-size: 13.5px; line-height: 1.55; margin-bottom: 16px; }
+  .dom-tabs {
+    display: flex; background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: 9px;
+    padding: 3px;
+    margin-bottom: 16px;
+    gap: 2px;
+  }
+  .dom-tabs button {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: 7px;
+    font-size: 13px; font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer; transition: all 120ms;
+  }
+  .dom-tabs button.active { background: var(--bg-elevated); color: var(--accent); }
+  .dom-input {
+    width: 100%;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    padding: 11px 14px;
+    border-radius: 9px;
+    font: inherit; font-size: 14px;
+    margin-bottom: 14px;
+  }
+  .dom-input:focus { border-color: var(--border-accent); outline: none; }
+  .dom-actions { display: flex; gap: 10px; justify-content: flex-end; }
+</style>
+</head>
+<body data-screen-label="Página de venta">
+
+  <header class="top">
+    <div class="top-left">
+      <a href="dashboard.html" class="back-btn">
+        <i class="ti ti-arrow-left" style="font-size: 18px;"></i><span>Panel</span>
+      </a>
+      <div class="top-divider"></div>
+      <a href="index.html" class="logo">cuerv<span class="logo-dot"></span>to</a>
+    </div>
+    <div class="top-actions">
+      <a class="btn btn-outline" href="cobertura.html?event=mba&p=ana-liotta" target="_blank">
+        <i class="ti ti-external-link"></i>Ver mi página
+      </a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="head">
+      <h1>Página de venta</h1>
+      <div class="sub">Personalizá cómo te ven tus clientes. Plantilla, colores y dominio propio.</div>
+    </div>
+
+    <!-- ===== Dominio ===== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Dominio</h2>
+        <span class="sub">Donde tus clientes ven tu galería</span>
+      </div>
+
+      <div class="domain-row">
+        <span class="url"><span class="accent">cuervito.app/</span><span id="slugLabel">ana-liotta</span></span>
+        <span class="badge-cuervito"><i class="ti ti-circle-check-filled" style="color: var(--success); font-size: 11px;"></i>Activo</span>
+        <button class="copy" onclick="copySlug(this)">Copiar</button>
+      </div>
+
+      <div class="domain-actions">
+        <button class="btn btn-outline" onclick="openDomModal()">
+          <i class="ti ti-world"></i>Conectar mi dominio
+        </button>
+        <button class="btn btn-ghost" onclick="openDomModal('buy')">
+          <i class="ti ti-shopping-cart"></i>Comprar dominio
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== Color principal ===== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Color principal</h2>
+        <span class="sub">Se aplica al CTA, links y acentos de tu página</span>
+      </div>
+
+      <div class="color-grid" id="colorGrid">
+        <button class="color-tile active" style="background: #F5820A" data-color="#F5820A" title="Cuervito Orange"></button>
+        <button class="color-tile" style="background: #E04545" data-color="#E04545" title="Coral"></button>
+        <button class="color-tile" style="background: #F5C842" data-color="#F5C842" title="Amber"></button>
+        <button class="color-tile" style="background: #4CAF7D" data-color="#4CAF7D" title="Forest"></button>
+        <button class="color-tile" style="background: #009ee5" data-color="#009ee5" title="Sky"></button>
+        <button class="color-tile" style="background: #7B61FF" data-color="#7B61FF" title="Violet"></button>
+        <button class="color-tile" style="background: #F083A5" data-color="#F083A5" title="Rose"></button>
+        <button class="color-tile" style="background: #F0EBE3" data-color="#F0EBE3" title="Bone"></button>
+      </div>
+      <div class="color-hint">
+        Color actual: <span class="accent mono" id="colorLabel">#F5820A</span> · Cuervito Orange (default)
+      </div>
+    </section>
+
+    <!-- ===== Plantillas ===== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Plantilla</h2>
+        <span class="sub">Elegí cómo se ve tu storefront</span>
+      </div>
+
+      <div class="tpl-grid" id="tplGrid">
+        <button class="tpl-card active" data-tpl="editorial">
+          <div class="tpl-preview">
+            <div class="mini tpl-editorial">
+              <div class="bar" style="width: 60%;"></div>
+              <div class="accent-bar"></div>
+              <div class="grid-3">
+                <div class="cell"></div>
+                <div class="cell cool"></div>
+                <div class="cell"></div>
+              </div>
+            </div>
+          </div>
+          <div class="tpl-body">
+            <div class="name">Editorial</div>
+            <div class="desc">Foto grande, tipografía protagonista</div>
+          </div>
+        </button>
+
+        <button class="tpl-card" data-tpl="minimal">
+          <div class="tpl-preview">
+            <div class="mini tpl-minimal">
+              <div class="bar" style="width: 30%;"></div>
+              <div class="grid-3">
+                <div class="cell"></div>
+                <div class="cell cool"></div>
+                <div class="cell"></div>
+                <div class="cell cool"></div>
+                <div class="cell"></div>
+                <div class="cell cool"></div>
+                <div class="cell"></div>
+                <div class="cell cool"></div>
+              </div>
+            </div>
+          </div>
+          <div class="tpl-body">
+            <div class="name">Minimal</div>
+            <div class="desc">Grid limpio, sin distracciones</div>
+          </div>
+        </button>
+
+        <button class="tpl-card" data-tpl="magazine">
+          <div class="tpl-preview">
+            <div class="mini tpl-magazine">
+              <div class="bar" style="width: 50%;"></div>
+              <div class="accent-bar"></div>
+              <div class="grid-3">
+                <div class="cell"></div>
+                <div class="cell cool"></div>
+                <div class="cell"></div>
+              </div>
+            </div>
+          </div>
+          <div class="tpl-body">
+            <div class="name">Magazine</div>
+            <div class="desc">Hero + grid asimétrico</div>
+          </div>
+        </button>
+
+        <button class="tpl-card" data-tpl="bold">
+          <div class="tpl-preview">
+            <div class="mini tpl-bold">
+              <div class="bar" style="width: 40%;"></div>
+              <div class="accent-bar" style="width: 50%; height: 6px;"></div>
+              <div class="grid-3">
+                <div class="cell"></div>
+                <div class="cell cool"></div>
+                <div class="cell cool"></div>
+                <div class="cell"></div>
+              </div>
+            </div>
+          </div>
+          <div class="tpl-body">
+            <div class="name">Bold</div>
+            <div class="desc">Cuadrados grandes y mucho contraste</div>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <!-- Edit CTA -->
+    <div class="edit-cta">
+      <div class="info">
+        <div class="ttl">Editor de plantilla</div>
+        <div class="sub">Modificá secciones, textos, hero y orden con drag &amp; drop</div>
+      </div>
+      <div class="actions">
+        <a class="btn btn-outline" href="cobertura.html?event=mba&p=ana-liotta" target="_blank">
+          <i class="ti ti-eye"></i>Preview
+        </a>
+        <button class="btn btn-primary" onclick="alert('Demo: aquí abre el editor visual (drag & drop de bloques, tipografías, fotos del hero, etc).')">
+          <i class="ti ti-edit"></i>Editar plantilla
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Domain modal -->
+  <div class="mb" id="domBackdrop" onclick="closeDomOnBackdrop(event)">
+    <div class="dom-modal" onclick="event.stopPropagation()">
+      <h3 id="domTitle">Conectar dominio propio</h3>
+      <p id="domDesc">Conectá un dominio que ya tenés o comprá uno nuevo desde acá.</p>
+
+      <div class="dom-tabs" id="domTabs">
+        <button class="active" data-mode="connect">Conectar uno mío</button>
+        <button data-mode="buy">Comprar nuevo</button>
+      </div>
+
+      <div id="domConnect">
+        <input class="dom-input" placeholder="tu-dominio.com" />
+        <p style="font-size: 12px; color: var(--text-tertiary);">Te pasamos los registros DNS para que apuntes el dominio acá. La verificación tarda hasta 48hs.</p>
+      </div>
+      <div id="domBuy" style="display: none;">
+        <input class="dom-input" placeholder="el-dominio-que-quiero.com" />
+        <p style="font-size: 12px; color: var(--text-tertiary);">Te mostramos disponibilidad y precios anuales (.com, .com.ar, .photo, .studio…).</p>
+      </div>
+
+      <div class="dom-actions">
+        <button class="btn btn-outline" onclick="closeDomModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="closeDomModal()">Continuar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Color picker =====
+    document.querySelectorAll('.color-tile').forEach(t => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('.color-tile').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        document.getElementById('colorLabel').textContent = t.dataset.color;
+      });
+    });
+
+    // ===== Template picker =====
+    document.querySelectorAll('.tpl-card').forEach(c => {
+      c.addEventListener('click', () => {
+        document.querySelectorAll('.tpl-card').forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+      });
+    });
+
+    // ===== Slug copy =====
+    function copySlug(btn) {
+      const url = 'cuervito.app/' + document.getElementById('slugLabel').textContent;
+      navigator.clipboard?.writeText(url);
+      const old = btn.textContent;
+      btn.textContent = 'Copiado';
+      btn.style.color = 'var(--success)';
+      setTimeout(() => { btn.textContent = old; btn.style.color = ''; }, 1400);
+    }
+
+    // ===== Domain modal =====
+    const dm = document.getElementById('domBackdrop');
+    function openDomModal(mode) {
+      dm.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      if (mode === 'buy') setDomMode('buy');
+      else setDomMode('connect');
+    }
+    function closeDomModal() {
+      dm.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function closeDomOnBackdrop(e) { if (e.target === dm) closeDomModal(); }
+    function setDomMode(m) {
+      document.querySelectorAll('#domTabs button').forEach(b =>
+        b.classList.toggle('active', b.dataset.mode === m));
+      document.getElementById('domConnect').style.display = m === 'connect' ? 'block' : 'none';
+      document.getElementById('domBuy').style.display     = m === 'buy'     ? 'block' : 'none';
+      document.getElementById('domTitle').textContent =
+        m === 'buy' ? 'Comprar dominio' : 'Conectar dominio propio';
+      document.getElementById('domDesc').textContent = m === 'buy'
+        ? 'Compramos el dominio por vos y lo dejamos listo para usar en tu página.'
+        : 'Conectá un dominio que ya tenés o comprá uno nuevo desde acá.';
+    }
+    document.querySelectorAll('#domTabs button').forEach(b => {
+      b.addEventListener('click', () => setDomMode(b.dataset.mode));
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && dm.classList.contains('open')) closeDomModal();
+    });
+  </script>
+</body>
+</html>

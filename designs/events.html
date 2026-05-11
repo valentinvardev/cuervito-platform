@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Eventos · cuervito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="panel-anim.css" />
+<style>
+  body { background: var(--bg-base); }
+
+  .top {
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(15,13,11,0.85);
+    backdrop-filter: blur(10px);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .top-left { display: flex; align-items: center; gap: 16px; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 8px;
+    color: var(--text-secondary); font-size: 14px;
+    transition: all 150ms;
+  }
+  .back-btn:hover { background: var(--bg-surface); color: var(--text-primary); }
+  .top-divider { width: 1px; height: 24px; background: var(--border-subtle); }
+  .top-actions { display: flex; align-items: center; gap: 10px; }
+  .top .avatar {
+    width: 36px; height: 36px; font-size: 13px; cursor: pointer;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #F5820A, #ff9a3a);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #1a0d00; font-family: var(--font-display); font-weight: 800;
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 32px 32px 80px;
+  }
+  @media (max-width: 700px) { .wrap { padding: 22px 18px 60px; } }
+
+  .head {
+    display: flex; justify-content: space-between; align-items: end;
+    gap: 16px; flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+  .head h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(26px, 4vw, 34px);
+    letter-spacing: -0.03em;
+    margin-bottom: 4px;
+  }
+  .head .sub { color: var(--text-secondary); font-size: 14px; }
+
+  .filters { margin-bottom: 18px; }
+  .filters .search {
+    width: 100%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    padding: 0 16px;
+    border-radius: 10px;
+    height: 46px;
+    display: flex; align-items: center; gap: 10px;
+    transition: border-color 150ms;
+  }
+  .filters .search:focus-within { border-color: var(--border-accent); }
+  .filters .search input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: inherit; font: inherit; font-size: 14.5px;
+  }
+  .filters .search input::placeholder { color: var(--text-tertiary); }
+  .filters .search i { color: var(--text-tertiary); font-size: 18px; }
+
+  .event-list { display: flex; flex-direction: column; gap: 10px; }
+  .event-item {
+    display: grid;
+    grid-template-columns: 60px 1fr auto auto;
+    gap: 16px;
+    padding: 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    align-items: center;
+    cursor: pointer;
+    transition: all 150ms;
+    text-decoration: none; color: inherit;
+  }
+  .event-item:hover {
+    border-color: var(--border-accent);
+    background: var(--bg-elevated);
+    transform: translateY(-1px);
+  }
+  .ev-thumb { width: 60px; height: 60px; border-radius: 8px; overflow: hidden; position: relative; }
+  .ev-info .title { font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: -0.015em; margin-bottom: 4px; }
+  .ev-info .sub { font-size: 12.5px; color: var(--text-secondary); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .ev-info .sub .sep { width: 3px; height: 3px; background: var(--text-tertiary); border-radius: 50%; opacity: 0.6; }
+  .ev-revenue { text-align: right; }
+  .ev-revenue .amt { font-family: var(--font-mono); font-weight: 500; font-size: 14px; color: var(--accent); }
+  .ev-revenue .photos { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+  .ev-arrow { color: var(--text-tertiary); }
+  @media (max-width: 600px) {
+    .event-item { grid-template-columns: 50px 1fr auto; }
+    .ev-arrow { display: none; }
+  }
+
+  .event-list-add {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px;
+    background: transparent;
+    border: 1px dashed var(--border-default);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 14px; font-weight: 500;
+    transition: all 150ms;
+    margin-top: 14px;
+    width: 100%;
+  }
+  .event-list-add:hover { border-color: var(--border-accent); color: var(--accent); background: var(--accent-deep); }
+
+  /* Status pill — black bg, colored icon */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #0F0D0B;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--text-secondary);
+  }
+  .status-pill.processing { color: var(--warning); }
+  .status-pill.processing .spin-ring {
+    width: 10px; height: 10px;
+    border: 1.6px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: status-spin 0.9s linear infinite;
+    flex-shrink: 0;
+  }
+  .status-pill.uploaded { color: var(--success); }
+  .status-pill.uploaded i { font-size: 13px; }
+  .status-pill.draft i { font-size: 12px; color: var(--text-tertiary); }
+  @keyframes status-spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body data-screen-label="Eventos">
+
+  <header class="top">
+    <div class="top-left">
+      <a href="dashboard.html" class="back-btn">
+        <i class="ti ti-arrow-left" style="font-size: 18px;"></i>
+        <span>Panel</span>
+      </a>
+      <div class="top-divider"></div>
+      <a href="index.html" class="logo">cuerv<span class="logo-dot"></span>to</a>
+    </div>
+    <div class="top-actions">
+      <a href="perfil.html" class="avatar" title="Perfil">AL</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="head">
+      <div>
+        <h1>Eventos</h1>
+        <div class="sub">Gestioná tus eventos activos y finalizados.</div>
+      </div>
+      <button class="btn btn-primary" onclick="alert('Crear nuevo evento — flujo simple')">
+        <i class="ti ti-plus"></i>Nuevo evento
+      </button>
+    </div>
+
+    <div class="filters">
+      <div class="search">
+        <i class="ti ti-search"></i>
+        <input placeholder="Buscar por nombre o ubicación…" />
+      </div>
+    </div>
+
+    <div class="event-list" id="eventList"></div>
+
+    <button class="event-list-add" onclick="alert('Crear nuevo evento')">
+      <i class="ti ti-plus"></i>
+      Crear nuevo evento
+    </button>
+  </main>
+
+  <script>
+    const EVENTS = [
+      { id: 'mba',  title: 'Maratón Internacional Buenos Aires', date: '12 nov 2025', loc: 'Buenos Aires', disc: 'Running', status: 'Procesando', photos: 2840, sold: 412,  rev: '$988.800',   warm: true },
+      { id: 'tpat', title: 'Trail Patagonia 50K',                date: '22 oct 2025', loc: 'Bariloche',    disc: 'Trail',   status: 'Activo',     photos: 2140, sold: 1840, rev: '$4.416.000', cool: true },
+      { id: 'gfa',  title: 'Gran Fondo Andes 200K',              date: '5 nov 2025',  loc: 'Mendoza',      disc: 'Ciclismo',status: 'Activo',     photos: 3890, sold: 2103, rev: '$5.047.200', warm: false },
+      { id: '10k',  title: '10K Nocturna Palermo',               date: '28 oct 2025', loc: 'Buenos Aires', disc: 'Running', status: 'Finalizado', photos: 1240, sold: 1180, rev: '$2.832.000', warm: true },
+    ];
+
+    function statusBadge(s) {
+      if (s === 'Procesando') {
+        return `<span class="status-pill processing"><span class="spin-ring"></span>Procesando</span>`;
+      }
+      if (s === 'Activo' || s === 'Finalizado') {
+        return `<span class="status-pill uploaded"><i class="ti ti-circle-check-filled"></i>Subido</span>`;
+      }
+      if (s === 'Borrador') {
+        return `<span class="status-pill draft"><i class="ti ti-pencil"></i>Borrador</span>`;
+      }
+      return `<span class="status-pill">${s}</span>`;
+    }
+
+    document.getElementById('eventList').innerHTML = EVENTS.map(e => `
+      <a class="event-item" href="event.html?id=${e.id}">
+        <div class="ev-thumb photo-ph ${e.warm ? 'photo-ph-warm' : (e.cool ? 'photo-ph-cool' : '')}" data-label=""></div>
+        <div class="ev-info">
+          <div class="title">${e.title}</div>
+          <div class="sub">
+            <span>${e.date}</span><span class="sep"></span>
+            <span>${e.loc}</span><span class="sep"></span>
+            <span>${e.photos.toLocaleString('es-AR')} fotos</span><span class="sep"></span>
+            ${statusBadge(e.status)}
+          </div>
+        </div>
+        <div class="ev-revenue">
+          <div class="amt">${e.rev}</div>
+          <div class="photos">${e.sold.toLocaleString('es-AR')} vendidas</div>
+        </div>
+        <i class="ti ti-chevron-right ev-arrow"></i>
+      </a>
+    `).join('');
+  </script>
+  <script src="panel-anim.js" defer></script>
+</body>
+</html>

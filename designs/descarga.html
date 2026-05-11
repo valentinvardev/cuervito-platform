@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tu descarga · cuervito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="panel-anim.css" />
+<style>
+  body { background: var(--bg-base); }
+
+  /* Shared element coming in from pago.html */
+  .hero .check-circle { view-transition-name: payment-circle; }
+  ::view-transition-old(payment-circle),
+  ::view-transition-new(payment-circle) {
+    animation-duration: 520ms;
+    animation-timing-function: cubic-bezier(.2, .7, .2, 1);
+  }
+  ::view-transition-old(root) { animation-duration: 320ms; }
+  ::view-transition-new(root) { animation-duration: 420ms; }
+
+  .nav {
+    height: 64px;
+    display: flex; align-items: center;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(15,13,11,0.85);
+    backdrop-filter: blur(10px);
+  }
+
+  /* ==================== HERO VIEW ==================== */
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 48px 32px 80px;
+  }
+  @media (max-width: 700px) { .wrap { padding: 28px 20px 60px; } }
+
+  .hero {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .hero > *:not(.check-circle) {
+    animation: hero-fade 480ms cubic-bezier(.2,.7,.2,1) both;
+    animation-delay: 60ms;
+  }
+  @keyframes hero-fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .check-circle {
+    width: 72px; height: 72px;
+    margin: 0 auto 22px;
+    border-radius: 50%;
+    background: rgba(76,175,125,0.15);
+    border: 2px solid var(--success);
+    color: var(--success);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+  }
+  .eyebrow-success {
+    font-size: 12px;
+    color: var(--success);
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(38px, 6.5vw, 60px);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 14px;
+  }
+  .lede {
+    font-size: 17px;
+    color: var(--text-secondary);
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+  .lede strong { color: var(--text-primary); font-weight: 500; }
+
+  .cta-row {
+    display: flex; gap: 10px; justify-content: center;
+    flex-wrap: wrap;
+    margin: 28px auto 0;
+  }
+  .cta-row .btn { height: 52px; padding: 0 22px; font-size: 15px; }
+  .cta-row .btn-primary {
+    box-shadow: 0 8px 30px rgba(245,130,10,0.25);
+  }
+
+  /* ==================== Photos summary ==================== */
+  .summary-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 26px;
+    display: flex; gap: 22px; align-items: center; flex-wrap: wrap;
+  }
+  .summary-card .meta { display: flex; gap: 22px; flex-wrap: wrap; flex: 1; min-width: 0; }
+  .summary-card .item { min-width: 0; }
+  .summary-card .lab {
+    font-size: 11.5px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+  }
+  .summary-card .val {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+  }
+  .summary-card .val.mono {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--text-primary);
+  }
+
+  /* ==================== Photo list ==================== */
+  .section-h {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 12px; gap: 12px; flex-wrap: wrap;
+  }
+  .section-h h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+  }
+  .section-h .sub { color: var(--text-tertiary); font-size: 13px; }
+
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 880px) { .photo-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 600px) { .photo-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; } }
+
+  .photo-cell {
+    aspect-ratio: 4/3;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+  .photo-cell .ribbon {
+    position: absolute; top: 8px; left: 8px;
+    background: rgba(15,13,11,0.85);
+    backdrop-filter: blur(8px);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    padding: 2px 7px;
+    border-radius: 5px;
+  }
+  .photo-cell .dl {
+    position: absolute; bottom: 8px; right: 8px;
+    background: var(--accent);
+    color: var(--text-on-accent);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    display: inline-flex; align-items: center; gap: 4px;
+    cursor: pointer;
+    transition: all 150ms;
+  }
+  .photo-cell .dl:hover { background: var(--accent-bright); }
+  .photo-cell.saved .dl {
+    background: rgba(76,175,125,0.18);
+    color: var(--success);
+    border: 1px solid rgba(76,175,125,0.4);
+  }
+
+  .footer-help {
+    margin-top: 30px;
+    padding: 18px 22px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    display: flex; gap: 14px; align-items: start;
+  }
+  .footer-help .ic {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    background: var(--accent-deep);
+    color: var(--accent);
+    border: 1px solid var(--border-accent);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .footer-help .body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; }
+  .footer-help .body strong { color: var(--text-primary); font-weight: 500; }
+  .footer-help .body a { color: var(--accent); }
+
+  /* ==================== iOS step-by-step view ==================== */
+  .ios-screen {
+    position: fixed; inset: 0;
+    background: var(--bg-base);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(24px);
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 280ms ease,
+                transform 380ms cubic-bezier(.2,.7,.2,1),
+                visibility 380ms;
+  }
+  .ios-screen.open {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+    pointer-events: auto;
+  }
+  /* Inner content rises in with slight delay on open */
+  .ios-screen .ios-head,
+  .ios-screen .ios-progress,
+  .ios-screen .ios-photo-area,
+  .ios-screen .ios-bottom,
+  .ios-screen .ios-done {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 280ms ease, transform 360ms cubic-bezier(.2,.7,.2,1);
+  }
+  .ios-screen.open .ios-head      { transition-delay: 120ms; opacity: 1; transform: translateY(0); }
+  .ios-screen.open .ios-progress  { transition-delay: 180ms; opacity: 1; transform: translateY(0); }
+  .ios-screen.open .ios-photo-area{ transition-delay: 220ms; opacity: 1; transform: translateY(0); }
+  .ios-screen.open .ios-bottom    { transition-delay: 280ms; opacity: 1; transform: translateY(0); }
+  .ios-screen.open .ios-done      { transition-delay: 220ms; opacity: 1; transform: translateY(0); }
+  .ios-screen::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .ios-head {
+    flex-shrink: 0;
+    padding: 0 22px 0 28px;
+    height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .ios-head .logo { font-size: 18px; }
+  .ios-head .pos { font-family: var(--font-mono); font-size: 13px; color: var(--text-tertiary); }
+  .ios-progress {
+    height: 3px; background: var(--bg-surface);
+    margin: 8px 22px 0;
+    border-radius: 999px; overflow: hidden;
+    flex-shrink: 0;
+  }
+  .ios-progress > span {
+    display: block; height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 380ms cubic-bezier(.2,.7,.2,1);
+  }
+
+  .ios-photo-area {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    padding: 18px 22px;
+    position: relative;
+    min-height: 0;
+  }
+  .ios-photo {
+    max-width: 100%; max-height: 100%;
+    aspect-ratio: 3/2;
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    transition: opacity 320ms ease;
+  }
+  .ios-photo.dimmed { opacity: 0.35; }
+  .ios-checkmark {
+    position: absolute;
+    width: 96px; height: 96px;
+    border-radius: 50%;
+    background: var(--success);
+    color: #0F0D0B;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 60px rgba(76,175,125,0.45);
+    opacity: 0; transform: scale(0.4);
+    transition: opacity 260ms ease, transform 380ms cubic-bezier(.2,.9,.3,1);
+    pointer-events: none;
+  }
+  .ios-checkmark i { font-size: 56px; }
+  .ios-checkmark.show { opacity: 1; transform: scale(1); }
+
+  .ios-bottom {
+    flex-shrink: 0;
+    padding: 14px 22px 28px;
+  }
+  .ios-instruct {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 14px;
+    line-height: 1.45;
+  }
+  .ios-instruct.met { color: var(--success); font-weight: 500; }
+  .ios-save-btn {
+    width: 100%;
+    height: 56px;
+    background: var(--accent);
+    color: var(--text-on-accent);
+    border-radius: 12px;
+    display: grid;
+    padding: 0 20px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+    position: relative;
+    overflow: hidden;
+    transition: background 280ms cubic-bezier(.2,.7,.2,1), color 280ms ease;
+    cursor: pointer;
+  }
+  .ios-save-btn:not([data-state="loading"]):hover { background: var(--accent-bright); }
+  .ios-save-btn[data-state="loading"] { cursor: progress; background: #cc6a08; }
+  .ios-save-btn[data-state="done"] { background: var(--success); color: #0F0D0B; }
+
+  .ios-save-btn .state {
+    grid-area: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    transition: opacity 240ms ease, transform 360ms cubic-bezier(.2,.7,.2,1);
+    pointer-events: none;
+  }
+  .ios-save-btn .state > i { font-size: 18px; }
+  .ios-save-btn .state .spinner-mini {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2.5px solid currentColor;
+    border-top-color: transparent;
+    animation: spin 0.9s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Default hidden states slide up from below */
+  .ios-save-btn .state { opacity: 0; transform: translateY(12px); }
+  /* Active state visible */
+  .ios-save-btn[data-state="idle"]    .state-idle,
+  .ios-save-btn[data-state="loading"] .state-loading,
+  .ios-save-btn[data-state="done"]    .state-done {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  /* States that already passed slide up & out */
+  .ios-save-btn[data-state="loading"] .state-idle,
+  .ios-save-btn[data-state="done"]    .state-idle,
+  .ios-save-btn[data-state="done"]    .state-loading {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+
+  .ios-skip {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 13px;
+    transition: color 150ms;
+  }
+  .ios-skip:hover { color: var(--text-primary); }
+
+  /* iOS done view */
+  .ios-done {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 40px 22px;
+    gap: 18px;
+  }
+  .ios-done .check-circle {
+    margin: 0;
+    animation: scale-pop 460ms cubic-bezier(.2,.9,.3,1) both;
+  }
+  @keyframes scale-pop {
+    from { opacity: 0; transform: scale(0.6); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .ios-done h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(36px, 7vw, 52px);
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .ios-done .desc { color: var(--text-secondary); font-size: 15px; line-height: 1.5; max-width: 360px; }
+</style>
+</head>
+<body data-screen-label="Descarga · gracias">
+
+  <header class="nav">
+    <a href="index.html" class="logo">cuerv<span class="logo-dot"></span>to</a>
+  </header>
+
+  <main class="wrap">
+
+    <section class="hero">
+      <div class="check-circle"><i class="ti ti-check"></i></div>
+      <div class="eyebrow-success">Pago aprobado · Compra confirmada</div>
+      <h1>Gracias por<br />tu compra.</h1>
+      <p class="lede">
+        Tus fotos están listas para descargar. También te las enviamos por email a
+        <strong id="dest-email">tu correo</strong>.
+      </p>
+      <div class="cta-row">
+        <button class="btn btn-primary" id="btnDownloadAll">
+          <i class="ti ti-download"></i>Descargar todas
+        </button>
+        <button class="btn btn-outline" id="btnIosFlow">
+          <i class="ti ti-device-mobile"></i>Guardar en iPhone (paso a paso)
+        </button>
+      </div>
+    </section>
+
+    <div class="summary-card">
+      <div class="meta">
+        <div class="item">
+          <div class="lab">Comprador</div>
+          <div class="val" id="sum-name">—</div>
+        </div>
+        <div class="item">
+          <div class="lab">Email</div>
+          <div class="val mono" id="sum-email">—</div>
+        </div>
+        <div class="item">
+          <div class="lab">Fotos</div>
+          <div class="val mono" id="sum-photos">—</div>
+        </div>
+        <div class="item">
+          <div class="lab">Token de descarga</div>
+          <div class="val mono" id="sum-token">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-h">
+      <h2>Tus fotos</h2>
+      <span class="sub">tocá <i class="ti ti-download" style="font-size: 13px;"></i> en cada foto para guardarla</span>
+    </div>
+
+    <div class="photo-grid" id="photoGrid"></div>
+
+    <div class="footer-help">
+      <div class="ic"><i class="ti ti-device-mobile"></i></div>
+      <div class="body">
+        <strong>¿Estás en iPhone?</strong> Te recomendamos usar
+        <a href="#" id="iosLinkInline">"Guardar en iPhone (paso a paso)"</a>
+        — vas foto por foto y cada una se guarda con el tap "Guardar foto" de iOS, que es el único método confiable.
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== iOS step-by-step screen ==================== -->
+  <aside class="ios-screen" id="iosScreen" aria-hidden="true">
+    <div id="iosSavingView">
+      <div class="ios-head">
+        <span class="logo">cuerv<span class="logo-dot"></span>to</span>
+        <span class="pos" id="iosPos">1 / 1</span>
+      </div>
+      <div class="ios-progress"><span id="iosBar" style="width: 0%"></span></div>
+      <div class="ios-photo-area">
+        <div class="ios-photo photo-ph photo-ph-warm" id="iosPhoto" data-label=""></div>
+        <div class="ios-checkmark" id="iosCheck"><i class="ti ti-check"></i></div>
+      </div>
+      <div class="ios-bottom">
+        <p class="ios-instruct" id="iosInstruct">
+          Tocá el botón para guardar esta foto en tu galería.
+        </p>
+        <button class="ios-save-btn" id="iosSaveBtn" data-state="idle">
+          <span class="state state-idle">
+            <span>Guardar foto</span>
+            <i class="ti ti-download"></i>
+          </span>
+          <span class="state state-loading">
+            <span>Preparando…</span>
+            <span class="spinner-mini"></span>
+          </span>
+          <span class="state state-done">
+            <span>Guardada</span>
+            <i class="ti ti-check"></i>
+          </span>
+        </button>
+        <button class="ios-skip" id="iosSkipBtn">Saltar esta foto →</button>
+      </div>
+    </div>
+
+    <div class="ios-done" id="iosDoneView" style="display: none;">
+      <div class="check-circle"><i class="ti ti-check"></i></div>
+      <h2>¡Listo!</h2>
+      <div class="desc" id="iosDoneDesc">
+        Tus fotos están guardadas en tu galería.<br />
+        Abrí la app Fotos para verlas.
+      </div>
+      <button class="btn btn-outline" onclick="closeIos()">Cerrar</button>
+    </div>
+  </aside>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const email  = params.get('email')  || 'tu@correo.com';
+    const name   = params.get('name')   || 'Comprador';
+    const photos = parseInt(params.get('photos') || '6', 10);
+    const token  = params.get('token')  || 'demo-xxxx';
+
+    document.getElementById('dest-email').textContent = email;
+    document.getElementById('sum-name').textContent   = name;
+    document.getElementById('sum-email').textContent  = email;
+    document.getElementById('sum-photos').textContent = photos.toLocaleString('es-AR');
+    document.getElementById('sum-token').textContent  = token;
+
+    // Build photo list
+    const variants = ['photo-ph-warm', 'photo-ph-cool', '', 'photo-ph-warm', 'photo-ph-cool'];
+    const photoList = Array.from({ length: photos }).map((_, i) => ({
+      id: 'p' + i,
+      bib: String(1000 + (i * 137) % 9000),
+      variant: variants[i % variants.length],
+    }));
+
+    document.getElementById('photoGrid').innerHTML = photoList.map((p, i) => `
+      <div class="photo-cell photo-ph ${p.variant}" data-label="" data-pid="${p.id}">
+        <div class="ribbon">#${p.bib}</div>
+        <button class="dl" data-dl="${p.id}">
+          <i class="ti ti-download" style="font-size: 14px;"></i>Guardar
+        </button>
+      </div>
+    `).join('');
+
+    // Per-photo "save" click
+    document.getElementById('photoGrid').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-dl]');
+      if (!btn) return;
+      const cell = btn.closest('.photo-cell');
+      cell.classList.add('saved');
+      btn.innerHTML = '<i class="ti ti-check" style="font-size: 14px;"></i>Guardada';
+    });
+
+    // Download all (browser would zip in real impl; here mark all)
+    document.getElementById('btnDownloadAll').addEventListener('click', () => {
+      document.querySelectorAll('.photo-cell .dl').forEach(b => {
+        b.closest('.photo-cell').classList.add('saved');
+        b.innerHTML = '<i class="ti ti-check" style="font-size: 14px;"></i>Guardada';
+      });
+      alert('Demo: en producción se descarga un .zip con las ' + photos + ' fotos.');
+    });
+
+    // ============ iOS step-by-step ============
+    let iosIdx = 0;
+    let iosBusy = false;
+
+    function openIos() {
+      iosIdx = 0;
+      const screen = document.getElementById('iosScreen');
+      document.getElementById('iosDoneView').style.display = 'none';
+      document.getElementById('iosSavingView').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+      // Pre-render content, then add .open in next frame so transitions kick in
+      renderIos();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          screen.classList.add('open');
+          screen.setAttribute('aria-hidden', 'false');
+        });
+      });
+    }
+    function closeIos() {
+      const screen = document.getElementById('iosScreen');
+      screen.classList.remove('open');
+      screen.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    function renderIos() {
+      const total = photoList.length;
+      const p = photoList[iosIdx];
+      if (!p) return;
+      document.getElementById('iosPos').textContent = `${iosIdx + 1} / ${total}`;
+      document.getElementById('iosBar').style.width = `${(iosIdx / total) * 100}%`;
+      const photoEl = document.getElementById('iosPhoto');
+      photoEl.className = `ios-photo photo-ph ${p.variant}`;
+      photoEl.setAttribute('data-label', '#' + p.bib);
+      document.getElementById('iosInstruct').classList.remove('met');
+      document.getElementById('iosInstruct').textContent = 'Tocá el botón para guardar esta foto en tu galería.';
+      document.getElementById('iosSaveBtn').dataset.state = 'idle';
+    }
+
+    function iosSave() {
+      if (iosBusy) return;
+      iosBusy = true;
+      const btn = document.getElementById('iosSaveBtn');
+      // 1) Loading (Preparando…)
+      btn.dataset.state = 'loading';
+
+      // 2) Done (Guardada) — simulates native share sheet finishing
+      setTimeout(() => {
+        btn.dataset.state = 'done';
+        const photoEl = document.getElementById('iosPhoto');
+        photoEl.classList.add('dimmed');
+        const check = document.getElementById('iosCheck');
+        check.classList.add('show');
+        document.getElementById('iosInstruct').classList.add('met');
+        const isLast = iosIdx === photoList.length - 1;
+        document.getElementById('iosInstruct').textContent =
+          'Guardada · ' + (isLast ? 'terminando…' : 'siguiente foto…');
+
+        // 3) Advance — slide check away + reset photo + go to next
+        setTimeout(() => {
+          check.classList.remove('show');
+          photoEl.classList.remove('dimmed');
+          iosBusy = false;
+          if (isLast) {
+            iosDone();
+          } else {
+            iosIdx++;
+            renderIos(); // resets data-state to 'idle' (CSS animates)
+          }
+        }, 1100);
+      }, 700);
+    }
+
+    function iosSkip() {
+      if (iosBusy) return;
+      const isLast = iosIdx === photoList.length - 1;
+      if (isLast) iosDone();
+      else { iosIdx++; renderIos(); }
+    }
+
+    function iosDone() {
+      document.getElementById('iosBar').style.width = '100%';
+      document.getElementById('iosSavingView').style.display = 'none';
+      document.getElementById('iosDoneView').style.display = 'flex';
+      document.getElementById('iosDoneDesc').innerHTML =
+        `Tus <strong style="color: var(--text-primary);">${photoList.length} ${photoList.length === 1 ? 'foto' : 'fotos'}</strong> ` +
+        `están guardadas en tu galería.<br />Abrí la app Fotos para verlas.`;
+    }
+
+    document.getElementById('btnIosFlow').addEventListener('click', openIos);
+    document.getElementById('iosLinkInline').addEventListener('click', (e) => { e.preventDefault(); openIos(); });
+    document.getElementById('iosSaveBtn').addEventListener('click', iosSave);
+    document.getElementById('iosSkipBtn').addEventListener('click', iosSkip);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('iosScreen').classList.contains('open')) closeIos();
+    });
+
+    // Auto-suggest iOS flow on iPhone/iPad
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+      const allBtn = document.getElementById('btnDownloadAll');
+      const iosBtn = document.getElementById('btnIosFlow');
+      // Swap order — iOS flow first/primary
+      allBtn.classList.remove('btn-primary');
+      allBtn.classList.add('btn-outline');
+      iosBtn.classList.remove('btn-outline');
+      iosBtn.classList.add('btn-primary');
+      iosBtn.parentElement.insertBefore(iosBtn, allBtn);
+    }
+  </script>
+</body>
+</html>

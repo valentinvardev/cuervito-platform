@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ayuda · cuervito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="panel-anim.css" />
+<style>
+  body { background: var(--bg-base); }
+  .top {
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(15,13,11,0.85);
+    backdrop-filter: blur(10px);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .top-left { display: flex; align-items: center; gap: 16px; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 8px;
+    color: var(--text-secondary); font-size: 14px;
+    transition: all 150ms;
+  }
+  .back-btn:hover { background: var(--bg-surface); color: var(--text-primary); }
+  .top-divider { width: 1px; height: 24px; background: var(--border-subtle); }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 32px 32px 80px; }
+  @media (max-width: 700px) { .wrap { padding: 22px 18px 60px; } }
+
+  .head { margin-bottom: 22px; }
+  .head h1 {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.03em;
+    margin-bottom: 4px;
+  }
+  .head .sub { color: var(--text-secondary); font-size: 14px; }
+
+  .help-list { display: flex; flex-direction: column; gap: 10px; }
+  .help-item {
+    display: flex; gap: 14px;
+    padding: 16px 18px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    align-items: center;
+    transition: all 180ms;
+  }
+  .help-item:hover { border-color: var(--border-accent); transform: translateY(-1px); }
+  .help-item .icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--accent-deep);
+    border: 1px solid var(--border-accent);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .help-item .body { flex: 1; min-width: 0; }
+  .help-item .title { font-weight: 500; font-size: 14.5px; margin-bottom: 2px; }
+  .help-item .desc { font-size: 12.5px; color: var(--text-tertiary); }
+  .help-item .chev { color: var(--text-tertiary); }
+</style>
+</head>
+<body data-screen-label="Ayuda">
+  <header class="top">
+    <div class="top-left">
+      <a href="dashboard.html" class="back-btn"><i class="ti ti-arrow-left" style="font-size: 18px;"></i><span>Panel</span></a>
+      <div class="top-divider"></div>
+      <a href="index.html" class="logo">cuerv<span class="logo-dot"></span>to</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="head">
+      <h1>Ayuda</h1>
+      <div class="sub">Guías, FAQ y soporte directo. Respondemos en 12hs hábiles.</div>
+    </div>
+
+    <div class="help-list">
+      <a href="#" class="help-item">
+        <div class="icon"><i class="ti ti-book-2"></i></div>
+        <div class="body">
+          <div class="title">Guía para empezar</div>
+          <div class="desc">Cómo subir tu primer evento, paso a paso</div>
+        </div>
+        <i class="ti ti-chevron-right chev"></i>
+      </a>
+      <a href="#" class="help-item">
+        <div class="icon"><i class="ti ti-message-circle"></i></div>
+        <div class="body">
+          <div class="title">Soporte directo</div>
+          <div class="desc">Hablá con nosotros · respuesta en 12hs hábiles</div>
+        </div>
+        <i class="ti ti-chevron-right chev"></i>
+      </a>
+      <a href="#" class="help-item">
+        <div class="icon"><i class="ti ti-help"></i></div>
+        <div class="body">
+          <div class="title">Preguntas frecuentes</div>
+          <div class="desc">Comisiones, cobros, calidad de fotos y más</div>
+        </div>
+        <i class="ti ti-chevron-right chev"></i>
+      </a>
+    </div>
+  </main>
+  <script src="panel-anim.js" defer></script>
+</body>
+</html>

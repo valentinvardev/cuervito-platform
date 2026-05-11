@@ -1,0 +1,1642 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Maratón BA · Galería · cuervito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+  /* Kill the auto-generated meta label inside photo placeholders */
+  .photo-ph::after { content: none; }
+
+  /* Nav */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(15, 13, 11, 0.92);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 68px; }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a { font-size: 14px; color: var(--text-secondary); }
+  .nav-links a.active { color: var(--text-primary); }
+  .nav-cta { display: flex; gap: 10px; align-items: center; }
+  @media (max-width: 880px) { .nav-links { display: none; } }
+
+  /* Breadcrumbs */
+  .breadcrumbs {
+    padding: 16px 0;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    display: flex; gap: 8px; align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .breadcrumbs a { color: var(--text-secondary); transition: color 150ms; }
+  .breadcrumbs a:hover { color: var(--text-primary); }
+  .breadcrumbs .sep { opacity: 0.5; }
+
+  /* Event header */
+  .event-hero {
+    position: relative;
+    height: 320px;
+    overflow: hidden;
+  }
+  .event-hero-img {
+    position: absolute; inset: 0;
+    /* Reemplazá esta URL por la cover real del evento */
+    background:
+      #2a1a10 url('https://picsum.photos/seed/cuervito-gallery/1600/700')
+      center / cover no-repeat;
+  }
+  /* Capa naranja — tinta y oscurece la foto */
+  .event-hero-img::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg,
+      rgba(245,130,10,0.55) 0%,
+      rgba(80,30,5,0.78) 100%);
+    mix-blend-mode: multiply;
+  }
+  /* Fade hacia el fondo de la página + legibilidad del texto */
+  .event-hero-img::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg,
+      rgba(15,13,11,0.08) 0%,
+      rgba(15,13,11,0.30) 30%,
+      rgba(15,13,11,0.70) 55%,
+      rgba(15,13,11,0.94) 78%,
+      var(--bg-base) 100%);
+  }
+  .event-hero-content {
+    position: absolute; bottom: 32px; left: 0; right: 0;
+    z-index: 2;
+  }
+  .event-hero-content .badges { display: flex; gap: 8px; margin-bottom: 14px; }
+  /* Hero badges — dark solid bg para contrastar con la foto tinted */
+  .event-hero-content .badges .badge {
+    background: rgba(15, 13, 11, 0.78);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(245, 130, 10, 0.35);
+    color: var(--accent-bright);
+    padding: 4px 10px;
+  }
+  .event-hero-content .badges .badge.badge-success {
+    border-color: rgba(76, 175, 125, 0.40);
+    color: var(--success);
+  }
+  .event-hero-content .badges .badge.badge-success.badge-dot::before { background: var(--success); }
+  .event-hero-content h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(32px, 5vw, 52px);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+    margin-bottom: 10px;
+  }
+  .event-meta-row {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+  .event-meta-row span { display: inline-flex; align-items: center; gap: 6px; }
+  .event-meta-row i { color: var(--accent); font-size: 16px; }
+
+  /* Stats bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    margin: 32px 0 40px;
+    overflow: hidden;
+  }
+  .stat {
+    padding: 20px 24px;
+    border-right: 1px solid var(--border-subtle);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: -0.02em;
+  }
+  .stat-value.accent { color: var(--accent); }
+  @media (max-width: 768px) {
+    .stats-bar { grid-template-columns: 1fr; }
+    .stat { border-right: none; border-bottom: 1px solid var(--border-subtle); }
+    .stat:last-child { border-bottom: none; }
+  }
+
+  /* Search panel */
+  .search-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 18px;
+    padding: 28px;
+    margin-bottom: 40px;
+    position: relative;
+    /* overflow visible — the selfie picker needs to extend below the panel */
+  }
+  .search-panel::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 80% at 50% 0%, var(--accent-deep), transparent 60%);
+    pointer-events: none;
+    border-radius: 18px;
+  }
+  .search-panel-inner { position: relative; z-index: 1; }
+  .search-panel h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: -0.025em;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .search-panel > .search-panel-inner > p {
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 24px;
+    font-size: 15px;
+  }
+
+  /* Single row: bib input + search + "or" + selfie */
+  .find-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: 12px;
+    align-items: center;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .find-input {
+    position: relative;
+    display: flex; align-items: center;
+  }
+  .find-input i {
+    position: absolute; left: 16px;
+    color: var(--text-tertiary);
+    font-size: 18px;
+  }
+  .find-input input {
+    width: 100%;
+    background: var(--bg-base);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    padding: 0 18px 0 44px;
+    height: 56px;
+    font-family: var(--font-mono);
+    font-size: 18px;
+    color: var(--text-primary);
+    letter-spacing: 0.04em;
+    outline: none;
+    transition: all 150ms;
+  }
+  .find-input input::placeholder { color: var(--text-tertiary); letter-spacing: 0; font-family: var(--font-ui); font-size: 15px; }
+  .find-input input:focus { border-color: var(--border-accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .find-row .btn { height: 56px; padding: 0 22px; border-radius: 12px; white-space: nowrap; }
+  .find-or {
+    color: var(--text-tertiary);
+    font-size: 13px;
+    padding: 0 2px;
+    user-select: none;
+  }
+  @media (max-width: 720px) {
+    .find-row { grid-template-columns: 1fr; }
+    .find-or { display: none; }
+  }
+
+  /* Results header */
+  .gallery-head {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 16px;
+    margin-bottom: 20px;
+  }
+  .gallery-head h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+  }
+  .gallery-head h2 .count {
+    font-family: var(--font-mono);
+    font-weight: 400;
+    font-size: 16px;
+    color: var(--accent);
+    margin-left: 8px;
+  }
+  /* Photo grid */
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 1024px) { .photo-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .photo-grid { grid-template-columns: 1fr; } }
+
+  .photo-tile {
+    position: relative;
+    aspect-ratio: 3/2;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: box-shadow 220ms ease, transform 200ms ease;
+  }
+  .photo-tile-bg {
+    position: absolute; inset: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    transition: border-color 200ms ease;
+  }
+  /* Selected: outline (border + soft glow ring) */
+  .photo-tile.selected { box-shadow: 0 0 0 3px var(--accent-glow); }
+  .photo-tile.selected .photo-tile-bg { border-color: var(--accent); }
+
+  /* Bib — top-left */
+  .photo-tile .bib-tag {
+    position: absolute; top: 10px; left: 10px;
+    z-index: 3;
+  }
+  /* Price — bottom-left */
+  .photo-tile .price-tag {
+    position: absolute; bottom: 10px; left: 10px;
+    background: rgba(15,13,11,0.82);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    padding: 4px 9px;
+    border-radius: 7px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    z-index: 3;
+  }
+  /* Add button — bottom-right, compact, with two states layered */
+  .photo-tile .add-btn {
+    position: absolute; bottom: 10px; right: 10px;
+    z-index: 3;
+    display: grid;
+    padding: 5px 9px;
+    border-radius: 7px;
+    background: var(--accent);
+    color: var(--text-on-accent);
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--accent);
+    transition: background 240ms ease, border-color 240ms ease, color 240ms ease, backdrop-filter 240ms ease;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .photo-tile .add-btn .state {
+    grid-area: 1 / 1;
+    display: inline-flex; align-items: center; gap: 4px;
+    transition: opacity 220ms ease, transform 320ms cubic-bezier(.2,.7,.2,1);
+    white-space: nowrap;
+  }
+  .photo-tile .add-btn .state i { font-size: 13px; }
+  /* Default: state-add visible, state-in hidden below */
+  .photo-tile .add-btn .state-add { opacity: 1; transform: translateY(0); }
+  .photo-tile .add-btn .state-in  { opacity: 0; transform: translateY(8px); pointer-events: none; }
+  /* Selected: state-in slides in from below, state-add slides up & out */
+  .photo-tile.selected .add-btn {
+    background: rgba(15,13,11,0.82);
+    color: var(--accent);
+    border-color: var(--border-accent);
+    backdrop-filter: blur(8px);
+  }
+  .photo-tile.selected .add-btn .state-add { opacity: 0; transform: translateY(-8px); pointer-events: none; }
+  .photo-tile.selected .add-btn .state-in  { opacity: 1; transform: translateY(0); }
+
+  .photo-tile .add-btn:hover { background: var(--accent-bright); border-color: var(--accent-bright); }
+  .photo-tile.selected .add-btn:hover { background: rgba(15,13,11,0.95); border-color: var(--accent); }
+
+  /* Cart button — lives in the nav header */
+  .cart-nav {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: all 150ms;
+    height: 40px;
+  }
+  .cart-nav:hover { border-color: var(--border-accent); }
+  .cart-nav.has {
+    background: var(--accent);
+    color: var(--text-on-accent);
+    border-color: var(--accent);
+  }
+  .cart-nav.has:hover { background: var(--accent-bright); border-color: var(--accent-bright); }
+  .cart-nav .badge-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: rgba(255,255,255,0.18);
+    padding: 1px 7px;
+    border-radius: 999px;
+    min-width: 22px;
+    text-align: center;
+  }
+  .cart-nav.empty .badge-num { display: none; }
+
+  /* ===== Cart drawer (sheet) ===== */
+  .sheet-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(8,6,5,0.55);
+    backdrop-filter: blur(4px);
+    z-index: 80;
+    opacity: 0; pointer-events: none;
+    transition: opacity 220ms ease;
+  }
+  .sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: min(460px, 100vw);
+    background: var(--bg-elevated);
+    z-index: 90;
+    transform: translateX(100%);
+    transition: transform 280ms cubic-bezier(.2,.7,.2,1);
+    display: flex; flex-direction: column;
+    box-shadow: -20px 0 60px rgba(0,0,0,0.5);
+  }
+  .sheet.open { transform: translateX(0); }
+  .sheet::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+  }
+  .sheet-head {
+    padding: 22px 24px 18px;
+    display: flex; justify-content: space-between; align-items: start;
+    gap: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .sheet-head .eyebrow {
+    font-weight: 600; font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    margin-bottom: 8px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .sheet-head h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+  .sheet-head .meta { margin-top: 8px; font-size: 13px; color: var(--text-tertiary); }
+  .sheet-head .meta .accent { color: var(--accent); font-family: var(--font-mono); }
+  .sheet-close {
+    width: 36px; height: 36px;
+    border-radius: 999px;
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 150ms;
+    flex-shrink: 0;
+  }
+  .sheet-close:hover { color: var(--accent); border-color: var(--border-accent); }
+
+  .sheet-body { flex: 1; overflow-y: auto; overflow-x: hidden; }
+  .empty-state {
+    margin: 24px;
+    padding: 38px 20px;
+    border: 1px dashed var(--border-default);
+    border-radius: 12px;
+    text-align: center;
+  }
+  .empty-state .lab { font-size: 12px; color: var(--accent); font-weight: 500; margin-bottom: 10px; }
+  .empty-state .ttl {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 24px; letter-spacing: -0.02em;
+  }
+  .empty-state .sub { font-size: 13px; color: var(--text-tertiary); margin-top: 8px; }
+
+  .items { padding: 0 24px; }
+  .item {
+    display: grid;
+    grid-template-columns: 22px 52px 1fr auto auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .item:last-child { border-bottom: none; }
+  .item .idx { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
+  .item .thumb { width: 52px; height: 52px; border-radius: 8px; overflow: hidden; position: relative; }
+  .item .info { min-width: 0; }
+  .item .info .lab { font-size: 11px; color: var(--text-tertiary); margin-bottom: 1px; }
+  .item .info .num {
+    font-weight: 600; font-size: 15px; line-height: 1.2;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .item .price { font-family: var(--font-mono); font-size: 13px; color: var(--accent); }
+  .item .rm {
+    width: 30px; height: 30px; border-radius: 8px;
+    color: var(--text-tertiary);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 150ms; font-size: 16px;
+  }
+  .item .rm:hover { color: var(--error); background: var(--bg-base); }
+
+  .sheet-foot {
+    border-top: 1px solid var(--border-subtle);
+    padding: 16px 24px 22px;
+    flex-shrink: 0;
+  }
+  .totals { margin-bottom: 14px; }
+  .totals .row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 13.5px; color: var(--text-secondary);
+    padding: 4px 0; gap: 12px;
+  }
+  .totals .row > span:last-child { font-family: var(--font-mono); font-feature-settings: "tnum"; }
+  .totals .row.total {
+    font-size: 14px; color: var(--text-primary);
+    margin-top: 6px; padding-top: 10px;
+    border-top: 1px solid var(--border-subtle);
+    font-weight: 500;
+  }
+  .totals .row.total .amt {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: 26px; letter-spacing: -0.02em;
+    line-height: 1; color: var(--text-primary);
+  }
+  .foot-actions { display: flex; gap: 8px; }
+  .foot-actions .btn { flex: 1; height: 46px; }
+  .foot-actions .btn-primary { justify-content: space-between; padding: 0 18px; }
+  .foot-actions .btn-primary span:last-child { transition: transform 150ms; }
+  .foot-actions .btn-primary:hover span:last-child { transform: translateX(3px); }
+
+  /* ===== Two-view drawer (cart → checkout) ===== */
+  .views { position: relative; flex: 1; overflow: hidden; min-height: 0; }
+  .view {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    transition: transform 280ms cubic-bezier(.2,.7,.2,1), opacity 200ms ease, visibility 280ms;
+    min-height: 0;
+  }
+  .view.cart     { transform: translateX(0); }
+  .view.checkout { transform: translateX(100%); opacity: 0; visibility: hidden; pointer-events: none; }
+  .sheet[data-view="checkout"] .view.cart     { transform: translateX(-30%); opacity: 0; visibility: hidden; pointer-events: none; }
+  .sheet[data-view="checkout"] .view.checkout { transform: translateX(0); opacity: 1; visibility: visible; pointer-events: auto; }
+
+  .checkout-form {
+    padding: 22px 24px;
+    display: flex; flex-direction: column; gap: 14px;
+    overflow-y: auto; flex: 1; min-height: 0;
+  }
+  .checkout-form label {
+    display: block; font-size: 13px;
+    color: var(--text-secondary); font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .checkout-form input {
+    width: 100%; min-width: 0;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    padding: 11px 14px; border-radius: 9px;
+    font: inherit; font-size: 14px;
+    transition: border-color 150ms;
+  }
+  .checkout-form input:focus { border-color: var(--border-accent); outline: none; }
+  .checkout-form .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 540px) { .checkout-form .grid-2 { grid-template-columns: 1fr; } }
+  .checkout-form .hint { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
+  .back-to-cart {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--text-secondary); font-size: 13px;
+    cursor: pointer; margin-bottom: 6px; width: fit-content;
+  }
+  .back-to-cart:hover { color: var(--accent); }
+
+  /* Bigger CTAs in the checkout view footer */
+  .view.checkout .foot-actions .btn {
+    height: 56px;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .view.checkout .foot-actions .btn-primary {
+    padding: 0 22px;
+  }
+
+  /* Sheet responsive */
+  @media (max-width: 540px) {
+    .sheet { width: 100vw; }
+    .sheet-head { padding: 18px 18px 14px; gap: 10px; }
+    .sheet-head h2 { font-size: 24px; }
+    .sheet-close { width: 32px; height: 32px; }
+    .empty-state { margin: 18px; padding: 30px 16px; }
+    .items { padding: 0 18px; }
+    .item { grid-template-columns: 48px 1fr auto 30px; gap: 10px; padding: 12px 0; }
+    .item .idx { display: none; }
+    .item .thumb { width: 48px; height: 48px; }
+    .item .price { font-size: 12px; }
+    .sheet-foot { padding: 14px 18px 18px; }
+    .totals .row.total .amt { font-size: 22px; }
+    .totals .row { font-size: 13px; gap: 8px; }
+    .foot-actions { gap: 6px; }
+    .foot-actions .btn { padding: 0 12px; font-size: 13px; }
+  }
+
+  /* ===== Menu drawer (hamburger) ===== */
+  .menu-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(8,6,5,0.55);
+    backdrop-filter: blur(4px);
+    z-index: 75;
+    opacity: 0; pointer-events: none;
+    transition: opacity 220ms ease;
+  }
+  .menu-backdrop.open { opacity: 1; pointer-events: auto; }
+  .menu-drawer {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: min(340px, 88vw);
+    background: var(--bg-elevated);
+    z-index: 85;
+    transform: translateX(100%);
+    transition: transform 280ms cubic-bezier(.2,.7,.2,1);
+    display: flex; flex-direction: column;
+    box-shadow: -20px 0 60px rgba(0,0,0,0.5);
+  }
+  .menu-drawer.open { transform: translateX(0); }
+  .menu-drawer::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: var(--accent);
+  }
+  .menu-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .menu-close {
+    width: 36px; height: 36px; border-radius: 999px;
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 150ms;
+  }
+  .menu-close:hover { color: var(--accent); border-color: var(--border-accent); }
+  .menu-links {
+    display: flex; flex-direction: column;
+    padding: 14px 12px; flex: 1;
+  }
+  .menu-links a {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px;
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 16px; font-weight: 500;
+    transition: all 150ms;
+    text-decoration: none;
+  }
+  .menu-links a:hover { background: var(--bg-base); color: var(--accent); }
+  .menu-links a i { color: var(--text-tertiary); font-size: 18px; transition: color 150ms; }
+  .menu-links a:hover i { color: var(--accent); }
+  .menu-links a.spacer-top { margin-top: auto; }
+  .menu-foot {
+    padding: 14px 18px 20px;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    text-align: center;
+  }
+
+  /* Lightbox */
+  .lightbox {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 40px;
+    animation: fadeIn 200ms ease-out;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox-inner {
+    position: relative;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 1080px;
+    max-height: 90vh;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    overflow: hidden;
+    animation: scaleIn 200ms ease-out;
+    transition: max-width 280ms cubic-bezier(.2,.7,.2,1);
+  }
+  /* Vertical (portrait) photos: shrink modal so foto se ve mejor */
+  .lightbox-inner.vertical {
+    max-width: 760px;
+    grid-template-columns: 1fr 1fr;
+  }
+  .lightbox-inner.vertical .lightbox-photo { aspect-ratio: 3/4; }
+  @media (max-width: 800px) { .lightbox-inner { grid-template-columns: 1fr; max-height: 95vh; overflow-y: auto; } }
+  @media (max-width: 800px) {
+    .lightbox-inner.vertical .lightbox-photo { aspect-ratio: 3/4; max-height: 55vh; }
+  }
+
+  /* On phone — compact single-row info panel for ALL photo orientations */
+  @media (max-width: 600px) {
+    .lightbox { padding: 12px; }
+    .lightbox-inner { max-height: calc(100dvh - 24px); border-radius: 12px; }
+    .lightbox-close { top: 10px; right: 10px; width: 34px; height: 34px; }
+
+    /* Vertical photos take more space; horizontal keep 3/2 */
+    .lightbox-inner.vertical { grid-template-columns: 1fr; max-width: 100%; }
+    .lightbox-inner.vertical .lightbox-photo { aspect-ratio: 3/4; max-height: 70vh; }
+
+    /* Side panel collapses into a single horizontal row */
+    .lightbox-inner .lightbox-side {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-subtle);
+    }
+    /* Hide everything that's not essential for a quick add-to-cart */
+    .lightbox-inner .lightbox-side > .badge:first-child,
+    .lightbox-inner .lightbox-side h3,
+    .lightbox-inner .lightbox-side .meta,
+    .lightbox-inner .lightbox-side .price-was,
+    .lightbox-inner .lightbox-side .price-row .badge,
+    .lightbox-inner .lightbox-side .price-note,
+    .lightbox-inner .lightbox-side ul.includes,
+    .lightbox-inner .lightbox-side .actions .btn-outline {
+      display: none;
+    }
+    .lightbox-inner .lightbox-side .price-row { margin: 0; align-items: baseline; }
+    .lightbox-inner .lightbox-side .price { font-size: 22px; }
+    .lightbox-inner .lightbox-side .actions { margin: 0; flex-direction: row; }
+    .lightbox-inner .lightbox-side .actions .btn {
+      height: auto;
+      min-height: 42px;
+      padding: 8px 16px;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+  }
+  .lightbox-photo {
+    position: relative;
+    background: var(--bg-base);
+    aspect-ratio: 3/2;
+  }
+  .lightbox-photo .photo-ph { position: absolute; inset: 0; border-radius: 0; }
+  .lightbox-side {
+    padding: 28px;
+    display: flex; flex-direction: column;
+  }
+  .lightbox-side h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .lightbox-side .meta { color: var(--text-secondary); font-size: 13px; margin-bottom: 24px; }
+  .lightbox-side .price-row {
+    display: flex; align-items: baseline; gap: 8px;
+    margin-bottom: 6px;
+  }
+  .lightbox-side .price {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 36px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .lightbox-side .price-was {
+    color: var(--text-tertiary);
+    text-decoration: line-through;
+    font-size: 16px;
+  }
+  .lightbox-side .price-note { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
+  .lightbox-side ul.includes {
+    list-style: none; padding: 0;
+    display: flex; flex-direction: column; gap: 10px;
+    margin-bottom: 24px;
+  }
+  .lightbox-side ul.includes li {
+    display: flex; gap: 10px; align-items: center;
+    font-size: 14px; color: var(--text-primary);
+  }
+  .lightbox-side ul.includes i { color: var(--success); font-size: 16px; }
+  .lightbox-side .actions { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+  .lightbox-close {
+    position: absolute; top: 14px; right: 14px;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(15,13,11,0.78);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 10;
+    backdrop-filter: blur(8px);
+    transition: all 150ms ease;
+  }
+  .lightbox-close:hover { background: rgba(15,13,11,0.95); border-color: var(--border-accent); color: var(--accent); }
+
+  /* ===== Selfie picker popover (desktop) ===== */
+  .selfie-picker {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 95;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    padding: 6px;
+    width: 260px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.55);
+    opacity: 0; transform: translateY(-6px) scale(0.98);
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 220ms cubic-bezier(.2,.7,.2,1);
+  }
+  .selfie-picker.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+
+  /* On mobile becomes a bottom sheet — anchored to viewport */
+  .selfie-picker-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(8,6,5,0.55);
+    backdrop-filter: blur(4px);
+    z-index: 94;
+    opacity: 0; pointer-events: none;
+    transition: opacity 220ms ease;
+    display: none;
+  }
+  @media (max-width: 720px) {
+    .selfie-picker-backdrop { display: block; }
+    .selfie-picker-backdrop.open { opacity: 1; pointer-events: auto; }
+    .selfie-picker {
+      position: fixed;
+      top: auto;
+      right: 12px;
+      left: 12px;
+      bottom: 12px;
+      width: auto;
+      padding: 8px;
+      transform: translateY(40px);
+      box-shadow: 0 -12px 50px rgba(0,0,0,0.6);
+      border-radius: 14px;
+    }
+    .selfie-picker.open { transform: translateY(0); }
+    .selfie-option { padding: 14px 14px; }
+  }
+  .selfie-option {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 9px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 120ms;
+    text-align: left;
+    align-items: center;
+  }
+  .selfie-option:hover { background: var(--bg-base); }
+  .selfie-option .ic {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    background: var(--accent-deep);
+    color: var(--accent);
+    border: 1px solid var(--border-accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .selfie-option .ttl { font-size: 13.5px; font-weight: 500; }
+  .selfie-option .sub { font-size: 11.5px; color: var(--text-tertiary); margin-top: 1px; }
+
+  /* ===== Scan overlay (replaces find-row during scan) ===== */
+  .scan-overlay {
+    display: none;
+    margin-top: 4px;
+    padding: 18px;
+    background: var(--bg-base);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    align-items: center;
+    gap: 18px;
+    position: relative;
+    animation: rise 360ms cubic-bezier(.2,.7,.2,1) both;
+  }
+  .scan-overlay.on { display: flex; }
+  @media (max-width: 540px) {
+    .scan-overlay { flex-direction: column; align-items: stretch; text-align: center; gap: 14px; padding: 16px; }
+  }
+  .scan-photo {
+    position: relative;
+    width: 120px; height: 120px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg-elevated);
+    flex-shrink: 0;
+  }
+  @media (max-width: 540px) { .scan-photo { width: 100%; height: 200px; align-self: stretch; } }
+  .scan-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .scan-grid {
+    position: absolute; inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent 0 19px, rgba(245,130,10,0.16) 19px 20px),
+      repeating-linear-gradient(90deg, transparent 0 19px, rgba(245,130,10,0.16) 19px 20px);
+    pointer-events: none;
+    transition: opacity 320ms ease;
+  }
+  .scan-line {
+    position: absolute; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    box-shadow: 0 0 18px var(--accent);
+    animation: scan-line 1.6s ease-in-out infinite;
+  }
+  @keyframes scan-line {
+    0%   { top: 0; }
+    50%  { top: calc(100% - 2px); }
+    100% { top: 0; }
+  }
+  .scan-overlay.found .scan-line,
+  .scan-overlay.no-match .scan-line { display: none; }
+  .scan-overlay.found .scan-grid,
+  .scan-overlay.no-match .scan-grid { opacity: 0.3; }
+  .scan-photo .scan-result-ic {
+    position: absolute; inset: 0;
+    display: none; align-items: center; justify-content: center;
+    font-size: 38px;
+  }
+  .scan-overlay.found .scan-photo .scan-result-ic { display: flex; color: var(--success); }
+  .scan-overlay.no-match .scan-photo .scan-result-ic { display: flex; color: var(--text-tertiary); }
+
+  .scan-info { flex: 1; min-width: 0; }
+  .scan-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+  .scan-overlay.found .scan-title { color: var(--success); }
+  .scan-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+  .scan-sub strong { color: var(--text-primary); font-weight: 500; font-family: var(--font-mono); }
+  .scan-bar {
+    height: 4px;
+    background: var(--bg-elevated);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .scan-bar > span {
+    display: block; height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 220ms ease, background 240ms ease;
+  }
+  .scan-overlay.found .scan-bar > span { background: var(--success); width: 100% !important; }
+  .scan-overlay.no-match .scan-bar { display: none; }
+  .scan-actions { display: none; gap: 8px; margin-top: 4px; }
+  .scan-overlay.no-match .scan-actions { display: inline-flex; }
+  .scan-actions .btn { padding: 0 16px; height: 38px; font-size: 13px; }
+
+  .scan-close {
+    position: absolute; top: 12px; right: 12px;
+    width: 30px; height: 30px;
+    border-radius: 999px;
+    border: 1px solid var(--border-default);
+    color: var(--text-tertiary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 150ms;
+    background: rgba(15,13,11,0.6);
+  }
+  .scan-close:hover { color: var(--accent); border-color: var(--border-accent); }
+
+  /* Hide form during scan */
+  .search-panel.scanning .find-row { display: none; }
+
+  /* ===== Photo tile skeleton ===== */
+  .photo-tile-skeleton {
+    aspect-ratio: 3/2;
+    border-radius: 12px;
+    background: linear-gradient(90deg, var(--bg-elevated) 0%, var(--bg-subtle) 50%, var(--bg-elevated) 100%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s linear infinite;
+  }
+
+  /* Stagger reveal for found photos */
+  .photo-tile.appearing {
+    animation: photo-rise 480ms cubic-bezier(.2,.7,.2,1) both;
+    animation-delay: calc(var(--i, 0) * 45ms);
+  }
+  @keyframes photo-rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body data-screen-label="Galería evento">
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="logo">cuerv<span class="logo-dot"></span>to</a>
+      <div class="nav-links">
+        <a href="search.html" class="active">Eventos</a>
+        <a href="onboarding.html">Fotógrafos</a>
+        <a href="index.html#como-funciona">Cómo funciona</a>
+      </div>
+      <div class="nav-cta">
+        <button class="cart-nav empty" id="cartNav" onclick="openCart()">
+          <i class="ti ti-shopping-cart" style="font-size: 16px;"></i>
+          <span>Carrito</span>
+          <span class="badge-num" id="cartCount">0</span>
+        </button>
+        <button class="btn btn-outline" id="menuBtn" aria-label="Menú">
+          <i class="ti ti-menu-2" style="font-size: 20px;"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="breadcrumbs">
+      <a href="search.html">Eventos</a>
+      <span class="sep">/</span>
+      <a href="search.html">Running</a>
+      <span class="sep">/</span>
+      <span style="color: var(--text-primary);">Maratón Internacional Buenos Aires 2025</span>
+    </div>
+  </div>
+
+  <header class="event-hero">
+    <div class="event-hero-img"></div>
+    <div class="event-hero-content">
+      <div class="container">
+        <div class="badges">
+          <span class="badge"><i class="ti ti-run" style="font-size: 12px;"></i>Running · 42K</span>
+          <span class="badge badge-success badge-dot">Fotos disponibles</span>
+        </div>
+        <h1>Maratón Internacional Buenos Aires 2025</h1>
+        <div class="event-meta-row">
+          <span><i class="ti ti-calendar"></i>12 noviembre · 2025</span>
+          <span><i class="ti ti-map-pin-filled"></i>Av. Figueroa Alcorta, CABA</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding-bottom: 120px;">
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-label">Fotos disponibles</div>
+        <div class="stat-value mono">8.420</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Fotógrafos</div>
+        <div class="stat-value mono">14</div>
+      </div>
+    </div>
+
+    <!-- Search panel -->
+    <section class="search-panel" id="searchPanel">
+      <div class="search-panel-inner">
+        <h2>Encontrá tus fotos</h2>
+        <form class="find-row" onsubmit="event.preventDefault(); runBibScan();">
+          <div class="find-input">
+            <i class="ti ti-search"></i>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+                   placeholder="Tu número de dorsal" id="bibInput" />
+          </div>
+          <button class="btn btn-primary" type="submit">Buscar</button>
+          <span class="find-or">o</span>
+          <button class="btn btn-outline" type="button" id="selfieBtn">
+            <i class="ti ti-camera"></i>Buscar por selfie
+          </button>
+        </form>
+
+        <!-- Selfie source picker -->
+        <div class="selfie-picker-backdrop" id="selfiePickerBackdrop" onclick="closeSelfiePicker()"></div>
+        <div class="selfie-picker" id="selfiePicker" onclick="event.stopPropagation()">
+          <button class="selfie-option" type="button" id="optCamera">
+            <span class="ic"><i class="ti ti-camera"></i></span>
+            <span>
+              <div class="ttl">Tomar foto</div>
+              <div class="sub">Usá la cámara</div>
+            </span>
+          </button>
+          <button class="selfie-option" type="button" id="optGallery">
+            <span class="ic"><i class="ti ti-photo"></i></span>
+            <span>
+              <div class="ttl">Elegir de la galería</div>
+              <div class="sub">Subir una foto guardada</div>
+            </span>
+          </button>
+        </div>
+
+        <input type="file" accept="image/*" capture="user" id="selfieCamera" hidden />
+        <input type="file" accept="image/*" id="selfieGallery" hidden />
+
+        <!-- Scan overlay -->
+        <div class="scan-overlay" id="scanOverlay">
+          <div class="scan-photo">
+            <img id="scanImg" alt="" />
+            <div class="scan-grid"></div>
+            <div class="scan-line"></div>
+            <div class="scan-result-ic"><i class="ti ti-circle-check-filled" id="scanResultIcon"></i></div>
+          </div>
+          <div class="scan-info">
+            <div class="scan-title" id="scanTitle">Analizando tu foto…</div>
+            <div class="scan-sub" id="scanSub">Comparando con <strong>8.420 fotos</strong> del evento</div>
+            <div class="scan-bar"><span id="scanBar"></span></div>
+            <div class="scan-actions">
+              <button class="btn btn-primary" type="button" id="retryBtn"><i class="ti ti-camera"></i>Probar otra</button>
+              <button class="btn btn-outline" type="button" id="useBibBtn"><i class="ti ti-numbers"></i>Buscar por dorsal</button>
+            </div>
+          </div>
+          <button class="scan-close" type="button" onclick="cancelScan()" aria-label="Cancelar">
+            <i class="ti ti-x" style="font-size: 16px;"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <div class="gallery-head">
+      <h2>Tus fotos <span class="count">14 encontradas</span></h2>
+    </div>
+
+    <div class="photo-grid" id="photoGrid"></div>
+
+    <div style="text-align: center; padding: 40px;">
+      <button class="btn btn-outline btn-lg">Ver más fotos del evento <i class="ti ti-chevron-down"></i></button>
+    </div>
+  </main>
+
+  <!-- Menu drawer (hamburger) -->
+  <div class="menu-backdrop" id="menuBackdrop" onclick="closeMenu()"></div>
+  <aside class="menu-drawer" id="menuDrawer" aria-hidden="true">
+    <div class="menu-head">
+      <a href="index.html" class="logo">cuerv<span class="logo-dot"></span>to</a>
+      <button class="menu-close" onclick="closeMenu()" aria-label="Cerrar">
+        <i class="ti ti-x" style="font-size: 18px;"></i>
+      </button>
+    </div>
+    <nav class="menu-links">
+      <a href="search.html"><i class="ti ti-calendar-event"></i><span>Eventos</span></a>
+      <a href="onboarding.html"><i class="ti ti-camera"></i><span>Fotógrafos</span></a>
+      <a href="index.html#como-funciona"><i class="ti ti-help-circle"></i><span>Cómo funciona</span></a>
+      <a href="dashboard.html"><i class="ti ti-user"></i><span>Mi cuenta</span></a>
+      <a href="ayuda.html" class="spacer-top"><i class="ti ti-life-buoy"></i><span>Ayuda</span></a>
+    </nav>
+    <div class="menu-foot">
+      © 2025 cuervito.app
+    </div>
+  </aside>
+
+  <!-- Cart sidebar drawer -->
+  <div class="sheet-backdrop" id="sheetBackdrop" onclick="closeCart()"></div>
+  <aside class="sheet" id="sheet" data-view="cart" aria-hidden="true">
+    <div class="sheet-head">
+      <div>
+        <span class="eyebrow">· Carrito</span>
+        <h2 id="sheetTitle">Tu selección.</h2>
+        <div class="meta">
+          <span id="sheetCount">Vacío</span>
+          <span id="sheetSubtotalLine"></span>
+        </div>
+      </div>
+      <button class="sheet-close" onclick="closeCart()" aria-label="Cerrar">
+        <i class="ti ti-x" style="font-size: 18px;"></i>
+      </button>
+    </div>
+
+    <div class="views">
+      <!-- Cart view -->
+      <div class="view cart">
+        <div class="sheet-body">
+          <div id="cartItemsWrap"></div>
+        </div>
+        <div class="sheet-foot" id="cartFoot" style="display: none;">
+          <div class="totals" id="totalsWrap"></div>
+          <div class="foot-actions">
+            <button class="btn btn-outline" onclick="clearCart()">Vaciar</button>
+            <button class="btn btn-primary" onclick="goCheckout()">
+              <span>Continuar</span><span>→</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Checkout view -->
+      <div class="view checkout">
+        <div class="checkout-form">
+          <span class="back-to-cart" onclick="goCart()">
+            <i class="ti ti-arrow-left" style="font-size: 14px;"></i>Volver al carrito
+          </span>
+          <div>
+            <label>Email *</label>
+            <input type="email" id="buyerEmail" placeholder="vos@correo.com" required />
+            <div class="hint">Te llega el comprobante y el link de descarga.</div>
+          </div>
+          <div class="grid-2">
+            <div>
+              <label>Nombre *</label>
+              <input type="text" id="buyerName" placeholder="Ana" required />
+            </div>
+            <div>
+              <label>Apellido</label>
+              <input type="text" id="buyerLast" placeholder="Pérez" />
+            </div>
+          </div>
+          <div>
+            <label>Teléfono (opcional)</label>
+            <input type="tel" id="buyerPhone" placeholder="+54 9 11 …" />
+          </div>
+        </div>
+        <div class="sheet-foot">
+          <div class="totals" id="checkoutTotals"></div>
+          <div class="foot-actions">
+            <button class="btn btn-outline" onclick="goCart()">Volver</button>
+            <button class="btn btn-primary" onclick="confirmPay()">
+              <span id="payLabel">Pagar</span><span>→</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <div class="lightbox-inner" id="lightboxInner" onclick="event.stopPropagation();">
+      <button class="lightbox-close" onclick="closeLightbox()"><i class="ti ti-x"></i></button>
+      <div class="lightbox-photo" id="lbPhotoWrap">
+        <div class="photo-ph photo-ph-warm" data-label="foto · alta resolución" id="lbPhoto">
+          <div class="photo-watermark">CUERVITO · PREVIEW</div>
+        </div>
+      </div>
+      <div class="lightbox-side">
+        <span class="badge" style="align-self: flex-start; margin-bottom: 12px;"><i class="ti ti-camera" style="font-size: 12px;"></i>Foto · KM 21</span>
+        <h3>Maratón BA · Dorsal #4218</h3>
+        <div class="meta">Tomada por <strong style="color: var(--text-secondary);">Ana Liotta</strong> · 12 nov 11:32</div>
+
+        <div class="price-row">
+          <span class="price mono">$2.400</span>
+          <span class="price-was mono">$3.000</span>
+          <span class="badge badge-success" style="margin-left: 4px;">−20% pack</span>
+        </div>
+        <div class="price-note">Precio por foto individual. Comprá 5+ y pagás $1.800 c/u.</div>
+
+        <ul class="includes">
+          <li><i class="ti ti-check"></i>Alta resolución (5184×3456)</li>
+          <li><i class="ti ti-check"></i>Sin marca de agua</li>
+          <li><i class="ti ti-check"></i>Descarga inmediata</li>
+          <li><i class="ti ti-check"></i>Licencia de uso personal</li>
+        </ul>
+
+        <div class="actions">
+          <button class="btn btn-primary btn-lg" onclick="addToCart()"><i class="ti ti-shopping-bag-plus"></i>Agregar al carrito</button>
+          <button class="btn btn-outline">Comprar pack completo (14 fotos · $25.200)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // photo grid — algunas marcadas como verticales para demo del modal compacto
+    const PHOTOS = [
+      { bib: '4218', loc: 'Largada', warm: true },
+      { bib: '4218', loc: 'KM 5', cool: true, vertical: true },
+      { bib: '4218', loc: 'KM 10', warm: false },
+      { bib: '4218', loc: 'KM 15', warm: true },
+      { bib: '4218', loc: 'KM 21', cool: true },
+      { bib: '4218', loc: 'KM 25', warm: false, vertical: true },
+      { bib: '4218', loc: 'KM 30', warm: true },
+      { bib: '4218', loc: 'KM 35', cool: true },
+      { bib: '4218', loc: 'KM 38', warm: false },
+      { bib: '4218', loc: 'KM 40', warm: true, vertical: true },
+      { bib: '4218', loc: 'Llegada', cool: true },
+      { bib: '4218', loc: 'Llegada', warm: true },
+      { bib: '4218', loc: 'Post-llegada', warm: false },
+      { bib: '4218', loc: 'Podio', warm: true, vertical: true },
+    ];
+    const grid = document.getElementById('photoGrid');
+    const galleryCount = document.querySelector('.gallery-head h2 .count');
+
+    function tileTemplate(p, i, opts = {}) {
+      const cls = p.cool ? 'photo-ph-cool' : (p.warm ? 'photo-ph-warm' : 'photo-ph');
+      const sel = (opts.preselect && i < 3) ? 'selected' : '';
+      const appearing = opts.stagger ? 'appearing' : '';
+      const styleI = opts.stagger ? `style="--i:${i}"` : '';
+      return `
+        <div class="photo-tile ${sel} ${appearing}" data-i="${i}" ${styleI}>
+          <div class="photo-ph ${cls} photo-tile-bg" data-label="foto · ${p.loc}">
+            <div class="photo-watermark">CUERVITO</div>
+          </div>
+          <span class="bib bib-tag">#${p.bib}</span>
+          <span class="price-tag">$2.400</span>
+          <button class="add-btn" onclick="event.stopPropagation(); toggleSelect(${i});" data-i="${i}">
+            <span class="state state-add"><i class="ti ti-shopping-cart-plus"></i><span>Agregar</span></span>
+            <span class="state state-in"><i class="ti ti-shopping-cart-check"></i><span>En carrito</span></span>
+          </button>
+        </div>`;
+    }
+
+    function renderPhotos({ preselect = false, stagger = false } = {}) {
+      grid.innerHTML = PHOTOS.map((p, i) => tileTemplate(p, i, { preselect, stagger })).join('');
+      galleryCount.textContent = `${PHOTOS.length} encontradas`;
+      updateCart();
+    }
+    function renderSkeletons(n = 12) {
+      grid.innerHTML = Array.from({ length: n }).map(() => `<div class="photo-tile-skeleton"></div>`).join('');
+      galleryCount.textContent = 'buscando…';
+    }
+
+    const PRICE = 2400;
+    let currentLightboxIdx = null;
+
+    // Initial render with 3 pre-selected (existing behaviour)
+    renderPhotos({ preselect: true });
+
+    // Event delegation — survives re-renders
+    grid.addEventListener('click', (e) => {
+      if (e.target.closest('.add-btn')) return; // handled by inline onclick
+      const tile = e.target.closest('.photo-tile');
+      if (!tile) return;
+      openLightbox(+tile.dataset.i);
+    });
+
+    function toggleSelect(i) {
+      const tile = grid.querySelector(`.photo-tile[data-i="${i}"]`);
+      tile.classList.toggle('selected');
+      updateCart();
+    }
+
+    function getSelectedIndices() {
+      return Array.from(grid.querySelectorAll('.photo-tile.selected'))
+        .map(t => Number(t.dataset.i));
+    }
+
+    function updateCart() {
+      const ix = getSelectedIndices();
+      const n = ix.length;
+      const total = n * PRICE;
+
+      // nav button
+      const cn = document.getElementById('cartNav');
+      document.getElementById('cartCount').textContent = n;
+      cn.classList.toggle('has', n > 0);
+      cn.classList.toggle('empty', n === 0);
+
+      // sheet header meta
+      document.getElementById('sheetCount').textContent =
+        n === 0 ? 'Vacío' : `${n} ${n === 1 ? 'foto' : 'fotos'}`;
+      document.getElementById('sheetSubtotalLine').innerHTML =
+        n > 0 ? ` · <span class="accent">$${total.toLocaleString('es-AR')}</span>` : '';
+
+      // body + foot
+      const body = document.getElementById('cartItemsWrap');
+      const foot = document.getElementById('cartFoot');
+      if (n === 0) {
+        foot.style.display = 'none';
+        body.innerHTML = `
+          <div class="empty-state">
+            <div class="lab">· Estado</div>
+            <div class="ttl">Vacío.</div>
+            <div class="sub">Tocá "Agregar" en cada foto para sumarla</div>
+          </div>`;
+        return;
+      }
+      foot.style.display = 'block';
+      body.innerHTML = `<div class="items">${ix.map((i, k) => {
+        const p = PHOTOS[i];
+        const cls = p.cool ? 'photo-ph-cool' : (p.warm ? 'photo-ph-warm' : '');
+        return `
+          <div class="item">
+            <span class="idx">${String(k+1).padStart(2,'0')}</span>
+            <div class="thumb photo-ph ${cls}" data-label=""></div>
+            <div class="info">
+              <div class="lab">${p.loc} · Dorsal</div>
+              <div class="num">#${p.bib}</div>
+            </div>
+            <span class="price">$${PRICE.toLocaleString('es-AR')}</span>
+            <button class="rm" onclick="toggleSelect(${i})" aria-label="Quitar"><i class="ti ti-x"></i></button>
+          </div>`;
+      }).join('')}</div>`;
+      const totalsHtml = `
+        <div class="row"><span>Subtotal · ${n} ${n === 1 ? 'foto' : 'fotos'}</span><span>$${total.toLocaleString('es-AR')}</span></div>
+        <div class="row total"><span>Total</span><span class="amt">$${total.toLocaleString('es-AR')}</span></div>`;
+      document.getElementById('totalsWrap').innerHTML = totalsHtml;
+      const checkoutTotals = document.getElementById('checkoutTotals');
+      if (checkoutTotals) checkoutTotals.innerHTML = totalsHtml;
+      const payBtn = document.getElementById('payLabel');
+      if (payBtn) payBtn.textContent = 'Pagar';
+    }
+    updateCart();
+
+    function clearCart() {
+      grid.querySelectorAll('.photo-tile.selected').forEach(t => t.classList.remove('selected'));
+      updateCart();
+    }
+
+    // ===== Menu drawer =====
+    const menuDrawer = document.getElementById('menuDrawer');
+    const menuBackdrop = document.getElementById('menuBackdrop');
+    function openMenu() {
+      menuDrawer.classList.add('open');
+      menuDrawer.setAttribute('aria-hidden', 'false');
+      menuBackdrop.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeMenu() {
+      menuDrawer.classList.remove('open');
+      menuDrawer.setAttribute('aria-hidden', 'true');
+      menuBackdrop.classList.remove('open');
+      if (!sheet?.classList.contains('open') &&
+          !document.getElementById('lightbox').classList.contains('open')) {
+        document.body.style.overflow = '';
+      }
+    }
+    document.getElementById('menuBtn').addEventListener('click', openMenu);
+
+    // ===== Cart drawer open/close + 2-step views =====
+    const sheet = document.getElementById('sheet');
+    const sBackdrop = document.getElementById('sheetBackdrop');
+    function openCart() {
+      sheet.classList.add('open');
+      sheet.setAttribute('aria-hidden', 'false');
+      sBackdrop.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeCart() {
+      sheet.classList.remove('open');
+      sheet.setAttribute('aria-hidden', 'true');
+      sBackdrop.classList.remove('open');
+      document.body.style.overflow = '';
+      sheet.dataset.view = 'cart';
+      document.getElementById('sheetTitle').textContent = 'Tu selección.';
+    }
+    function goCheckout() {
+      if (getSelectedIndices().length === 0) return;
+      sheet.dataset.view = 'checkout';
+      document.getElementById('sheetTitle').textContent = 'Tus datos.';
+      setTimeout(() => document.getElementById('buyerEmail')?.focus(), 320);
+    }
+    function goCart() {
+      sheet.dataset.view = 'cart';
+      document.getElementById('sheetTitle').textContent = 'Tu selección.';
+    }
+    function confirmPay() {
+      const email = document.getElementById('buyerEmail').value.trim();
+      const name  = document.getElementById('buyerName').value.trim();
+      if (!email || !name) {
+        alert('Completá email y nombre para continuar.');
+        return;
+      }
+      const ix = getSelectedIndices();
+      const total = ix.length * PRICE;
+      const params = new URLSearchParams({
+        email, name,
+        total: String(total),
+        photos: String(ix.length),
+      });
+      location.href = `pago.html?${params.toString()}`;
+    }
+
+    // ===== Lightbox =====
+    function openLightbox(i) {
+      currentLightboxIdx = i;
+      const p = PHOTOS[i];
+      const inner = document.getElementById('lightboxInner');
+      const lb = document.getElementById('lbPhoto');
+
+      // update photo variant
+      lb.className = 'photo-ph';
+      if (p.cool) lb.classList.add('photo-ph-cool');
+      else if (p.warm) lb.classList.add('photo-ph-warm');
+      lb.setAttribute('data-label', `foto · ${p.loc} · alta resolución`);
+
+      // toggle vertical / compact modal
+      inner.classList.toggle('vertical', !!p.vertical);
+
+      document.getElementById('lightbox').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox(e) {
+      if (e && e.target.id !== 'lightbox') return;
+      document.getElementById('lightbox').classList.remove('open');
+      // restore scroll only if cart sheet is closed too
+      if (!sheet.classList.contains('open')) document.body.style.overflow = '';
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (document.getElementById('lightbox').classList.contains('open')) {
+        closeLightbox({ target: { id: 'lightbox' } });
+      } else if (sheet.classList.contains('open')) {
+        closeCart();
+      } else if (menuDrawer.classList.contains('open')) {
+        closeMenu();
+      }
+    });
+
+    function addToCart() {
+      if (currentLightboxIdx == null) return;
+      const tile = grid.querySelector(`.photo-tile[data-i="${currentLightboxIdx}"]`);
+      tile.classList.add('selected');
+      updateCart();
+      closeLightbox({ target: { id: 'lightbox' } });
+    }
+
+    // ============ SELFIE / BIB SEARCH FLOW ============
+    const searchPanel = document.getElementById('searchPanel');
+    const selfieBtn   = document.getElementById('selfieBtn');
+    const picker      = document.getElementById('selfiePicker');
+    const camInput    = document.getElementById('selfieCamera');
+    const galInput    = document.getElementById('selfieGallery');
+    const scanOverlay = document.getElementById('scanOverlay');
+    const scanImg     = document.getElementById('scanImg');
+    const scanTitleEl = document.getElementById('scanTitle');
+    const scanSubEl   = document.getElementById('scanSub');
+    const scanBarEl   = document.getElementById('scanBar');
+    const scanResultIcon = document.getElementById('scanResultIcon');
+
+    let scanCancelled = false;
+    let scanTimers = [];
+
+    const pickerBackdrop = document.getElementById('selfiePickerBackdrop');
+    function openPicker(e) {
+      e.stopPropagation();
+      const isOpen = picker.classList.toggle('open');
+      pickerBackdrop.classList.toggle('open', isOpen);
+    }
+    function closePicker() {
+      picker.classList.remove('open');
+      pickerBackdrop.classList.remove('open');
+    }
+    // expose for inline onclick on backdrop
+    window.closeSelfiePicker = closePicker;
+    selfieBtn.addEventListener('click', openPicker);
+    document.addEventListener('click', (e) => {
+      if (!picker.contains(e.target) && e.target !== selfieBtn && !selfieBtn.contains(e.target)) closePicker();
+    });
+    document.getElementById('optCamera').addEventListener('click', () => { closePicker(); camInput.click(); });
+    document.getElementById('optGallery').addEventListener('click', () => { closePicker(); galInput.click(); });
+    [camInput, galInput].forEach(inp => {
+      inp.addEventListener('change', (e) => {
+        const f = e.target.files?.[0];
+        if (f) startSelfieScan(f);
+        inp.value = '';
+      });
+    });
+
+    function startSelfieScan(file) {
+      scanCancelled = false;
+      scanTimers.forEach(clearTimeout);
+      scanTimers = [];
+
+      // preview
+      const reader = new FileReader();
+      reader.onload = (ev) => { scanImg.src = ev.target.result; };
+      reader.readAsDataURL(file);
+
+      // reset overlay state
+      scanOverlay.classList.remove('found', 'no-match');
+      scanOverlay.classList.add('on');
+      searchPanel.classList.add('scanning');
+      scanTitleEl.textContent = 'Analizando tu foto…';
+      scanSubEl.innerHTML = 'Comparando con <strong>8.420 fotos</strong> del evento';
+      scanBarEl.style.width = '0%';
+
+      // grid skeletons
+      renderSkeletons(12);
+
+      // animate progress
+      let pct = 0;
+      const tick = () => {
+        if (scanCancelled) return;
+        pct += 3 + Math.random() * 6;
+        if (pct >= 100) {
+          scanBarEl.style.width = '100%';
+          finishSelfieScan();
+        } else {
+          scanBarEl.style.width = pct + '%';
+          scanTimers.push(setTimeout(tick, 80 + Math.random() * 60));
+        }
+      };
+      scanTimers.push(setTimeout(tick, 220));
+    }
+
+    function finishSelfieScan() {
+      // 75% match, 25% no-match for demo variety
+      const match = Math.random() > 0.25;
+      if (match) {
+        scanOverlay.classList.add('found');
+        scanResultIcon.className = 'ti ti-circle-check-filled';
+        scanTitleEl.textContent = '¡Te encontramos!';
+        scanSubEl.innerHTML = `Encontramos <strong>${PHOTOS.length} fotos</strong> donde estás`;
+        // render real photos with stagger
+        scanTimers.push(setTimeout(() => {
+          if (scanCancelled) return;
+          renderPhotos({ stagger: true });
+          // close scan overlay after photos appear
+          scanTimers.push(setTimeout(() => {
+            if (!scanCancelled) cancelScan();
+          }, 900));
+        }, 700));
+      } else {
+        scanOverlay.classList.add('no-match');
+        scanResultIcon.className = 'ti ti-mood-search';
+        scanTitleEl.textContent = 'No te encontramos';
+        scanSubEl.innerHTML = 'Probá con otra foto con mejor luz y rostro visible.';
+        // clear grid
+        grid.innerHTML = '';
+        galleryCount.textContent = '0 encontradas';
+      }
+    }
+
+    function cancelScan() {
+      scanCancelled = true;
+      scanTimers.forEach(clearTimeout);
+      scanTimers = [];
+      scanOverlay.classList.remove('on', 'found', 'no-match');
+      searchPanel.classList.remove('scanning');
+    }
+
+    // Buttons inside the no-match state
+    document.getElementById('retryBtn').addEventListener('click', () => {
+      cancelScan();
+      // re-open picker for retry
+      setTimeout(() => picker.classList.add('open'), 280);
+    });
+    document.getElementById('useBibBtn').addEventListener('click', () => {
+      cancelScan();
+      setTimeout(() => document.getElementById('bibInput').focus(), 280);
+    });
+
+    // Bib search — same scan-style animation without a photo preview
+    function runBibScan() {
+      const bib = document.getElementById('bibInput').value.trim();
+      if (!bib) return;
+      // Simulate by using a placeholder for the preview
+      scanCancelled = false;
+      scanTimers.forEach(clearTimeout);
+      scanTimers = [];
+
+      scanImg.removeAttribute('src');
+      scanImg.style.display = 'none';
+      scanOverlay.classList.remove('found', 'no-match');
+      scanOverlay.classList.add('on');
+      searchPanel.classList.add('scanning');
+      scanTitleEl.textContent = `Buscando dorsal #${bib}…`;
+      scanSubEl.innerHTML = 'Cruzando con <strong>8.420 fotos</strong> del evento';
+      scanBarEl.style.width = '0%';
+      renderSkeletons(12);
+
+      let pct = 0;
+      const tick = () => {
+        if (scanCancelled) return;
+        pct += 5 + Math.random() * 6;
+        if (pct >= 100) {
+          scanBarEl.style.width = '100%';
+          // For bib search demo: always match (it's a clear identifier)
+          scanOverlay.classList.add('found');
+          scanResultIcon.className = 'ti ti-circle-check-filled';
+          scanImg.style.display = '';
+          scanTitleEl.textContent = `¡Dorsal #${bib} encontrado!`;
+          scanSubEl.innerHTML = `Encontramos <strong>${PHOTOS.length} fotos</strong>`;
+          scanTimers.push(setTimeout(() => {
+            if (scanCancelled) return;
+            renderPhotos({ stagger: true });
+            scanTimers.push(setTimeout(() => { if (!scanCancelled) cancelScan(); }, 900));
+          }, 600));
+        } else {
+          scanBarEl.style.width = pct + '%';
+          scanTimers.push(setTimeout(tick, 70 + Math.random() * 60));
+        }
+      };
+      scanTimers.push(setTimeout(tick, 200));
+    }
+    // expose for inline onsubmit handler
+    window.runBibScan = runBibScan;
+    window.cancelScan = cancelScan;
+  </script>
+</body>
+</html>

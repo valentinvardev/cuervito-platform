@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ventas · cuervito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="panel-anim.css" />
+<style>
+  body { background: var(--bg-base); }
+  .top {
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(15,13,11,0.85);
+    backdrop-filter: blur(10px);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .top-left { display: flex; align-items: center; gap: 16px; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 8px;
+    color: var(--text-secondary); font-size: 14px;
+    transition: all 150ms;
+  }
+  .back-btn:hover { background: var(--bg-surface); color: var(--text-primary); }
+  .top-divider { width: 1px; height: 24px; background: var(--border-subtle); }
+  .top .avatar {
+    width: 36px; height: 36px; font-size: 13px; cursor: pointer;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #F5820A, #ff9a3a);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #1a0d00; font-family: var(--font-display); font-weight: 800;
+  }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 32px 80px; }
+  @media (max-width: 700px) { .wrap { padding: 22px 18px 60px; } }
+
+  .head { margin-bottom: 22px; }
+  .head h1 {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.03em;
+    margin-bottom: 4px;
+  }
+  .head .sub { color: var(--text-secondary); font-size: 14px; }
+
+  .filters {
+    display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .filters select {
+    background: var(--bg-surface); border: 1px solid var(--border-subtle);
+    color: var(--text-primary); padding: 8px 12px; border-radius: 8px;
+    font: inherit; font-size: 13px;
+  }
+  .filters .btn { margin-left: auto; padding: 8px 14px; height: 36px; font-size: 13px; }
+
+  .sales-card {
+    background: var(--bg-surface); border: 1px solid var(--border-subtle);
+    border-radius: 14px; padding: 8px 18px;
+  }
+  .sale-row {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    align-items: center;
+  }
+  .sale-row:last-child { border-bottom: none; }
+  .sale-thumb { width: 44px; height: 34px; border-radius: 6px; overflow: hidden; position: relative; }
+  .sale-info .ttl { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+  .sale-info .meta { font-size: 12px; color: var(--text-tertiary); display: flex; gap: 8px; align-items: center; }
+  .sale-info .bib-mini { font-family: var(--font-mono); background: var(--bg-elevated); padding: 1px 6px; border-radius: 4px; font-size: 10.5px; }
+  .sale-row .price { font-family: var(--font-mono); font-weight: 500; font-size: 14px; color: var(--accent); }
+</style>
+</head>
+<body data-screen-label="Ventas">
+  <header class="top">
+    <div class="top-left">
+      <a href="dashboard.html" class="back-btn"><i class="ti ti-arrow-left" style="font-size: 18px;"></i><span>Panel</span></a>
+      <div class="top-divider"></div>
+      <a href="index.html" class="logo">cuerv<span class="logo-dot"></span>to</a>
+    </div>
+    <div class="top-actions"><a href="perfil.html" class="avatar">AL</a></div>
+  </header>
+
+  <main class="wrap">
+    <div class="head">
+      <h1>Ventas</h1>
+      <div class="sub">1.247 ventas registradas · cobros automáticos vía Mercado Pago.</div>
+    </div>
+
+    <div class="filters">
+      <select>
+        <option>Todos los eventos</option>
+        <option>Maratón BA</option>
+        <option>Trail Patagonia</option>
+        <option>Gran Fondo Andes</option>
+      </select>
+      <select>
+        <option>Últimos 30 días</option>
+        <option>Hoy</option>
+        <option>Esta semana</option>
+        <option>Este mes</option>
+      </select>
+      <button class="btn btn-outline"><i class="ti ti-download" style="font-size: 14px;"></i>Exportar CSV</button>
+    </div>
+
+    <div class="sales-card" id="salesList"></div>
+  </main>
+
+  <script>
+    const SALES = [
+      { ev: 'Maratón BA', count: '4 fotos', bib: '#4218', when: 'hace 12 min', amt: '$9.600',  warm: true },
+      { ev: 'Trail Patagonia', count: '7 fotos', bib: null, when: 'hace 1 hora', amt: '$12.600', cool: true },
+      { ev: 'Gran Fondo Andes', count: '3 fotos', bib: '#1456', when: 'hace 2 horas', amt: '$5.400' },
+      { ev: '10K Nocturna', count: 'pack 14', bib: '#3201', when: 'ayer', amt: '$25.200', warm: true },
+      { ev: 'Maratón BA', count: '6 fotos', bib: '#892',  when: 'ayer', amt: '$14.400', cool: true },
+      { ev: 'Trail Patagonia', count: '5 fotos', bib: null, when: 'hace 2 días', amt: '$12.000', warm: true },
+      { ev: 'Gran Fondo Andes', count: 'pack 10', bib: '#2104', when: 'hace 3 días', amt: '$18.000' },
+      { ev: 'Maratón BA', count: '8 fotos', bib: '#5012', when: 'hace 3 días', amt: '$19.200', warm: true },
+    ];
+    document.getElementById('salesList').innerHTML = SALES.map(s => `
+      <div class="sale-row">
+        <div class="sale-thumb photo-ph ${s.warm ? 'photo-ph-warm' : (s.cool ? 'photo-ph-cool' : '')}" data-label=""></div>
+        <div class="sale-info">
+          <div class="ttl">${s.ev} · ${s.count}</div>
+          <div class="meta">${s.bib ? `<span class="bib-mini">${s.bib}</span>` : ''}<span>${s.when}</span></div>
+        </div>
+        <span class="price">${s.amt}</span>
+      </div>
+    `).join('');
+  </script>
+  <script src="panel-anim.js" defer></script>
+</body>
+</html>

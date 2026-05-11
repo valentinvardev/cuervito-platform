@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Buscar eventos · cuervito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+  /* Nav (shared) */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(15, 13, 11, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 68px; }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a { font-size: 14px; color: var(--text-secondary); transition: color 150ms ease; }
+  .nav-links a:hover, .nav-links a.active { color: var(--text-primary); }
+  .nav-links a.active { position: relative; }
+  .nav-links a.active::after {
+    content: ''; position: absolute; bottom: -24px; left: 0; right: 0; height: 2px; background: var(--accent);
+  }
+  .nav-cta { display: flex; gap: 10px; align-items: center; }
+  @media (max-width: 880px) { .nav-links { display: none; } }
+
+  /* ===== Page header ===== */
+  .page-head {
+    padding: 36px 0 28px;
+    border-bottom: 1px solid var(--border-subtle);
+    background:
+      radial-gradient(ellipse 60% 80% at 50% 0%, var(--accent-deep), transparent 70%),
+      var(--bg-base);
+  }
+  .page-head h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(32px, 4.5vw, 48px);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 8px;
+  }
+  .page-head p { color: var(--text-secondary); font-size: 16px; margin-bottom: 28px; }
+
+  /* Search bar — unified pill with location, search, and filters */
+  .search-shell {
+    display: flex;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 14px;
+    padding: 6px;
+    gap: 6px;
+    align-items: stretch;
+    transition: all 200ms ease;
+  }
+  .search-shell:focus-within { border-color: var(--border-accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+  .geo-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 0 14px;
+    height: 52px;
+    border-radius: 9px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 150ms ease;
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    font: inherit;
+  }
+  .geo-chip:hover { background: var(--bg-elevated); color: var(--text-primary); }
+  .geo-chip.on, .prov-drop.open .geo-chip {
+    color: var(--accent); background: var(--accent-deep);
+  }
+  .geo-chip i { font-size: 18px; }
+  .geo-chip .chev { font-size: 14px; color: var(--text-tertiary); transition: transform 200ms; }
+  .prov-drop.open .geo-chip .chev { transform: rotate(180deg); color: var(--accent); }
+  .geo-chip strong { font-weight: 600; color: inherit; }
+
+  /* Province dropdown */
+  .prov-drop { position: relative; }
+  .prov-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 60;
+    min-width: 280px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    padding: 6px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.5);
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 220ms cubic-bezier(.2,.7,.2,1);
+    display: flex;
+    flex-direction: column;
+    max-height: 360px;
+  }
+  .prov-drop.open .prov-menu { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+  .prov-search {
+    position: relative;
+    padding: 4px 6px 6px;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 4px;
+  }
+  .prov-search i {
+    position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
+    color: var(--text-tertiary); font-size: 16px;
+  }
+  .prov-search input {
+    width: 100%;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    padding: 9px 12px 9px 36px;
+    border-radius: 8px;
+    font: inherit; font-size: 13.5px;
+    transition: border-color 150ms;
+  }
+  .prov-search input:focus { border-color: var(--border-accent); outline: none; }
+  .prov-list {
+    flex: 1; overflow-y: auto;
+    padding: 2px;
+  }
+  .prov-option {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 7px;
+    font-size: 13.5px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 120ms;
+    background: transparent; border: none;
+    text-align: left;
+    gap: 8px;
+  }
+  .prov-option:hover { background: var(--bg-base); }
+  .prov-option .check {
+    width: 16px; height: 16px;
+    color: var(--accent);
+    opacity: 0;
+    flex-shrink: 0;
+  }
+  .prov-option.active { color: var(--accent); background: var(--accent-deep); }
+  .prov-option.active .check { opacity: 1; }
+  .prov-empty {
+    padding: 18px 14px;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 13px;
+  }
+
+  .search-divider { width: 1px; background: var(--border-subtle); margin: 8px 0; }
+
+  .search-input-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    min-width: 0;
+  }
+  .search-input-wrap .ti-search {
+    color: var(--text-tertiary);
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 15px;
+    height: 52px;
+    min-width: 0;
+  }
+  .search-input::placeholder { color: var(--text-tertiary); }
+
+  .filters-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 0 14px;
+    height: 52px;
+    border-radius: 9px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 150ms ease;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    font: inherit;
+    position: relative;
+  }
+  .filters-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
+  .filters-btn i { font-size: 18px; }
+  .filters-btn .count {
+    background: var(--accent);
+    color: var(--text-on-accent);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 999px;
+    margin-left: 2px;
+  }
+
+  .search-go {
+    height: 52px;
+    padding: 0 22px;
+    border-radius: 9px;
+    background: var(--accent);
+    color: var(--text-on-accent);
+    border: none;
+    font: inherit;
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-flex; align-items: center; gap: 6px;
+    cursor: pointer;
+    transition: all 150ms ease;
+    flex-shrink: 0;
+  }
+  .search-go:hover { background: var(--accent-bright); }
+  .search-go i { font-size: 18px; }
+
+  @media (max-width: 760px) {
+    .search-shell { flex-wrap: wrap; padding: 8px; gap: 4px; }
+    .search-divider { display: none; }
+    .geo-chip, .filters-btn { height: 44px; }
+    .search-input { height: 44px; }
+    .search-go { width: 100%; height: 46px; }
+    .search-input-wrap { width: 100%; order: 1; border-top: 1px solid var(--border-subtle); padding-top: 4px; padding-bottom: 4px; }
+    .geo-chip { order: 0; flex: 1; }
+    .filters-btn { order: 0; }
+  }
+
+  /* ===== Layout ===== */
+  .page-body {
+    padding: 32px 0 80px;
+  }
+
+  /* ===== Results ===== */
+  .results-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .results-head h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 24px;
+    letter-spacing: -0.02em;
+  }
+  .results-head h2 .count {
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    font-weight: 400;
+    font-size: 16px;
+    margin-left: 8px;
+  }
+  .sort {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--text-secondary);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 7px 12px;
+    cursor: pointer;
+  }
+  .sort:hover { border-color: var(--border-default); color: var(--text-primary); }
+
+  .results-section { margin-bottom: 56px; }
+  .results-section .results-head { margin-bottom: 18px; }
+
+  /* Bigger grid: 4 columns on wide, 3 mid, 2 narrow, 1 mobile */
+  .events-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 1280px) { .events-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 900px)  { .events-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px)  { .events-grid { grid-template-columns: 1fr; } }
+
+  .event-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 200ms ease;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+  }
+  .event-card:hover { transform: translateY(-3px); border-color: var(--border-accent); }
+  .event-cover {
+    aspect-ratio: 16/10;
+    position: relative;
+  }
+  .event-cover .badge { position: absolute; top: 12px; left: 12px; }
+  .event-cover .distance {
+    position: absolute; top: 12px; right: 12px;
+    background: rgba(15, 13, 11, 0.85);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    backdrop-filter: blur(8px);
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .event-cover .distance i { font-size: 12px; color: var(--accent); }
+  .event-body { padding: 16px 18px 18px; flex: 1; display: flex; flex-direction: column; }
+  .event-body h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.015em;
+    margin-bottom: 6px;
+    line-height: 1.25;
+  }
+  .event-meta { color: var(--text-secondary); font-size: 13px; margin-bottom: 12px; display: flex; gap: 8px; align-items: center; }
+  .event-meta .sep { width: 3px; height: 3px; background: var(--text-tertiary); border-radius: 50%; opacity: 0.6; }
+  .event-foot {
+    margin-top: auto;
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .event-foot .photos { font-family: var(--font-mono); font-size: 13px; color: var(--accent); }
+  .event-foot i { color: var(--text-tertiary); transition: all 150ms; }
+  .event-card:hover .event-foot i { color: var(--accent); transform: translateX(3px); }
+
+  /* ===== Filters drawer ===== */
+  .drawer-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(8, 6, 5, 0.6);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    opacity: 0; pointer-events: none;
+    transition: opacity 200ms;
+  }
+  .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: 380px; max-width: calc(100vw - 40px);
+    background: var(--bg-surface);
+    border-left: 1px solid var(--border-subtle);
+    z-index: 101;
+    transform: translateX(100%);
+    transition: transform 280ms cubic-bezier(0.2, 0.9, 0.3, 1);
+    display: flex; flex-direction: column;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-head {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .drawer-head h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.02em;
+  }
+  .drawer-close {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+  }
+  .drawer-close:hover { background: var(--bg-elevated); color: var(--text-primary); }
+  .drawer-body { padding: 22px; overflow-y: auto; flex: 1; }
+
+  .filter-group { margin-bottom: 28px; }
+  .filter-group h4 {
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+  }
+
+  /* sport pills inside drawer */
+  .sport-pills {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .sport-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 12px;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: all 120ms;
+    text-align: left;
+  }
+  .sport-pill:hover { border-color: var(--border-default); color: var(--text-primary); }
+  .sport-pill.active {
+    background: var(--accent-deep);
+    border-color: var(--border-accent);
+    color: var(--accent-bright);
+  }
+  .sport-pill i { font-size: 16px; }
+  .sport-pill .qty { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
+  .sport-pill.active .qty { color: var(--accent-bright); }
+
+  .filter-group ul { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .filter-group li {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 120ms ease;
+  }
+  .filter-group li:hover { background: var(--bg-base); color: var(--text-primary); }
+  .filter-group li.checked { color: var(--text-primary); background: var(--bg-base); }
+  .filter-group li.checked .checkbox { background: var(--accent); border-color: var(--accent); }
+  .filter-group li.checked .checkbox::after { opacity: 1; }
+  .filter-group li .left { display: flex; align-items: center; gap: 10px; }
+  .checkbox {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 4px;
+    position: relative;
+    transition: all 120ms ease;
+    flex-shrink: 0;
+  }
+  .checkbox::after {
+    content: ''; position: absolute;
+    top: 1px; left: 4px;
+    width: 4px; height: 8px;
+    border: solid var(--text-on-accent);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    opacity: 0;
+    transition: opacity 100ms;
+  }
+  .filter-group li .qty { font-family: var(--font-mono); font-size: 12px; color: var(--text-tertiary); }
+  .range {
+    width: 100%;
+    -webkit-appearance: none; appearance: none;
+    height: 4px;
+    background: var(--bg-base);
+    border-radius: 999px;
+    outline: none;
+  }
+  .range::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 16px; height: 16px;
+    background: var(--accent);
+    border-radius: 50%; cursor: pointer;
+    border: 3px solid var(--bg-base);
+  }
+  .range-vals {
+    display: flex; justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: 8px;
+  }
+  .drawer-foot {
+    padding: 14px 22px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex; gap: 10px;
+    flex-shrink: 0;
+  }
+  .drawer-foot .btn { flex: 1; }
+</style>
+</head>
+<body data-screen-label="Buscar eventos">
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="logo">cuerv<span class="logo-dot"></span>to</a>
+      <div class="nav-links">
+        <a href="search.html" class="active">Eventos</a>
+        <a href="onboarding.html">Fotógrafos</a>
+        <a href="index.html#como-funciona">Cómo funciona</a>
+        <a href="#">Precios</a>
+      </div>
+      <div class="nav-cta">
+        <a href="onboarding.html" class="btn btn-outline">Soy fotógrafo</a>
+        <a href="dashboard.html" class="btn btn-primary"><i class="ti ti-user"></i>Mi cuenta</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="page-head">
+    <div class="container">
+      <h1>Buscá tu evento</h1>
+      <p>Por nombre, deporte, fecha o ubicación. Activá la geolocalización para ver lo más cercano primero.</p>
+
+      <div class="search-shell">
+        <div class="prov-drop" id="provDrop">
+          <button class="geo-chip" id="provTrigger" type="button">
+            <i class="ti ti-map-pin-filled"></i>
+            <span><strong id="provLabel">CABA</strong></span>
+            <i class="ti ti-chevron-down chev"></i>
+          </button>
+          <div class="prov-menu" id="provMenu">
+            <div class="prov-search">
+              <i class="ti ti-search"></i>
+              <input id="provSearchInput" placeholder="Buscar provincia…" autocomplete="off" />
+            </div>
+            <div class="prov-list" id="provList"></div>
+          </div>
+        </div>
+        <div class="search-divider"></div>
+        <div class="search-input-wrap">
+          <i class="ti ti-search"></i>
+          <input class="search-input" type="text" placeholder="Maratón, trail, ciclismo..." aria-label="Buscar evento" />
+        </div>
+        <div class="search-divider"></div>
+        <button class="filters-btn" id="openFilters">
+          <i class="ti ti-adjustments-horizontal"></i>
+          <span>Filtros</span>
+          <span class="count" id="filterCount">3</span>
+        </button>
+        <button class="search-go">
+          <i class="ti ti-search"></i>
+          <span>Buscar</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="page-body">
+      <!-- Cerca tuyo -->
+      <section class="results-section">
+        <div class="results-head">
+          <h2>Cerca tuyo <span class="count">12 eventos</span></h2>
+          <button class="sort">Más cercanos primero <i class="ti ti-chevron-down"></i></button>
+        </div>
+        <div class="events-grid" id="nearGrid"></div>
+      </section>
+
+      <!-- Próximos -->
+      <section class="results-section">
+        <div class="results-head">
+          <h2>Próximos eventos <span class="count">186 esta temporada</span></h2>
+          <button class="sort">Por fecha <i class="ti ti-chevron-down"></i></button>
+        </div>
+        <div class="events-grid" id="upcomingGrid"></div>
+      </section>
+
+      <!-- Recientes con fotos -->
+      <section class="results-section">
+        <div class="results-head">
+          <h2>Recientes con fotos disponibles</h2>
+          <button class="sort">Más populares <i class="ti ti-chevron-down"></i></button>
+        </div>
+        <div class="events-grid" id="recentGrid"></div>
+      </section>
+
+      <div style="text-align: center; padding: 24px;">
+        <button class="btn btn-outline btn-lg">
+          Cargar más eventos <i class="ti ti-chevron-down"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Filters drawer ===== -->
+  <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+  <aside class="drawer" id="drawer">
+    <div class="drawer-head">
+      <div>
+        <h3>Filtros</h3>
+        <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;">
+          <span id="filterSummary">3 filtros activos</span>
+        </div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()"><i class="ti ti-x"></i></button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="filter-group">
+        <h4>Deporte</h4>
+        <div class="sport-pills">
+          <button class="sport-pill active" data-sport="all"><i class="ti ti-circles"></i>Todos<span class="qty">2.4K</span></button>
+          <button class="sport-pill" data-sport="running"><i class="ti ti-run"></i>Running<span class="qty">820</span></button>
+          <button class="sport-pill" data-sport="trail"><i class="ti ti-mountain"></i>Trail<span class="qty">340</span></button>
+          <button class="sport-pill" data-sport="bike"><i class="ti ti-bike"></i>Ciclismo<span class="qty">412</span></button>
+          <button class="sport-pill" data-sport="mtb"><i class="ti ti-bike-off"></i>MTB<span class="qty">208</span></button>
+          <button class="sport-pill" data-sport="tri"><i class="ti ti-swimming"></i>Triatlón<span class="qty">186</span></button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <h4>Distancia</h4>
+        <input type="range" min="5" max="200" value="80" class="range" />
+        <div class="range-vals"><span>5 km</span><span>80 km</span><span>200+ km</span></div>
+      </div>
+
+      <div class="filter-group">
+        <h4>Fecha</h4>
+        <ul>
+          <li class="checked"><div class="left"><span class="checkbox"></span>Esta semana</div><span class="qty">42</span></li>
+          <li class="checked"><div class="left"><span class="checkbox"></span>Este mes</div><span class="qty">186</span></li>
+          <li><div class="left"><span class="checkbox"></span>Próximos 3 meses</div><span class="qty">412</span></li>
+          <li><div class="left"><span class="checkbox"></span>Eventos pasados</div><span class="qty">1.8K</span></li>
+        </ul>
+      </div>
+
+      <div class="filter-group">
+        <h4>Estado</h4>
+        <ul>
+          <li class="checked"><div class="left"><span class="checkbox"></span>Con fotos disponibles</div><span class="qty">1.4K</span></li>
+          <li><div class="left"><span class="checkbox"></span>Próximamente</div><span class="qty">214</span></li>
+          <li><div class="left"><span class="checkbox"></span>Procesando fotos</div><span class="qty">38</span></li>
+        </ul>
+      </div>
+
+      <div class="filter-group">
+        <h4>Provincia</h4>
+        <ul>
+          <li><div class="left"><span class="checkbox"></span>CABA</div><span class="qty">312</span></li>
+          <li><div class="left"><span class="checkbox"></span>Buenos Aires</div><span class="qty">486</span></li>
+          <li><div class="left"><span class="checkbox"></span>Córdoba</div><span class="qty">241</span></li>
+          <li><div class="left"><span class="checkbox"></span>Mendoza</div><span class="qty">198</span></li>
+          <li><div class="left"><span class="checkbox"></span>Patagonia</div><span class="qty">112</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="drawer-foot">
+      <button class="btn btn-outline" onclick="clearFilters()">Limpiar</button>
+      <button class="btn btn-primary" onclick="closeDrawer()">Ver 1.247 eventos</button>
+    </div>
+  </aside>
+
+  <script>
+    const NEAR = [
+      { sport: 'running', sportLabel: 'Running', icon: 'ti-run', name: 'Maratón Internacional Buenos Aires', date: '12 nov · 2025', city: 'CABA', photos: '8.420', dist: '3.2 km', warm: true },
+      { sport: 'trail', sportLabel: 'Trail', icon: 'ti-mountain', name: '21K Reserva Costanera Norte', date: '24 nov · 2025', city: 'CABA', photos: '1.840', dist: '5.8 km', cool: true },
+      { sport: 'bike', sportLabel: 'Ciclismo', icon: 'ti-bike', name: 'Doble Bragado · Ruta 7', date: '8 dic · 2025', city: 'Bragado, BA', photos: '—', dist: '12 km', warm: false },
+      { sport: 'tri', sportLabel: 'Triatlón', icon: 'ti-swimming', name: 'Triatlón Olímpico Tigre', date: '15 dic · 2025', city: 'Tigre, BA', photos: '—', dist: '18 km', cool: true },
+      { sport: 'running', sportLabel: 'Running', icon: 'ti-run', name: '10K Nocturna Palermo', date: '5 dic · 2025', city: 'CABA', photos: '—', dist: '4.1 km', warm: true },
+      { sport: 'mtb', sportLabel: 'MTB', icon: 'ti-bike-off', name: 'Rally MTB Sierras Bonaerenses', date: '20 dic · 2025', city: 'Tandil, BA', photos: '—', dist: '24 km', warm: false },
+      { sport: 'running', sportLabel: 'Running', icon: 'ti-run', name: 'Cross La Plata 8K', date: '14 dic · 2025', city: 'La Plata, BA', photos: '—', dist: '52 km', cool: true },
+      { sport: 'trail', sportLabel: 'Trail', icon: 'ti-mountain', name: 'Trail Sierra de la Ventana', date: '11 ene · 2026', city: 'Sierra de la Ventana', photos: '—', dist: '78 km', warm: true },
+    ];
+
+    const UPCOMING = [
+      { sport: 'bike', sportLabel: 'Ciclismo', icon: 'ti-bike', name: 'Gran Fondo Andes 200K', date: '5 nov · 2025', city: 'Mendoza', photos: '3.890', cool: true },
+      { sport: 'trail', sportLabel: 'Trail', icon: 'ti-mountain', name: 'Trail Patagonia 50K', date: '22 oct · 2025', city: 'Bariloche', photos: '2.140', warm: true },
+      { sport: 'running', sportLabel: 'Running', icon: 'ti-run', name: 'Half Marathon Rosario', date: '18 nov · 2025', city: 'Rosario', photos: '—', warm: true },
+      { sport: 'tri', sportLabel: 'Triatlón', icon: 'ti-swimming', name: 'Half Iron Mar del Plata', date: '7 dic · 2025', city: 'Mar del Plata', photos: '—', cool: true },
+    ];
+
+    const RECENT = [
+      { sport: 'tri', sportLabel: 'Triatlón', icon: 'ti-swimming', name: 'Triatlón Mar del Plata Olímpico', date: '29 oct · 2025', city: 'Mar del Plata', photos: '5.612', cool: true },
+      { sport: 'running', sportLabel: 'Running', icon: 'ti-run', name: 'Maratón Córdoba', date: '15 oct · 2025', city: 'Córdoba', photos: '6.230', warm: true },
+      { sport: 'mtb', sportLabel: 'MTB', icon: 'ti-bike-off', name: 'Desafío Río Pinto MTB', date: '8 oct · 2025', city: 'Capilla del Monte', photos: '4.180', warm: false },
+      { sport: 'trail', sportLabel: 'Trail', icon: 'ti-mountain', name: 'Cruce Andes 80K', date: '2 oct · 2025', city: 'San Martín de los Andes', photos: '3.420', cool: true },
+    ];
+
+    function renderEvent(e, includeDistance) {
+      const phClass = e.cool ? 'photo-ph-cool' : (e.warm ? 'photo-ph-warm' : 'photo-ph');
+      const photosHtml = e.photos === '—'
+        ? `<span class="badge badge-warning badge-dot" style="font-size: 11px; padding: 3px 8px;">Próximamente</span>`
+        : `<span class="photos">${e.photos} fotos</span>`;
+      return `
+        <a class="event-card" href="gallery.html">
+          <div class="event-cover photo-ph ${phClass}" data-label=""></div>
+          <div class="event-body">
+            <h4>${e.name}</h4>
+            <div class="event-meta"><span>${e.date}</span><span class="sep"></span><span>${e.city}</span></div>
+            <div class="event-foot">
+              ${photosHtml}
+              <i class="ti ti-arrow-up-right" style="font-size: 16px;"></i>
+            </div>
+          </div>
+        </a>
+      `;
+    }
+
+    document.getElementById('nearGrid').innerHTML = NEAR.map(e => renderEvent(e, true)).join('');
+    document.getElementById('upcomingGrid').innerHTML = UPCOMING.map(e => renderEvent(e, false)).join('');
+    document.getElementById('recentGrid').innerHTML = RECENT.map(e => renderEvent(e, false)).join('');
+
+    // ============ Province dropdown ============
+    const PROVINCIAS = [
+      'CABA', 'Buenos Aires', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba',
+      'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja',
+      'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan',
+      'San Luis', 'Santa Cruz', 'Santa Fe', 'Santiago del Estero',
+      'Tierra del Fuego', 'Tucumán',
+    ];
+    let selectedProv = 'CABA';
+
+    const provDrop = document.getElementById('provDrop');
+    const provTrigger = document.getElementById('provTrigger');
+    const provLabel = document.getElementById('provLabel');
+    const provSearchInput = document.getElementById('provSearchInput');
+    const provListEl = document.getElementById('provList');
+
+    function normalize(s) {
+      return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    function renderProvList() {
+      const q = normalize(provSearchInput.value.trim());
+      const filtered = PROVINCIAS.filter(p => normalize(p).includes(q));
+      if (filtered.length === 0) {
+        provListEl.innerHTML = '<div class="prov-empty">Sin resultados</div>';
+        return;
+      }
+      provListEl.innerHTML = filtered.map(p => `
+        <button class="prov-option ${p === selectedProv ? 'active' : ''}" type="button" data-prov="${p}">
+          <span>${p}</span>
+          <i class="ti ti-check check"></i>
+        </button>`).join('');
+    }
+
+    function openProvDrop() {
+      provDrop.classList.add('open');
+      renderProvList();
+      setTimeout(() => provSearchInput.focus(), 80);
+    }
+    function closeProvDrop() {
+      provDrop.classList.remove('open');
+      provSearchInput.value = '';
+    }
+    function selectProv(p) {
+      selectedProv = p;
+      provLabel.textContent = p;
+      closeProvDrop();
+    }
+
+    provTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (provDrop.classList.contains('open')) closeProvDrop();
+      else openProvDrop();
+    });
+    document.addEventListener('click', (e) => {
+      if (!provDrop.contains(e.target)) closeProvDrop();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && provDrop.classList.contains('open')) closeProvDrop();
+    });
+    provSearchInput.addEventListener('input', renderProvList);
+    provListEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-prov]');
+      if (btn) selectProv(btn.dataset.prov);
+    });
+
+    // Drawer
+    const drawer = document.getElementById('drawer');
+    const backdrop = document.getElementById('drawerBackdrop');
+    function openDrawer() { drawer.classList.add('open'); backdrop.classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open'); document.body.style.overflow = ''; }
+    document.getElementById('openFilters').addEventListener('click', openDrawer);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+    // Sport pills (drawer)
+    document.querySelectorAll('.sport-pill').forEach(p => {
+      p.addEventListener('click', () => {
+        document.querySelectorAll('.sport-pill').forEach(b => b.classList.remove('active'));
+        p.classList.add('active');
+        updateFilterCount();
+      });
+    });
+
+    // Checkbox toggle (drawer)
+    document.querySelectorAll('.filter-group li').forEach(li => {
+      li.addEventListener('click', () => {
+        li.classList.toggle('checked');
+        updateFilterCount();
+      });
+    });
+
+    function updateFilterCount() {
+      const active = document.querySelectorAll('.filter-group li.checked').length;
+      const sportActive = document.querySelector('.sport-pill.active')?.dataset.sport !== 'all' ? 1 : 0;
+      const total = active + sportActive;
+      const countEl = document.getElementById('filterCount');
+      const summaryEl = document.getElementById('filterSummary');
+      if (total === 0) {
+        countEl.style.display = 'none';
+        summaryEl.textContent = 'Sin filtros activos';
+      } else {
+        countEl.style.display = 'inline';
+        countEl.textContent = total;
+        summaryEl.textContent = `${total} ${total === 1 ? 'filtro activo' : 'filtros activos'}`;
+      }
+    }
+
+    function clearFilters() {
+      document.querySelectorAll('.filter-group li.checked').forEach(li => li.classList.remove('checked'));
+      document.querySelectorAll('.sport-pill').forEach(b => b.classList.remove('active'));
+      document.querySelector('.sport-pill[data-sport="all"]').classList.add('active');
+      updateFilterCount();
+    }
+
+    updateFilterCount();
+  </script>
+</body>
+</html>

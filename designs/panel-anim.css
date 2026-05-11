@@ -1,0 +1,77 @@
+/* ==========================================================
+   panel-anim.css — animaciones del panel admin
+   - View Transitions API entre páginas (Chromium / Safari TP)
+   - Stagger reveal al cargar (todos los browsers)
+   - Fallback JS para navegación con fade-out (panel-anim.js)
+   - Fade-in del body en cada carga (entrada coherente)
+   ========================================================== */
+
+/* Body fade-in on every page load — para entradas suaves desde
+   navegación normal o desde onboarding's body.leaving fade-out.
+   IMPORTANT: usa `backwards` (no `both`) — un `transform` retenido en <body>
+   crea un containing block para los hijos `position: fixed` (drawers, modales)
+   y rompe su anclaje al viewport. `backwards` aplica el from-state durante la
+   animación pero al terminar el body vuelve a `transform: none`. */
+body {
+  animation: page-fade-in 480ms cubic-bezier(.2, .7, .2, 1) backwards;
+}
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Cross-document transitions — Chromium 126+, Safari 18.2+ */
+@view-transition { navigation: auto; }
+
+::view-transition-old(root) {
+  animation: panel-leave 220ms cubic-bezier(.4, 0, 1, 1) both;
+}
+::view-transition-new(root) {
+  animation: panel-enter 320ms cubic-bezier(.2, .7, .2, 1) both;
+}
+
+@keyframes panel-leave {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-8px); }
+}
+@keyframes panel-enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Header sticks across the transition (no flicker) */
+.top { view-transition-name: panel-top; }
+::view-transition-old(panel-top),
+::view-transition-new(panel-top) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(.2, .7, .2, 1);
+}
+
+/* ===== Stagger reveal on load ===== */
+.appear {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: panel-rise 520ms cubic-bezier(.2, .7, .2, 1) forwards;
+  animation-delay: calc(var(--i, 0) * 55ms + 60ms);
+  will-change: opacity, transform;
+}
+@keyframes panel-rise {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== JS fallback: body fade-out before navigating ===== */
+body.panel-leaving {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .appear,
+  body.panel-leaving { animation: none !important; opacity: 1 !important; transform: none !important; transition: none !important; }
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-old(panel-top),
+  ::view-transition-new(panel-top) { animation: none !important; }
+}

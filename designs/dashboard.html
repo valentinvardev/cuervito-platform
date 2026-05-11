@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Panel · cuervito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="panel-anim.css" />
+<style>
+  body { background: var(--bg-base); }
+
+  .top {
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(15,13,11,0.85);
+    backdrop-filter: blur(10px);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .top-left { display: flex; align-items: center; gap: 16px; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    transition: all 150ms;
+  }
+  .back-btn:hover { background: var(--bg-surface); color: var(--text-primary); }
+  .top-divider { width: 1px; height: 24px; background: var(--border-subtle); }
+  .top-actions { display: flex; align-items: center; gap: 10px; }
+  .top-icon {
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative;
+  }
+  .top-icon:hover { color: var(--text-primary); border-color: var(--border-default); }
+  .top-icon .dot {
+    position: absolute; top: 8px; right: 8px;
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    border: 2px solid var(--bg-base);
+  }
+  .top .avatar {
+    width: 36px; height: 36px; font-size: 13px; cursor: pointer;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #F5820A, #ff9a3a);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #1a0d00; font-family: var(--font-display); font-weight: 800;
+  }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 32px 32px 80px;
+  }
+  @media (max-width: 700px) { .wrap { padding: 22px 18px 60px; } }
+
+  .greeting { margin-bottom: 22px; }
+  .greeting h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(26px, 4vw, 34px);
+    letter-spacing: -0.03em;
+    margin-bottom: 4px;
+  }
+  .greeting p { color: var(--text-secondary); font-size: 14px; }
+
+  /* ===== Compact sales card (top, small) ===== */
+  .sales-mini {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 18px;
+    align-items: center;
+    margin-bottom: 28px;
+  }
+  .sm-totals { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .sm-totals .label {
+    font-size: 11px; color: var(--text-tertiary);
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .sm-totals .amount-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .sm-totals .amount {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 24px;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .sm-totals .amount .currency { color: var(--text-tertiary); margin-right: 2px; font-weight: 700; }
+  .sm-totals .delta {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--success);
+  }
+  .sm-totals .meta { font-size: 12px; color: var(--text-tertiary); }
+  .sparkline { width: 160px; height: 44px; }
+  .sparkline svg { width: 100%; height: 100%; display: block; }
+
+  /* Time-range dropdown */
+  .ts-drop {
+    position: relative;
+    user-select: none;
+  }
+  .ts-trigger {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: 9px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 150ms;
+    height: 38px;
+  }
+  .ts-trigger:hover { border-color: var(--border-default); }
+  .ts-trigger.open { border-color: var(--border-accent); background: var(--bg-elevated); }
+  .ts-trigger .lbl { color: var(--text-secondary); font-size: 11.5px; }
+  .ts-trigger .val { color: var(--accent); font-family: var(--font-mono); }
+  .ts-trigger .chev {
+    color: var(--text-tertiary);
+    transition: transform 200ms;
+    margin-left: 2px;
+  }
+  .ts-trigger.open .chev { transform: rotate(180deg); color: var(--accent); }
+
+  .ts-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 220px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+    padding: 5px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.5);
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 220ms cubic-bezier(.2,.7,.2,1);
+    z-index: 10;
+  }
+  .ts-drop.open .ts-menu {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+  .ts-option {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 7px;
+    font-size: 13.5px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 120ms;
+    gap: 10px;
+  }
+  .ts-option:hover { background: var(--bg-base); }
+  .ts-option .meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+  .ts-option.active {
+    color: var(--accent);
+    background: var(--accent-deep);
+  }
+  .ts-option.active .meta { color: var(--accent); }
+  .ts-option .check {
+    width: 16px; height: 16px;
+    color: var(--accent);
+    opacity: 0;
+  }
+  .ts-option.active .check { opacity: 1; }
+
+  @media (max-width: 720px) {
+    .sales-mini { grid-template-columns: 1fr auto; }
+    .sparkline { display: none; }
+  }
+  @media (max-width: 460px) {
+    .sales-mini { grid-template-columns: 1fr; }
+  }
+
+  /* ===== Section ===== */
+  .section { margin-bottom: 36px; }
+  .section-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 14px;
+  }
+  .section-head h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+  }
+
+  /* ===== Action cards ===== */
+  .action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 700px) { .action-grid { grid-template-columns: 1fr; } }
+
+  .action-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 22px;
+    cursor: pointer;
+    transition: all 200ms ease;
+    display: flex; flex-direction: column; gap: 14px;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    overflow: hidden;
+    min-height: 170px;
+  }
+  .action-card:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+    background: var(--bg-elevated);
+  }
+  .action-card.primary {
+    background: linear-gradient(140deg, var(--bg-surface) 0%, rgba(245,130,10,0.06) 100%);
+    border-color: var(--border-accent);
+  }
+  .action-icon {
+    width: 44px; height: 44px;
+    border-radius: 11px;
+    background: var(--accent-deep);
+    color: var(--accent);
+    border: 1px solid var(--border-accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .action-card h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+  .action-card p { color: var(--text-secondary); font-size: 13.5px; line-height: 1.5; }
+  .action-foot {
+    margin-top: auto;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+  .action-foot .arrow { color: var(--accent); }
+
+</style>
+</head>
+<body data-screen-label="Panel fotógrafo">
+
+  <header class="top">
+    <div class="top-left">
+      <a href="index.html" class="back-btn">
+        <i class="ti ti-arrow-left" style="font-size: 18px;"></i>
+        <span>Inicio</span>
+      </a>
+      <div class="top-divider"></div>
+      <a href="index.html" class="logo">cuerv<span class="logo-dot"></span>to</a>
+    </div>
+    <div class="top-actions">
+      <button class="top-icon"><i class="ti ti-bell"></i><span class="dot"></span></button>
+      <button class="top-icon"><i class="ti ti-help-circle"></i></button>
+      <a href="perfil.html" class="avatar" title="Perfil">AL</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <div class="greeting">
+      <h1>Buen día, Ana</h1>
+      <p>Tenés 3 ventas nuevas desde ayer.</p>
+    </div>
+
+    <!-- ====== Compact sales chart (small, on top) ====== -->
+    <section class="sales-mini" aria-label="Resumen de ventas">
+      <div class="sm-totals">
+        <span class="label" id="ts-label">Últimos 30 días</span>
+        <div class="amount-row">
+          <div class="amount"><span class="currency">$</span><span id="ts-amount">684.200</span></div>
+          <span class="delta" id="ts-delta"><i class="ti ti-trending-up" style="font-size: 12px;"></i><span>+18%</span></span>
+        </div>
+        <span class="meta"><span id="ts-photos">1.247</span> fotos · ticket prom. $<span id="ts-avg">3.210</span></span>
+      </div>
+
+      <div class="sparkline" aria-hidden="true">
+        <svg viewBox="0 0 160 44" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#F5820A" stop-opacity="0.32"/>
+              <stop offset="100%" stop-color="#F5820A" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path id="spark-area" fill="url(#spark-grad)"></path>
+          <path id="spark-line" fill="none" stroke="#F5820A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+          <circle id="spark-pt" r="2.6" fill="#F5820A" stroke="#0F0D0B" stroke-width="1.4"></circle>
+        </svg>
+      </div>
+
+      <div class="ts-drop" id="tsDrop">
+        <button class="ts-trigger" id="tsTrigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+          <i class="ti ti-calendar-stats" style="font-size: 14px; color: var(--text-tertiary);"></i>
+          <span class="val" id="tsTriggerLabel">30 días</span>
+          <i class="ti ti-chevron-down chev"></i>
+        </button>
+        <div class="ts-menu" role="listbox">
+          <button class="ts-option" data-ts="7d"  type="button"><span>Últimos 7 días</span><span class="meta">7d</span><i class="ti ti-check check"></i></button>
+          <button class="ts-option active" data-ts="30d" type="button"><span>Últimos 30 días</span><span class="meta">30d</span><i class="ti ti-check check"></i></button>
+          <button class="ts-option" data-ts="90d" type="button"><span>Últimos 90 días</span><span class="meta">90d</span><i class="ti ti-check check"></i></button>
+          <button class="ts-option" data-ts="1y"  type="button"><span>Último año</span><span class="meta">1a</span><i class="ti ti-check check"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== Acciones rápidas ====== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Qué querés hacer hoy</h2>
+      </div>
+
+      <div class="action-grid">
+        <a class="action-card primary" href="events.html">
+          <div class="action-icon"><i class="ti ti-calendar-event"></i></div>
+          <div>
+            <h3>Eventos</h3>
+            <p>Gestioná tus eventos: subí fotos, editá portada, título y descripción.</p>
+          </div>
+          <div class="action-foot">
+            <span>3 activos · 28 finalizados</span>
+            <span class="arrow"><i class="ti ti-arrow-right"></i></span>
+          </div>
+        </a>
+
+        <a class="action-card" href="ventas.html">
+          <div class="action-icon"><i class="ti ti-list-details"></i></div>
+          <div>
+            <h3>Ventas</h3>
+            <p>Detalle de cada venta, filtros por evento y exportar a CSV.</p>
+          </div>
+          <div class="action-foot">
+            <span>1.247 ventas registradas</span>
+            <span class="arrow"><i class="ti ti-arrow-right"></i></span>
+          </div>
+        </a>
+
+        <a class="action-card" href="tienda.html">
+          <div class="action-icon"><i class="ti ti-template"></i></div>
+          <div>
+            <h3>Página de venta</h3>
+            <p>Tu storefront público. Plantillas, colores, dominio propio.</p>
+          </div>
+          <div class="action-foot">
+            <span class="mono" style="font-size: 12px;">cuervito.app/ana-liotta</span>
+            <span class="arrow"><i class="ti ti-arrow-right"></i></span>
+          </div>
+        </a>
+
+        <a class="action-card" href="cobros.html">
+          <div class="action-icon"><i class="ti ti-credit-card-pay"></i></div>
+          <div>
+            <h3>Método de pago</h3>
+            <p>Cómo recibís el 90% de cada venta procesada.</p>
+          </div>
+          <div class="action-foot">
+            <span style="color: var(--success); display: inline-flex; align-items: center; gap: 4px;">
+              <i class="ti ti-circle-check-filled" style="font-size: 12px;"></i>Mercado Pago conectado
+            </span>
+            <span class="arrow"><i class="ti ti-arrow-right"></i></span>
+          </div>
+        </a>
+
+        <a class="action-card" href="perfil.html">
+          <div class="action-icon"><i class="ti ti-user-circle"></i></div>
+          <div>
+            <h3>Mi perfil</h3>
+            <p>Datos personales, especialidad, portfolio y medios de cobro.</p>
+          </div>
+          <div class="action-foot">
+            <span>Perfil completo</span>
+            <span class="arrow"><i class="ti ti-arrow-right"></i></span>
+          </div>
+        </a>
+
+        <a class="action-card" href="ayuda.html">
+          <div class="action-icon"><i class="ti ti-lifebuoy"></i></div>
+          <div>
+            <h3>Ayuda</h3>
+            <p>Guías, FAQ y soporte directo. Respondemos en 12hs hábiles.</p>
+          </div>
+          <div class="action-foot">
+            <span>Centro de ayuda</span>
+            <span class="arrow"><i class="ti ti-arrow-right"></i></span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // ====================== SPARK CHART ======================
+    const TS = {
+      '7d':  { label: 'Últimos 7 días',   amount: 162400, photos: 285,  delta: 12,  avg: 3215, points: [40,46,38,52,48,68,82] },
+      '30d': { label: 'Últimos 30 días',  amount: 684200, photos: 1247, delta: 18,  avg: 3210, points: [55,62,48,72,65,80,68,90,75,88,72,95,80,102,85,110,98,118,102,125,108,140,120,148,132,160,140,168,158,180] },
+      '90d': { label: 'Últimos 90 días',  amount: 1842300,photos: 3680, delta: 24,  avg: 3145, points: [40,55,48,72,60,85,75,95,80,110,92,125,110,140,128,155,142,168,150,180,165,190,178,200,185,210,195,220,205,230,218,240,228,250,238,260,248,268,258,275,265,280,272,288,278,295,285,300,290,305,295,310,300,315,305,320,310,325,315,330,320,335,325,340,330,345,335,350,340,355,345,360,350,365,355,370,360,375,365,380,370,385,375,390,380,395,385,400,390,405] },
+      '1y':  { label: 'Último año',       amount: 6420000,photos: 11450,delta: 42,  avg: 3270, points: [60,80,72,95,85,110,100,125,118,140,135,160,150,175,168,190,180,205,200,220,215,235,230,250,245,265,260,280,275,295,290,310,305,325,320,340,335,355,350,370,365,385,380,400,395,415,410,430,425,445] },
+    };
+    const fmt = n => n.toLocaleString('es-AR');
+
+    function buildSpark(points, w, h) {
+      const max = Math.max(...points), min = Math.min(...points);
+      const range = max - min || 1;
+      const padX = 2, padTop = 4, padBot = 4;
+      const usableW = w - padX * 2;
+      const usableH = h - padTop - padBot;
+      const step = usableW / (points.length - 1);
+      let line = '';
+      points.forEach((p, i) => {
+        const x = padX + i * step;
+        const y = padTop + (1 - (p - min) / range) * usableH;
+        line += (i === 0 ? 'M' : 'L') + ' ' + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
+      });
+      const lastX = padX + (points.length - 1) * step;
+      const baseY = padTop + usableH;
+      const area = line + ` L ${lastX} ${baseY} L ${padX} ${baseY} Z`;
+      const lp = points[points.length - 1];
+      const ptY = padTop + (1 - (lp - min) / range) * usableH;
+      return { line, area, ptX: lastX, ptY };
+    }
+
+    function setTimespan(key) {
+      const d = TS[key];
+      // sync dropdown active state + trigger label
+      document.querySelectorAll('.ts-option').forEach(b =>
+        b.classList.toggle('active', b.dataset.ts === key));
+      const shortMap = { '7d': '7 días', '30d': '30 días', '90d': '90 días', '1y': '1 año' };
+      document.getElementById('tsTriggerLabel').textContent = shortMap[key] ?? key;
+      document.getElementById('ts-label').textContent = d.label;
+      animateNumber('ts-amount', d.amount);
+      animateNumber('ts-avg', d.avg);
+      document.getElementById('ts-photos').textContent = fmt(d.photos);
+      const deltaEl = document.getElementById('ts-delta');
+      deltaEl.style.display = 'inline-flex';
+      deltaEl.innerHTML = `<i class="ti ti-trending-up" style="font-size: 12px;"></i><span>+${d.delta}%</span>`;
+
+      const { line, area, ptX, ptY } = buildSpark(d.points, 160, 44);
+      const lineEl = document.getElementById('spark-line');
+      const areaEl = document.getElementById('spark-area');
+      const ptEl   = document.getElementById('spark-pt');
+      lineEl.style.opacity = '0'; areaEl.style.opacity = '0';
+      setTimeout(() => {
+        lineEl.setAttribute('d', line);
+        areaEl.setAttribute('d', area);
+        ptEl.setAttribute('cx', ptX);
+        ptEl.setAttribute('cy', ptY);
+        lineEl.style.opacity = '1';
+        areaEl.style.opacity = '1';
+      }, 60);
+    }
+
+    function animateNumber(id, target) {
+      const el = document.getElementById(id);
+      const current = parseInt(el.textContent.replace(/\./g, '')) || 0;
+      const dur = 380, start = performance.now();
+      function tick(t) {
+        const e = Math.min(1, (t - start) / dur);
+        const eased = 1 - Math.pow(1 - e, 3);
+        el.textContent = fmt(Math.round(current + (target - current) * eased));
+        if (e < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    // ===== Dropdown behaviour =====
+    const tsDrop = document.getElementById('tsDrop');
+    const tsTrigger = document.getElementById('tsTrigger');
+    function closeTsDrop() {
+      tsDrop.classList.remove('open');
+      tsTrigger.classList.remove('open');
+      tsTrigger.setAttribute('aria-expanded', 'false');
+    }
+    function toggleTsDrop() {
+      const open = tsDrop.classList.toggle('open');
+      tsTrigger.classList.toggle('open', open);
+      tsTrigger.setAttribute('aria-expanded', String(open));
+    }
+    tsTrigger.addEventListener('click', (e) => { e.stopPropagation(); toggleTsDrop(); });
+    document.addEventListener('click', (e) => {
+      if (!tsDrop.contains(e.target)) closeTsDrop();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeTsDrop();
+    });
+    document.querySelectorAll('.ts-option').forEach(b => {
+      b.addEventListener('click', () => { setTimespan(b.dataset.ts); closeTsDrop(); });
+    });
+
+    setTimespan('30d');
+  </script>
+  <script src="panel-anim.js" defer></script>
+</body>
+</html>
