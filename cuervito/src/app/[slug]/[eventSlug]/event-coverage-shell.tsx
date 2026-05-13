@@ -352,7 +352,7 @@ function ShellInner({
 
       {lightboxIdx !== null && (
         <PublicLightbox
-          photos={visiblePhotos}
+          photos={filterByBib(visiblePhotos, query)}
           startIndex={lightboxIdx}
           pricePerPhoto={event.pricePerPhoto}
           onClose={() => setLightboxIdx(null)}

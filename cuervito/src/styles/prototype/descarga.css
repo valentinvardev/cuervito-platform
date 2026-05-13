@@ -87,30 +87,41 @@
     background: var(--bg-surface);
     border: 1px solid var(--border-subtle);
     border-radius: 14px;
-    padding: 22px;
+    padding: 20px 22px;
     margin-bottom: 26px;
-    display: flex; gap: 22px; align-items: center; flex-wrap: wrap;
   }
-  .summary-card .meta { display: flex; gap: 22px; flex-wrap: wrap; flex: 1; min-width: 0; }
+  .summary-card .meta {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px 24px;
+  }
+  @media (max-width: 700px) {
+    .summary-card { padding: 18px; }
+    .summary-card .meta { grid-template-columns: repeat(2, 1fr); }
+  }
   .summary-card .item { min-width: 0; }
   .summary-card .lab {
-    font-size: 11.5px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
     color: var(--text-tertiary);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 4px;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
   }
   .summary-card .val {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 18px;
+    font-size: 17px;
     letter-spacing: -0.02em;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .summary-card .val.mono {
     font-family: var(--font-mono);
     font-weight: 500;
-    font-size: 15px;
-    color: var(--text-primary);
+    font-size: 14px;
   }
 
   /* ==================== Photo list ==================== */
