@@ -124,30 +124,27 @@ export function CobrosClient({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/assets/mp/mp-pluma-vertical.svg" alt="Mercado Pago" />
           </div>
-          <div>
-            <h3>Mercado Pago</h3>
-            <div className="mp-sub">
-              {isConnected
-                ? `Conectada${mpLiveMode ? " · modo producción" : " · modo prueba"}`
-                : "Vinculá tu cuenta para empezar a recibir pagos."}
-            </div>
+          <div className="mp-info">
+            <div className="ttl">Mercado Pago</div>
+            {isConnected ? (
+              <div className="status">
+                <i className="ti ti-circle-check-filled" />
+                Conectada{mpLiveMode ? " · modo producción" : " · modo prueba"}
+              </div>
+            ) : (
+              <div
+                className="status"
+                style={{ color: "var(--text-secondary)", fontWeight: 400 }}
+              >
+                Vinculá tu cuenta para empezar a recibir pagos.
+              </div>
+            )}
           </div>
         </div>
 
         {isConnected ? (
           <>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 12,
-                padding: "14px 16px",
-                background: "var(--bg-base)",
-                border: "1px solid var(--border-subtle)",
-                borderRadius: 10,
-                marginBottom: 18,
-              }}
-            >
+            <div className="mp-details">
               <Field label="Cuenta" value={email || "—"} />
               <Field
                 label="Vinculada el"
@@ -165,13 +162,12 @@ export function CobrosClient({
               <Field label="Acreditación" value="Instantánea" />
             </div>
 
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <div className="mp-actions">
               <button
                 type="button"
-                className="btn btn-outline"
+                className="btn btn-danger"
                 onClick={disconnect}
                 disabled={disconnecting}
-                style={{ color: "var(--error)", borderColor: "rgba(224,85,85,0.4)" }}
               >
                 <i className="ti ti-plug-off" />
                 {disconnecting ? "Desconectando…" : "Desconectar"}
@@ -204,7 +200,7 @@ export function CobrosClient({
               className="btn btn-primary mp-connect-btn"
             >
               <i className="ti ti-plug-connected" />
-              Conectar
+              Conectar Mercado Pago
             </a>
 
             <div className="mp-help">
@@ -218,81 +214,27 @@ export function CobrosClient({
       </div>
 
       {/* Info notes */}
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          alignItems: "start",
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border-subtle)",
-          borderRadius: 12,
-          padding: "16px 18px",
-          fontSize: 13.5,
-          color: "var(--text-secondary)",
-          lineHeight: 1.55,
-          marginBottom: 12,
-        }}
-      >
-        <span
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 8,
-            background: "var(--accent-deep)",
-            border: "1px solid var(--border-accent)",
-            color: "var(--accent)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
+      <div className="info-note" style={{ marginBottom: 12 }}>
+        <span className="ic">
           <i className="ti ti-info-circle" />
         </span>
         <div>
-          <strong style={{ color: "var(--text-primary)" }}>Cómo funciona:</strong> cada venta se
-          acredita directo en tu cuenta de Mercado Pago. Cuervito retiene automáticamente el{" "}
-          {platformFeePercent}% de comisión y vos recibís el {100 - platformFeePercent}% restante
-          sin necesidad de retirar nada manualmente.
+          <strong>Cómo funciona:</strong> cada venta se acredita directo en tu cuenta de
+          Mercado Pago. Cuervito retiene automáticamente el {platformFeePercent}% de
+          comisión y vos recibís el {100 - platformFeePercent}% restante sin necesidad de
+          retirar nada manualmente.
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          alignItems: "start",
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border-subtle)",
-          borderRadius: 12,
-          padding: "16px 18px",
-          fontSize: 13.5,
-          color: "var(--text-secondary)",
-          lineHeight: 1.55,
-        }}
-      >
-        <span
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 8,
-            background: "rgba(76,175,125,0.12)",
-            border: "1px solid rgba(76,175,125,0.35)",
-            color: "var(--success)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
+      <div className="info-note">
+        <span className="ic security">
           <i className="ti ti-shield-lock" />
         </span>
         <div>
-          <strong style={{ color: "var(--text-primary)" }}>Retención de seguridad:</strong>{" "}
-          Mercado Pago retiene los fondos por unos días después de cada venta como medida estándar
-          de protección contra fraude y contracargos. Tus fondos están{" "}
-          <strong style={{ color: "var(--text-primary)" }}>asegurados al 100%</strong> y se liberan
-          automáticamente al finalizar la retención.
+          <strong>Retención de seguridad:</strong> Mercado Pago retiene los fondos por
+          unos días después de cada venta como medida estándar de protección contra
+          fraude y contracargos. Tus fondos están <strong>asegurados al 100%</strong> y
+          se liberan automáticamente al finalizar la retención.
         </div>
       </div>
     </main>
@@ -301,27 +243,9 @@ export function CobrosClient({
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <div
-        style={{
-          fontSize: 11,
-          color: "var(--text-tertiary)",
-          textTransform: "uppercase",
-          letterSpacing: "0.06em",
-          marginBottom: 4,
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 13,
-          color: "var(--text-primary)",
-        }}
-      >
-        {value}
-      </div>
+    <div className="field">
+      <div className="lbl">{label}</div>
+      <div className="val">{value}</div>
     </div>
   );
 }

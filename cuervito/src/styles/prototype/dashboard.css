@@ -497,6 +497,138 @@
 .mp-inline-status.connected i { color: var(--success); }
 .mp-inline-status.pending i { color: var(--warning); }
 
+/* =========================================================================
+   /dashboard/cobros — Método de pago
+   ======================================================================= */
+.mp-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 22px;
+}
+.mp-row {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 18px;
+}
+.mp-logo {
+  width: 64px; height: 64px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.mp-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.mp-info { flex: 1; min-width: 0; }
+.mp-info .ttl {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 18px; letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.mp-info .status {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px;
+  color: var(--success);
+  font-weight: 500;
+}
+.mp-info .status i { font-size: 16px; }
+
+.mp-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+@media (max-width: 540px) { .mp-details { grid-template-columns: 1fr; } }
+.mp-details .field .lbl {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+.mp-details .field .val {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.mp-actions {
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+.mp-actions .btn { height: 40px; padding: 0 16px; font-size: 13.5px; }
+
+.btn-danger {
+  background: transparent;
+  color: var(--error);
+  border: 1px solid rgba(224, 85, 85, 0.4);
+}
+.btn-danger:hover { background: rgba(224, 85, 85, 0.08); border-color: var(--error); }
+
+/* Disconnected-state extras */
+.mp-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 22px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.mp-bullets li {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.mp-bullets li i {
+  color: var(--success);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.mp-bullets li strong { color: var(--text-primary); font-weight: 500; }
+
+.mp-connect-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  width: 100%; justify-content: center;
+  height: 46px; font-size: 14.5px;
+  margin-bottom: 14px;
+}
+
+.mp-help {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-tertiary);
+}
+.mp-help a { color: var(--accent); text-decoration: none; }
+.mp-help a:hover { text-decoration: underline; }
+
+/* Info notes (cómo funciona + retención de seguridad) */
+.info-note {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 16px 18px;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+.info-note .ic {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--accent-deep);
+  border: 1px solid var(--border-accent);
+  color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+.info-note .ic.security {
+  background: rgba(76, 175, 125, 0.12);
+  border-color: rgba(76, 175, 125, 0.35);
+  color: var(--success);
+}
+.info-note strong { color: var(--text-primary); font-weight: 500; }
+
 /* === Photo upload zone === */
 .upload-zone {
   border: 1.5px dashed var(--border-default);
