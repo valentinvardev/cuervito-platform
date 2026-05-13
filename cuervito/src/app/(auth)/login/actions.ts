@@ -5,6 +5,11 @@ import { signIn } from "~/server/auth";
 
 export type LoginState = { error: string | null };
 
+export async function loginWithGoogleAction(formData: FormData): Promise<void> {
+  const callbackUrl = String(formData.get("callbackUrl") ?? "/dashboard");
+  await signIn("google", { redirectTo: callbackUrl });
+}
+
 export async function loginAction(
   _prev: LoginState,
   formData: FormData,
