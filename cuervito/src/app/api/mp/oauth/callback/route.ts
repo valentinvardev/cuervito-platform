@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { env } from "~/env";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { exchangeOAuthCode } from "~/server/mp";
@@ -26,7 +27,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL(`/dashboard/cobros?error=state_mismatch`, req.url));
   }
 
-  const redirectUri = new URL("/api/mp/oauth/callback", req.url).toString();
+  // Must match exactly what we sent to MP in /start (and what's registered in
+  // the MP panel). Using req.url here would give localhost behind the proxy.
+  const base = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
+  const redirectUri = `${base}/api/mp/oauth/callback`;
 
   try {
     const tokens = await exchangeOAuthCode({ code, redirectUri });
