@@ -3,23 +3,22 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 export const eventRouter = createTRPCRouter({
-  hello: publicProcedure
-    .input(z.object({ text: z.string() }))
-    .query(({ input }) => ({ greeting: `Hello ${input.text}` })),
-
   list: publicProcedure
     .input(
       z
         .object({
-          city: z.string().optional(),
+          location: z.string().optional(),
           take: z.number().min(1).max(50).default(12),
         })
         .optional(),
     )
     .query(({ ctx, input }) =>
       ctx.db.event.findMany({
-        where: input?.city ? { city: input.city } : undefined,
-        orderBy: { startsAt: "desc" },
+        where: {
+          isPublished: true,
+          ...(input?.location ? { location: { contains: input.location, mode: "insensitive" } } : {}),
+        },
+        orderBy: { eventDate: "desc" },
         take: input?.take ?? 12,
       }),
     ),
@@ -29,7 +28,7 @@ export const eventRouter = createTRPCRouter({
     .query(({ ctx, input }) =>
       ctx.db.event.findUnique({
         where: { slug: input.slug },
-        include: { photographers: true },
+        include: { owner: { select: { id: true, name: true, slug: true, image: true } } },
       }),
     ),
 });

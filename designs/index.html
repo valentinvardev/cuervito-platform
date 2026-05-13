@@ -579,12 +579,34 @@
   .reveal {
     opacity: 0;
     transform: translateY(16px);
-    transition: opacity 500ms ease-out, transform 500ms cubic-bezier(.2,.7,.2,1);
+    transition: opacity 600ms ease-out, transform 600ms cubic-bezier(.2,.7,.2,1);
+    transition-delay: var(--reveal-delay, 0ms);
   }
   .reveal.in {
     opacity: 1;
     transform: translateY(0);
   }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, .hero-anim { opacity: 1 !important; transform: none !important; animation: none !important; }
+  }
+
+  /* Initial hero stagger on load */
+  .hero-anim {
+    opacity: 0;
+    transform: translateY(14px);
+    animation: hero-rise 720ms cubic-bezier(.2,.7,.2,1) forwards;
+    animation-delay: var(--hero-delay, 0ms);
+  }
+  @keyframes hero-rise {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hero-anim.from-right {
+    transform: translateX(20px) translateY(8px);
+  }
+  @keyframes hero-rise-right {
+    to { opacity: 1; transform: translateX(0) translateY(0); }
+  }
+  .hero-anim.from-right { animation-name: hero-rise-right; }
 
   /* ============================================
      v2 — Simpler hero + crow + recognition + live events
@@ -667,7 +689,6 @@
     /* Soft amber glow keeps the column balanced while the PNG is dropped in */
     background:
       radial-gradient(ellipse 70% 60% at 50% 42%, rgba(245,130,10,0.18), transparent 72%);
-    animation: rise 800ms cubic-bezier(.2,.7,.2,1) both 200ms;
   }
   @media (max-width: 960px) {
     .hero-v2-illustration { margin-right: auto; max-width: 520px; }
@@ -1030,6 +1051,17 @@
   }
   .photog-v2-text ul li i { color: var(--accent); font-size: 18px; flex-shrink: 0; }
   .photog-v2-text ul strong { color: var(--accent); }
+  .paid-with {
+    display: inline-flex; align-items: center; gap: 8px;
+    line-height: 1;
+  }
+  .paid-with img {
+    height: 18px;
+    width: auto;
+    display: block;
+    /* SVG is already white-fill; keep brightness in case theme tints */
+    filter: brightness(1.1);
+  }
 
   /* === Earnings widget (replaces camera-printing) === */
   .earn-card {
@@ -1367,7 +1399,7 @@
 <body data-screen-label="Landing">
 
   <!-- ============ NAV ============ -->
-  <nav class="nav" id="nav">
+  <nav class="nav hero-anim" id="nav" style="--hero-delay: 0ms;">
     <div class="container nav-inner">
       <a href="index.html" class="logo">cuerv<span class="logo-dot"></span>to</a>
       <div class="nav-links">
@@ -1416,15 +1448,14 @@
     <div class="hero-v2-bg"></div>
     <div class="container hero-v2-grid">
       <div class="hero-v2-text">
-        <span class="eyebrow"><i class="ti ti-bird" style="font-size: 14px;"></i>Reconocimiento visual</span>
-        <h1 class="hero-v2-headline">
-          Memoria<br />de <span class="accent">cuervo.</span>
+        <span class="eyebrow hero-anim" style="--hero-delay: 180ms;"><i class="ti ti-bird" style="font-size: 14px;"></i>Reconocimiento visual</span>
+        <h1 class="hero-v2-headline hero-anim" style="--hero-delay: 280ms;">
+          Cuervito encuentra<br /><span class="accent">tus fotos.</span>
         </h1>
-        <p class="hero-v2-sub">
-          Los cuervos no olvidan una cara. Nosotros tampoco.
-          Subí una selfie o tu dorsal y te encontramos en cada foto del evento.
+        <p class="hero-v2-sub hero-anim" style="--hero-delay: 420ms;">
+          Reconocemos personas a través de su foto o número de competición en segundos.
         </p>
-        <div class="hero-v2-cta">
+        <div class="hero-v2-cta hero-anim" style="--hero-delay: 540ms;">
           <a href="search.html" class="btn btn-primary btn-lg">
             <i class="ti ti-search"></i>Buscar mis fotos
           </a>
@@ -1432,7 +1463,7 @@
             <i class="ti ti-camera"></i>Soy fotógrafo
           </a>
         </div>
-        <div class="hero-v2-trust">
+        <div class="hero-v2-trust hero-anim" style="--hero-delay: 660ms;">
           <span><strong>2.400+</strong> eventos</span>
           <span class="sep"></span>
           <span><strong>180K+</strong> fotos</span>
@@ -1441,7 +1472,7 @@
         </div>
       </div>
 
-      <div class="hero-v2-illustration" id="heroIllustration" aria-hidden="true">
+      <div class="hero-v2-illustration hero-anim from-right" id="heroIllustration" aria-hidden="true" style="--hero-delay: 380ms;">
         <img src="assets/illustrations/hero.png" alt="" />
       </div>
     </div>
@@ -1482,7 +1513,7 @@
       </div>
 
       <!-- 3D face scan animation -->
-      <div class="face-scan" aria-hidden="true">
+      <div class="face-scan reveal" style="--reveal-delay: 120ms;" aria-hidden="true">
         <span class="face-id-badge"><i class="ti ti-scan-eye"></i>FACE ID · 99%</span>
 
         <div class="face-scene">
@@ -1563,14 +1594,14 @@
           <li><i class="ti ti-cloud-upload"></i>Subida masiva con detección automática</li>
           <li><i class="ti ti-coin"></i>Recibís el <strong>90%</strong> de cada venta</li>
           <li><i class="ti ti-template"></i>Tu página de venta con plantillas editables</li>
-          <li><i class="ti ti-shield-check"></i>Cobros automáticos vía Mercado Pago</li>
+          <li><i class="ti ti-shield-check"></i><span class="paid-with">Cobrado con <img src="assets/mp/mp-pluma-horizontal.svg" alt="Mercado Pago" /></span></li>
         </ul>
         <a href="onboarding.html" class="btn btn-primary btn-lg">
           <i class="ti ti-arrow-right"></i>Sumarme como fotógrafo
         </a>
       </div>
 
-      <div class="earn-card reveal" aria-hidden="true">
+      <div class="earn-card reveal" style="--reveal-delay: 140ms;" aria-hidden="true">
         <div class="earn-head">
           <span class="label">Ventas · hoy</span>
           <span class="earn-live"><span class="dot"></span>En vivo</span>
@@ -1656,7 +1687,7 @@
         <p>Filtrá en vivo a medida que escribís.</p>
       </div>
 
-      <div class="le-search" id="leSearch">
+      <div class="le-search reveal" style="--reveal-delay: 100ms;" id="leSearch">
         <i class="ti ti-search"></i>
         <input id="leInput" placeholder="Maratón, trail, ciclismo, ciudad…" autocomplete="off" />
         <button class="clear" type="button" onclick="clearSearch()" aria-label="Limpiar">
@@ -1664,13 +1695,13 @@
         </button>
       </div>
 
-      <div class="le-grid" id="leGrid"></div>
+      <div class="le-grid reveal" style="--reveal-delay: 180ms;" id="leGrid"></div>
     </div>
   </section>
 
 
   <!-- ============ Footer ============ -->
-  <footer class="footer">
+  <footer class="footer reveal">
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">

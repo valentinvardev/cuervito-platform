@@ -1,0 +1,89 @@
+// Minimal Prisma schema for the Lambda.
+// Mirrors the relevant subset of cuervito/prisma/schema.prisma so the Lambda
+// can read/write Photos, FaceRecords, and RecognitionUsage without pulling
+// the entire app schema. Keep these definitions in sync.
+
+generator client {
+    provider      = "prisma-client-js"
+    output        = "../generated/prisma"
+    binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_URL")
+}
+
+enum UserRole { PHOTOGRAPHER ADMIN }
+enum UserStatus { ACTIVE SUSPENDED DELETED }
+enum EventStatus { DRAFT ACTIVE PROCESSING FINISHED ARCHIVED }
+
+model User {
+    id   String     @id @default(cuid())
+    role UserRole   @default(PHOTOGRAPHER)
+    status UserStatus @default(ACTIVE)
+    storageQuotaBytes        BigInt?
+    recognitionQuotaMonthly  Int?
+    eventsOwned       Event[]            @relation("EventOwner")
+    photosOwned       Photo[]            @relation("PhotoOwner")
+    recognitionUsage  RecognitionUsage[]
+}
+
+model Event {
+    id              String      @id @default(cuid())
+    ownerId         String
+    owner           User        @relation("EventOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+    rekCollectionId String?
+    photos          Photo[]
+    faceRecords     FaceRecord[]
+}
+
+model Photo {
+    id              String   @id @default(cuid())
+    eventId         String
+    event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    ownerId         String
+    owner           User     @relation("PhotoOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+    storageKey      String   @unique
+    previewKey      String?
+    filename        String
+    mimeType        String?
+    fileSize        Int?
+    width           Int?
+    height          Int?
+    bibNumbers      String?
+    priceOverride   Decimal? @db.Decimal(10, 2)
+    isPublic        Boolean  @default(false)
+    previewGeneratedAt DateTime?
+    ocrProcessedAt  DateTime?
+    faceProcessedAt DateTime?
+    faceRecords     FaceRecord[]
+    createdAt       DateTime @default(now())
+}
+
+model FaceRecord {
+    id          String   @id @default(cuid())
+    rekFaceId   String   @unique
+    photoId     String
+    photo       Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+    eventId     String
+    event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    confidence  Float?
+    boundingBox Json?
+    createdAt   DateTime @default(now())
+}
+
+model RecognitionUsage {
+    id            String   @id @default(cuid())
+    userId        String
+    user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    year          Int
+    month         Int
+    indexedFaces  Int      @default(0)
+    searchedFaces Int      @default(0)
+    ocrCalls      Int      @default(0)
+    updatedAt     DateTime @updatedAt
+
+    @@unique([userId, year, month])
+}

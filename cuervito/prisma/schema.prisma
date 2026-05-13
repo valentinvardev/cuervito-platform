@@ -1,18 +1,30 @@
 // Prisma schema — cuervito.app
 // Sports / event photography marketplace.
+//
+// Architecture notes:
+//  - Multi-tenant: each User with role=PHOTOGRAPHER owns Events and Photos.
+//  - Buyers do NOT need an account (Sale.buyerEmail is the identifier).
+//  - Mercado Pago marketplace: each photographer connects their MP account,
+//    Cuervito retains 10% as marketplace_fee on every Sale.
+//  - Forward-compatible for cross-event search: Event.canonicalEventId and
+//    Sale.referrerId / referrerCommissionCents are nullable and unused for MVP.
 
 generator client {
-    provider = "prisma-client-js"
-    output   = "../generated/prisma"
+    provider        = "prisma-client-js"
+    output          = "../generated/prisma"
+    previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-    provider  = "postgresql"
-    url       = env("DATABASE_URL")
-    directUrl = env("DIRECT_URL")
+    provider   = "postgresql"
+    url        = env("DATABASE_URL")
+    directUrl  = env("DIRECT_URL")
+    extensions = [pg_trgm, vector]
 }
 
-// ─── NextAuth ──────────────────────────────────────────────────────────────
+// =============================================================================
+// NextAuth.js v5
+// =============================================================================
 
 model Account {
     id                       String  @id @default(cuid())
@@ -20,15 +32,15 @@ model Account {
     type                     String
     provider                 String
     providerAccountId        String
-    refresh_token            String?
-    access_token             String?
+    refresh_token            String? @db.Text
+    access_token             String? @db.Text
     expires_at               Int?
     token_type               String?
     scope                    String?
-    id_token                 String?
+    id_token                 String? @db.Text
     session_state            String?
-    user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
     refresh_token_expires_in Int?
+    user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@unique([provider, providerAccountId])
 }
@@ -49,21 +61,82 @@ model VerificationToken {
     @@unique([identifier, token])
 }
 
-// ─── Domain ────────────────────────────────────────────────────────────────
+// =============================================================================
+// Users
+// =============================================================================
 
 enum UserRole {
-    BUYER
     PHOTOGRAPHER
-    ORGANIZER
     ADMIN
 }
 
-enum PhotographerStatus {
-    PENDING
-    APPROVED
-    REJECTED
+enum UserStatus {
+    ACTIVE
     SUSPENDED
+    DELETED
 }
+
+model User {
+    id            String     @id @default(cuid())
+    name          String?
+    email         String?    @unique
+    emailVerified DateTime?
+    image         String?
+    passwordHash  String?    // null for OAuth-only accounts
+    role          UserRole   @default(PHOTOGRAPHER)
+    status        UserStatus @default(ACTIVE)
+
+    // Public profile (storefront)
+    slug         String?  @unique // e.g. "ana-liotta"
+    bio          String?  @db.Text
+    instagramUrl String?
+    websiteUrl   String?
+    location     String?  // "Buenos Aires, Argentina"
+
+    // Onboarding state — null until profile step is completed
+    onboardingCompletedAt DateTime?
+    // Photographer can dismiss the "connect MP" prompt for now
+    mpOnboardingSkipped   Boolean   @default(false)
+
+    // Quotas (per-user overrides; null = use env defaults)
+    storageQuotaBytes        BigInt?
+    recognitionQuotaMonthly  Int?
+
+    // Mercado Pago marketplace connection
+    mpUserId         BigInt?   // MP's user_id for the connected account
+    mpAccessToken    String?   @db.Text // encrypted at app layer
+    mpRefreshToken   String?   @db.Text // encrypted at app layer
+    mpPublicKey      String?
+    mpTokenExpiresAt DateTime?
+    mpLiveMode       Boolean   @default(false)
+    mpConnectedAt    DateTime?
+
+    // Storefront customization
+    storefrontBrandColor String?  // hex, e.g. "#F5820A"
+    storefrontTemplate   String?  // template id from frontend catalog
+    storefrontDomain     String?  @unique // custom domain
+    storefrontPublished  Boolean  @default(false)
+
+    suspendedAt    DateTime?
+    suspendedReason String?  @db.Text
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    accounts Account[]
+    sessions Session[]
+
+    eventsOwned       Event[]            @relation("EventOwner")
+    photosOwned       Photo[]            @relation("PhotoOwner")
+    sales             Sale[]             @relation("SaleSeller")
+    salesReferred     Sale[]             @relation("SaleReferrer")
+    recognitionUsage  RecognitionUsage[]
+    salesAudit        AdminAction[]
+}
+
+// =============================================================================
+// Events
+// =============================================================================
 
 enum EventStatus {
     DRAFT
@@ -73,176 +146,282 @@ enum EventStatus {
     ARCHIVED
 }
 
-enum Sport {
-    RUNNING
-    CYCLING
-    TRIATHLON
-    SWIMMING
-    FOOTBALL
-    BASKETBALL
-    TENNIS
-    MOTORSPORTS
-    OTHER
+model Event {
+    id            String      @id @default(cuid())
+    ownerId       String
+    owner         User        @relation("EventOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+    slug          String      @unique // photographer-scoped, e.g. "maraton-ba-2025-ana"
+    name          String
+    description   String?     @db.Text
+    discipline    String?     // running, cycling, trail, etc — freeform for now
+    location      String?
+    eventDate     DateTime?
+    coverUrl      String?
+    status        EventStatus @default(DRAFT)
+    pricePerPhoto Decimal     @default(0) @db.Decimal(10, 2)
+    currency      String      @default("ARS")
+
+    // AWS Rekognition collection for this event (created on first photo)
+    rekCollectionId String?
+
+    // Future-proofing: when admin merges duplicates from multiple photographers,
+    // they get the same canonicalEventId. Cross-event search queries by this.
+    canonicalEventId       String?
+    canonicalEvent         CanonicalEvent? @relation(fields: [canonicalEventId], references: [id], onDelete: SetNull)
+
+    // Discount config (legacy JSON, can be normalized later if needed)
+    discountCodes Json?
+    bundleConfig  Json?
+
+    isPublished Boolean @default(false)
+
+    photos       Photo[]
+    sales        Sale[]
+    faceRecords  FaceRecord[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([ownerId, status])
+    @@index([canonicalEventId])
+    @@index([eventDate])
 }
 
-enum OrderStatus {
+// Canonical events are admin-curated buckets. Multiple Events from different
+// photographers can point to the same canonical for cross-event search.
+// Empty for MVP — only used once the categorization agent comes online.
+model CanonicalEvent {
+    id          String    @id @default(cuid())
+    name        String
+    discipline  String?
+    location    String?
+    eventDate   DateTime?
+    coverUrl    String?
+    events      Event[]
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+}
+
+// =============================================================================
+// Photos
+// =============================================================================
+
+model Photo {
+    id             String   @id @default(cuid())
+    eventId        String
+    event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    ownerId        String   // denormalized from event.ownerId for query speed
+    owner          User     @relation("PhotoOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+    storageKey   String  @unique // S3 key for full-res original
+    previewKey   String? // S3 key for watermarked preview
+    filename     String
+    mimeType     String?
+    fileSize     Int?    // bytes
+    width        Int?
+    height       Int?
+
+    bibNumbers   String? // comma-separated bibs extracted from OCR (matches SINCHI format)
+    priceOverride Decimal? @db.Decimal(10, 2) // null = use event.pricePerPhoto
+
+    isPublic     Boolean @default(false) // free photo
+
+    previewGeneratedAt DateTime?
+    ocrProcessedAt     DateTime?
+    faceProcessedAt    DateTime?
+
+    faceRecords FaceRecord[]
+    orderItems  SaleItem[]
+
+    createdAt DateTime @default(now())
+
+    @@index([eventId])
+    @@index([eventId, bibNumbers])
+    @@index([ownerId])
+}
+
+// =============================================================================
+// Face recognition (Rekognition)
+// =============================================================================
+
+model FaceRecord {
+    id           String   @id @default(cuid())
+    rekFaceId    String   @unique // AWS Rekognition FaceId
+    photoId      String
+    photo        Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+    eventId      String
+    event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    confidence   Float?
+    boundingBox  Json?    // { left, top, width, height } normalized 0–1
+    createdAt    DateTime @default(now())
+
+    @@index([eventId])
+    @@index([photoId])
+}
+
+// Monthly recognition consumption tracking — used for quota enforcement.
+model RecognitionUsage {
+    id        String   @id @default(cuid())
+    userId    String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    year      Int
+    month     Int      // 1–12
+    indexedFaces  Int @default(0) // IndexFaces ops
+    searchedFaces Int @default(0) // SearchFacesByImage ops
+    ocrCalls      Int @default(0) // DetectText ops
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, year, month])
+}
+
+// =============================================================================
+// Sales (was Purchase in SINCHI)
+// =============================================================================
+
+enum SaleStatus {
     PENDING
     PAID
     FAILED
     REFUNDED
+    EXPIRED
 }
 
-enum PayoutStatus {
-    REQUESTED
-    PROCESSING
-    PAID
-    REJECTED
-}
+model Sale {
+    id          String     @id @default(cuid())
+    sellerId    String
+    seller      User       @relation("SaleSeller", fields: [sellerId], references: [id])
+    eventId     String
+    event       Event      @relation(fields: [eventId], references: [id])
 
-model User {
-    id            String    @id @default(cuid())
-    name          String?
-    email         String?   @unique
-    emailVerified DateTime?
-    image         String?
-    role          UserRole  @default(BUYER)
-    createdAt     DateTime  @default(now())
+    // Buyer is an email — no account needed
+    buyerEmail  String
+    buyerName   String?
+    buyerPhone  String?
 
-    accounts     Account[]
-    sessions     Session[]
-    photographer Photographer?
-    organizer    Organizer?
-    orders       Order[]
-}
+    items       SaleItem[]
 
-model Photographer {
-    id            String             @id @default(cuid())
-    userId        String             @unique
-    user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-    displayName   String
-    bio           String?
-    avatarUrl     String?
-    coverUrl      String?
-    instagram     String?
-    website       String?
-    sports        Sport[]
-    serviceArea   String?
-    portfolio     String[]           @default([])
-    status        PhotographerStatus @default(PENDING)
-    commissionPct Decimal            @default(10.00) @db.Decimal(5, 2)
-    payoutAccount PayoutAccount?
-    events        Event[]            @relation("EventPhotographers")
-    photos        Photo[]
-    payouts       Payout[]
-    createdAt     DateTime           @default(now())
-    updatedAt     DateTime           @updatedAt
-}
+    // Money
+    subtotalCents Int        // sum of items
+    discountCents Int        @default(0)
+    totalCents    Int        // what the buyer pays
+    platformFeeCents Int     // 10% of totalCents = Cuervito's cut
+    sellerNetCents   Int     // totalCents - platformFeeCents - referrerCommissionCents
+    currency      String     @default("ARS")
 
-model Organizer {
-    id        String   @id @default(cuid())
-    userId    String   @unique
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    orgName   String
-    contact   String?
-    events    Event[]
+    // === Affiliate / referral (FORWARD-COMPATIBLE — not used in MVP) ===
+    referrerId             String?
+    referrer               User?    @relation("SaleReferrer", fields: [referrerId], references: [id])
+    referrerCommissionCents Int?    // explicit cents for transparency
+
+    // Mercado Pago tracking
+    mpPreferenceId String?
+    mpPaymentId    String?
+    mpOrderId      String?
+
+    status SaleStatus @default(PENDING)
+
+    // 72-hour expiring download token (SINCHI pattern)
+    downloadToken         String?   @unique
+    downloadTokenExpires  DateTime?
+    downloadCount         Int       @default(0)
+    firstDownloadAt       DateTime?
+
+    notes     String?  @db.Text
     createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    paidAt    DateTime?
+
+    downloads DownloadLog[]
+
+    @@index([sellerId])
+    @@index([eventId])
+    @@index([buyerEmail])
+    @@index([status])
+    @@index([downloadToken])
+    @@index([mpPaymentId])
+    @@index([referrerId])
 }
 
-model PayoutAccount {
-    id             String       @id @default(cuid())
-    photographerId String       @unique
-    photographer   Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
-    holderName     String
-    country        String
-    cbu            String?
-    cuit           String?
-    bankName       String?
-    iban           String?
-    swift          String?
-    createdAt      DateTime     @default(now())
-}
-
-model Event {
-    id             String      @id @default(cuid())
-    slug           String      @unique
-    name           String
-    description    String?
-    sport          Sport
-    startsAt       DateTime
-    endsAt         DateTime?
-    city           String
-    country        String      @default("AR")
-    latitude       Float?
-    longitude      Float?
-    coverUrl       String?
-    basePriceCents Int         @default(150000) // ARS, in cents
-    status         EventStatus @default(DRAFT)
-    organizerId    String?
-    organizer      Organizer?  @relation(fields: [organizerId], references: [id])
-    photographers  Photographer[] @relation("EventPhotographers")
-    photos         Photo[]
-    createdAt      DateTime    @default(now())
-    updatedAt      DateTime    @updatedAt
-
-    @@index([sport, startsAt])
-    @@index([city])
-}
-
-model Photo {
-    id              String       @id @default(cuid())
-    eventId         String
-    event           Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
-    photographerId  String
-    photographer    Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
-    storageKey      String       @unique // path in Supabase Storage
-    previewUrl      String?      // watermarked preview
-    width           Int?
-    height          Int?
-    takenAt         DateTime?
-    bibNumbers      String[]     @default([])
-    faceEmbeddings  Bytes?
-    priceCents      Int
-    purchases       OrderItem[]
-    createdAt       DateTime     @default(now())
-
-    @@index([eventId, photographerId])
-    @@index([bibNumbers])
-}
-
-model Order {
-    id             String      @id @default(cuid())
-    userId         String?
-    user           User?       @relation(fields: [userId], references: [id])
-    buyerEmail     String
-    totalCents     Int
-    feeCents       Int         // 10% Cuervito take
-    currency       String      @default("ARS")
-    status         OrderStatus @default(PENDING)
-    paymentRef     String?     // Stripe / MercadoPago id
-    items          OrderItem[]
-    createdAt      DateTime    @default(now())
-    paidAt         DateTime?
-}
-
-model OrderItem {
+model SaleItem {
     id        String @id @default(cuid())
-    orderId   String
-    order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+    saleId    String
+    sale      Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
     photoId   String
     photo     Photo  @relation(fields: [photoId], references: [id])
     priceCents Int
 
-    @@unique([orderId, photoId])
+    @@unique([saleId, photoId])
 }
 
-model Payout {
-    id             String       @id @default(cuid())
-    photographerId String
-    photographer   Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
-    amountCents    Int
-    currency       String       @default("ARS")
-    status         PayoutStatus @default(REQUESTED)
-    requestedAt    DateTime     @default(now())
-    paidAt         DateTime?
-    note           String?
+model DownloadLog {
+    id        String   @id @default(cuid())
+    saleId    String
+    sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+    photoId   String?
+    ip        String?
+    userAgent String?  @db.Text
+    createdAt DateTime @default(now())
+
+    @@index([saleId])
+    @@index([createdAt])
+}
+
+// =============================================================================
+// Affiliate attribution (FORWARD-COMPATIBLE — empty for MVP)
+// =============================================================================
+
+// When a visitor lands via a photographer's storefront link, we set a cookie.
+// If they buy within attribution window, that photographer earns a referral cut.
+// Not active in MVP — table stays empty until cross-event is launched.
+model Attribution {
+    id                String   @id @default(cuid())
+    visitorId         String   // cookie value
+    referrerUserId    String   // the photographer who brought the visitor
+    eventId           String?  // event they landed on (optional)
+    createdAt         DateTime @default(now())
+    expiresAt         DateTime // typically createdAt + 7 days
+
+    @@index([visitorId, expiresAt])
+    @@index([referrerUserId])
+}
+
+// =============================================================================
+// Admin / audit / settings
+// =============================================================================
+
+model AdminAction {
+    id        String   @id @default(cuid())
+    actorId   String   // admin user
+    actor     User     @relation(fields: [actorId], references: [id])
+    action    String   // 'SUSPEND_USER', 'REACTIVATE_USER', 'OVERRIDE_QUOTA', etc.
+    targetType String  // 'User', 'Event', 'Sale', etc.
+    targetId  String
+    metadata  Json?
+    createdAt DateTime @default(now())
+
+    @@index([actorId, createdAt])
+    @@index([targetType, targetId])
+}
+
+// Key-value config (global watermark key, contact info, feature flags, etc.)
+model Setting {
+    key       String   @id
+    value     String   @db.Text
+    updatedAt DateTime @updatedAt
+}
+
+// =============================================================================
+// Analytics (lightweight event log)
+// =============================================================================
+
+model AnalyticsEvent {
+    id        String   @id @default(cuid())
+    type      String   // VISIT | SEARCH_BIB | SEARCH_FACE | CART_ADD | CHECKOUT_START | PURCHASE
+    eventId   String?  // Event.id
+    userId    String?
+    metadata  Json?
+    createdAt DateTime @default(now())
+
+    @@index([type, createdAt])
+    @@index([eventId, createdAt])
 }

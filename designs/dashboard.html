@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css" />
 <link rel="stylesheet" href="styles.css" />
 <link rel="stylesheet" href="panel-anim.css" />
+<link rel="stylesheet" href="admin-nav.css" />
 <style>
   body { background: var(--bg-base); }
 
@@ -303,7 +304,7 @@
           <div class="amount"><span class="currency">$</span><span id="ts-amount">684.200</span></div>
           <span class="delta" id="ts-delta"><i class="ti ti-trending-up" style="font-size: 12px;"></i><span>+18%</span></span>
         </div>
-        <span class="meta"><span id="ts-photos">1.247</span> fotos · ticket prom. $<span id="ts-avg">3.210</span></span>
+        <span class="meta"><span id="ts-photos">1.247</span> fotos</span>
       </div>
 
       <div class="sparkline" aria-hidden="true">
@@ -460,7 +461,6 @@
       document.getElementById('tsTriggerLabel').textContent = shortMap[key] ?? key;
       document.getElementById('ts-label').textContent = d.label;
       animateNumber('ts-amount', d.amount);
-      animateNumber('ts-avg', d.avg);
       document.getElementById('ts-photos').textContent = fmt(d.photos);
       const deltaEl = document.getElementById('ts-delta');
       deltaEl.style.display = 'inline-flex';
@@ -519,7 +519,23 @@
     });
 
     setTimespan('30d');
+
+    // Demo: fire a sale notification a few seconds after landing on the panel.
+    // Browsers block autoplay audio until the user interacts, so we wait for
+    // the first user input (click/key/touch) before triggering the toast.
+    function demoSaleOnce() {
+      window.removeEventListener('pointerdown', demoSaleOnce);
+      window.removeEventListener('keydown', demoSaleOnce);
+      setTimeout(() => {
+        if (window.adminNotifySale) {
+          window.adminNotifySale({ amount: '$2.400', detail: '1 foto · Maratón BA' });
+        }
+      }, 1800);
+    }
+    window.addEventListener('pointerdown', demoSaleOnce, { once: true });
+    window.addEventListener('keydown', demoSaleOnce, { once: true });
   </script>
   <script src="panel-anim.js" defer></script>
+  <script src="admin-nav.js" defer></script>
 </body>
 </html>
