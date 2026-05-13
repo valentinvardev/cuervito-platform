@@ -89,13 +89,14 @@ export function ProcesandoClient({
 
   // Celebration timeline — runs ONCE when the sale becomes PAID:
   //
-  //   pending  (status flips to PAID)
-  //     ↓ +400ms  copy crossfade out
-  //   approved  ring closes + check pops (CSS), copy → "¡Listo! Pago aprobado"
+  //   pending  ring spins. We extend this beat so the buyer registers it.
+  //     ↓ +1800ms  copy crossfade out
+  //   approved  ring closes + check pops, copy → "¡Listo! Pago aprobado"
   //     ↓ +2200ms copy crossfade out
   //   delivered copy → "Gracias por tu compra" + confetti
-  //     ↓ +2200ms
-  //   router.push(/descarga)
+  //     ↓ +3000ms (long beat so /descarga prefetch lands and there's no
+  //                loading wheel on the next route)
+  //   router.replace(/descarga) — replace so the back button skips us
   //
   // The ref guard makes this idempotent regardless of how many polls land.
   useEffect(() => {
@@ -103,34 +104,39 @@ export function ProcesandoClient({
     if (timelineStarted.current) return;
     timelineStarted.current = true;
 
+    // Warm up /descarga as soon as we know the token, so when we navigate
+    // it's already cached and there's no flash of the loading skeleton.
+    router.prefetch(`/descarga/${downloadToken}`);
+
     const timers: ReturnType<typeof setTimeout>[] = [];
     const fadeOut = () => setSwap(true);
     const fadeIn = () => setSwap(false);
 
-    // pending → approved
-    timers.push(setTimeout(fadeOut, 100));
+    // pending → approved (longer hold on "Confirmando pago")
+    timers.push(setTimeout(fadeOut, 1700));
     timers.push(
       setTimeout(() => {
         setStage("approved");
         fadeIn();
-      }, 380),
+      }, 1980),
     );
 
-    // approved → delivered
-    timers.push(setTimeout(fadeOut, 2200));
+    // approved → delivered (give the ring time to fully close + check pop)
+    timers.push(setTimeout(fadeOut, 4100));
     timers.push(
       setTimeout(() => {
         setStage("delivered");
         fadeIn();
         if (confettiRef.current) fireConfetti(confettiRef.current);
-      }, 2480),
+      }, 4380),
     );
 
-    // delivered → /descarga
+    // delivered → /descarga (long beat so the confetti is enjoyed, prefetch
+    // is in-flight, and the next route mounts without a loading wheel).
     timers.push(
       setTimeout(() => {
-        router.push(`/descarga/${downloadToken}`);
-      }, 4700),
+        router.replace(`/descarga/${downloadToken}`);
+      }, 7400),
     );
 
     return () => {
