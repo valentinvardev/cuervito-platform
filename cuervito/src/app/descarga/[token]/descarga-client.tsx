@@ -125,48 +125,36 @@ export function DescargaClient({
   //
   //   pending  → ring spins, "Confirmando pago"
   //   approved → ring closes + check, "Pago confirmado"
-  //   delivered → "Gracias por tu compra"
-  //   off      → overlay gone, grid visible
-  type Stage = "pending" | "approved" | "delivered" | "off";
+  //   off      → overlay fades out, hero "Gracias por tu compra" with its
+  //              own green check + grid appear underneath. The check
+  //              you saw centered in the overlay visually morphs into
+  //              the hero check (both green, both checks) — no nav.
+  type Stage = "pending" | "approved" | "off";
   const [stage, setStage] = useState<Stage>(fresh ? "pending" : "off");
   const [overlaySwap, setOverlaySwap] = useState(false);
 
   useEffect(() => {
     if (!fresh) return;
-    // The whole timeline lives in one effect so timers don't fight each other.
     const timers: ReturnType<typeof setTimeout>[] = [];
     const fadeOut = () => setOverlaySwap(true);
     const fadeIn = () => setOverlaySwap(false);
 
-    // pending → approved (let the user read "Confirmando pago" for ~1.7s)
-    timers.push(setTimeout(fadeOut, 1700));
+    // pending → approved (let the user read "Confirmando pago" ~1.8s)
+    timers.push(setTimeout(fadeOut, 1800));
     timers.push(
       setTimeout(() => {
         setStage("approved");
         fadeIn();
-      }, 1980),
+      }, 2080),
     );
 
-    // approved → delivered (give the ring time to fully close + check pop)
-    timers.push(setTimeout(fadeOut, 4100));
-    timers.push(
-      setTimeout(() => {
-        setStage("delivered");
-        fadeIn();
-      }, 4380),
-    );
-
-    // delivered → off (fade out the overlay, reveal the grid)
-    timers.push(
-      setTimeout(() => {
-        setOverlaySwap(true);
-      }, 7100),
-    );
+    // approved → fade-out the whole overlay (~2.4s of "Pago aprobado"
+    // before we hand off to the page hero)
+    timers.push(setTimeout(fadeOut, 4500));
     timers.push(
       setTimeout(() => {
         setStage("off");
-        setOverlaySwap(false);
-      }, 7600),
+      }, 5000),
     );
 
     return () => {
@@ -238,18 +226,14 @@ export function DescargaClient({
               </div>
             </div>
             <h1 className={`pay-title ${overlaySwap ? "swap-out" : ""}`}>
-              {stage === "delivered"
-                ? "Gracias por tu compra."
-                : stage === "approved"
-                  ? "¡Listo! Pago aprobado."
-                  : "Confirmando pago…"}
+              {stage === "approved"
+                ? "¡Listo! Pago aprobado."
+                : "Confirmando pago…"}
             </h1>
             <p className={`pay-sub ${overlaySwap ? "swap-out" : ""}`}>
-              {stage === "delivered"
-                ? `Tus ${photos.length} ${photos.length === 1 ? "foto está" : "fotos están"} listas.`
-                : stage === "approved"
-                  ? "Preparando tus fotos."
-                  : "No cierres la página."}
+              {stage === "approved"
+                ? "Preparando tus fotos."
+                : "No cierres la página."}
             </p>
           </div>
         </div>
@@ -262,7 +246,7 @@ export function DescargaClient({
       </header>
 
       <main className="wrap">
-        <section className="hero">
+        <section className={`hero ${fresh ? "hero-enter" : ""}`}>
           <div className="check-circle">
             <i className="ti ti-check" />
           </div>

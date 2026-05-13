@@ -83,15 +83,18 @@ function formatARS(cents: number): string {
 }
 
 /**
- * Cuervito wordmark — drawn with HTML so it survives email clients that strip
- * images. The orange dot is a tiny inline-block circle.
+ * Cuervito logo — served from the public bucket (cuervito.app/assets/logo).
+ * Wrapped in a dark-bg pill so it stays legible on Gmail dark mode (which
+ * sometimes inverts colors aggressively). The pill bg matches the card so
+ * the logo feels mounted, not floating.
  *
- * Wrapped in a dark-bg pill so the orange stays legible on Gmail dark-mode
- * clients that aggressively invert colors. Pill background = bgSurface so it
- * blends with the card below it.
+ * Alt text uses the wordmark itself ("cuerv·to") so it reads cleanly when
+ * the recipient hasn't clicked "show images".
  */
 function wordmark(): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${COLORS.bgSurface}" style="background:${COLORS.bgSurface};padding:10px 14px;border-radius:10px;border:1px solid ${COLORS.border};"><span style="font-family:${FONT_DISPLAY};font-weight:800;font-size:24px;color:${COLORS.accent};letter-spacing:-0.025em;line-height:1;mso-line-height-rule:exactly;">cuerv<span style="display:inline-block;width:7px;height:7px;background:${COLORS.accent};border-radius:50%;margin:0 1px;vertical-align:baseline;mso-hide:all;"></span>to</span></td></tr></table>`;
+  const baseUrl = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
+  const src = `${baseUrl}/assets/logo/cuervito.png`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${COLORS.bgSurface}" style="background:${COLORS.bgSurface};padding:10px 16px;border-radius:10px;border:1px solid ${COLORS.border};line-height:0;"><img src="${src}" width="120" height="auto" alt="cuervito" style="display:block;border:0;outline:none;text-decoration:none;height:auto;max-height:32px;" /></td></tr></table>`;
 }
 
 type LayoutInput = {
