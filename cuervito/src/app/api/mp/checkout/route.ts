@@ -5,8 +5,11 @@ import { z } from "zod";
 
 import { env } from "~/env";
 import { db } from "~/server/db";
+import { deliveryEmailHtml, sendEmail } from "~/server/email";
 import { createPreference, isMpConfigured } from "~/server/mp";
+import { recordPendingAndMaybeNotify } from "~/server/sale-notifier";
 import { publishSale } from "~/server/sales-bus";
+import { getMpTestMode } from "~/server/settings";
 
 const checkoutSchema = z.object({
   eventId: z.string(),
@@ -17,7 +20,9 @@ const checkoutSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  if (!env.MP_TEST_MODE && !isMpConfigured()) {
+  const testMode = await getMpTestMode();
+
+  if (!testMode && !isMpConfigured()) {
     return NextResponse.json(
       { error: "Mercado Pago no está configurado." },
       { status: 503 },
@@ -66,7 +71,7 @@ export async function POST(req: NextRequest) {
       { status: 403 },
     );
   }
-  if (!env.MP_TEST_MODE && !event.owner.mpAccessToken) {
+  if (!testMode && !event.owner.mpAccessToken) {
     return NextResponse.json(
       { error: "El fotógrafo aún no conectó Mercado Pago." },
       { status: 409 },
@@ -105,7 +110,7 @@ export async function POST(req: NextRequest) {
   // === TEST MODE ===
   // Skip MP entirely: create the Sale already PAID with a downloadToken so
   // we can validate the post-payment UX locally without going through MP.
-  if (env.MP_TEST_MODE) {
+  if (testMode) {
     const downloadToken = randomBytes(24).toString("hex");
     const tokenExpiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000);
 
@@ -142,6 +147,24 @@ export async function POST(req: NextRequest) {
       paidAt: new Date().toISOString(),
     });
     revalidateTag(`user:${event.ownerId}:dashboard`);
+
+    // Buyer delivery email + seller notification (same as the webhook path)
+    const baseUrl = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
+    void sendEmail({
+      to: parsed.data.buyerEmail,
+      subject: `Tus fotos · ${event.name}`,
+      html: deliveryEmailHtml({
+        buyerName: parsed.data.buyerName ?? "Hola",
+        eventName: event.name,
+        photoCount: items.length,
+        downloadUrl: `${baseUrl}/descarga/${downloadToken}`,
+      }),
+    }).catch((err: unknown) =>
+      console.error("[checkout test-mode] delivery email failed:", err),
+    );
+    void recordPendingAndMaybeNotify(sale.id).catch((err: unknown) =>
+      console.error("[checkout test-mode] seller notify failed:", err),
+    );
 
     return NextResponse.json({
       saleId: sale.id,

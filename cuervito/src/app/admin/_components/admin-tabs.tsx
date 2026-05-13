@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/admin/users", label: "Usuarios", icon: "ti-users" },
   { href: "/admin/watermark", label: "Watermark", icon: "ti-watermark" },
+  { href: "/admin/settings", label: "Settings", icon: "ti-settings" },
 ];
 
 export function AdminTabs() {

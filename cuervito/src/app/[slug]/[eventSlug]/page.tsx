@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 
-import { env } from "~/env";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
+import { getMpTestMode } from "~/server/settings";
 
 import { EventCoverageShell } from "./event-coverage-shell";
 
@@ -100,6 +100,7 @@ export default async function PublicEventPage(props: {
 
   const avatarUrl = await resolveAvatarUrl(photographer.image);
   const brandColor = photographer.storefrontBrandColor;
+  const testMode = await getMpTestMode();
 
   return (
     <div
@@ -133,7 +134,7 @@ export default async function PublicEventPage(props: {
         photosCount: photos.length,
       }}
       photos={photos}
-      testMode={env.MP_TEST_MODE}
+      testMode={testMode}
     />
     </div>
   );

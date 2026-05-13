@@ -630,6 +630,41 @@
 .info-note strong { color: var(--text-primary); font-weight: 500; }
 
 /* =========================================================================
+   Toggle switch (admin settings, etc)
+   ======================================================================= */
+.toggle-switch {
+  position: relative;
+  width: 54px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 200ms ease, border-color 200ms ease;
+}
+.toggle-switch:disabled { cursor: not-allowed; opacity: 0.6; }
+.toggle-switch .thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  transition: transform 220ms cubic-bezier(.34,1.6,.64,1), background 200ms ease;
+}
+.toggle-switch.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.toggle-switch.on .thumb {
+  background: #1a0d00;
+  transform: translateX(24px);
+}
+
+/* =========================================================================
    Loading skeletons (used by loading.tsx files)
    ======================================================================= */
 .skel {
