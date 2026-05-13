@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { fireConfetti } from "~/lib/confetti";
 
 import { DescargaLightbox } from "./descarga-lightbox";
 
@@ -15,7 +14,6 @@ type Photo = {
   previewUrl: string;
 };
 
-// fireConfetti is shared with /pago/procesando — see ~/lib/confetti.
 
 async function fetchDownloadUrl(token: string, photoId: string): Promise<{ url: string; filename: string }> {
   const res = await fetch(`/api/download/${token}/${photoId}`);
@@ -104,14 +102,15 @@ export function DescargaClient({
   buyerName,
   eventName,
   photos,
+  fresh = false,
 }: {
   token: string;
   buyerEmail: string;
   buyerName: string;
   eventName: string;
   photos: Photo[];
+  fresh?: boolean;
 }) {
-  const confettiRef = useRef<HTMLDivElement>(null);
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -119,11 +118,62 @@ export function DescargaClient({
   const [isIos, setIsIos] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
+  // Payment confirmation overlay state. Only runs when ?fresh=1 — i.e. the
+  // buyer just came from /pago/exito or test-mode checkout. The overlay
+  // sits ON TOP of the page (grid is already painted below) so when it
+  // fades out the user transitions in-place, no navigation.
+  //
+  //   pending  → ring spins, "Confirmando pago"
+  //   approved → ring closes + check, "Pago confirmado"
+  //   delivered → "Gracias por tu compra"
+  //   off      → overlay gone, grid visible
+  type Stage = "pending" | "approved" | "delivered" | "off";
+  const [stage, setStage] = useState<Stage>(fresh ? "pending" : "off");
+  const [overlaySwap, setOverlaySwap] = useState(false);
+
   useEffect(() => {
-    // The full payment confirmation animation now lives in /pago/procesando.
-    // Here we just fire the celebratory confetti once the page mounts.
-    if (confettiRef.current) fireConfetti(confettiRef.current);
-  }, []);
+    if (!fresh) return;
+    // The whole timeline lives in one effect so timers don't fight each other.
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const fadeOut = () => setOverlaySwap(true);
+    const fadeIn = () => setOverlaySwap(false);
+
+    // pending → approved (let the user read "Confirmando pago" for ~1.7s)
+    timers.push(setTimeout(fadeOut, 1700));
+    timers.push(
+      setTimeout(() => {
+        setStage("approved");
+        fadeIn();
+      }, 1980),
+    );
+
+    // approved → delivered (give the ring time to fully close + check pop)
+    timers.push(setTimeout(fadeOut, 4100));
+    timers.push(
+      setTimeout(() => {
+        setStage("delivered");
+        fadeIn();
+      }, 4380),
+    );
+
+    // delivered → off (fade out the overlay, reveal the grid)
+    timers.push(
+      setTimeout(() => {
+        setOverlaySwap(true);
+      }, 7100),
+    );
+    timers.push(
+      setTimeout(() => {
+        setStage("off");
+        setOverlaySwap(false);
+      }, 7600),
+    );
+
+    return () => {
+      for (const t of timers) clearTimeout(t);
+    };
+  }, [fresh]);
+
 
   useEffect(() => {
     if (typeof navigator !== "undefined") {
@@ -170,7 +220,40 @@ export function DescargaClient({
 
   return (
     <>
-      <div className="confetti-container" ref={confettiRef} aria-hidden="true" />
+
+      {stage !== "off" && (
+        <div
+          className={`pay-overlay ${stage} ${overlaySwap ? "swap-out" : ""}`}
+          role="status"
+          aria-live="polite"
+        >
+          <div className="pay-overlay-inner">
+            <div className="pay-ring">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle className="track" cx="60" cy="60" r="54" />
+                <circle className="indeterminate" cx="60" cy="60" r="54" />
+              </svg>
+              <div className="check">
+                <i className="ti ti-circle-check-filled" />
+              </div>
+            </div>
+            <h1 className={`pay-title ${overlaySwap ? "swap-out" : ""}`}>
+              {stage === "delivered"
+                ? "Gracias por tu compra."
+                : stage === "approved"
+                  ? "¡Listo! Pago aprobado."
+                  : "Confirmando pago…"}
+            </h1>
+            <p className={`pay-sub ${overlaySwap ? "swap-out" : ""}`}>
+              {stage === "delivered"
+                ? `Tus ${photos.length} ${photos.length === 1 ? "foto está" : "fotos están"} listas.`
+                : stage === "approved"
+                  ? "Preparando tus fotos."
+                  : "No cierres la página."}
+            </p>
+          </div>
+        </div>
+      )}
 
       <header className="nav">
         <Link href="/" className="logo">

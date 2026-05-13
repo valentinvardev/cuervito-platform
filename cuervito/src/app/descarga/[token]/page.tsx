@@ -7,8 +7,14 @@ import { DescargaClient } from "./descarga-client";
 
 export default async function DescargaPage(props: {
   params: Promise<{ token: string }>;
+  searchParams: Promise<{ fresh?: string }>;
 }) {
   const { token } = await props.params;
+  const sp = await props.searchParams;
+  // `fresh=1` is set by /pago/exito and the test-mode checkout when the
+  // buyer arrives right after paying. It triggers the in-page payment
+  // confirmation animation on top of the grid.
+  const fresh = sp.fresh === "1";
 
   const sale = await db.sale.findUnique({
     where: { downloadToken: token },
@@ -75,6 +81,7 @@ export default async function DescargaPage(props: {
       buyerName={sale.buyerName ?? "Comprador"}
       eventName={sale.event.name}
       photos={photos}
+      fresh={fresh}
     />
   );
 }

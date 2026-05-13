@@ -168,11 +168,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       saleId: sale.id,
-      // Send the buyer through /pago/procesando so they get the full
-      // confirmation animation (matches the prototype + the real-MP path).
-      // The page polls /api/sales/:id/status; since this is test-mode the
-      // sale is already PAID and it'll redirect to /descarga immediately.
-      initPoint: `/pago/procesando?sale=${sale.id}`,
+      // Send the buyer straight to /descarga with ?fresh=1 — the page renders
+      // the photo grid AND runs the in-place "Confirmando pago → Pago
+      // confirmado → Gracias por tu compra" overlay on top. No intermediate
+      // navigation, no loading wheel between states.
+      initPoint: `/descarga/${downloadToken}?fresh=1`,
       testMode: true,
     });
   }

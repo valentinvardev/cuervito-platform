@@ -407,88 +407,100 @@
   .ios-done .desc { color: var(--text-secondary); font-size: 15px; line-height: 1.5; max-width: 360px; }
 
   /* =========================================================================
-     Payment confirmation overlay (3-stage animation on /descarga)
+     In-page payment confirmation overlay (?fresh=1).
+     Sits on top of /descarga so we can transition pending → approved →
+     delivered → fade out, revealing the photo grid that was already painted
+     behind. No navigation, no loading wheel. Ring style ported from
+     designs/pago.html.
      ======================================================================= */
   .pay-overlay {
-    position: fixed; inset: 0;
+    position: fixed;
+    inset: 0;
     z-index: 200;
-    background: rgba(8, 6, 5, 0.92);
-    backdrop-filter: blur(14px);
-    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 24px;
-    animation: pay-fade-in 220ms ease both;
+    transition: opacity 480ms ease;
+    opacity: 1;
   }
-  .pay-overlay.approved {
-    animation: pay-fade-out 380ms ease 720ms forwards;
-  }
-  @keyframes pay-fade-in {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-  @keyframes pay-fade-out {
-    from { opacity: 1; }
-    to   { opacity: 0; pointer-events: none; }
-  }
-  .pay-card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-subtle);
-    border-radius: 18px;
-    padding: 38px 32px 32px;
-    width: 100%; max-width: 360px;
+  .pay-overlay.swap-out { opacity: 0; }
+
+  .pay-overlay-inner {
+    width: 100%;
+    max-width: 460px;
     text-align: center;
-    box-shadow: 0 24px 70px rgba(0,0,0,0.55);
-    display: flex; flex-direction: column; align-items: center; gap: 14px;
   }
 
-  .pay-spinner {
+  .pay-ring {
+    width: 120px; height: 120px;
+    margin: 0 auto 28px;
     position: relative;
-    width: 78px; height: 78px;
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 6px;
   }
-  .pay-spinner .ring {
+  .pay-ring svg {
+    width: 100%; height: 100%;
+    transform: rotate(-90deg);
+  }
+  .pay-ring .track { fill: none; stroke: var(--border-subtle); stroke-width: 4; }
+  .pay-ring .indeterminate {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-dasharray: 340;
+    stroke-dashoffset: 255;
+    transform-origin: center;
+    transform: rotate(90deg);
+    animation: pay-spin 1.4s linear infinite;
+    transition:
+      stroke-dashoffset 820ms cubic-bezier(.2, .7, .2, 1),
+      stroke 520ms ease 120ms;
+  }
+  .pay-ring .check {
     position: absolute; inset: 0;
-    border-radius: 50%;
-    border: 3px solid var(--border-subtle);
-    border-top-color: var(--accent);
-    animation: pay-spin 1.05s linear infinite;
-  }
-  .pay-spinner i {
-    font-size: 30px;
-    color: var(--accent);
-    animation: pay-card-pulse 1.4s ease-in-out infinite;
-  }
-  @keyframes pay-spin { to { transform: rotate(360deg); } }
-  @keyframes pay-card-pulse {
-    0%, 100% { transform: scale(1);    opacity: 0.92; }
-    50%      { transform: scale(1.08); opacity: 1; }
-  }
-
-  .pay-check {
-    width: 78px; height: 78px;
-    border-radius: 50%;
-    background: var(--success);
-    color: #0f0d0b;
     display: flex; align-items: center; justify-content: center;
-    margin-bottom: 6px;
-    animation: pay-pop 360ms cubic-bezier(.34,1.6,.64,1) both;
+    color: var(--success);
+    opacity: 0;
+    transform: scale(0.4);
+    transition:
+      opacity 280ms ease 720ms,
+      transform 420ms cubic-bezier(.2, .9, .3, 1) 720ms;
   }
-  .pay-check i { font-size: 42px; font-weight: 700; }
-  @keyframes pay-pop {
-    from { transform: scale(0.4); opacity: 0; }
-    to   { transform: scale(1);   opacity: 1; }
+  .pay-ring .check i { font-size: 64px; }
+
+  .pay-overlay.approved .pay-ring .indeterminate,
+  .pay-overlay.delivered .pay-ring .indeterminate {
+    stroke: var(--success);
+    stroke-dashoffset: 0;
+    animation-play-state: paused;
+  }
+  .pay-overlay.approved .pay-ring .check,
+  .pay-overlay.delivered .pay-ring .check {
+    opacity: 1;
+    transform: scale(1);
   }
 
-  .pay-ttl {
+  @keyframes pay-spin { to { transform: rotate(360deg); } }
+
+  .pay-title {
     font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 20px;
-    letter-spacing: -0.02em;
+    font-weight: 800;
+    font-size: clamp(34px, 6vw, 48px);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0 0 10px;
     color: var(--text-primary);
+    transition: opacity 260ms ease, transform 260ms ease;
   }
-  .pay-ttl-ok { color: var(--success); }
+  .pay-overlay.delivered .pay-title { color: var(--success); }
+  .pay-title.swap-out { opacity: 0; transform: translateY(-4px); }
+
   .pay-sub {
-    font-size: 13.5px;
+    font-size: 15px;
     color: var(--text-secondary);
     line-height: 1.5;
+    margin: 0;
+    transition: opacity 260ms ease, transform 260ms ease;
   }
+  .pay-sub.swap-out { opacity: 0; transform: translateY(-4px); }

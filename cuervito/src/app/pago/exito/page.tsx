@@ -1,11 +1,10 @@
 import { redirect } from "next/navigation";
 
 /**
- * Mercado Pago redirects buyers here when the payment is approved (configured
- * via back_urls.success in the preference). We immediately forward to
- * /pago/procesando which polls the webhook state and runs the unified
- * confirmation animation. MP doesn't always have the webhook done by the
- * time the user returns, so the procesando page is what we want them to see.
+ * Mercado Pago's back_urls.success lands here. Forward to /pago/procesando
+ * (which then forwards again to /descarga/[token]?fresh=1 as soon as the
+ * webhook has fired). MP doesn't always have the webhook done by the time
+ * the user returns, so /pago/procesando handles the wait.
  */
 export default async function PagoExitoPage(props: {
   searchParams: Promise<{ sale?: string; external_reference?: string }>;
