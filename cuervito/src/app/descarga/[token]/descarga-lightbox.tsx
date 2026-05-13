@@ -10,6 +10,11 @@ type Photo = {
   previewUrl: string;
 };
 
+/**
+ * Lightbox for /descarga — reuses the same .lb/.lb-img/.lb-close/.lb-nav
+ * classes as the public storefront lightbox (lightbox.css). Differs only
+ * in the footer: a "Guardar foto" button instead of cart add/remove.
+ */
 export function DescargaLightbox({
   photos,
   startIndex,
@@ -62,18 +67,15 @@ export function DescargaLightbox({
     };
   }, []);
 
-  function onTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0]?.clientX ?? null;
-  }
-  function onTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current == null) return;
-    const endX = e.changedTouches[0]?.clientX ?? touchStartX.current;
-    const dx = endX - touchStartX.current;
-    touchStartX.current = null;
-    if (Math.abs(dx) < 50) return;
-    if (dx < 0) next();
-    else prev();
-  }
+  // Preload neighbors for snappy swipe
+  useEffect(() => {
+    [photos[idx - 1], photos[idx + 1]].forEach((p) => {
+      if (p) {
+        const img = new Image();
+        img.src = p.previewUrl;
+      }
+    });
+  }, [idx, photos]);
 
   if (!current || !mounted) return null;
 
@@ -81,51 +83,119 @@ export function DescargaLightbox({
   const pending = isPending(current.id);
 
   const content = (
-    <div className="lb-root" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      <button className="lb-close" onClick={onClose} aria-label="Cerrar">
+    <div
+      className="lb open"
+      onClick={onClose}
+      onTouchStart={(e) => {
+        touchStartX.current = e.touches[0]?.clientX ?? null;
+      }}
+      onTouchEnd={(e) => {
+        const start = touchStartX.current;
+        const end = e.changedTouches[0]?.clientX;
+        touchStartX.current = null;
+        if (start == null || end == null) return;
+        const dx = end - start;
+        if (Math.abs(dx) < 50) return;
+        if (dx < 0) next();
+        else prev();
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className="lb-img"
+        src={current.previewUrl}
+        alt=""
+        onClick={(e) => e.stopPropagation()}
+        onLoad={() => setLoaded(true)}
+      />
+
+      {!loaded && (
+        <div className="lb-loading">
+          <span className="up-spinner" />
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="lb-close"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        aria-label="Cerrar"
+      >
         <i className="ti ti-x" />
       </button>
 
-      <div className="lb-counter">
-        {idx + 1} / {total}
-      </div>
+      <button
+        type="button"
+        className="lb-nav prev"
+        onClick={(e) => {
+          e.stopPropagation();
+          prev();
+        }}
+        disabled={idx === 0}
+        aria-label="Anterior"
+      >
+        <i className="ti ti-chevron-left" />
+      </button>
+      <button
+        type="button"
+        className="lb-nav next"
+        onClick={(e) => {
+          e.stopPropagation();
+          next();
+        }}
+        disabled={idx === total - 1}
+        aria-label="Siguiente"
+      >
+        <i className="ti ti-chevron-right" />
+      </button>
 
-      {idx > 0 && (
-        <button className="lb-chev lb-chev-left" onClick={prev} aria-label="Anterior">
-          <i className="ti ti-chevron-left" />
-        </button>
-      )}
-      {idx < total - 1 && (
-        <button className="lb-chev lb-chev-right" onClick={next} aria-label="Siguiente">
-          <i className="ti ti-chevron-right" />
-        </button>
-      )}
-
-      <div className="lb-stage">
-        {!loaded && <div className="lb-spinner" aria-hidden="true" />}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={current.previewUrl}
-          alt={current.bibNumbers ?? "Foto"}
-          className={`lb-img ${loaded ? "ready" : ""}`}
-          onLoad={() => setLoaded(true)}
-        />
-      </div>
-
-      <div className="lb-foot">
+      <div className="lb-meta" onClick={(e) => e.stopPropagation()} style={{ gap: 14 }}>
+        <span>
+          {idx + 1} / {total}
+        </span>
         {current.bibNumbers && (
-          <div className="lb-bib">#{current.bibNumbers}</div>
+          <>
+            <span className="sep">·</span>
+            <span className="bib">#{current.bibNumbers}</span>
+          </>
         )}
         <button
           type="button"
-          className="lb-save-btn"
           onClick={() => onSave(current)}
           disabled={pending}
+          style={{
+            marginLeft: 6,
+            padding: "6px 14px",
+            borderRadius: 999,
+            background: saved ? "var(--success)" : "var(--accent)",
+            color: saved ? "white" : "var(--text-on-accent)",
+            border: "none",
+            fontFamily: "var(--font-ui)",
+            fontWeight: 600,
+            fontSize: 12,
+            cursor: pending ? "wait" : "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+          }}
         >
           {pending ? (
             <>
-              <span className="spinner-mini" />
-              Preparando…
+              <span
+                style={{
+                  width: 11,
+                  height: 11,
+                  border: "2px solid currentColor",
+                  borderTopColor: "transparent",
+                  borderRadius: "50%",
+                  display: "inline-block",
+                  animation: "spin 0.8s linear infinite",
+                }}
+              />
+              Preparando
             </>
           ) : saved ? (
             <>
@@ -135,7 +205,7 @@ export function DescargaLightbox({
           ) : (
             <>
               <i className="ti ti-download" />
-              Guardar foto
+              Guardar
             </>
           )}
         </button>
