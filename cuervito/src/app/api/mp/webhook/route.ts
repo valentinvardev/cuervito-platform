@@ -1,8 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { revalidateTag } from "next/cache";
 import { randomBytes } from "node:crypto";
 
 import { db } from "~/server/db";
 import { fetchPayment } from "~/server/mp";
+import { publishSale } from "~/server/sales-bus";
 
 /**
  * Mercado Pago webhook handler.
@@ -82,7 +84,16 @@ async function handlePayment(paymentId: string) {
 
   const sale = await db.sale.findUnique({
     where: { id: saleId },
-    select: { id: true, status: true, downloadToken: true },
+    select: {
+      id: true,
+      status: true,
+      downloadToken: true,
+      sellerId: true,
+      totalCents: true,
+      buyerName: true,
+      event: { select: { name: true } },
+      _count: { select: { items: true } },
+    },
   });
   if (!sale) {
     console.warn("[mp webhook] sale not found:", saleId);
@@ -113,6 +124,19 @@ async function handlePayment(paymentId: string) {
         : {}),
     },
   });
+
+  // Real-time toast for the seller's dashboard + bust their cached counts.
+  if (newStatus === "PAID" && sale.status !== "PAID") {
+    publishSale(sale.sellerId, {
+      saleId: sale.id,
+      amount: sale.totalCents,
+      itemCount: sale._count.items,
+      eventName: sale.event.name,
+      buyerName: sale.buyerName,
+      paidAt: new Date().toISOString(),
+    });
+    revalidateTag(`user:${sale.sellerId}:dashboard`);
+  }
 
   console.log(
     `[mp webhook] sale=${sale.id} ${sale.status} → ${newStatus} (payment=${payment.id})`,

@@ -2,28 +2,46 @@
 
 import { useEffect } from "react";
 
+type ServerSalePayload = {
+  saleId: string;
+  amount: number; // cents
+  itemCount: number;
+  eventName: string;
+  buyerName: string | null;
+  paidAt: string;
+};
+
+function formatARS(cents: number): string {
+  return `$${(cents / 100).toLocaleString("es-AR")}`;
+}
+
 /**
- * Demo only: fires the sale toast once the user makes their first input gesture.
- * Browsers block WebAudio without prior interaction, so we wait for click/key.
+ * Subscribes to /api/dashboard/sales-stream and fires the SaleToast every
+ * time a real sale is paid. EventSource auto-reconnects on disconnect.
  */
 export function DemoSaleTrigger() {
   useEffect(() => {
-    let fired = false;
-    function trigger() {
-      if (fired) return;
-      fired = true;
-      window.removeEventListener("pointerdown", trigger);
-      window.removeEventListener("keydown", trigger);
-      setTimeout(() => {
-        window.cuervitoNotifySale?.({ amount: "$2.400", detail: "1 foto · Maratón BA" });
-      }, 1800);
-    }
-    window.addEventListener("pointerdown", trigger, { once: true });
-    window.addEventListener("keydown", trigger, { once: true });
-    return () => {
-      window.removeEventListener("pointerdown", trigger);
-      window.removeEventListener("keydown", trigger);
+    const es = new EventSource("/api/dashboard/sales-stream");
+
+    es.addEventListener("sale", (event) => {
+      try {
+        const data = JSON.parse((event as MessageEvent).data) as ServerSalePayload;
+        window.cuervitoNotifySale?.({
+          amount: formatARS(data.amount),
+          detail: `${data.itemCount} ${data.itemCount === 1 ? "foto" : "fotos"} · ${data.eventName}`,
+        });
+      } catch (err) {
+        console.warn("[sales-stream] bad payload:", err);
+      }
+    });
+
+    es.onerror = () => {
+      // EventSource auto-retries; just log once.
+      // console.debug("[sales-stream] disconnected, will retry");
     };
+
+    return () => es.close();
   }, []);
+
   return null;
 }

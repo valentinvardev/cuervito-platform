@@ -1,10 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { revalidateTag } from "next/cache";
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
 
 import { env } from "~/env";
 import { db } from "~/server/db";
 import { createPreference, isMpConfigured } from "~/server/mp";
+import { publishSale } from "~/server/sales-bus";
 
 const checkoutSchema = z.object({
   eventId: z.string(),
@@ -129,6 +131,17 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true },
     });
+
+    // Same realtime + cache flow as the real webhook would do.
+    publishSale(event.ownerId, {
+      saleId: sale.id,
+      amount: totalCents,
+      itemCount: items.length,
+      eventName: event.name,
+      buyerName: parsed.data.buyerName ?? null,
+      paidAt: new Date().toISOString(),
+    });
+    revalidateTag(`user:${event.ownerId}:dashboard`);
 
     return NextResponse.json({
       saleId: sale.id,
