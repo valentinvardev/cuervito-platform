@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { fireConfetti } from "~/lib/confetti";
+
 type SaleStatus =
   | "PENDING"
   | "PAID"
@@ -38,12 +40,18 @@ export function ProcesandoClient({
   const [downloadToken, setDownloadToken] = useState<string | null>(
     initialDownloadToken,
   );
-  // The "approved" CSS state — flipped slightly *after* status becomes PAID so
-  // the user has time to register the change before the redirect.
-  const [showApproved, setShowApproved] = useState(initialStatus === "PAID");
+  // Three-stage UI:
+  //   pending   → ring spins, "Estamos confirmando tu compra"
+  //   approved  → ring closes, check appears, "¡Listo! Pago aprobado"
+  //   delivered → confetti + "Gracias por tu compra", auto-nav to /descarga
+  type Stage = "pending" | "approved" | "delivered";
+  const [stage, setStage] = useState<Stage>(
+    initialStatus === "PAID" ? "approved" : "pending",
+  );
   // Smooth-swap copy when state changes (prototype-style)
   const [swap, setSwap] = useState(false);
   const swapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const confettiRef = useRef<HTMLDivElement>(null);
 
   // Polling loop — bail when we land on PAID.
   useEffect(() => {
@@ -76,64 +84,99 @@ export function ProcesandoClient({
     };
   }, [saleId, status]);
 
-  // When we transition into PAID: swap copy, then fire approved CSS, then nav
+  // Three-step transition once we reach PAID:
+  //   t=0       → stage=approved, ring closes + check pops in (CSS does this)
+  //   t≈1.8s    → stage=delivered, swap copy to "Gracias por tu compra" + confetti
+  //   t≈4.6s    → router.push(/descarga)
   useEffect(() => {
     if (status !== "PAID") return;
-    if (!downloadToken) return; // wait until token is in state
+    if (!downloadToken) return;
+    if (stage === "delivered") return; // already running the timeline
 
-    // Fade copy out, then back in with new text (matches prototype timing)
+    // Step 1: trigger the "approved" stage (ring close + check)
     setSwap(true);
     swapTimer.current = setTimeout(() => setSwap(false), 280);
+    setStage("approved");
 
-    // Slight beat so the user sees the ring fill before the page changes
-    setShowApproved(true);
+    // Step 2: after the ring has filled, swap to "delivered" + fire confetti
+    const tDelivered = setTimeout(() => {
+      setSwap(true);
+      setTimeout(() => {
+        setStage("delivered");
+        setSwap(false);
+        if (confettiRef.current) fireConfetti(confettiRef.current);
+      }, 280);
+    }, 1800);
 
-    const navTimer = setTimeout(() => {
+    // Step 3: navigate to /descarga once the celebration has played
+    const tNav = setTimeout(() => {
       router.push(`/descarga/${downloadToken}`);
-    }, 2200);
+    }, 4600);
 
     return () => {
-      clearTimeout(navTimer);
+      clearTimeout(tDelivered);
+      clearTimeout(tNav);
       if (swapTimer.current) clearTimeout(swapTimer.current);
     };
-  }, [status, downloadToken, router]);
+  }, [status, downloadToken, router, stage]);
 
-  const titleHtml = showApproved
-    ? "¡Listo! Pago<br />aprobado."
-    : "Estamos confirmando<br />tu compra.";
+  const titleHtml =
+    stage === "delivered"
+      ? "Gracias por<br />tu compra."
+      : stage === "approved"
+        ? "¡Listo! Pago<br />aprobado."
+        : "Estamos confirmando<br />tu compra.";
 
-  const ledeHtml = showApproved ? (
-    <>
-      Estamos preparando tus{" "}
-      <strong>
-        {photoCount.toLocaleString("es-AR")}{" "}
-        {photoCount === 1 ? "foto" : "fotos"}
-      </strong>
-      . En segundos te llevamos a la descarga.
-    </>
-  ) : (
-    <>
-      Apenas Mercado Pago aprueba el pago, te enviamos las fotos a{" "}
-      <strong>{buyerEmail}</strong>. Esto suele tardar entre 5 y 30 segundos.
-    </>
-  );
+  const ledeHtml =
+    stage === "delivered" ? (
+      <>
+        Te llevamos a tus{" "}
+        <strong>
+          {photoCount.toLocaleString("es-AR")}{" "}
+          {photoCount === 1 ? "foto" : "fotos"}
+        </strong>
+        …
+      </>
+    ) : stage === "approved" ? (
+      <>
+        Estamos preparando tus{" "}
+        <strong>
+          {photoCount.toLocaleString("es-AR")}{" "}
+          {photoCount === 1 ? "foto" : "fotos"}
+        </strong>
+        . En segundos te llevamos a la descarga.
+      </>
+    ) : (
+      <>
+        Apenas Mercado Pago aprueba el pago, te enviamos las fotos a{" "}
+        <strong>{buyerEmail}</strong>. Esto suele tardar entre 5 y 30 segundos.
+      </>
+    );
 
-  const footHtml = showApproved ? (
-    <>
-      También te enviamos el link a{" "}
-      <strong style={{ color: "var(--text-primary)" }}>{buyerEmail}</strong>.
-    </>
-  ) : (
-    <>
-      Podés cerrar esta página — te avisamos por mail.
-      <br />
-      ¿Algo no anda?{" "}
-      <a href="mailto:hola@cuervito.app">Escribinos</a>.
-    </>
-  );
+  const footHtml =
+    stage === "delivered" ? (
+      <>
+        También te enviamos el link a{" "}
+        <strong style={{ color: "var(--text-primary)" }}>{buyerEmail}</strong>.
+      </>
+    ) : stage === "approved" ? (
+      <>
+        También te enviamos el link a{" "}
+        <strong style={{ color: "var(--text-primary)" }}>{buyerEmail}</strong>.
+      </>
+    ) : (
+      <>
+        Podés cerrar esta página — te avisamos por mail.
+        <br />
+        ¿Algo no anda?{" "}
+        <a href="mailto:hola@cuervito.app">Escribinos</a>.
+      </>
+    );
 
   return (
-    <main className="pago-wrap" data-state={showApproved ? "approved" : "pending"}>
+    <main className="pago-wrap" data-state={stage}>
+      <div className="confetti-container" ref={confettiRef} aria-hidden="true" />
+
       <div className="pago-ring">
         <svg viewBox="0 0 120 120" aria-hidden="true">
           <circle className="track" cx="60" cy="60" r="54" />
@@ -150,24 +193,26 @@ export function ProcesandoClient({
       />
       <p className={`pago-lede ${swap ? "swap-out" : ""}`}>{ledeHtml}</p>
 
-      <div className="pago-summary">
-        <div className="row">
-          <span>Comprador</span>
-          <span>{buyerName}</span>
+      {stage !== "delivered" && (
+        <div className="pago-summary">
+          <div className="row">
+            <span>Comprador</span>
+            <span>{buyerName}</span>
+          </div>
+          <div className="row">
+            <span>Email</span>
+            <span>{buyerEmail}</span>
+          </div>
+          <div className="row">
+            <span>Fotos</span>
+            <strong>{photoCount.toLocaleString("es-AR")}</strong>
+          </div>
+          <div className="row total">
+            <span>Total pagado</span>
+            <span className="amt">{formatARS(totalCents)}</span>
+          </div>
         </div>
-        <div className="row">
-          <span>Email</span>
-          <span>{buyerEmail}</span>
-        </div>
-        <div className="row">
-          <span>Fotos</span>
-          <strong>{photoCount.toLocaleString("es-AR")}</strong>
-        </div>
-        <div className="row total">
-          <span>Total pagado</span>
-          <span className="amt">{formatARS(totalCents)}</span>
-        </div>
-      </div>
+      )}
 
       <p className={`pago-foot ${swap ? "swap-out" : ""}`}>{footHtml}</p>
     </main>

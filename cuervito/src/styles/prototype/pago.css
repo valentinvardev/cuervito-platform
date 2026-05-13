@@ -143,3 +143,40 @@
   transition: opacity 260ms ease, transform 260ms ease;
 }
 .pago-foot a { color: var(--accent); }
+
+/* "Delivered" stage — summary hides, accent flips green, copy celebrates */
+.pago-wrap[data-state="delivered"] .pago-title {
+  color: var(--success);
+}
+
+/* Confetti — same DSL as /onboarding/welcome and /descarga */
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.confetti {
+  position: absolute;
+  top: -30px;
+  width: var(--w, 8px);
+  height: var(--h, 14px);
+  background: var(--c, var(--accent));
+  border-radius: 1.5px;
+  animation: pago-confetti-fall var(--dur, 3.2s)
+    cubic-bezier(0.16, 0.8, 0.4, 1) var(--delay, 0s) forwards;
+}
+@keyframes pago-confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, -20px, 0) rotate(0deg);
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--dx, 0px), 100vh, 0) rotate(var(--rot, 720deg));
+  }
+}
