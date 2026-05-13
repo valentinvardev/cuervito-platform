@@ -1,9 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 
-import { fakeConnectMpAction, skipMpAction } from "../actions";
+import { skipMpAction } from "../actions";
 import { ObShell } from "../ob-shell";
 
 export default async function OnboardingMpPage() {
@@ -44,11 +45,12 @@ export default async function OnboardingMpPage() {
             <li><i className="ti ti-check"></i>Usás tu cuenta MP personal — sin formularios</li>
           </ul>
 
-          <form action={fakeConnectMpAction}>
-            <button type="submit" className="btn btn-primary mp-connect-btn">
-              <i className="ti ti-plug-connected"></i>Conectar
-            </button>
-          </form>
+          <Link
+            href="/api/mp/oauth/start"
+            className="btn btn-primary mp-connect-btn"
+          >
+            <i className="ti ti-plug-connected"></i>Conectar
+          </Link>
 
           <div className="mp-help">
             ¿Todavía no tenés cuenta?{" "}
