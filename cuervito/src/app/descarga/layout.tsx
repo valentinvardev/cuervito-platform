@@ -1,6 +1,7 @@
 import "~/styles/prototype/styles.css";
 import "~/styles/prototype/panel-anim.css";
 import "~/styles/prototype/descarga.css";
+import "~/styles/prototype/lightbox.css";
 
 export default function DescargaLayout({ children }: { children: React.ReactNode }) {
   return (

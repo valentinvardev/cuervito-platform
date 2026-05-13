@@ -162,3 +162,61 @@
   }
   .lb-meta .filename { max-width: 100px; }
 }
+
+/* =========================================================================
+   Descarga lightbox extras — bottom action bar with "Guardar foto"
+   ======================================================================= */
+.lb-foot {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 31;
+  padding: 18px max(env(safe-area-inset-left), 18px) max(env(safe-area-inset-bottom), 18px) max(env(safe-area-inset-right), 18px);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(
+    to top,
+    rgba(8, 6, 5, 0.92) 0%,
+    rgba(8, 6, 5, 0.0) 100%
+  );
+}
+.lb-bib {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: var(--text-primary);
+}
+.lb-save-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  background: var(--accent);
+  color: #1a0d00;
+  border: none;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease, transform 150ms ease;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+}
+.lb-save-btn:hover { background: var(--accent-bright); transform: translateY(-1px); }
+.lb-save-btn:active { transform: translateY(0); }
+.lb-save-btn:disabled { opacity: 0.7; cursor: wait; }
+.lb-save-btn i { font-size: 16px; }
+.lb-save-btn .spinner-mini {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}

@@ -6,6 +6,8 @@ import { createPortal } from "react-dom";
 
 import { fireConfetti } from "~/lib/confetti";
 
+import { DescargaLightbox } from "./descarga-lightbox";
+
 type Photo = {
   id: string;
   filename: string;
@@ -72,6 +74,7 @@ export function DescargaClient({
   const [error, setError] = useState<string | null>(null);
   const [iosOpen, setIosOpen] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
   useEffect(() => {
     // The full payment confirmation animation now lives in /pago/procesando.
@@ -211,7 +214,7 @@ export function DescargaClient({
         </div>
 
         <div className="photo-grid">
-          {photos.map((p) => {
+          {photos.map((p, i) => {
             const isSaved = saved.has(p.id);
             const isPending = pendingId === p.id;
             return (
@@ -222,12 +225,17 @@ export function DescargaClient({
                   backgroundImage: `url(${p.previewUrl})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
+                  cursor: "zoom-in",
                 }}
+                onClick={() => setLightboxIdx(i)}
               >
                 {p.bibNumbers && <div className="ribbon">#{p.bibNumbers}</div>}
                 <button
                   className="dl"
-                  onClick={() => downloadOne(p.id, p.filename)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    downloadOne(p.id, p.filename);
+                  }}
                   disabled={isPending}
                 >
                   {isPending ? (
@@ -284,6 +292,17 @@ export function DescargaClient({
           token={token}
           photos={photos}
           onClose={() => setIosOpen(false)}
+        />
+      )}
+
+      {lightboxIdx !== null && (
+        <DescargaLightbox
+          photos={photos}
+          startIndex={lightboxIdx}
+          isSaved={(id) => saved.has(id)}
+          isPending={(id) => pendingId === id}
+          onSave={(p) => downloadOne(p.id, p.filename)}
+          onClose={() => setLightboxIdx(null)}
         />
       )}
     </>
