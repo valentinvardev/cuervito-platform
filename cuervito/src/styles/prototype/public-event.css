@@ -96,9 +96,9 @@
     position: relative;
     max-width: 1080px;
     margin: 0 auto;
-    padding: 60px 32px 50px;
+    padding: 60px 32px 28px;
   }
-  @media (max-width: 700px) { .hero-inner { padding: 40px 18px 36px; } }
+  @media (max-width: 700px) { .hero-inner { padding: 28px 18px 18px; } }
 
   .photog-row {
     display: flex; align-items: center; gap: 18px;
@@ -237,9 +237,9 @@
   .main {
     max-width: 1080px;
     margin: 0 auto;
-    padding: 0 32px 90px;
+    padding: 22px 32px 90px;
   }
-  @media (max-width: 700px) { .main { padding: 0 18px 80px; } }
+  @media (max-width: 700px) { .main { padding: 14px 18px 80px; } }
 
   .search-card {
     background: var(--bg-surface);
@@ -251,6 +251,22 @@
     gap: 10px;
     margin-bottom: 24px;
     align-items: center;
+  }
+  /* Variant: search-card sits inside .hero-inner (more compact mobile layout)
+     so we drop the bottom margin and make the surface translucent to blend
+     with the cover image behind it. */
+  .search-card.in-hero {
+    margin-top: 18px;
+    margin-bottom: 0;
+    background: rgba(15, 13, 11, 0.72);
+    backdrop-filter: blur(10px);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  @media (max-width: 700px) {
+    .search-card.in-hero {
+      margin-top: 14px;
+      padding: 12px;
+    }
   }
   .search-card .input-with-icon {
     position: relative;

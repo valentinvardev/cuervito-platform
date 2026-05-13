@@ -55,22 +55,22 @@ export default function Loading() {
               }}
             />
           </div>
+          {/* Search bar lives inside the hero */}
+          <span
+            className="skel"
+            style={{
+              display: "block",
+              width: "100%",
+              height: 56,
+              borderRadius: 14,
+              marginTop: 18,
+              background: "rgba(255,255,255,0.10)",
+            }}
+          />
         </div>
       </header>
 
       <main className="main">
-        {/* Search bar */}
-        <span
-          className="skel"
-          style={{
-            display: "block",
-            width: "100%",
-            height: 56,
-            borderRadius: 14,
-            marginBottom: 18,
-          }}
-        />
-
         {/* Photo grid */}
         <div className="photo-grid">
           {Array.from({ length: 12 }).map((_, i) => (

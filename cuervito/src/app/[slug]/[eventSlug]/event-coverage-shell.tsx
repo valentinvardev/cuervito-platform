@@ -225,31 +225,32 @@ function ShellInner({
               </span>
             </div>
           </div>
+
+          <div className="search-card in-hero">
+            <div className="input-with-icon">
+              <i className="ti ti-search"></i>
+              <input
+                placeholder="Buscar por número de dorsal…"
+                inputMode="numeric"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+            <SelfieSearchButton eventId={event.id} onResult={handleSelfie} />
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                // Bib filter runs as you type already; this is a no-op affordance.
+              }}
+            >
+              <i className="ti ti-search"></i>Buscar
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="main">
-        <div className="search-card">
-          <div className="input-with-icon">
-            <i className="ti ti-search"></i>
-            <input
-              placeholder="Buscar por número de dorsal…"
-              inputMode="numeric"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </div>
-          <SelfieSearchButton eventId={event.id} onResult={handleSelfie} />
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => {
-              // Bib filter runs as you type already; this is a no-op affordance.
-            }}
-          >
-            <i className="ti ti-search"></i>Buscar
-          </button>
-        </div>
 
         {selfieMessage && (
           <div
