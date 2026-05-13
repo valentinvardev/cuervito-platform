@@ -132,6 +132,7 @@ model User {
     salesReferred     Sale[]             @relation("SaleReferrer")
     recognitionUsage  RecognitionUsage[]
     salesAudit        AdminAction[]
+    customDomains     CustomDomain[]     @relation("CustomDomainsOwner")
 }
 
 // =============================================================================
@@ -364,6 +365,33 @@ model DownloadLog {
 
     @@index([saleId])
     @@index([createdAt])
+}
+
+// Custom domain a photographer has connected to their storefront
+// (e.g. www.anaphoto.com.ar → /ana-liotta).
+//
+// status lifecycle:
+//   PENDING_DNS    — user added the domain, DNS not yet pointing
+//   PENDING_SSL    — DNS verified, Cloudflare issuing cert
+//   ACTIVE         — everything verified, public
+//   FAILED         — something broke, see error message
+//
+// cfHostnameId is the Cloudflare for SaaS "Custom Hostname" record id
+// (we call their API to provision the cert / verify ownership).
+model CustomDomain {
+    id            String   @id @default(cuid())
+    userId        String
+    user          User     @relation("CustomDomainsOwner", fields: [userId], references: [id], onDelete: Cascade)
+    hostname      String   @unique  // e.g. "www.anaphoto.com.ar"
+    status        String   @default("PENDING_DNS")  // PENDING_DNS | PENDING_SSL | ACTIVE | FAILED
+    cfHostnameId  String?  @unique  // Cloudflare Custom Hostname API id
+    errorMessage  String?  @db.Text
+    verifiedAt    DateTime?
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    @@index([userId])
+    @@index([status])
 }
 
 // Pending notifications for sellers — we batch them progressively

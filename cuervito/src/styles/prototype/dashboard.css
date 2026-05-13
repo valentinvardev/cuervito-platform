@@ -994,6 +994,101 @@
 .edit-cta .info .sub { color: var(--text-secondary); font-size: 13px; }
 
 /* =========================================================================
+   Custom domains (DomainsSection on /dashboard/tienda)
+   ======================================================================= */
+.domain-add-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.domain-add-form .input { flex: 1; }
+.domain-add-form .btn { white-space: nowrap; }
+@media (max-width: 540px) {
+  .domain-add-form { flex-direction: column; }
+}
+
+.domain-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.domain-callout i { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.domain-callout.warning {
+  background: rgba(245, 200, 66, 0.08);
+  border: 1px solid rgba(245, 200, 66, 0.4);
+  color: var(--warning);
+}
+.domain-callout.warning strong,
+.domain-callout.warning a { color: var(--text-primary); }
+.domain-callout.error {
+  background: rgba(224, 85, 85, 0.08);
+  border: 1px solid rgba(224, 85, 85, 0.4);
+  color: var(--error);
+}
+
+.dns-instructions {
+  margin: 16px 0;
+  padding: 16px 18px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-accent);
+  border-radius: 12px;
+}
+.dns-instructions .ttl {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14.5px;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.dns-table {
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.dns-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 1.5fr;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 12.5px;
+  align-items: center;
+}
+.dns-row:last-child { border-bottom: none; }
+.dns-row.dns-head {
+  background: var(--bg-elevated);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.dns-row .mono { font-family: var(--font-mono); color: var(--text-primary); }
+@media (max-width: 540px) {
+  .dns-row { grid-template-columns: 1fr; gap: 4px; }
+  .dns-row.dns-head { display: none; }
+  .dns-row .mono::before {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 2px;
+  }
+  .dns-row .mono:nth-child(1)::before { content: "Tipo"; }
+  .dns-row .mono:nth-child(2)::before { content: "Nombre"; }
+  .dns-row .mono:nth-child(3)::before { content: "Valor"; }
+}
+
+/* =========================================================================
    /dashboard/ventas
    ======================================================================= */
 .wrap-ventas { max-width: 880px; margin: 0 auto; padding: 32px 32px 80px; }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { saveBrandColorAction } from "./actions";
+import { DomainsSection, type DomainRow } from "./domains-section";
 
 const PRESETS: { name: string; hex: string }[] = [
   { name: "Cuervito Orange", hex: "#F5820A" },
@@ -19,9 +20,13 @@ const PRESETS: { name: string; hex: string }[] = [
 export function TiendaClient({
   slug,
   brandColor,
+  domains,
+  cfEnabled,
 }: {
   slug: string;
   brandColor: string;
+  domains: DomainRow[];
+  cfEnabled: boolean;
 }) {
   const [selected, setSelected] = useState(brandColor.toUpperCase());
   const [copied, setCopied] = useState(false);
@@ -93,18 +98,10 @@ export function TiendaClient({
             <i className="ti ti-external-link" />
             Ver mi página
           </Link>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            disabled
-            title="Próximamente"
-            style={{ opacity: 0.5, cursor: "not-allowed" }}
-          >
-            <i className="ti ti-world" />
-            Conectar mi dominio
-          </button>
         </div>
       </section>
+
+      <DomainsSection domains={domains} cfEnabled={cfEnabled} />
 
       <section className="section">
         <div className="section-head">
@@ -153,7 +150,7 @@ export function TiendaClient({
         <div className="info">
           <div className="ttl">Más opciones de personalización</div>
           <div className="sub">
-            Plantillas, hero personalizado y dominios propios — próximamente.
+            Plantillas y hero personalizado — próximamente.
           </div>
         </div>
       </div>

@@ -45,6 +45,11 @@ export const env = createEnv({
     RESEND_API_KEY: z.string().optional(),
     RESEND_FROM_EMAIL: z.string().default("Cuervito <hola@cuervito.app>"),
 
+    // Cloudflare for SaaS (custom hostnames for /dashboard/tienda)
+    CLOUDFLARE_API_TOKEN: z.string().optional(),
+    CLOUDFLARE_ZONE_ID: z.string().optional(),
+    CLOUDFLARE_FALLBACK_ORIGIN: z.string().default("cuervito.app"),
+
     // Quotas
     QUOTA_STORAGE_BYTES_DEFAULT: z.coerce.number().default(107374182400), // 100 GB
     QUOTA_MAX_PHOTO_BYTES: z.coerce.number().default(31457280), // 30 MB
@@ -90,6 +95,10 @@ export const env = createEnv({
 
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
+
+    CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN,
+    CLOUDFLARE_ZONE_ID: process.env.CLOUDFLARE_ZONE_ID,
+    CLOUDFLARE_FALLBACK_ORIGIN: process.env.CLOUDFLARE_FALLBACK_ORIGIN,
 
     QUOTA_STORAGE_BYTES_DEFAULT: process.env.QUOTA_STORAGE_BYTES_DEFAULT,
     QUOTA_MAX_PHOTO_BYTES: process.env.QUOTA_MAX_PHOTO_BYTES,
