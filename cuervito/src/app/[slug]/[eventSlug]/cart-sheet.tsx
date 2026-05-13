@@ -4,10 +4,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useCart } from "./cart-context";
-import {
-  PaymentProcessingOverlay,
-  type PaymentOverlayState,
-} from "./payment-overlay";
 
 type Photo = {
   id: string;
@@ -42,8 +38,6 @@ export function CartSheet({
   const [phone, setPhone] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [overlayState, setOverlayState] =
-    useState<PaymentOverlayState | null>(null);
 
   async function goCheckout() {
     setError(null);
@@ -56,8 +50,6 @@ export function CartSheet({
       return;
     }
     setPending(true);
-    setOverlayState("processing");
-    const startedAt = Date.now();
     try {
       const res = await fetch("/api/mp/checkout", {
         method: "POST",
@@ -73,35 +65,22 @@ export function CartSheet({
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
         setError(data.error ?? "No pudimos iniciar el pago.");
-        setOverlayState(null);
         setPending(false);
         return;
       }
       const data = (await res.json()) as { saleId: string; initPoint: string };
       const isInternal = data.initPoint.startsWith("/");
-
-      // Ensure the "processing" frame is visible for a beat, even on fast LAN.
-      const minProcessingMs = 900;
-      const elapsed = Date.now() - startedAt;
-      if (elapsed < minProcessingMs) {
-        await new Promise((r) => setTimeout(r, minProcessingMs - elapsed));
-      }
-
       if (isInternal) {
-        // Test mode / internal: show "approved" beat, then soft-nav so React
-        // tree (and overlay) survive the transition until /descarga mounts.
-        setOverlayState("approved");
+        // Test mode: initPoint is /pago/procesando?sale=X — soft-nav.
         router.prefetch(data.initPoint);
-        await new Promise((r) => setTimeout(r, 700));
         router.push(data.initPoint);
       } else {
-        // External (real MP) — hard nav. Keep the processing state visible
-        // until the browser actually unloads.
+        // Real MP: hard nav out to MP. They'll redirect back to /pago/exito
+        // (which forwards to /pago/procesando) after payment.
         window.location.href = data.initPoint;
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error de red.");
-      setOverlayState(null);
       setPending(false);
     }
   }
@@ -180,9 +159,6 @@ export function CartSheet({
           )}
         </div>
       </aside>
-      {overlayState && (
-        <PaymentProcessingOverlay state={overlayState} testMode={testMode} />
-      )}
     </>
   );
 }

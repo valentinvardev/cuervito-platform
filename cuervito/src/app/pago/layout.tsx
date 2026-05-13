@@ -1,4 +1,5 @@
 import "~/styles/prototype/styles.css";
+import "~/styles/prototype/pago.css";
 
 export default function PagoLayout({ children }: { children: React.ReactNode }) {
   return (

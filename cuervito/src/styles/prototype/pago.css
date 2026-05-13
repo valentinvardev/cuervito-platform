@@ -1,0 +1,145 @@
+/* =========================================================================
+   /pago/procesando — ported from designs/pago.html
+   Pending → Approved single-page transition (no overlay, just a state flip)
+   ======================================================================= */
+
+.pago-wrap {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 60px 32px 80px;
+  text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+@media (max-width: 540px) {
+  .pago-wrap { padding: 40px 22px 60px; }
+}
+
+.pago-ring {
+  width: 120px; height: 120px;
+  margin: 0 auto 28px;
+  position: relative;
+}
+.pago-ring svg {
+  width: 100%; height: 100%;
+  transform: rotate(-90deg);
+}
+.pago-ring .track {
+  fill: none;
+  stroke: var(--border-subtle);
+  stroke-width: 4;
+}
+.pago-ring .indeterminate {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+  /* circumference for r=54 ≈ 339.3 → use 340; offset 255 ≈ 25% arc visible */
+  stroke-dasharray: 340;
+  stroke-dashoffset: 255;
+  transform-origin: center;
+  transform: rotate(90deg);
+  animation: pago-spin 1.4s linear infinite;
+  /* When state flips to approved these transition smoothly */
+  transition:
+    stroke-dashoffset 820ms cubic-bezier(.2, .7, .2, 1),
+    stroke 520ms ease 120ms;
+}
+.pago-ring .check {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--success);
+  opacity: 0;
+  transform: scale(0.4);
+  /* Check appears AFTER the ring finishes filling (delay matches fill duration) */
+  transition:
+    opacity 280ms ease 720ms,
+    transform 420ms cubic-bezier(.2, .9, .3, 1) 720ms;
+}
+.pago-ring .check i { font-size: 64px; }
+
+.pago-wrap[data-state="approved"] .pago-ring .indeterminate {
+  stroke: var(--success);
+  stroke-dashoffset: 0;
+  animation-play-state: paused;
+}
+.pago-wrap[data-state="approved"] .pago-ring .check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@keyframes pago-spin { to { transform: rotate(360deg); } }
+
+.pago-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(36px, 6vw, 52px);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin: 0 0 12px;
+  color: var(--text-primary);
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+.pago-lede {
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0 0 32px;
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+.pago-lede strong { color: var(--text-primary); font-weight: 500; }
+
+.swap-out { opacity: 0; transform: translateY(-4px); }
+
+/* ===== Order summary ===== */
+.pago-summary {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 18px 22px;
+  text-align: left;
+  margin-bottom: 24px;
+}
+.pago-summary .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+.pago-summary .row strong {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-family: var(--font-mono);
+}
+.pago-summary .row.total {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.pago-summary .row.total .amt {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 24px;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+.pago-wrap[data-state="approved"] .pago-summary .row.total .amt {
+  color: var(--success);
+  transition: color 520ms ease;
+}
+
+.pago-foot {
+  font-size: 12.5px;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+  margin: 8px 0 0;
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+.pago-foot a { color: var(--accent); }

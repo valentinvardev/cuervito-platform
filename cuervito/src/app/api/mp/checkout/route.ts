@@ -168,9 +168,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       saleId: sale.id,
-      // Path relativo: el cliente hace window.location.href y respeta el host actual
-      // (LAN, localhost, prod). No usamos NEXT_PUBLIC_BASE_URL acá porque rompe testing en LAN.
-      initPoint: `/descarga/${downloadToken}`,
+      // Send the buyer through /pago/procesando so they get the full
+      // confirmation animation (matches the prototype + the real-MP path).
+      // The page polls /api/sales/:id/status; since this is test-mode the
+      // sale is already PAID and it'll redirect to /descarga immediately.
+      initPoint: `/pago/procesando?sale=${sale.id}`,
       testMode: true,
     });
   }

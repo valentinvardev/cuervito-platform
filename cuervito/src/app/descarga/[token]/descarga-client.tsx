@@ -76,8 +76,6 @@ function openInlineForIos(url: string) {
   }
 }
 
-type PaymentStage = "confirming" | "approved" | "delivered";
-
 export function DescargaClient({
   token,
   buyerEmail,
@@ -97,20 +95,11 @@ export function DescargaClient({
   const [error, setError] = useState<string | null>(null);
   const [iosOpen, setIosOpen] = useState(false);
   const [isIos, setIsIos] = useState(false);
-  // 3-stage payment animation: confirming → approved → delivered (final)
-  const [stage, setStage] = useState<PaymentStage>("confirming");
 
   useEffect(() => {
-    // Sequence: confirming (1.2s) → approved (1.1s) → delivered → fire confetti
-    const t1 = setTimeout(() => setStage("approved"), 1200);
-    const t2 = setTimeout(() => {
-      setStage("delivered");
-      if (confettiRef.current) fireConfetti(confettiRef.current);
-    }, 2300);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    // The full payment confirmation animation now lives in /pago/procesando.
+    // Here we just fire the celebratory confetti once the page mounts.
+    if (confettiRef.current) fireConfetti(confettiRef.current);
   }, []);
 
   useEffect(() => {
@@ -147,31 +136,6 @@ export function DescargaClient({
 
   return (
     <>
-      {stage !== "delivered" && (
-        <div className={`pay-overlay ${stage}`} role="status" aria-live="polite">
-          <div className="pay-card">
-            {stage === "confirming" ? (
-              <>
-                <div className="pay-spinner" aria-hidden="true">
-                  <span className="ring" />
-                  <i className="ti ti-credit-card" />
-                </div>
-                <div className="pay-ttl">Confirmando pago…</div>
-                <div className="pay-sub">No cierres ni recargues esta página.</div>
-              </>
-            ) : (
-              <>
-                <div className="pay-check" aria-hidden="true">
-                  <i className="ti ti-check" />
-                </div>
-                <div className="pay-ttl pay-ttl-ok">Pago confirmado</div>
-                <div className="pay-sub">Preparando tus fotos…</div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
       <div className="confetti-container" ref={confettiRef} aria-hidden="true" />
 
       <header className="nav">
