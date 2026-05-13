@@ -1,0 +1,228 @@
+/* =========================================================================
+   /terminos and /privacidad — shared legal layout
+   ======================================================================= */
+
+.legal-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  background: rgba(15, 13, 11, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.legal-nav-links {
+  display: flex;
+  gap: 18px;
+  font-size: 13.5px;
+}
+.legal-nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 150ms;
+}
+.legal-nav-links a:hover {
+  color: var(--accent);
+}
+@media (max-width: 540px) {
+  .legal-nav {
+    padding: 0 18px;
+  }
+}
+
+.legal-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 32px 80px;
+}
+@media (max-width: 700px) {
+  .legal-wrap {
+    padding: 32px 22px 60px;
+  }
+}
+
+.legal-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+
+.legal-wrap h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(34px, 5.5vw, 48px);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.legal-updated {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-family: var(--font-mono);
+  margin-bottom: 32px;
+}
+
+.legal-wrap h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 38px 0 12px;
+  scroll-margin-top: 80px;
+}
+
+.legal-wrap h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+  margin: 24px 0 10px;
+}
+
+.legal-wrap p {
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin: 0 0 14px;
+}
+.legal-wrap p strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.legal-wrap ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 18px;
+}
+.legal-wrap ul li {
+  position: relative;
+  padding-left: 22px;
+  margin-bottom: 10px;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.legal-wrap ul li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 11px;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  opacity: 0.7;
+}
+.legal-wrap ul li strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.legal-wrap a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.legal-wrap a:hover {
+  text-decoration: underline;
+}
+
+.legal-callout {
+  margin: 24px 0;
+  padding: 18px 22px;
+  background: var(--accent-deep);
+  border: 1px solid var(--border-accent);
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.legal-callout strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.legal-toc {
+  margin: 0 0 32px;
+  padding: 18px 22px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+.legal-toc-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 10px;
+}
+.legal-toc ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  columns: 2;
+  column-gap: 24px;
+}
+@media (max-width: 540px) {
+  .legal-toc ol {
+    columns: 1;
+  }
+}
+.legal-toc ol li {
+  padding: 4px 0;
+  font-size: 13.5px;
+  break-inside: avoid;
+}
+.legal-toc ol li a {
+  color: var(--text-secondary);
+}
+.legal-toc ol li a:hover {
+  color: var(--accent);
+}
+
+.legal-foot {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 32px 40px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  font-size: 12.5px;
+  color: var(--text-tertiary);
+  flex-wrap: wrap;
+}
+.legal-foot a {
+  color: var(--text-tertiary);
+  text-decoration: none;
+}
+.legal-foot a:hover {
+  color: var(--accent);
+}
+
+/* Placeholder badge — yellow pill highlighting bits that need real data */
+.legal-placeholder {
+  display: inline-block;
+  padding: 1px 7px;
+  margin: 0 2px;
+  background: rgba(245, 200, 66, 0.12);
+  border: 1px dashed rgba(245, 200, 66, 0.5);
+  border-radius: 5px;
+  color: var(--warning);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+}

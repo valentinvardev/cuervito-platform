@@ -113,6 +113,15 @@ export default function SignupPage() {
         ¿Ya tenés cuenta?{" "}
         <Link href="/login">Iniciar sesión</Link>
       </p>
+
+      <p
+        className="auth-foot"
+        style={{ fontSize: 11.5, color: "var(--text-tertiary)", marginTop: 12 }}
+      >
+        Al crear una cuenta aceptás nuestros{" "}
+        <Link href="/terminos">Términos</Link> y la{" "}
+        <Link href="/privacidad">Política de Privacidad</Link>.
+      </p>
     </div>
   );
 }
