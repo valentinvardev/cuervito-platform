@@ -63,12 +63,14 @@ const COLORS = {
   onAccent: "#1a0d00",
 } as const;
 
-const FONT_DISPLAY =
-  "'Bricolage Grotesque', 'Georgia', serif";
+// Sans-serif everywhere. Email clients often block webfonts, so we list a
+// short SF/Helvetica/Arial stack that's guaranteed to render. Headings just
+// crank the weight on the same family — keeps the brand consistent.
 const FONT_BODY =
-  "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
+const FONT_DISPLAY = FONT_BODY;
 const FONT_MONO =
-  "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace";
+  "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) =>
@@ -83,9 +85,13 @@ function formatARS(cents: number): string {
 /**
  * Cuervito wordmark — drawn with HTML so it survives email clients that strip
  * images. The orange dot is a tiny inline-block circle.
+ *
+ * Wrapped in a dark-bg pill so the orange stays legible on Gmail dark-mode
+ * clients that aggressively invert colors. Pill background = bgSurface so it
+ * blends with the card below it.
  */
 function wordmark(): string {
-  return `<div style="font-family:${FONT_DISPLAY};font-weight:800;font-size:26px;color:${COLORS.accent};letter-spacing:-0.025em;line-height:1;display:inline-block;">cuerv<span style="display:inline-block;width:8px;height:8px;background:${COLORS.accent};border-radius:50%;margin:0 1px;vertical-align:baseline;"></span>to</div>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${COLORS.bgSurface}" style="background:${COLORS.bgSurface};padding:10px 14px;border-radius:10px;border:1px solid ${COLORS.border};"><span style="font-family:${FONT_DISPLAY};font-weight:800;font-size:24px;color:${COLORS.accent};letter-spacing:-0.025em;line-height:1;mso-line-height-rule:exactly;">cuerv<span style="display:inline-block;width:7px;height:7px;background:${COLORS.accent};border-radius:50%;margin:0 1px;vertical-align:baseline;mso-hide:all;"></span>to</span></td></tr></table>`;
 }
 
 type LayoutInput = {
@@ -97,26 +103,41 @@ type LayoutInput = {
 
 function layout({ preheader, body }: LayoutInput): string {
   return `<!doctype html>
-<html lang="es"><head>
+<html lang="es" style="color-scheme:only light;supported-color-schemes:only light;"><head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="only light" />
+<meta name="supported-color-schemes" content="only light" />
+<meta name="x-apple-disable-message-reformatting" />
 <title>Cuervito</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<!--[if mso]>
+<style type="text/css">body, table, td { font-family: Arial, Helvetica, sans-serif !important; }</style>
+<![endif]-->
+<style>
+/* Gmail dark-mode hooks: when Gmail flips to dark mode, [data-ogsc]/[data-ogsb]
+   are applied to every node. We re-assert our colors so the theme doesn't
+   wash out into Gmail's auto-inverted palette. */
+[data-ogsc] body, [data-ogsb] body { background:${COLORS.bgBase} !important; }
+[data-ogsc] .cv-card, [data-ogsb] .cv-card { background:${COLORS.bgSurface} !important; }
+[data-ogsc] .cv-elevated, [data-ogsb] .cv-elevated { background:${COLORS.bgElevated} !important; }
+[data-ogsc] .cv-text, [data-ogsb] .cv-text { color:${COLORS.textPrimary} !important; }
+[data-ogsc] .cv-text-2, [data-ogsb] .cv-text-2 { color:${COLORS.textSecondary} !important; }
+[data-ogsc] .cv-text-3, [data-ogsb] .cv-text-3 { color:${COLORS.textTertiary} !important; }
+[data-ogsc] .cv-accent, [data-ogsb] .cv-accent { color:${COLORS.accent} !important; }
+</style>
 </head>
-<body style="margin:0;padding:0;background:${COLORS.bgBase};color:${COLORS.textPrimary};font-family:${FONT_BODY};">
+<body bgcolor="${COLORS.bgBase}" style="margin:0;padding:0;background:${COLORS.bgBase};color:${COLORS.textPrimary};font-family:${FONT_BODY};">
 <div style="display:none;max-height:0;overflow:hidden;color:transparent;">${escapeHtml(preheader)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${COLORS.bgBase};padding:40px 16px;">
-  <tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${COLORS.bgBase}" style="background:${COLORS.bgBase};padding:40px 16px;">
+  <tr><td align="center" bgcolor="${COLORS.bgBase}" style="background:${COLORS.bgBase};">
     <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
-      <tr><td style="padding:0 4px 24px;">${wordmark()}</td></tr>
-      <tr><td style="background:${COLORS.bgSurface};border:1px solid ${COLORS.border};border-radius:16px;padding:36px 32px;">
+      <tr><td style="padding:0 4px 22px;">${wordmark()}</td></tr>
+      <tr><td bgcolor="${COLORS.bgSurface}" class="cv-card" style="background:${COLORS.bgSurface};border:1px solid ${COLORS.border};border-radius:16px;padding:36px 32px;">
         ${body}
       </td></tr>
-      <tr><td style="padding:20px 4px 0;color:${COLORS.textTertiary};font-size:11.5px;line-height:1.5;text-align:left;">
-        Recibís este correo porque sos parte de <strong style="color:${COLORS.textSecondary};">cuervito</strong>, la plataforma de fotos deportivas.<br>
-        <a href="${env.NEXT_PUBLIC_BASE_URL}" style="color:${COLORS.textTertiary};text-decoration:underline;">cuervito.app</a>
+      <tr><td class="cv-text-3" style="padding:20px 4px 0;color:${COLORS.textTertiary};font-size:11.5px;line-height:1.5;text-align:left;font-family:${FONT_BODY};">
+        Recibís este correo porque sos parte de <strong class="cv-text-2" style="color:${COLORS.textSecondary};">cuervito</strong>, la plataforma de fotos deportivas.<br>
+        <a href="${env.NEXT_PUBLIC_BASE_URL}" class="cv-text-3" style="color:${COLORS.textTertiary};text-decoration:underline;">cuervito.app</a>
       </td></tr>
     </table>
   </td></tr>
@@ -125,23 +146,23 @@ function layout({ preheader, body }: LayoutInput): string {
 }
 
 function ctaButton(text: string, url: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0;"><tr><td style="background:${COLORS.accent};border-radius:10px;"><a href="${url}" style="display:inline-block;padding:14px 26px;color:${COLORS.onAccent};font-family:${FONT_BODY};font-weight:600;font-size:15px;text-decoration:none;letter-spacing:-0.005em;">${escapeHtml(text)}</a></td></tr></table>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0;"><tr><td bgcolor="${COLORS.accent}" style="background:${COLORS.accent};border-radius:10px;"><a href="${url}" style="display:inline-block;padding:14px 26px;color:${COLORS.onAccent};font-family:${FONT_BODY};font-weight:600;font-size:15px;text-decoration:none;letter-spacing:-0.005em;">${escapeHtml(text)}</a></td></tr></table>`;
 }
 
 function ctaButtonOutline(text: string, url: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0;"><tr><td style="background:transparent;border:1px solid ${COLORS.border};border-radius:10px;"><a href="${url}" style="display:inline-block;padding:13px 24px;color:${COLORS.textPrimary};font-family:${FONT_BODY};font-weight:500;font-size:14px;text-decoration:none;">${escapeHtml(text)}</a></td></tr></table>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0;"><tr><td bgcolor="${COLORS.bgSurface}" class="cv-card" style="background:${COLORS.bgSurface};border:1px solid ${COLORS.border};border-radius:10px;"><a href="${url}" class="cv-text" style="display:inline-block;padding:13px 24px;color:${COLORS.textPrimary};font-family:${FONT_BODY};font-weight:500;font-size:14px;text-decoration:none;">${escapeHtml(text)}</a></td></tr></table>`;
 }
 
 function heading(text: string): string {
-  return `<h1 style="margin:0 0 14px;font-family:${FONT_DISPLAY};font-weight:800;font-size:30px;line-height:1.1;letter-spacing:-0.03em;color:${COLORS.textPrimary};">${escapeHtml(text)}</h1>`;
+  return `<h1 class="cv-text" style="margin:0 0 14px;font-family:${FONT_DISPLAY};font-weight:800;font-size:28px;line-height:1.15;letter-spacing:-0.02em;color:${COLORS.textPrimary};">${escapeHtml(text)}</h1>`;
 }
 
 function paragraph(text: string): string {
-  return `<p style="margin:0 0 18px;font-family:${FONT_BODY};font-size:15px;line-height:1.55;color:${COLORS.textSecondary};">${text}</p>`;
+  return `<p class="cv-text-2" style="margin:0 0 18px;font-family:${FONT_BODY};font-size:15px;line-height:1.55;color:${COLORS.textSecondary};">${text}</p>`;
 }
 
 function eyebrow(text: string): string {
-  return `<div style="font-family:${FONT_MONO};font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${COLORS.accent};margin-bottom:14px;">${escapeHtml(text)}</div>`;
+  return `<div class="cv-accent" style="font-family:${FONT_MONO};font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${COLORS.accent};margin-bottom:14px;">${escapeHtml(text)}</div>`;
 }
 
 /* ============================================================================
@@ -214,7 +235,7 @@ export function welcomeEmailHtml(input: WelcomeEmailInput): string {
       )}
     </div>
 
-    <div style="margin-top:28px;padding:16px 18px;background:${COLORS.accentDeep};border:1px solid ${COLORS.borderAccent};border-radius:10px;font-size:13px;color:${COLORS.textSecondary};line-height:1.55;">
+    <div bgcolor="${COLORS.bgElevated}" class="cv-elevated" style="margin-top:28px;padding:16px 18px;background:${COLORS.bgElevated};border:1px solid ${COLORS.borderAccent};border-radius:10px;font-size:13px;color:${COLORS.textSecondary};line-height:1.55;">
       <strong style="color:${COLORS.textPrimary};">¿Trabás en algo?</strong> Respondé este mail y te ayudamos. Somos un equipo chico, contestamos en horas hábiles.
     </div>
   `;
@@ -249,7 +270,7 @@ export function deliveryEmailHtml(input: DeliveryEmailInput): string {
       ${ctaButton("Ver y descargar mis fotos", input.downloadUrl)}
     </div>
 
-    <div style="padding:14px 16px;background:${COLORS.bgElevated};border:1px solid ${COLORS.border};border-radius:10px;font-size:13px;color:${COLORS.textSecondary};line-height:1.55;">
+    <div bgcolor="${COLORS.bgElevated}" class="cv-elevated" style="padding:14px 16px;background:${COLORS.bgElevated};border:1px solid ${COLORS.border};border-radius:10px;font-size:13px;color:${COLORS.textSecondary};line-height:1.55;">
       <div style="font-family:${FONT_MONO};font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${COLORS.textTertiary};margin-bottom:6px;">Antes que se te pase</div>
       El link es <strong style="color:${COLORS.textPrimary};">tuyo y vence en 72 horas</strong>. Guardá las fotos en tu celu o compu apenas puedas. Si estás en iPhone, en la página de descarga hay un paso a paso para guardarlas en tu galería.
     </div>
@@ -294,7 +315,7 @@ export function saleEmailSingleHtml(input: {
       `<strong style="color:${COLORS.textPrimary};">${escapeHtml(buyer)}</strong> compró <strong style="color:${COLORS.textPrimary};">${input.sale.itemCount} ${input.sale.itemCount === 1 ? "foto" : "fotos"}</strong> de <strong style="color:${COLORS.textPrimary};">${escapeHtml(input.sale.eventName)}</strong>.`,
     )}
 
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${COLORS.bgElevated};border:1px solid ${COLORS.border};border-radius:12px;margin:18px 0 22px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${COLORS.bgElevated}" class="cv-elevated" style="background:${COLORS.bgElevated};border:1px solid ${COLORS.border};border-radius:12px;margin:18px 0 22px;">
       <tr>
         <td style="padding:18px 22px;">
           <div style="font-family:${FONT_MONO};font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${COLORS.textTertiary};margin-bottom:6px;">Tu neto</div>
@@ -407,7 +428,7 @@ export function saleEmailBigBatchHtml(input: {
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0;">
       <tr>
-        <td style="padding:18px 22px;background:${COLORS.bgElevated};border:1px solid ${COLORS.border};border-radius:12px;">
+        <td bgcolor="${COLORS.bgElevated}" class="cv-elevated" style="padding:18px 22px;background:${COLORS.bgElevated};border:1px solid ${COLORS.border};border-radius:12px;">
           <div style="font-family:${FONT_MONO};font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${COLORS.textTertiary};margin-bottom:6px;">Neto este lote</div>
           <div style="font-family:${FONT_DISPLAY};font-weight:800;font-size:38px;color:${COLORS.accent};letter-spacing:-0.025em;line-height:1;">${formatARS(totalNet)}</div>
           <div style="font-size:12.5px;color:${COLORS.textSecondary};margin-top:6px;">de ${formatARS(totalGross)} totales · acreditado en MP</div>
@@ -451,7 +472,7 @@ export function passwordResetEmailHtml(input: PasswordResetEmailInput): string {
       ${ctaButton("Crear nueva contraseña", input.resetUrl)}
     </div>
 
-    <div style="padding:14px 16px;background:${COLORS.bgElevated};border:1px solid ${COLORS.border};border-radius:10px;font-size:13px;color:${COLORS.textSecondary};line-height:1.55;">
+    <div bgcolor="${COLORS.bgElevated}" class="cv-elevated" style="padding:14px 16px;background:${COLORS.bgElevated};border:1px solid ${COLORS.border};border-radius:10px;font-size:13px;color:${COLORS.textSecondary};line-height:1.55;">
       <div style="font-family:${FONT_MONO};font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${COLORS.warning};margin-bottom:6px;">¿No fuiste vos?</div>
       Ignorá este mail. Tu cuenta sigue protegida con la contraseña actual. Solo quien tenga acceso a este mail puede usar el link.
     </div>
