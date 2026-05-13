@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { db } from "~/server/db";
 import { signIn } from "~/server/auth";
+import { sendEmail, welcomeEmailHtml } from "~/server/email";
 
 export type SignupState = { error: string | null };
 
@@ -57,6 +58,17 @@ export async function signupAction(
   await db.user.create({
     data: { name, email, passwordHash, slug, role: "PHOTOGRAPHER", status: "ACTIVE" },
   });
+
+  // Welcome email — best-effort, never block signup
+  void sendEmail({
+    to: email,
+    subject: "Bienvenido a cuervito",
+    html: welcomeEmailHtml({
+      name,
+      hasMpConnected: false,
+      hasFirstEvent: false,
+    }),
+  }).catch((err: unknown) => console.error("[signup] welcome email failed:", err));
 
   try {
     await signIn("credentials", {

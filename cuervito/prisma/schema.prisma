@@ -366,6 +366,33 @@ model DownloadLog {
     @@index([createdAt])
 }
 
+// Pending notifications for sellers — we batch them progressively
+// (1-2-3 individual → 4-10 grouped in 2s → 11+ grouped in 5s) so a
+// fotógrafo who's selling fast doesn't drown in email.
+// Row gets inserted on every PAID transition; flagged "sentAt" when emailed.
+model PendingSaleNotification {
+    id        String   @id @default(cuid())
+    sellerId  String
+    saleId    String   @unique
+    createdAt DateTime @default(now())
+    sentAt    DateTime?
+
+    @@index([sellerId, sentAt])
+}
+
+// Password reset tokens. Single-use, 1h TTL.
+model PasswordResetToken {
+    id        String   @id @default(cuid())
+    userId    String
+    token     String   @unique
+    expiresAt DateTime
+    usedAt    DateTime?
+    createdAt DateTime @default(now())
+
+    @@index([userId])
+    @@index([expiresAt])
+}
+
 // =============================================================================
 // Affiliate attribution (FORWARD-COMPATIBLE — empty for MVP)
 // =============================================================================

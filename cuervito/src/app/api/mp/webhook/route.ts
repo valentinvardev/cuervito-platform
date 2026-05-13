@@ -2,9 +2,38 @@ import { NextResponse, type NextRequest } from "next/server";
 import { revalidateTag } from "next/cache";
 import { randomBytes } from "node:crypto";
 
+import { env } from "~/env";
 import { db } from "~/server/db";
+import { deliveryEmailHtml, sendEmail } from "~/server/email";
 import { fetchPayment } from "~/server/mp";
+import { recordPendingAndMaybeNotify } from "~/server/sale-notifier";
 import { publishSale } from "~/server/sales-bus";
+
+async function sendDeliveryEmailForSale(saleId: string): Promise<void> {
+  const sale = await db.sale.findUnique({
+    where: { id: saleId },
+    select: {
+      buyerEmail: true,
+      buyerName: true,
+      downloadToken: true,
+      event: { select: { name: true } },
+      _count: { select: { items: true } },
+    },
+  });
+  if (!sale?.downloadToken) return;
+
+  const baseUrl = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
+  await sendEmail({
+    to: sale.buyerEmail,
+    subject: `Tus fotos · ${sale.event.name}`,
+    html: deliveryEmailHtml({
+      buyerName: sale.buyerName ?? "Hola",
+      eventName: sale.event.name,
+      photoCount: sale._count.items,
+      downloadUrl: `${baseUrl}/descarga/${sale.downloadToken}`,
+    }),
+  });
+}
 
 /**
  * Mercado Pago webhook handler.
@@ -126,6 +155,8 @@ async function handlePayment(paymentId: string) {
   });
 
   // Real-time toast for the seller's dashboard + bust their cached counts.
+  // Also send the buyer their download link, and queue the seller email
+  // (which batches progressively — see sale-notifier.ts).
   if (newStatus === "PAID" && sale.status !== "PAID") {
     publishSale(sale.sellerId, {
       saleId: sale.id,
@@ -136,6 +167,16 @@ async function handlePayment(paymentId: string) {
       paidAt: new Date().toISOString(),
     });
     revalidateTag(`user:${sale.sellerId}:dashboard`);
+
+    // Buyer delivery email (best-effort, don't fail webhook on send error)
+    void sendDeliveryEmailForSale(sale.id).catch((err: unknown) =>
+      console.error("[mp webhook] delivery email failed:", err),
+    );
+
+    // Seller notification (queued with progressive batching)
+    void recordPendingAndMaybeNotify(sale.id).catch((err: unknown) =>
+      console.error("[mp webhook] seller notify failed:", err),
+    );
   }
 
   console.log(
