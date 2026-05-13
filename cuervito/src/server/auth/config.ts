@@ -44,6 +44,11 @@ const credentialsSchema = z.object({
 export const authConfig = {
   adapter: PrismaAdapter(db),
   session: { strategy: "jwt" },
+  // We sit behind nginx / Cloudflare in production. NextAuth v5 needs this
+  // flag to trust X-Forwarded-Host instead of rejecting the request as
+  // UntrustedHost. AUTH_TRUST_HOST=true env var also works, but explicit beats
+  // implicit.
+  trustHost: true,
   pages: {
     signIn: "/login",
   },
