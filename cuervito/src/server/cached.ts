@@ -46,13 +46,38 @@ export const getDashboardCounts = (userId: string) =>
  * Quota usage — storage + recognitions. These change slowly (uploads bump
  * storage on commit; recognition count updates after OCR/face). 30s of
  * staleness is fine for a dashboard widget.
+ *
+ * unstable_cache JSON-serializes the return value, which can't handle BigInt.
+ * We round-trip BigInt fields through strings inside the cache, then revive
+ * them on the way out so consumers still get BigInts (formatBytes accepts both).
  */
-export const getCachedQuotaUsage = (userId: string) =>
-  unstable_cache(
-    () => getQuotaUsage(userId),
+export const getCachedQuotaUsage = async (userId: string) => {
+  const cached = await unstable_cache(
+    async () => {
+      const u = await getQuotaUsage(userId);
+      return {
+        storage: {
+          usedBytes: u.storage.usedBytes.toString(),
+          limitBytes: u.storage.limitBytes.toString(),
+          pct: u.storage.pct,
+          overrideActive: u.storage.overrideActive,
+        },
+        recognitions: u.recognitions,
+      };
+    },
     ["quota-usage", userId],
     { revalidate: 30, tags: [`user:${userId}:quota`] },
   )();
+  return {
+    storage: {
+      usedBytes: BigInt(cached.storage.usedBytes),
+      limitBytes: BigInt(cached.storage.limitBytes),
+      pct: cached.storage.pct,
+      overrideActive: cached.storage.overrideActive,
+    },
+    recognitions: cached.recognitions,
+  };
+};
 
 /**
  * Photographer's events list — used in /dashboard/events. Cached 60s so
