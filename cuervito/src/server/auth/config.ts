@@ -49,6 +49,39 @@ export const authConfig = {
   // UntrustedHost. AUTH_TRUST_HOST=true env var also works, but explicit beats
   // implicit.
   trustHost: true,
+  // Explicit cookies config — Cloudflare's edge can strip cookies with the
+  // __Host- / __Secure- prefixes in some setups, which causes a MissingCSRF
+  // loop on the login form (CSRF cookie is set by the server, sent to the
+  // browser, but server doesn't see it back on submit). We use plain names
+  // and rely on Secure + httpOnly + SameSite=lax for protection.
+  cookies: {
+    csrfToken: {
+      name: "authjs.csrf-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+    sessionToken: {
+      name: "authjs.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+    callbackUrl: {
+      name: "authjs.callback-url",
+      options: {
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
   pages: {
     signIn: "/login",
   },
