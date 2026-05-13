@@ -45,13 +45,16 @@ export function ProcesandoClient({
   //   approved  → ring closes, check appears, "¡Listo! Pago aprobado"
   //   delivered → confetti + "Gracias por tu compra", auto-nav to /descarga
   type Stage = "pending" | "approved" | "delivered";
-  const [stage, setStage] = useState<Stage>(
-    initialStatus === "PAID" ? "approved" : "pending",
-  );
+  // Always start at "pending" so the user sees the animation, even when the
+  // sale is already PAID (e.g. test mode). The timeline below moves through
+  // approved → delivered → /descarga.
+  const [stage, setStage] = useState<Stage>("pending");
   // Smooth-swap copy when state changes (prototype-style)
   const [swap, setSwap] = useState(false);
-  const swapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const confettiRef = useRef<HTMLDivElement>(null);
+  // Guarantees the celebration timeline only fires once, no matter how many
+  // times the polling or the state changes.
+  const timelineStarted = useRef(false);
 
   // Polling loop — bail when we land on PAID.
   useEffect(() => {
@@ -84,41 +87,56 @@ export function ProcesandoClient({
     };
   }, [saleId, status]);
 
-  // Three-step transition once we reach PAID:
-  //   t=0       → stage=approved, ring closes + check pops in (CSS does this)
-  //   t≈1.8s    → stage=delivered, swap copy to "Gracias por tu compra" + confetti
-  //   t≈4.6s    → router.push(/descarga)
+  // Celebration timeline — runs ONCE when the sale becomes PAID:
+  //
+  //   pending  (status flips to PAID)
+  //     ↓ +400ms  copy crossfade out
+  //   approved  ring closes + check pops (CSS), copy → "¡Listo! Pago aprobado"
+  //     ↓ +2200ms copy crossfade out
+  //   delivered copy → "Gracias por tu compra" + confetti
+  //     ↓ +2200ms
+  //   router.push(/descarga)
+  //
+  // The ref guard makes this idempotent regardless of how many polls land.
   useEffect(() => {
-    if (status !== "PAID") return;
-    if (!downloadToken) return;
-    if (stage === "delivered") return; // already running the timeline
+    if (status !== "PAID" || !downloadToken) return;
+    if (timelineStarted.current) return;
+    timelineStarted.current = true;
 
-    // Step 1: trigger the "approved" stage (ring close + check)
-    setSwap(true);
-    swapTimer.current = setTimeout(() => setSwap(false), 280);
-    setStage("approved");
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const fadeOut = () => setSwap(true);
+    const fadeIn = () => setSwap(false);
 
-    // Step 2: after the ring has filled, swap to "delivered" + fire confetti
-    const tDelivered = setTimeout(() => {
-      setSwap(true);
+    // pending → approved
+    timers.push(setTimeout(fadeOut, 100));
+    timers.push(
+      setTimeout(() => {
+        setStage("approved");
+        fadeIn();
+      }, 380),
+    );
+
+    // approved → delivered
+    timers.push(setTimeout(fadeOut, 2200));
+    timers.push(
       setTimeout(() => {
         setStage("delivered");
-        setSwap(false);
+        fadeIn();
         if (confettiRef.current) fireConfetti(confettiRef.current);
-      }, 280);
-    }, 1800);
+      }, 2480),
+    );
 
-    // Step 3: navigate to /descarga once the celebration has played
-    const tNav = setTimeout(() => {
-      router.push(`/descarga/${downloadToken}`);
-    }, 4600);
+    // delivered → /descarga
+    timers.push(
+      setTimeout(() => {
+        router.push(`/descarga/${downloadToken}`);
+      }, 4700),
+    );
 
     return () => {
-      clearTimeout(tDelivered);
-      clearTimeout(tNav);
-      if (swapTimer.current) clearTimeout(swapTimer.current);
+      for (const t of timers) clearTimeout(t);
     };
-  }, [status, downloadToken, router, stage]);
+  }, [status, downloadToken, router]);
 
   const titleHtml =
     stage === "delivered"
