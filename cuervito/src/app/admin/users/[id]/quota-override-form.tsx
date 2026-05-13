@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 
 import { setQuotasAction, type QuotaState } from "../actions";
-import { formatBytes, type QuotaUsage } from "~/server/quotas";
+import { formatBytes, type QuotaUsage } from "~/lib/quotas-shared";
 
 export function QuotaOverrideForm({
   userId,
