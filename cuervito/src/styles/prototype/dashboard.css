@@ -629,6 +629,55 @@
 }
 .info-note strong { color: var(--text-primary); font-weight: 500; }
 
+/* =========================================================================
+   Loading skeletons (used by loading.tsx files)
+   ======================================================================= */
+.skel {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface) 0%,
+    var(--bg-elevated) 50%,
+    var(--bg-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: skel-shimmer 1.2s ease-in-out infinite;
+  border-radius: 6px;
+}
+@keyframes skel-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skel-title { height: 32px; width: 240px; border-radius: 8px; margin-bottom: 8px; }
+.skel-sub   { height: 14px; width: 340px; border-radius: 6px; margin-bottom: 22px; }
+.skel-line  { height: 14px; border-radius: 6px; margin-bottom: 8px; }
+.skel-card  {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 14px;
+}
+.skel-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: center;
+}
+.skel-row:last-child { border-bottom: none; }
+.skel-thumb { width: 44px; height: 34px; border-radius: 6px; }
+.skel-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.skel-photo {
+  aspect-ratio: 4/3;
+  border-radius: 10px;
+}
+
 /* === Photo upload zone === */
 .upload-zone {
   border: 1.5px dashed var(--border-default);
