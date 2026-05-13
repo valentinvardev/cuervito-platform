@@ -58,6 +58,26 @@ function triggerDownload(url: string, filename: string) {
   document.body.removeChild(a);
 }
 
+/**
+ * iOS Safari ignores the `download` attribute and sends every download to
+ * the Files app. To get the iOS share sheet (with "Save Image" → Photos),
+ * we open the image inline in a new tab so the user can long-press → save.
+ *
+ * Caveat: the user has to do one extra tap, but it lands in Photos instead
+ * of Files. This matches the iOS-by-iOS flow in the step-by-step modal.
+ */
+function openInlineForIos(url: string) {
+  // Need a user-gesture initiated window.open with noopener so Safari
+  // shows the image directly (and not as a download).
+  const win = window.open(url, "_blank", "noopener,noreferrer");
+  if (!win) {
+    // Pop-up blocked — fall back to navigating the current tab.
+    window.location.href = url;
+  }
+}
+
+type PaymentStage = "confirming" | "approved" | "delivered";
+
 export function DescargaClient({
   token,
   buyerEmail,
@@ -77,9 +97,20 @@ export function DescargaClient({
   const [error, setError] = useState<string | null>(null);
   const [iosOpen, setIosOpen] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  // 3-stage payment animation: confirming → approved → delivered (final)
+  const [stage, setStage] = useState<PaymentStage>("confirming");
 
   useEffect(() => {
-    if (confettiRef.current) fireConfetti(confettiRef.current);
+    // Sequence: confirming (1.2s) → approved (1.1s) → delivered → fire confetti
+    const t1 = setTimeout(() => setStage("approved"), 1200);
+    const t2 = setTimeout(() => {
+      setStage("delivered");
+      if (confettiRef.current) fireConfetti(confettiRef.current);
+    }, 2300);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, []);
 
   useEffect(() => {
@@ -93,7 +124,12 @@ export function DescargaClient({
     setError(null);
     try {
       const { url } = await fetchDownloadUrl(token, photoId);
-      triggerDownload(url, filename);
+      if (isIos) {
+        // iOS: open inline so the user can long-press → "Save to Photos"
+        openInlineForIos(url);
+      } else {
+        triggerDownload(url, filename);
+      }
       setSaved((prev) => new Set(prev).add(photoId));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error de red");
@@ -111,6 +147,31 @@ export function DescargaClient({
 
   return (
     <>
+      {stage !== "delivered" && (
+        <div className={`pay-overlay ${stage}`} role="status" aria-live="polite">
+          <div className="pay-card">
+            {stage === "confirming" ? (
+              <>
+                <div className="pay-spinner" aria-hidden="true">
+                  <span className="ring" />
+                  <i className="ti ti-credit-card" />
+                </div>
+                <div className="pay-ttl">Confirmando pago…</div>
+                <div className="pay-sub">No cierres ni recargues esta página.</div>
+              </>
+            ) : (
+              <>
+                <div className="pay-check" aria-hidden="true">
+                  <i className="ti ti-check" />
+                </div>
+                <div className="pay-ttl pay-ttl-ok">Pago confirmado</div>
+                <div className="pay-sub">Preparando tus fotos…</div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="confetti-container" ref={confettiRef} aria-hidden="true" />
 
       <header className="nav">
@@ -326,8 +387,9 @@ function IosStepByStep({
     if (state !== "idle" || !current) return;
     setState("loading");
     try {
-      const { url, filename } = await fetchDownloadUrl(token, current.id);
-      triggerDownload(url, filename);
+      const { url } = await fetchDownloadUrl(token, current.id);
+      // Always inline here: this whole flow exists for iOS-style saving.
+      openInlineForIos(url);
     } catch {
       // ignore — UI still advances so the user can keep going
     }

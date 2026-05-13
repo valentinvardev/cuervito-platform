@@ -394,3 +394,90 @@
     line-height: 1;
   }
   .ios-done .desc { color: var(--text-secondary); font-size: 15px; line-height: 1.5; max-width: 360px; }
+
+  /* =========================================================================
+     Payment confirmation overlay (3-stage animation on /descarga)
+     ======================================================================= */
+  .pay-overlay {
+    position: fixed; inset: 0;
+    z-index: 200;
+    background: rgba(8, 6, 5, 0.92);
+    backdrop-filter: blur(14px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    animation: pay-fade-in 220ms ease both;
+  }
+  .pay-overlay.approved {
+    animation: pay-fade-out 380ms ease 720ms forwards;
+  }
+  @keyframes pay-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes pay-fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; pointer-events: none; }
+  }
+  .pay-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 18px;
+    padding: 38px 32px 32px;
+    width: 100%; max-width: 360px;
+    text-align: center;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.55);
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+  }
+
+  .pay-spinner {
+    position: relative;
+    width: 78px; height: 78px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 6px;
+  }
+  .pay-spinner .ring {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 3px solid var(--border-subtle);
+    border-top-color: var(--accent);
+    animation: pay-spin 1.05s linear infinite;
+  }
+  .pay-spinner i {
+    font-size: 30px;
+    color: var(--accent);
+    animation: pay-card-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pay-spin { to { transform: rotate(360deg); } }
+  @keyframes pay-card-pulse {
+    0%, 100% { transform: scale(1);    opacity: 0.92; }
+    50%      { transform: scale(1.08); opacity: 1; }
+  }
+
+  .pay-check {
+    width: 78px; height: 78px;
+    border-radius: 50%;
+    background: var(--success);
+    color: #0f0d0b;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 6px;
+    animation: pay-pop 360ms cubic-bezier(.34,1.6,.64,1) both;
+  }
+  .pay-check i { font-size: 42px; font-weight: 700; }
+  @keyframes pay-pop {
+    from { transform: scale(0.4); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+
+  .pay-ttl {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+  .pay-ttl-ok { color: var(--success); }
+  .pay-sub {
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }

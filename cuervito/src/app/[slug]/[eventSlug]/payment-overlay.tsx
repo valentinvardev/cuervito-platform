@@ -25,9 +25,7 @@ export function PaymentProcessingOverlay({
               <span className="ring" />
               <i className="ti ti-credit-card" />
             </div>
-            <div className="pay-ttl">
-              {testMode ? "Confirmando tu compra…" : "Procesando tu pago…"}
-            </div>
+            <div className="pay-ttl">Confirmando pago…</div>
             <div className="pay-sub">
               {testMode
                 ? "Modo test · sin cargo real"
@@ -39,7 +37,7 @@ export function PaymentProcessingOverlay({
             <div className="pay-check" aria-hidden="true">
               <i className="ti ti-check" />
             </div>
-            <div className="pay-ttl pay-ttl-ok">¡Pago aprobado!</div>
+            <div className="pay-ttl pay-ttl-ok">Pago confirmado</div>
             <div className="pay-sub">Preparando tus fotos…</div>
           </>
         )}
