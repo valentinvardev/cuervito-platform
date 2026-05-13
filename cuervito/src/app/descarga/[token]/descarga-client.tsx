@@ -38,20 +38,63 @@ function triggerDownload(url: string, filename: string) {
 }
 
 /**
- * iOS Safari ignores the `download` attribute and sends every download to
- * the Files app. To get the iOS share sheet (with "Save Image" → Photos),
- * we open the image inline in a new tab so the user can long-press → save.
- *
- * Caveat: the user has to do one extra tap, but it lands in Photos instead
- * of Files. This matches the iOS-by-iOS flow in the step-by-step modal.
+ * Detect support for sharing files via the Web Share API. iOS Safari 15+
+ * supports this and it's the only way to get "Guardar foto → Fotos" instead
+ * of dropping the file in the Files app.
  */
-function openInlineForIos(url: string) {
-  // Need a user-gesture initiated window.open with noopener so Safari
-  // shows the image directly (and not as a download).
-  const win = window.open(url, "_blank", "noopener,noreferrer");
-  if (!win) {
-    // Pop-up blocked — fall back to navigating the current tab.
-    window.location.href = url;
+function canShareFiles(): boolean {
+  if (typeof navigator === "undefined") return false;
+  if (!("share" in navigator) || !("canShare" in navigator)) return false;
+  try {
+    const probe = new File([""], "probe.jpg", { type: "image/jpeg" });
+    return (
+      navigator as Navigator & { canShare: (d: ShareData) => boolean }
+    ).canShare({ files: [probe] });
+  } catch {
+    return false;
+  }
+}
+
+type ShareResult = "shared" | "long-press" | "error";
+
+/**
+ * iOS save flow ported from sinchi. Fetches the original image, wraps it
+ * in a File, and opens the Web Share sheet so the user can pick
+ * "Guardar imagen" (which lands in Photos, not Files).
+ *
+ * Returns:
+ *   "shared"      — the iOS share sheet opened. We treat any rejection from
+ *                   navigator.share as success because iOS has a known bug
+ *                   where it throws AbortError even after "Guardar foto" is
+ *                   tapped.
+ *   "long-press"  — Web Share API isn't available (older iOS / non-Safari).
+ *                   Caller should show the long-press instruction.
+ *   "error"       — fetch failed or something else broke.
+ */
+async function saveViaShareSheet(
+  url: string,
+  filename: string,
+): Promise<ShareResult> {
+  if (!canShareFiles()) return "long-press";
+  let sheetOpened = false;
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const mime = blob.type || "image/jpeg";
+    const file = new File([blob], filename, { type: mime });
+    sheetOpened = true;
+    await (
+      navigator as Navigator & {
+        share: (d: ShareData) => Promise<void>;
+      }
+    ).share({ files: [file] });
+    return "shared";
+  } catch {
+    if (sheetOpened) {
+      // iOS AbortError quirk — treat as success
+      return "shared";
+    }
+    return "error";
   }
 }
 
@@ -94,8 +137,19 @@ export function DescargaClient({
     try {
       const { url } = await fetchDownloadUrl(token, photoId);
       if (isIos) {
-        // iOS: open inline so the user can long-press → "Save to Photos"
-        openInlineForIos(url);
+        // Use the Web Share API → iOS shows the share sheet with "Guardar
+        // imagen" which lands in the Photos app (not Files). If the API
+        // isn't available we fall back to opening the iOS step-by-step
+        // modal where the user can long-press the image to save it.
+        const r = await saveViaShareSheet(url, filename);
+        if (r === "long-press") {
+          setIosOpen(true);
+          return;
+        }
+        if (r === "error") {
+          setError("No pudimos preparar la foto. Probá de nuevo.");
+          return;
+        }
       } else {
         triggerDownload(url, filename);
       }
@@ -348,8 +402,10 @@ function IosStepByStep({
     setState("loading");
     try {
       const { url } = await fetchDownloadUrl(token, current.id);
-      // Always inline here: this whole flow exists for iOS-style saving.
-      openInlineForIos(url);
+      // Use the share sheet — this whole modal exists for iOS-style saving.
+      // If the API isn't available the user has to long-press the image
+      // (we still advance to the next photo so they can keep going).
+      await saveViaShareSheet(url, current.filename);
     } catch {
       // ignore — UI still advances so the user can keep going
     }
