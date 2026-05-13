@@ -5,7 +5,7 @@ export default function Loading() {
         <div className="nav-left">
           <span
             className="skel"
-            style={{ width: 140, height: 22, borderRadius: 6 }}
+            style={{ width: 32, height: 32, borderRadius: 8 }}
           />
         </div>
       </nav>

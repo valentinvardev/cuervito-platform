@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const NAV = [
@@ -16,7 +16,9 @@ const NAV = [
 
 export function AdminDrawer() {
   const pathname = usePathname() ?? "/dashboard";
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [prefetched, setPrefetched] = useState(false);
 
   useEffect(() => {
     function handleOpen() {
@@ -25,6 +27,17 @@ export function AdminDrawer() {
     window.addEventListener("cuervito:open-drawer", handleOpen);
     return () => window.removeEventListener("cuervito:open-drawer", handleOpen);
   }, []);
+
+  // Prefetch every dashboard section the first time the drawer opens.
+  // After this, clicking any item in the menu navigates from the in-memory
+  // cache, not from a fresh request.
+  useEffect(() => {
+    if (!open || prefetched) return;
+    for (const n of NAV) {
+      router.prefetch(n.href);
+    }
+    setPrefetched(true);
+  }, [open, prefetched, router]);
 
   useEffect(() => {
     if (!open) return;

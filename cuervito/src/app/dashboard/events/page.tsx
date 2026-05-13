@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "~/server/auth";
-import { db } from "~/server/db";
+import { getCachedEventsList } from "~/server/cached";
 
 import { EventsList } from "./events-list";
 
@@ -10,20 +10,7 @@ export default async function EventsPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/dashboard/events");
 
-  const events = await db.event.findMany({
-    where: { ownerId: session.user.id, NOT: { status: "ARCHIVED" } },
-    orderBy: [{ eventDate: "desc" }, { createdAt: "desc" }],
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      eventDate: true,
-      location: true,
-      discipline: true,
-      status: true,
-      _count: { select: { photos: true, sales: true } },
-    },
-  });
+  const events = await getCachedEventsList(session.user.id);
 
   return (
     <main className="wrap-narrow">
@@ -39,12 +26,7 @@ export default async function EventsPage() {
       </div>
 
       {events.length > 0 ? (
-        <EventsList events={events.map((e) => ({
-          ...e,
-          eventDate: e.eventDate?.toISOString() ?? null,
-          photos: e._count.photos,
-          sales: e._count.sales,
-        }))} />
+        <EventsList events={events} />
       ) : (
         <div className="empty-state">
           <div className="ic">

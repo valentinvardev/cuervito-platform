@@ -119,9 +119,12 @@ function ShellInner({
     <>
       <nav className="nav">
         <div className="nav-left">
-          <Link href={`/${photographer.slug}`} className="back-btn">
+          <Link
+            href={`/${photographer.slug}`}
+            className="back-btn"
+            aria-label={`Volver a ${photographer.name}`}
+          >
             <i className="ti ti-arrow-left" style={{ fontSize: 16 }} />
-            <span>{photographer.name}</span>
           </Link>
           <div className="nav-divider"></div>
           <Link href="/" className="logo">

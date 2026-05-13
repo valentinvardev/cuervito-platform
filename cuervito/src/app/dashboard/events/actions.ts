@@ -1,6 +1,12 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+
+function busUserDashboardCache(userId: string) {
+  revalidateTag(`user:${userId}:dashboard`);
+  revalidateTag(`user:${userId}:events`);
+  revalidateTag(`user:${userId}:quota`);
+}
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -87,6 +93,7 @@ export async function createEventAction(
     select: { id: true },
   });
 
+  busUserDashboardCache(session.user.id);
   revalidatePath("/dashboard/events");
   revalidatePath("/dashboard");
   redirect(`/dashboard/events/${event.id}`);
@@ -145,6 +152,7 @@ export async function updateEventAction(
     },
   });
 
+  busUserDashboardCache(session.user.id);
   revalidatePath("/dashboard/events");
   revalidatePath(`/dashboard/events/${id}`);
   redirect(`/dashboard/events/${id}`);
@@ -171,6 +179,7 @@ export async function togglePublishedAction(id: string): Promise<void> {
     },
   });
 
+  busUserDashboardCache(session.user.id);
   revalidatePath(`/dashboard/events/${id}`);
   revalidatePath("/dashboard/events");
   revalidatePath("/dashboard");
@@ -184,6 +193,7 @@ export async function archiveEventAction(id: string): Promise<void> {
   if (!ev || ev.ownerId !== session.user.id) redirect("/dashboard/events");
 
   await db.event.update({ where: { id }, data: { status: "ARCHIVED", isPublished: false } });
+  busUserDashboardCache(session.user.id);
   revalidatePath("/dashboard/events");
   redirect("/dashboard/events");
 }
@@ -196,6 +206,7 @@ export async function deleteEventAction(id: string): Promise<void> {
   if (!ev || ev.ownerId !== session.user.id) redirect("/dashboard/events");
 
   await db.event.delete({ where: { id } });
+  busUserDashboardCache(session.user.id);
   revalidatePath("/dashboard/events");
   revalidatePath("/dashboard");
   redirect("/dashboard/events");
