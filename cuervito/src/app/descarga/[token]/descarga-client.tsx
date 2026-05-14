@@ -173,13 +173,16 @@ export function DescargaClient({
     setPendingId(photoId);
     setError(null);
     try {
-      const { url } = await fetchDownloadUrl(token, photoId);
       if (isIos) {
         // Use the Web Share API → iOS shows the share sheet with "Guardar
-        // imagen" which lands in the Photos app (not Files). If the API
-        // isn't available we fall back to opening the iOS step-by-step
-        // modal where the user can long-press the image to save it.
-        const r = await saveViaShareSheet(url, filename);
+        // imagen" which lands in the Photos app (not Files).
+        //
+        // CRITICAL: we fetch from a SAME-ORIGIN endpoint (/blob streams the
+        // bytes through our server) instead of the S3 presigned URL. iOS
+        // Safari's fetch() on a cross-origin URL without CORS headers throws
+        // a network error, and the whole share pipeline dies silently.
+        const sameOriginUrl = `/api/download/${token}/${photoId}/blob`;
+        const r = await saveViaShareSheet(sameOriginUrl, filename);
         if (r === "long-press") {
           setIosOpen(true);
           return;
@@ -189,6 +192,9 @@ export function DescargaClient({
           return;
         }
       } else {
+        // Desktop: fetch the presigned URL and let the browser download it
+        // directly from S3 (faster than streaming through our server).
+        const { url } = await fetchDownloadUrl(token, photoId);
         triggerDownload(url, filename);
       }
       setSaved((prev) => new Set(prev).add(photoId));
@@ -468,11 +474,10 @@ function IosStepByStep({
     if (state !== "idle" || !current) return;
     setState("loading");
     try {
-      const { url } = await fetchDownloadUrl(token, current.id);
-      // Use the share sheet — this whole modal exists for iOS-style saving.
-      // If the API isn't available the user has to long-press the image
-      // (we still advance to the next photo so they can keep going).
-      await saveViaShareSheet(url, current.filename);
+      // Same-origin proxy endpoint — needed so iOS Safari's fetch() inside
+      // saveViaShareSheet doesn't fail CORS against S3.
+      const sameOriginUrl = `/api/download/${token}/${current.id}/blob`;
+      await saveViaShareSheet(sameOriginUrl, current.filename);
     } catch {
       // ignore — UI still advances so the user can keep going
     }
