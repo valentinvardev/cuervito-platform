@@ -165,8 +165,15 @@ function DomainCard({
           <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>{status.hint}</div>
         )}
         {domain.errorMessage && (
-          <div style={{ fontSize: 12, color: "var(--error)" }}>
-            <i className="ti ti-alert-circle" /> {domain.errorMessage}
+          <div
+            style={{
+              fontSize: 12,
+              color: "var(--error)",
+              marginTop: 4,
+              lineHeight: 1.5,
+            }}
+          >
+            <i className="ti ti-alert-circle" /> {humanizeError(domain.errorMessage)}
           </div>
         )}
       </div>
@@ -251,6 +258,23 @@ function DnsInstructions({
         Cloudflare, etc.), agregá estos registros DNS. Cuando los tengas, volvé
         acá y tocá <strong>Refrescar</strong>. Tarda 5–15 minutos en propagar.
       </p>
+      <p
+        style={{
+          fontSize: 12.5,
+          color: "var(--warning)",
+          lineHeight: 1.55,
+          marginBottom: 12,
+          padding: "8px 12px",
+          background: "rgba(245,200,66,0.08)",
+          border: "1px solid rgba(245,200,66,0.3)",
+          borderRadius: 8,
+        }}
+      >
+        <i className="ti ti-alert-triangle" style={{ marginRight: 6 }} />
+        Si tu dominio está en Cloudflare, asegurate que el CNAME esté en
+        modo <strong>DNS only</strong> (nube gris, no naranja). Si está
+        proxiado, Cloudflare no puede verificarlo.
+      </p>
       <div className="dns-table">
         <div className="dns-row dns-head">
           <span>Tipo</span>
@@ -271,4 +295,14 @@ function DnsInstructions({
       </div>
     </div>
   );
+}
+
+function humanizeError(msg: string): string {
+  if (/does not CNAME/i.test(msg) || /point to the SaaS zone/i.test(msg)) {
+    return "El CNAME todavía no apunta a cuervito.app. Si tu dominio está en Cloudflare, asegurate que la nube esté gris (DNS only), no naranja. Si está en otro registrador, esperá unos minutos más a que propague.";
+  }
+  if (/timeout/i.test(msg)) {
+    return "Verificación lenta. Esperá un par de minutos y probá Refrescar de nuevo.";
+  }
+  return msg;
 }
