@@ -1,12 +1,17 @@
+/**
+ * Mirrors the real /[slug] layout 1:1 so there's no shift when the real
+ * server component swaps in. Uses the same class structure (.hero, .hero-inner,
+ * .photog-row, .photog-avatar, .photog-info, .photog-name, .photog-meta) and
+ * the same grid spec as page.tsx — only the text/avatar nodes become skel pills.
+ */
 export default function Loading() {
   return (
     <>
       <nav className="nav">
         <div className="nav-left">
-          <span
-            className="skel"
-            style={{ width: 100, height: 24, borderRadius: 6 }}
-          />
+          <span className="logo" aria-hidden="true">
+            cuerv<span className="logo-dot"></span>to
+          </span>
         </div>
       </nav>
 
@@ -14,45 +19,56 @@ export default function Loading() {
         <div className="hero-cover" aria-hidden="true" />
         <div className="hero-inner">
           <div className="photog-row">
-            <span
-              className="skel"
+            <div
+              className="photog-avatar"
               style={{
-                width: 76,
-                height: 76,
-                borderRadius: "50%",
-                background: "rgba(255,255,255,0.18)",
+                background:
+                  "linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.18), rgba(255,255,255,0.08))",
+                backgroundSize: "200% 100%",
+                animation: "skel-shimmer 1.2s ease-in-out infinite",
+                color: "transparent",
               }}
             />
-            <div style={{ flex: 1 }}>
-              <span
-                className="skel"
-                style={{
-                  width: 220,
-                  height: 28,
-                  display: "block",
-                  marginBottom: 8,
-                  background: "rgba(255,255,255,0.16)",
-                }}
-              />
-              <span
-                className="skel"
-                style={{
-                  width: 320,
-                  height: 14,
-                  display: "block",
-                  background: "rgba(255,255,255,0.12)",
-                }}
-              />
+            <div className="photog-info">
+              <h1 className="photog-name">
+                <span
+                  className="skel"
+                  style={{
+                    width: 220,
+                    height: 26,
+                    display: "inline-block",
+                    background: "rgba(255,255,255,0.16)",
+                  }}
+                />
+              </h1>
+              <div className="photog-meta">
+                <span
+                  className="skel"
+                  style={{
+                    width: 280,
+                    height: 13,
+                    display: "inline-block",
+                    background: "rgba(255,255,255,0.12)",
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
       </header>
 
       <main className="main">
-        <span
-          className="skel"
-          style={{ width: 140, height: 22, display: "block", marginBottom: 14 }}
-        />
+        <h2
+          style={{
+            fontFamily: "var(--font-display)",
+            fontWeight: 700,
+            fontSize: 22,
+            letterSpacing: "-0.02em",
+            marginBottom: 14,
+          }}
+        >
+          Eventos
+        </h2>
         <div
           style={{
             display: "grid",
@@ -61,10 +77,14 @@ export default function Loading() {
           }}
         >
           {Array.from({ length: 6 }).map((_, i) => (
-            <span
+            <div
               key={i}
               className="skel"
-              style={{ aspectRatio: "16/10", borderRadius: 14 }}
+              style={{
+                aspectRatio: "16/10",
+                borderRadius: 14,
+                opacity: 0.7,
+              }}
             />
           ))}
         </div>
