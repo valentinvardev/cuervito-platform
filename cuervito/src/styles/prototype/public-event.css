@@ -64,13 +64,23 @@
   .hero {
     position: relative;
     overflow: hidden;
+    /* Reserve space before content lands so the hero doesn't collapse
+       during the first paint (which made the layout shift after the
+       photog row + event-strip rendered). */
+    min-height: 320px;
   }
+  @media (max-width: 700px) { .hero { min-height: 260px; } }
   .hero-cover {
     position: absolute; inset: 0;
-    /* Reemplazá esta URL por la foto de portada del fotógrafo / evento */
+    /* Fallback color so the hero never paints picsum.photos placeholder
+       URLs from the design prototype — the real event cover is set inline
+       on the .hero-cover element from event-coverage-shell.tsx. */
     background:
-      #2a1a10 url('https://picsum.photos/seed/cuervito-marathon/1600/700')
-      center / cover no-repeat;
+      #2a1a10
+      linear-gradient(135deg, rgba(80,30,5,0.6) 0%, rgba(40,20,10,0.9) 100%);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
   }
   /* Orange tint overlay — tinta el photo y unifica con la paleta */
   .hero-cover::before {
