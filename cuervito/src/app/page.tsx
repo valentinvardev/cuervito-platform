@@ -14,7 +14,7 @@ export default async function Home() {
   const session = await auth().catch(() => null);
 
   return (
-    <>
+    <div className="lp">
       <RevealOnScroll />
 
       <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -467,6 +467,6 @@ export default async function Home() {
           </div>
         </div>
       </footer>
-    </>
+    </div>
   );
 }
