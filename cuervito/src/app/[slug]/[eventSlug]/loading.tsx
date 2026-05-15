@@ -19,7 +19,7 @@ export default function Loading() {
         </div>
       </nav>
 
-      <header className="hero">
+      <header className="hero has-cover">
         <div className="hero-cover" aria-hidden="true" />
         <div className="hero-inner">
           <div className="photog-row">

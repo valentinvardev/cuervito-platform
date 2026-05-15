@@ -64,12 +64,16 @@
   .hero {
     position: relative;
     overflow: hidden;
-    /* Reserve space before content lands so the hero doesn't collapse
-       during the first paint (which made the layout shift after the
-       photog row + event-strip rendered). */
-    min-height: 320px;
   }
-  @media (max-width: 700px) { .hero { min-height: 260px; } }
+  /* Only reserve a tall area when there's an actual cover image to show.
+     The storefront root (/{slug}) has no cover so it sits compact; the
+     event coverage page (/{slug}/{eventSlug}) has a cover and gets the
+     tall hero. event-coverage-shell.tsx adds .has-cover when event.coverUrl
+     exists. */
+  .hero.has-cover { min-height: 320px; }
+  @media (max-width: 700px) {
+    .hero.has-cover { min-height: 260px; }
+  }
   .hero-cover {
     position: absolute; inset: 0;
     /* Fallback color so the hero never paints picsum.photos placeholder

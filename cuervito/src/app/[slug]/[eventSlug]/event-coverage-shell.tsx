@@ -145,7 +145,7 @@ function ShellInner({
         </div>
       </nav>
 
-      <header className="hero">
+      <header className={`hero ${event.coverUrl ? "has-cover" : ""}`}>
         <div
           className="hero-cover"
           aria-hidden="true"
