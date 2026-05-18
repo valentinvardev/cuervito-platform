@@ -1404,3 +1404,77 @@
   line-height: 1.6;
   color: var(--text-secondary);
 }
+
+/* =========================================================================
+   Generic confirmation modal (Delete photos dialog + future reuses)
+   ======================================================================= */
+.cv-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 6, 5, 0.78);
+  backdrop-filter: blur(8px);
+  z-index: 220;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+.cv-modal-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.cv-modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 28px 26px 22px;
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  transform: translateY(8px) scale(0.98);
+  transition: transform 220ms cubic-bezier(.2, .9, .3, 1);
+}
+.cv-modal-backdrop.open .cv-modal { transform: none; }
+
+.cv-modal-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(224, 85, 85, 0.12);
+  border: 1px solid rgba(224, 85, 85, 0.4);
+  color: var(--error);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin-bottom: 16px;
+}
+.cv-modal h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+  color: var(--text-primary);
+}
+.cv-modal p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0 0 22px;
+}
+.cv-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.cv-modal-actions .btn {
+  height: 40px;
+  padding: 0 18px;
+  font-size: 14px;
+}

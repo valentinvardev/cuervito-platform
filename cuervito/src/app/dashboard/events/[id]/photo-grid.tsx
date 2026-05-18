@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { DeletePhotosDialog } from "./delete-photos-dialog";
 import { PhotoLightbox } from "./photo-lightbox";
 
 type PhotoTile = {
@@ -31,6 +32,14 @@ export function PhotoGrid({
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
 
+  // ── delete confirmation modal ────────────────────────────────────────────
+  // pendingDelete is either null (closed), a single photo id, or "bulk"
+  // (use the current `selected` set). We open the modal instead of calling
+  // confirm() so the UI stays on-brand.
+  const [pendingDelete, setPendingDelete] = useState<
+    null | { kind: "single"; photoId: string } | { kind: "bulk" }
+  >(null);
+
   function toggle(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -54,7 +63,7 @@ export function PhotoGrid({
     setBulkError(null);
   }
 
-  async function onDelete(photoId: string) {
+  async function performSingleDelete(photoId: string) {
     setDeleting(photoId);
     const res = await fetch(`/api/dashboard/events/${eventId}/photos/${photoId}`, {
       method: "DELETE",
@@ -62,21 +71,14 @@ export function PhotoGrid({
     setDeleting(null);
     if (!res.ok) {
       const data = (await res.json().catch(() => ({}))) as { error?: string };
-      alert(data.error ?? "No pudimos eliminar la foto.");
+      setBulkError(data.error ?? "No pudimos eliminar la foto.");
       return;
     }
     startTransition(() => router.refresh());
   }
 
-  async function onBulkDelete() {
+  async function performBulkDelete() {
     if (selected.size === 0) return;
-    if (
-      !confirm(
-        `¿Eliminar ${selected.size} ${selected.size === 1 ? "foto" : "fotos"}? Esta acción no se puede deshacer.`,
-      )
-    ) {
-      return;
-    }
     setBulkBusy(true);
     setBulkError(null);
     try {
@@ -174,7 +176,7 @@ export function PhotoGrid({
             <button
               type="button"
               className="btn btn-danger"
-              onClick={onBulkDelete}
+              onClick={() => setPendingDelete({ kind: "bulk" })}
               disabled={selected.size === 0 || bulkBusy}
               style={{ padding: "8px 14px", fontSize: 13, height: 36 }}
             >
@@ -289,7 +291,7 @@ export function PhotoGrid({
                   disabled={deleting === p.id}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (confirm("¿Eliminar esta foto?")) void onDelete(p.id);
+                    setPendingDelete({ kind: "single", photoId: p.id });
                   }}
                   title="Eliminar foto"
                   aria-label="Eliminar foto"
@@ -349,10 +351,37 @@ export function PhotoGrid({
           startIndex={lightboxIdx}
           onClose={() => setLightboxIdx(null)}
           onDelete={async (photoId) => {
-            await onDelete(photoId);
+            // Close lightbox and route through the styled modal instead
+            // of triggering the native browser confirm() from inside it.
+            setLightboxIdx(null);
+            setPendingDelete({ kind: "single", photoId });
           }}
         />
       )}
+
+      <DeletePhotosDialog
+        open={pendingDelete !== null}
+        count={
+          pendingDelete?.kind === "bulk"
+            ? selected.size
+            : pendingDelete?.kind === "single"
+              ? 1
+              : 0
+        }
+        busy={bulkBusy || deleting !== null}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={async () => {
+          if (!pendingDelete) return;
+          if (pendingDelete.kind === "single") {
+            const id = pendingDelete.photoId;
+            setPendingDelete(null);
+            await performSingleDelete(id);
+          } else {
+            await performBulkDelete();
+            setPendingDelete(null);
+          }
+        }}
+      />
     </>
   );
 }
