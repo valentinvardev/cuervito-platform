@@ -138,9 +138,14 @@ async function handlePayment(paymentId: string) {
           ? "REFUNDED"
           : "PENDING";
 
-  // Generate a download token only when transitioning to PAID for the first time
+  // Generate a download token only when transitioning to PAID for the first
+  // time. Token lives DOWNLOAD_TOKEN_RETENTION_DAYS days — the same window the
+  // photo files survive on S3 (see /api/cron/cleanup). After that the buyer
+  // would 404 anyway because the underlying photos are gone.
   const willIssueToken = newStatus === "PAID" && !sale.downloadToken;
-  const tokenExpiresAt = willIssueToken ? new Date(Date.now() + 72 * 60 * 60 * 1000) : undefined;
+  const tokenExpiresAt = willIssueToken
+    ? new Date(Date.now() + env.DOWNLOAD_TOKEN_RETENTION_DAYS * 24 * 60 * 60 * 1000)
+    : undefined;
 
   await db.sale.update({
     where: { id: sale.id },

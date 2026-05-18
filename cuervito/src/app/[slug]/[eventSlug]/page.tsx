@@ -66,7 +66,11 @@ export default async function PublicEventPage(props: {
 
   // Load up to 200 committed photos, sign their preview URLs briefly
   const rawPhotos = await db.photo.findMany({
-    where: { eventId: event.id, fileSize: { not: null } },
+    where: {
+      eventId: event.id,
+      fileSize: { not: null },
+      deletedAt: null, // exclude soft-deleted photos from the public storefront
+    },
     orderBy: { createdAt: "desc" },
     take: 200,
     select: {

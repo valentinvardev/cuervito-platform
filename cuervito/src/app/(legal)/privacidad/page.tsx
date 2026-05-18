@@ -131,7 +131,7 @@ export default function PrivacidadPage() {
         Conservamos tu información de cuenta mientras tu cuenta esté activa o
         sea necesario para prestarte el servicio. Las fotos y videos adquiridos
         por compradores se mantienen disponibles para descarga durante{" "}
-        <strong>72 horas</strong> desde la confirmación de pago. Podés
+        <strong>30 días</strong> desde la confirmación de pago. Podés
         solicitar la eliminación de tu cuenta y tus datos en cualquier momento
         escribiendo a{" "}
         <a href="mailto:hola@cuervito.app">hola@cuervito.app</a>.

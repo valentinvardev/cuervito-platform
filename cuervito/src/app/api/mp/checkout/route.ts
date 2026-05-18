@@ -78,12 +78,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Defensive: confirm all photoIds belong to this event and are uploaded
+  // Defensive: confirm all photoIds belong to this event, are uploaded, and
+  // not soft-deleted (a buyer can't pay for a photo the photographer removed).
   const photos = await db.photo.findMany({
     where: {
       id: { in: parsed.data.photoIds },
       eventId: event.id,
       fileSize: { not: null },
+      deletedAt: null,
     },
     select: { id: true, priceOverride: true },
   });
@@ -112,7 +114,9 @@ export async function POST(req: NextRequest) {
   // we can validate the post-payment UX locally without going through MP.
   if (testMode) {
     const downloadToken = randomBytes(24).toString("hex");
-    const tokenExpiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000);
+    const tokenExpiresAt = new Date(
+      Date.now() + env.DOWNLOAD_TOKEN_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+    );
 
     const sale = await db.sale.create({
       data: {

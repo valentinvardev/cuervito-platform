@@ -48,9 +48,12 @@ export default async function EventDetailPage(props: {
       : await getPresignedDownloadUrl(event.coverUrl, { expiresIn: 60 * 60 * 6 })
     : null;
 
-  // Committed photos only — sign each preview URL briefly until preview pipeline lands
+  // Committed, non-soft-deleted photos. Soft-deleted ones disappear from the
+  // dashboard the moment the photographer removes them, even if buyers can
+  // still download what they already purchased until the retention window
+  // expires (see /api/cron/cleanup).
   const rawPhotos = await db.photo.findMany({
-    where: { eventId: id, fileSize: { not: null } },
+    where: { eventId: id, fileSize: { not: null }, deletedAt: null },
     orderBy: { createdAt: "desc" },
     take: 200,
     select: {

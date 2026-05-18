@@ -50,6 +50,16 @@ export const env = createEnv({
     CLOUDFLARE_ZONE_ID: z.string().optional(),
     CLOUDFLARE_FALLBACK_ORIGIN: z.string().default("cuervito.app"),
 
+    // Retention windows (days). After a photo is soft-deleted, the daily
+    // cron hard-deletes it from S3 + DB once this many days have passed.
+    // Same window applies to download tokens (buyers can re-download within
+    // this many days from payment).
+    PHOTO_RETENTION_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+    DOWNLOAD_TOKEN_RETENTION_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+    // Shared secret for the /api/cron/cleanup endpoint. The VPS' cron job
+    // calls it with `Authorization: Bearer <CRON_SECRET>`. Required in prod.
+    CRON_SECRET: z.string().optional(),
+
     // Quotas
     QUOTA_STORAGE_BYTES_DEFAULT: z.coerce.number().default(107374182400), // 100 GB
     QUOTA_MAX_PHOTO_BYTES: z.coerce.number().default(31457280), // 30 MB
@@ -99,6 +109,10 @@ export const env = createEnv({
     CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN,
     CLOUDFLARE_ZONE_ID: process.env.CLOUDFLARE_ZONE_ID,
     CLOUDFLARE_FALLBACK_ORIGIN: process.env.CLOUDFLARE_FALLBACK_ORIGIN,
+
+    PHOTO_RETENTION_DAYS: process.env.PHOTO_RETENTION_DAYS,
+    DOWNLOAD_TOKEN_RETENTION_DAYS: process.env.DOWNLOAD_TOKEN_RETENTION_DAYS,
+    CRON_SECRET: process.env.CRON_SECRET,
 
     QUOTA_STORAGE_BYTES_DEFAULT: process.env.QUOTA_STORAGE_BYTES_DEFAULT,
     QUOTA_MAX_PHOTO_BYTES: process.env.QUOTA_MAX_PHOTO_BYTES,

@@ -234,11 +234,17 @@ model Photo {
     faceRecords FaceRecord[]
     orderItems  SaleItem[]
 
-    createdAt DateTime @default(now())
+    createdAt DateTime  @default(now())
+    // Soft delete. When set, the photo is hidden from public storefront
+    // listings but stays available to buyers who already paid for it.
+    // A daily cron job hard-deletes photos whose deletedAt is older than
+    // PHOTO_RETENTION_DAYS (default 30) — see /api/cron/cleanup.
+    deletedAt DateTime?
 
     @@index([eventId])
     @@index([eventId, bibNumbers])
     @@index([ownerId])
+    @@index([deletedAt])
 }
 
 // =============================================================================

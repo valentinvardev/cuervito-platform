@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     // Filter to photos that actually belong to this event (defensive — extra
     // safety even though the collection itself is scoped per-event).
     const photos = await db.photo.findMany({
-      where: { id: { in: matchedPhotoIds }, eventId },
+      where: { id: { in: matchedPhotoIds }, eventId, deletedAt: null },
       select: { id: true },
     });
 

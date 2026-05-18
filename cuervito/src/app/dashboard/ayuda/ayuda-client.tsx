@@ -14,11 +14,11 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "¿Mis fotos están protegidas?",
-    a: "Sí. Las previsualizaciones públicas tienen una marca de agua y son de baja resolución. La foto original sin marca solo se entrega después del pago, con un link de descarga que vence en 72 horas.",
+    a: "Sí. Las previsualizaciones públicas tienen una marca de agua y son de baja resolución. La foto original sin marca solo se entrega después del pago, con un link de descarga que vence en 30 días.",
   },
   {
     q: "¿Qué pasa si una foto sale mal subida?",
-    a: "Podés borrar o reemplazar fotos desde el dashboard del evento mientras no estén vendidas. Si ya hay ventas con esa foto, contactanos por soporte.",
+    a: "Podés borrar o reemplazar fotos desde el dashboard del evento cuando quieras. Si la foto ya tenía ventas, las personas que la compraron pueden seguir descargándola desde su link durante los 30 días posteriores al pago; vos no la ves más en tu galería.",
   },
   {
     q: "¿Cómo funciona la búsqueda por dorsal y selfie?",

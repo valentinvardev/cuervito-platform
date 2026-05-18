@@ -93,23 +93,15 @@ export function PhotoGrid({
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
         deleted?: number;
-        skippedSold?: string[];
       };
       if (!res.ok) {
         setBulkError(data.error ?? "No pudimos eliminar las fotos.");
         setBulkBusy(false);
         return;
       }
-      const skipped = data.skippedSold?.length ?? 0;
-      const deletedN = data.deleted ?? 0;
-      // Reset selection regardless of skip count.
-      const finalMsg =
-        skipped > 0
-          ? `${deletedN} eliminadas · ${skipped} no se borraron porque ya fueron vendidas.`
-          : null;
       setSelectionMode(false);
       setSelected(new Set());
-      setBulkError(finalMsg);
+      setBulkError(null);
       startTransition(() => router.refresh());
     } catch (err) {
       setBulkError(err instanceof Error ? err.message : "Error de red.");

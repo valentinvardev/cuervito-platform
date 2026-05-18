@@ -8,10 +8,13 @@ export default async function AdminWatermarkPage() {
   const photosNeedingPreview = await db.photo.count({
     where: {
       fileSize: { not: null },
+      deletedAt: null,
       OR: [{ previewKey: null }, { previewGeneratedAt: null }],
     },
   });
-  const totalPhotos = await db.photo.count({ where: { fileSize: { not: null } } });
+  const totalPhotos = await db.photo.count({
+    where: { fileSize: { not: null }, deletedAt: null },
+  });
 
   const watermarkUrl = setting?.value
     ? await getPresignedDownloadUrl(setting.value, { expiresIn: 60 * 30 })

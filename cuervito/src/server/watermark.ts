@@ -159,7 +159,7 @@ export async function regeneratePreviewsForEvent(eventId: string): Promise<{
   failed: number;
 }> {
   const photos = await db.photo.findMany({
-    where: { eventId, fileSize: { not: null } },
+    where: { eventId, fileSize: { not: null }, deletedAt: null },
     select: { id: true },
   });
   let done = 0;

@@ -275,7 +275,7 @@ export function deliveryEmailHtml(input: DeliveryEmailInput): string {
 
     <div bgcolor="${COLORS.bgElevated}" class="cv-elevated" style="padding:14px 16px;background:${COLORS.bgElevated};border:1px solid ${COLORS.border};border-radius:10px;font-size:13px;color:${COLORS.textSecondary};line-height:1.55;">
       <div style="font-family:${FONT_MONO};font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${COLORS.textTertiary};margin-bottom:6px;">Antes que se te pase</div>
-      El link es <strong style="color:${COLORS.textPrimary};">tuyo y vence en 72 horas</strong>. Guardá las fotos en tu celu o compu apenas puedas. Si estás en iPhone, en la página de descarga hay un paso a paso para guardarlas en tu galería.
+      El link es <strong style="color:${COLORS.textPrimary};">tuyo y vence en 30 días</strong>. Te recomendamos guardar las fotos en tu celu o compu apenas puedas. Si estás en iPhone, en la página de descarga hay un paso a paso para guardarlas en tu galería.
     </div>
 
     <p style="margin:22px 0 0;font-size:12.5px;color:${COLORS.textTertiary};line-height:1.5;word-break:break-all;">
@@ -285,7 +285,7 @@ export function deliveryEmailHtml(input: DeliveryEmailInput): string {
   `;
 
   return layout({
-    preheader: `${input.photoCount} ${input.photoCount === 1 ? "foto lista" : "fotos listas"} para descargar — válido por 72 horas.`,
+    preheader: `${input.photoCount} ${input.photoCount === 1 ? "foto lista" : "fotos listas"} para descargar — válido por 30 días.`,
     body,
   });
 }

@@ -18,6 +18,7 @@ export async function POST() {
   const photos = await db.photo.findMany({
     where: {
       fileSize: { not: null },
+      deletedAt: null,
       OR: [{ previewKey: null }, { previewGeneratedAt: null }],
     },
     orderBy: { createdAt: "asc" },
@@ -36,6 +37,7 @@ export async function POST() {
   const remaining = await db.photo.count({
     where: {
       fileSize: { not: null },
+      deletedAt: null,
       OR: [{ previewKey: null }, { previewGeneratedAt: null }],
     },
   });
