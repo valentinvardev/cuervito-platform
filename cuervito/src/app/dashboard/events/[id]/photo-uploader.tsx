@@ -14,7 +14,10 @@ type UpItem = {
   visible: boolean; // shown as a tile in the grid (not in the "+X" overflow)
 };
 
-const MAX_PARALLEL = 3;
+// Browsers cap concurrent connections to the same origin (~6 in Chrome,
+// Firefox). S3 is a different host, so PUTs to S3 don't share that budget
+// with our own /api requests — 6 in parallel is the sweet spot.
+const MAX_PARALLEL = 6;
 const MAX_VISIBLE_TILES = 11; // grid shows up to 11 tiles + 1 "+X" tile
 const ACCEPT = "image/jpeg,image/png,image/webp";
 
@@ -91,77 +94,84 @@ export function PhotoUploader({
   }
 
   async function processBatches(toProcess: UpItem[]) {
-    for (let i = 0; i < toProcess.length; i += MAX_PARALLEL) {
-      const batch = toProcess.slice(i, i + MAX_PARALLEL);
+    // Presign in a single round-trip (cheap, just creates Photo rows). This
+    // hands us a signed S3 URL per file so we can fire all uploads in parallel
+    // without a round-trip per file.
+    let presigned:
+      | Array<{ photoId: string; uploadUrl: string; contentType: string }>
+      | null = null;
+    try {
+      const res = await fetch(`/api/dashboard/events/${eventId}/photos/presign`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          files: toProcess.map((b) => ({
+            name: b.file.name,
+            size: b.file.size,
+            mimeType: b.file.type,
+          })),
+        }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        const msg = data.error ?? "Error al iniciar la subida";
+        toProcess.forEach((b) => setOne(b.localId, { state: "failed", error: msg }));
+        return;
+      }
+      const data = (await res.json()) as {
+        items: Array<{ photoId: string; uploadUrl: string; contentType: string }>;
+      };
+      presigned = data.items;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Red caída";
+      toProcess.forEach((b) => setOne(b.localId, { state: "failed", error: msg }));
+      return;
+    }
 
-      // Presign
-      let presigned:
-        | Array<{ photoId: string; uploadUrl: string; contentType: string }>
-        | null = null;
-      try {
-        const res = await fetch(`/api/dashboard/events/${eventId}/photos/presign`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            files: batch.map((b) => ({
-              name: b.file.name,
-              size: b.file.size,
-              mimeType: b.file.type,
-            })),
-          }),
-        });
-        if (!res.ok) {
-          const data = (await res.json().catch(() => ({}))) as { error?: string };
-          const msg = data.error ?? "Error al iniciar la subida";
-          batch.forEach((b) =>
-            setOne(b.localId, { state: "failed", error: msg }),
-          );
+    // Worker pool: kick off MAX_PARALLEL uploads, and as each finishes, pull
+    // the next one. A slow upload doesn't stall the rest — every worker
+    // independently drains the queue. Net effect: ~Nx faster on large batches
+    // with mixed file sizes.
+    const queue = toProcess.map((b, i) => ({ b, p: presigned![i]! }));
+    let cursor = 0;
+    async function worker() {
+      while (true) {
+        const idx = cursor++;
+        if (idx >= queue.length) return;
+        const { b, p } = queue[idx]!;
+        if (!p) {
+          setOne(b.localId, { state: "failed", error: "Sin URL" });
           continue;
         }
-        const data = (await res.json()) as {
-          items: Array<{ photoId: string; uploadUrl: string; contentType: string }>;
-        };
-        presigned = data.items;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Red caída";
-        batch.forEach((b) => setOne(b.localId, { state: "failed", error: msg }));
-        continue;
+        setOne(b.localId, { state: "uploading", photoId: p.photoId, pct: 0 });
+        try {
+          await putWithProgress({
+            url: p.uploadUrl,
+            file: b.file,
+            contentType: p.contentType,
+            onProgress: (pct) => setOne(b.localId, { pct: Math.min(99, pct) }),
+          });
+          const cm = await fetch(
+            `/api/dashboard/events/${eventId}/photos/${p.photoId}/commit`,
+            { method: "POST" },
+          );
+          if (!cm.ok) {
+            const data = (await cm.json().catch(() => ({}))) as { error?: string };
+            throw new Error(data.error ?? "Commit falló");
+          }
+          setOne(b.localId, { state: "complete", pct: 100 });
+        } catch (err) {
+          setOne(b.localId, {
+            state: "failed",
+            error: err instanceof Error ? err.message : "Error",
+          });
+        }
       }
-
-      // Parallel PUT to S3 + commit
-      await Promise.all(
-        batch.map(async (b, idx) => {
-          const p = presigned![idx];
-          if (!p) {
-            setOne(b.localId, { state: "failed", error: "Sin URL" });
-            return;
-          }
-          setOne(b.localId, { state: "uploading", photoId: p.photoId, pct: 0 });
-          try {
-            await putWithProgress({
-              url: p.uploadUrl,
-              file: b.file,
-              contentType: p.contentType,
-              onProgress: (pct) => setOne(b.localId, { pct: Math.min(99, pct) }),
-            });
-            const cm = await fetch(
-              `/api/dashboard/events/${eventId}/photos/${p.photoId}/commit`,
-              { method: "POST" },
-            );
-            if (!cm.ok) {
-              const data = (await cm.json().catch(() => ({}))) as { error?: string };
-              throw new Error(data.error ?? "Commit falló");
-            }
-            setOne(b.localId, { state: "complete", pct: 100 });
-          } catch (err) {
-            setOne(b.localId, {
-              state: "failed",
-              error: err instanceof Error ? err.message : "Error",
-            });
-          }
-        }),
-      );
     }
+
+    await Promise.all(
+      Array.from({ length: Math.min(MAX_PARALLEL, queue.length) }, () => worker()),
+    );
 
     // Refresh server-rendered grid so the photos appear below
     router.refresh();

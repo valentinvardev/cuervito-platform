@@ -64,12 +64,18 @@ export default async function PublicEventPage(props: {
       : await getPresignedDownloadUrl(event.coverUrl, { expiresIn: 60 * 60 * 6 })
     : null;
 
-  // Load up to 200 committed photos, sign their preview URLs briefly
+  // Load up to 200 committed photos. We require `previewKey` to exist —
+  // without it the falling back to `storageKey` would leak the original
+  // un-watermarked image to the public storefront. The owner sees photos
+  // in the dashboard immediately after upload; the public gallery only
+  // catches up once the background watermark finishes (a few seconds
+  // after the commit returns).
   const rawPhotos = await db.photo.findMany({
     where: {
       eventId: event.id,
       fileSize: { not: null },
-      deletedAt: null, // exclude soft-deleted photos from the public storefront
+      deletedAt: null,
+      previewKey: { not: null },
     },
     orderBy: { createdAt: "desc" },
     take: 200,
