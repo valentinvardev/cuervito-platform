@@ -154,12 +154,21 @@
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
   }
   .photog-meta a {
-    color: var(--text-secondary);
+    color: var(--accent);
     text-decoration: none;
-    transition: color 150ms;
+    transition: all 150ms;
     display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px 2px 6px;
+    border-radius: 20px;
+    background: var(--accent-deep);
+    border: 1px solid var(--border-accent);
+    font-size: 13px;
   }
-  .photog-meta a:hover { color: var(--accent); }
+  .photog-meta a:hover {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  }
   .photog-meta .sep { width: 3px; height: 3px; background: var(--text-tertiary); border-radius: 50%; opacity: 0.6; }
 
   .event-strip {

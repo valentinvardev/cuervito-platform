@@ -116,7 +116,16 @@ export default async function PublicEventPage(props: {
     <div
       style={
         brandColor
-          ? ({ "--accent": brandColor } as React.CSSProperties)
+          ? ({
+              "--accent": brandColor,
+              // Derive hover/tint variables from the brand color so all
+              // interactive states (button hovers, borders, backgrounds)
+              // respect the photographer's custom palette instead of
+              // falling back to the default orange.
+              "--accent-bright": `color-mix(in srgb, ${brandColor} 85%, white)`,
+              "--accent-deep":   `color-mix(in srgb, ${brandColor} 12%, transparent)`,
+              "--border-accent": `color-mix(in srgb, ${brandColor} 40%, transparent)`,
+            } as React.CSSProperties)
           : undefined
       }
     >

@@ -142,7 +142,7 @@ export function SelfieSearchButton({
         ) : (
           <>
             <i className="ti ti-face-id" style={{ fontSize: 16 }} />
-            <span>Buscar por selfie</span>
+            <span>Reconocimiento facial</span>
           </>
         )}
       </button>
