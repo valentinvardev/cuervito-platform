@@ -3,14 +3,23 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+type PhotographerRow = {
+  id: string;
+  name: string;
+  hasCustomWatermark: boolean;
+  photoCount: number;
+};
+
 export function WatermarkAdminUI({
   currentUrl,
   totalPhotos,
   photosNeedingPreview,
+  photographers,
 }: {
   currentUrl: string | null;
   totalPhotos: number;
   photosNeedingPreview: number;
+  photographers: PhotographerRow[];
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -18,13 +27,14 @@ export function WatermarkAdminUI({
   const [error, setError] = useState<string | null>(null);
   const [savedToast, setSavedToast] = useState<string | null>(null);
 
-  // Regenerate progress
+  // Regenerate — global
   const [regen, setRegen] = useState<{
     running: boolean;
     processed: number;
     failed: number;
     remaining: number;
     initial: number;
+    userId?: string; // set when scoped to a single user
   } | null>(null);
 
   async function onPick(file: File) {
@@ -64,43 +74,48 @@ export function WatermarkAdminUI({
     }
   }
 
-  async function regenerateAll() {
-    if (!confirm(`Regenerar previews para ${totalPhotos.toLocaleString("es-AR")} fotos. Esto puede tardar varios minutos.`)) return;
-
+  async function runRegen(userId?: string) {
+    const targetTotal = userId
+      ? (photographers.find((p) => p.id === userId)?.photoCount ?? 0)
+      : photosNeedingPreview;
+    const initial = targetTotal || totalPhotos;
     let processed = 0;
     let failed = 0;
-    let remaining = photosNeedingPreview;
-    const initial = photosNeedingPreview;
-    setRegen({ running: true, processed, failed, remaining, initial });
+    let remaining = initial;
+    setRegen({ running: true, processed, failed, remaining, initial, userId });
 
-    // We hit the endpoint in a loop until remaining = 0
-    // (each call processes up to 25 photos).
     let iters = 0;
-    const MAX_ITERS = 2000; // safety cap: 50 000 photos
-    while (remaining > 0 && iters < MAX_ITERS) {
-      const res = await fetch("/api/admin/watermark/regenerate", { method: "POST" });
+    while (remaining > 0 && iters < 2000) {
+      const res = await fetch("/api/admin/watermark/regenerate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(userId ? { userId } : {}),
+      });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
         setError(data.error ?? "Regeneración fallida.");
         break;
       }
-      const data = (await res.json()) as {
-        processed: number;
-        done: number;
-        failed: number;
-        remaining: number;
-      };
+      const data = (await res.json()) as { done: number; failed: number; remaining: number };
       processed += data.done;
       failed += data.failed;
       remaining = data.remaining;
-      setRegen({ running: remaining > 0, processed, failed, remaining, initial });
+      setRegen({ running: remaining > 0, processed, failed, remaining, initial, userId });
       iters++;
-      // small breather between batches so the UI updates and we don't slam S3
       await new Promise((r) => setTimeout(r, 80));
     }
-
-    setRegen({ running: false, processed, failed, remaining, initial });
+    setRegen((prev) => prev ? { ...prev, running: false, remaining: 0 } : null);
     router.refresh();
+  }
+
+  function regenerateAll() {
+    if (!confirm(`Regenerar previews para todas las fotos (${totalPhotos.toLocaleString("es-AR")}). Esto puede tardar varios minutos.`)) return;
+    void runRegen();
+  }
+
+  function regenerateForUser(userId: string, name: string, count: number) {
+    if (!confirm(`Regenerar ${count.toLocaleString("es-AR")} previews de ${name}?`)) return;
+    void runRegen(userId);
   }
 
   return (
@@ -275,41 +290,71 @@ export function WatermarkAdminUI({
           </button>
         </div>
 
-        {regen && (
+        {regen && !regen.userId && (
           <div style={{ marginTop: 14 }}>
-            <div
-              style={{
-                height: 6,
-                background: "var(--bg-elevated)",
-                borderRadius: 999,
-                overflow: "hidden",
-                marginBottom: 8,
-              }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  width: `${regen.initial > 0 ? Math.round(((regen.initial - regen.remaining) / regen.initial) * 100) : 100}%`,
-                  background: regen.running ? "var(--accent)" : "var(--success)",
-                  transition: "width 320ms ease",
-                }}
-              />
+            <div style={{ height: 6, background: "var(--bg-elevated)", borderRadius: 999, overflow: "hidden", marginBottom: 8 }}>
+              <div style={{
+                height: "100%",
+                width: `${regen.initial > 0 ? Math.round(((regen.initial - regen.remaining) / regen.initial) * 100) : 100}%`,
+                background: regen.running ? "var(--accent)" : "var(--success)",
+                transition: "width 320ms ease",
+              }} />
             </div>
             <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>
               {regen.processed.toLocaleString("es-AR")} procesadas
-              {regen.failed > 0 && (
-                <>
-                  {" · "}
-                  <span style={{ color: "var(--error)" }}>{regen.failed} fallaron</span>
-                </>
-              )}
+              {regen.failed > 0 && <> · <span style={{ color: "var(--error)" }}>{regen.failed} fallaron</span></>}
               {regen.remaining > 0 && <> · {regen.remaining.toLocaleString("es-AR")} restantes</>}
               {!regen.running && regen.remaining === 0 && (
-                <span style={{ color: "var(--success)", marginLeft: 8 }}>
-                  <i className="ti ti-circle-check-filled" /> Listo
-                </span>
+                <span style={{ color: "var(--success)", marginLeft: 8 }}><i className="ti ti-circle-check-filled" /> Listo</span>
               )}
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Per-photographer section */}
+      <div className="form-card" style={{ marginTop: 18 }}>
+        <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, letterSpacing: "-0.02em", marginBottom: 14 }}>
+          Por fotógrafo
+        </h3>
+        {photographers.length === 0 ? (
+          <div style={{ color: "var(--text-tertiary)", fontSize: 13 }}>No hay fotógrafos activos.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {photographers.map((p) => (
+              <div key={p.id} style={{
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "10px 12px", borderRadius: 8,
+                background: "var(--bg-base)", border: "1px solid var(--border-subtle)",
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 500, color: "var(--text-primary)" }}>{p.name}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 2 }}>
+                    {p.photoCount.toLocaleString("es-AR")} fotos ·{" "}
+                    {p.hasCustomWatermark
+                      ? <span style={{ color: "var(--accent)" }}>watermark propio</span>
+                      : <span>usa el global</span>}
+                  </div>
+                </div>
+                {regen?.userId === p.id && (
+                  <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: "var(--font-mono)", textAlign: "right" }}>
+                    {regen.running
+                      ? `${regen.processed}/${regen.initial}…`
+                      : <span style={{ color: "var(--success)" }}>✓ Listo</span>}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  style={{ flexShrink: 0, padding: "6px 12px", fontSize: 12, height: 32 }}
+                  disabled={regen?.running}
+                  onClick={() => regenerateForUser(p.id, p.name, p.photoCount)}
+                >
+                  <i className="ti ti-refresh" style={{ fontSize: 13 }} />
+                  Regenerar
+                </button>
+              </div>
+            ))}
           </div>
         )}
       </div>

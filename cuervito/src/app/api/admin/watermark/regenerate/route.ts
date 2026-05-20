@@ -1,27 +1,32 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { generatePreview } from "~/server/watermark";
 
-// Process in chunks so a single HTTP request doesn't hang for an hour on a
-// 5000-photo system. The admin can call this endpoint repeatedly until
-// remaining = 0.
 const BATCH_SIZE = 25;
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  // Pick photos that have an original but a missing/stale preview
+  // Optional: scope to a single user's photos (for per-user watermark regeneration)
+  let ownerId: string | undefined;
+  try {
+    const body = (await req.json().catch(() => ({}))) as { userId?: string };
+    ownerId = body.userId;
+  } catch { /* empty body is fine */ }
+
+  const baseWhere = {
+    fileSize: { not: null } as { not: null },
+    deletedAt: null as null,
+    ...(ownerId ? { ownerId } : {}),
+  };
+
   const photos = await db.photo.findMany({
-    where: {
-      fileSize: { not: null },
-      deletedAt: null,
-      OR: [{ previewKey: null }, { previewGeneratedAt: null }],
-    },
-    orderBy: { createdAt: "asc" },
+    where: baseWhere,
+    orderBy: { createdAt: "asc" as const },
     take: BATCH_SIZE,
     select: { id: true },
   });
@@ -34,18 +39,7 @@ export async function POST() {
     else failed++;
   }
 
-  const remaining = await db.photo.count({
-    where: {
-      fileSize: { not: null },
-      deletedAt: null,
-      OR: [{ previewKey: null }, { previewGeneratedAt: null }],
-    },
-  });
+  const remaining = await db.photo.count({ where: baseWhere });
 
-  return NextResponse.json({
-    processed: photos.length,
-    done,
-    failed,
-    remaining,
-  });
+  return NextResponse.json({ processed: photos.length, done, failed, remaining });
 }

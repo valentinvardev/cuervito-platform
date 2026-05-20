@@ -9,39 +9,67 @@ import {
   platformWatermarkKey,
   previewPhotoKey,
   putS3Object,
+  userWatermarkKey,
 } from "~/server/s3";
 
 const PREVIEW_MAX_WIDTH = 1600;
 const PREVIEW_QUALITY = 65;
 
-let watermarkCache: { bytes: Buffer; loadedAt: number } | null = null;
-const CACHE_TTL_MS = 60_000; // re-fetch every minute in case admin updated it
+// ── Watermark cache ───────────────────────────────────────────────────────────
+// We keep one entry for the platform watermark and one per user who has their
+// own. TTL is 60 s so a new upload is reflected quickly without hammering S3.
+
+interface CacheEntry { bytes: Buffer; loadedAt: number }
+let platformCache: CacheEntry | null = null;
+const userCacheMap = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 60_000;
 
 async function loadPlatformWatermark(): Promise<Buffer | null> {
-  if (watermarkCache && Date.now() - watermarkCache.loadedAt < CACHE_TTL_MS) {
-    return watermarkCache.bytes;
+  if (platformCache && Date.now() - platformCache.loadedAt < CACHE_TTL_MS) {
+    return platformCache.bytes;
   }
   try {
     const bytes = await getS3ObjectBytes(platformWatermarkKey());
     const buf = Buffer.from(bytes);
-    watermarkCache = { bytes: buf, loadedAt: Date.now() };
+    platformCache = { bytes: buf, loadedAt: Date.now() };
     return buf;
   } catch {
-    // No watermark uploaded yet — use the text fallback in buildComposite
     return null;
   }
 }
 
-/** Invalidate the in-process cache (e.g. after admin uploads a new watermark). */
+async function loadUserWatermark(userId: string): Promise<Buffer | null> {
+  const cached = userCacheMap.get(userId);
+  if (cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) return cached.bytes;
+  try {
+    const bytes = await getS3ObjectBytes(userWatermarkKey(userId));
+    const buf = Buffer.from(bytes);
+    userCacheMap.set(userId, { bytes: buf, loadedAt: Date.now() });
+    return buf;
+  } catch {
+    return null;
+  }
+}
+
+/** Invalidate the in-process cache for the platform watermark. */
 export function invalidateWatermarkCache() {
-  watermarkCache = null;
+  platformCache = null;
+}
+
+/** Invalidate the per-user cache entry (call after the user uploads/deletes). */
+export function invalidateUserWatermarkCache(userId: string) {
+  userCacheMap.delete(userId);
 }
 
 async function buildComposite(
   imageWidth: number,
   imageHeight: number,
+  ownerId?: string,
 ): Promise<{ input: Buffer; tile: boolean; blend: "over" }> {
-  const wm = await loadPlatformWatermark();
+  // Prefer the per-user watermark; fall back to the platform-wide one.
+  const wm =
+    (ownerId ? await loadUserWatermark(ownerId) : null) ??
+    (await loadPlatformWatermark());
 
   if (wm) {
     const meta = await sharp(wm).metadata();
@@ -120,6 +148,7 @@ export async function generatePreview(photoId: string): Promise<string | null> {
     const composite = await buildComposite(
       resizedMeta.width ?? w,
       resizedMeta.height ?? h,
+      photo.ownerId,
     );
 
     const out = await sharp(resized)

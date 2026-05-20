@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
 import { isCfConfigured } from "~/server/cloudflare";
 import { db } from "~/server/db";
+import { getPresignedDownloadUrl } from "~/server/s3";
 
 import { TiendaClient } from "./tienda-client";
 
@@ -16,9 +17,18 @@ export default async function TiendaPage() {
       slug: true,
       storefrontBrandColor: true,
       storefrontPublished: true,
+      watermarkKey: true,
     },
   });
   if (!user?.slug) redirect("/onboarding");
+
+  const watermarkUrl = user.watermarkKey
+    ? await getPresignedDownloadUrl(user.watermarkKey, { expiresIn: 60 * 30 })
+    : null;
+
+  const totalPhotos = await db.photo.count({
+    where: { ownerId: session.user.id, fileSize: { not: null }, deletedAt: null },
+  });
 
   const domains = await db.customDomain.findMany({
     where: { userId: session.user.id },
@@ -37,6 +47,8 @@ export default async function TiendaPage() {
     <TiendaClient
       slug={user.slug}
       brandColor={user.storefrontBrandColor ?? "#F5820A"}
+      watermarkUrl={watermarkUrl}
+      totalPhotos={totalPhotos}
       domains={domains.map((d) => ({
         ...d,
         verifiedAt: d.verifiedAt?.toISOString() ?? null,

@@ -116,6 +116,7 @@ model User {
     storefrontTemplate   String?  // template id from frontend catalog
     storefrontDomain     String?  @unique // custom domain
     storefrontPublished  Boolean  @default(false)
+    watermarkKey         String?  // S3 key for per-user watermark PNG; null = use platform default
 
     suspendedAt    DateTime?
     suspendedReason String?  @db.Text
