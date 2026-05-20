@@ -1,0 +1,13 @@
+{
+  "name": "Cuervito",
+  "short_name": "Cuervito",
+  "description": "Fotos de eventos deportivos",
+  "icons": [
+    { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#0F0D0B",
+  "background_color": "#0F0D0B",
+  "display": "standalone",
+  "start_url": "/"
+}
