@@ -324,7 +324,6 @@
 
   @media (max-width: 600px) {
     .search-card { grid-template-columns: 1fr; }
-    .search-card .selfie-btn span { display: none; }
     .search-card .selfie-btn { justify-content: center; }
   }
 
