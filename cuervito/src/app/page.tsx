@@ -441,28 +441,17 @@ export default async function Home() {
           </div>
           <div className="footer-bottom">
             <span>© 2026 cuervito.app · Hecho en Argentina</span>
-            <div
-              className="footer-social"
-              style={{ display: "flex", gap: 18, alignItems: "center" }}
-            >
-              <Link
-                href="/terminos"
-                style={{ fontSize: 12.5, color: "var(--text-tertiary)" }}
-              >
-                Términos
-              </Link>
-              <Link
-                href="/privacidad"
-                style={{ fontSize: 12.5, color: "var(--text-tertiary)" }}
-              >
-                Privacidad
-              </Link>
-              <a href="#" aria-label="Instagram">
-                <i className="ti ti-brand-instagram"></i>
-              </a>
-              <a href="#" aria-label="WhatsApp">
-                <i className="ti ti-brand-whatsapp"></i>
-              </a>
+            <div style={{ display: "flex", gap: 18, alignItems: "center" }}>
+              <Link href="/terminos" className="footer-legal-link">Términos</Link>
+              <Link href="/privacidad" className="footer-legal-link">Privacidad</Link>
+              <div className="footer-social">
+                <a href="#" aria-label="Instagram">
+                  <i className="ti ti-brand-instagram"></i>
+                </a>
+                <a href="#" aria-label="WhatsApp">
+                  <i className="ti ti-brand-whatsapp"></i>
+                </a>
+              </div>
             </div>
           </div>
         </div>

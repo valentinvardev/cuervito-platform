@@ -76,10 +76,18 @@ export function LiveEventsSearch() {
             <Link key={e.href} className="le-card" href={e.href}>
               <div
                 className="le-card-cover"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(245,130,10,0.3) 0%, rgba(245,130,10,0.05) 60%, rgba(15,13,11,1) 100%)",
-                }}
+                style={
+                  e.coverUrl
+                    ? {
+                        backgroundImage: `url(${e.coverUrl})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }
+                    : {
+                        background:
+                          "linear-gradient(135deg, rgba(245,130,10,0.3) 0%, rgba(245,130,10,0.05) 60%, rgba(15,13,11,1) 100%)",
+                      }
+                }
               ></div>
               <div className="le-card-body">
                 <div className="ttl">{e.name}</div>
