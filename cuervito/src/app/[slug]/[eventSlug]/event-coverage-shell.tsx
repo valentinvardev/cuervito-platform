@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { CartProvider, useCart } from "./cart-context";
 import { CartSheet } from "./cart-sheet";
@@ -266,6 +266,8 @@ function ShellInner({
 
       <main className="main">
 
+        <PromosStrip discounts={discounts} />
+
         {selfieMessage && (
           <div
             style={{
@@ -356,6 +358,12 @@ function ShellInner({
         )}
       </main>
 
+      <LiveNudge
+        discounts={discounts}
+        pricePerPhoto={event.pricePerPhoto}
+        onOpen={openCart}
+      />
+
       <CartSheet
         eventId={event.id}
         eventName={event.name}
@@ -374,6 +382,193 @@ function ShellInner({
         />
       )}
     </>
+  );
+}
+
+// ── Promos strip ─────────────────────────────────────────────────────────────
+// Shows BUNDLE and QTYPCT discounts as cards below the search bar.
+// CODE discounts are kept private (shared out-of-band by the photographer).
+
+function PromosStrip({ discounts }: { discounts: PublicDiscount[] }) {
+  const visible = discounts.filter((d) => d.type !== "CODE");
+  if (visible.length === 0) return null;
+
+  return (
+    <section className="promos">
+      <div className="promos-head">
+        <span className="lbl">Promos activas</span>
+        <span className="sub">se aplican automáticamente al sumar fotos</span>
+      </div>
+      <div className="promos-grid">
+        {visible.map((d) => {
+          const icon = d.type === "BUNDLE" ? "ti-package" : "ti-percentage";
+          const ttl =
+            d.type === "BUNDLE"
+              ? `Llevá ${d.qty} y pagás $${d.price?.toLocaleString("es-AR")} c/u`
+              : `Llevá ${d.qty}+ y obtené ${d.value}% off`;
+          const sub =
+            d.type === "BUNDLE"
+              ? "Precio especial al alcanzar la cantidad"
+              : "Aplicado al total automáticamente";
+          return (
+            <div key={d.id} className="promo-card">
+              <div className="ic"><i className={`ti ${icon}`} /></div>
+              <div className="body">
+                <div className="ttl">{ttl}</div>
+                <div className="sub">{sub}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// ── Live nudge ────────────────────────────────────────────────────────────────
+// Fixed floating banner at the bottom of the page. Appears when you add the
+// first photo and updates in real time — green when a threshold is met.
+
+type NudgeState = {
+  icon: string;
+  ttl: string;
+  sub: string;
+  met: boolean;
+  progress: number; // 0-100
+} | null;
+
+function computeNudge(
+  discounts: PublicDiscount[],
+  count: number,
+  pricePerPhoto: number,
+): NudgeState {
+  if (count === 0) return null;
+
+  const bundle = discounts
+    .filter((d) => d.type === "BUNDLE" && d.qty !== null && d.price !== null)
+    .sort((a, b) => (a.price ?? 0) - (b.price ?? 0))[0] ?? null;
+
+  const qpct = discounts
+    .filter((d) => d.type === "QTYPCT" && d.qty !== null && d.value !== null)
+    .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))[0] ?? null;
+
+  if (bundle) {
+    if (count >= bundle.qty!) {
+      const saving = (pricePerPhoto - bundle.price!) * count;
+      return {
+        icon: "ti-package",
+        ttl: `Estás al precio especial · $${bundle.price!.toLocaleString("es-AR")} c/u`,
+        sub: `Llevás ${count} fotos · ahorrás $${saving.toLocaleString("es-AR")}`,
+        met: true,
+        progress: 100,
+      };
+    }
+    const need = bundle.qty! - count;
+    const saving = (pricePerPhoto - bundle.price!) * bundle.qty!;
+    return {
+      icon: "ti-package",
+      ttl: `Sumá ${need} más y pagás $${bundle.price!.toLocaleString("es-AR")} c/u`,
+      sub: `Llevando ${bundle.qty} fotos ahorrás $${saving.toLocaleString("es-AR")}`,
+      met: false,
+      progress: Math.round((count / bundle.qty!) * 100),
+    };
+  }
+
+  if (qpct) {
+    if (count >= qpct.qty!) {
+      const saving = Math.round((count * pricePerPhoto * (qpct.value ?? 0)) / 100);
+      return {
+        icon: "ti-percentage",
+        ttl: `${qpct.value}% off aplicado · ahorrás $${saving.toLocaleString("es-AR")}`,
+        sub: `Por llevar ${count} fotos`,
+        met: true,
+        progress: 100,
+      };
+    }
+    const need = qpct.qty! - count;
+    return {
+      icon: "ti-percentage",
+      ttl: `Sumá ${need} más y obtené ${qpct.value}% off`,
+      sub: "Aplicado automáticamente al total",
+      met: false,
+      progress: Math.round((count / qpct.qty!) * 100),
+    };
+  }
+
+  return null;
+}
+
+function LiveNudge({
+  discounts,
+  pricePerPhoto,
+  onOpen,
+}: {
+  discounts: PublicDiscount[];
+  pricePerPhoto: number;
+  onOpen: () => void;
+}) {
+  const { items } = useCart();
+  const count = items.length;
+
+  const nudge = computeNudge(discounts, count, pricePerPhoto);
+
+  const elRef = useRef<HTMLDivElement>(null);
+  const prevTtl = useRef<string>("");
+  const prevMet = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    const el = elRef.current;
+    if (!el) return;
+
+    if (!nudge) {
+      // Fade out
+      el.classList.add("entering");
+      const t = setTimeout(() => {
+        el.hidden = true;
+        el.classList.remove("entering");
+      }, 240);
+      return () => clearTimeout(t);
+    }
+
+    if (el.hidden) {
+      // First appearance
+      el.hidden = false;
+      el.classList.add("entering");
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => el.classList.remove("entering")),
+      );
+    } else if (nudge.ttl !== prevTtl.current || nudge.met !== prevMet.current) {
+      // Content changed — quick fade swap
+      el.classList.add("swap");
+      const t = setTimeout(() => el.classList.remove("swap"), 180);
+      return () => clearTimeout(t);
+    }
+
+    prevTtl.current = nudge.ttl;
+    prevMet.current = nudge.met;
+  }, [nudge]);
+
+  return (
+    <div
+      ref={elRef}
+      className={`live-nudge${nudge?.met ? " met" : ""}`}
+      hidden={!nudge}
+      onClick={onOpen}
+      style={{ cursor: "pointer" }}
+    >
+      <div className="ic">
+        <i className={`ti ${nudge?.icon ?? "ti-bolt"}`} />
+      </div>
+      <div className="body">
+        <div className="ttl">{nudge?.ttl}</div>
+        <div className="sub">{nudge?.sub}</div>
+        {nudge && nudge.progress < 100 && (
+          <div className="progress">
+            <span style={{ width: `${nudge.progress}%` }} />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
