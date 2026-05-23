@@ -12,8 +12,8 @@ import {
   userWatermarkKey,
 } from "~/server/s3";
 
-const PREVIEW_MAX_WIDTH = 1600;
-const PREVIEW_QUALITY = 65;
+const PREVIEW_MAX_WIDTH = 2400;
+const PREVIEW_QUALITY = 85;
 
 // ── Watermark cache ───────────────────────────────────────────────────────────
 // We keep one entry for the platform watermark and one per user who has their
