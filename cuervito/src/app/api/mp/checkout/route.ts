@@ -17,6 +17,7 @@ const checkoutSchema = z.object({
   buyerEmail: z.string().email(),
   buyerName: z.string().trim().min(1).max(80).optional(),
   buyerPhone: z.string().trim().max(40).optional(),
+  discountCode: z.string().trim().max(30).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -103,7 +104,61 @@ export async function POST(req: NextRequest) {
     subtotalCents += priceCents;
     return { photoId: p.id, priceCents };
   });
-  const totalCents = subtotalCents; // no discount logic yet
+
+  // Apply discount
+  const now = new Date();
+  const activeDiscounts = await db.discount.findMany({
+    where: {
+      eventId: event.id,
+      OR: [{ expires: null }, { expires: { gt: now } }],
+    },
+  });
+
+  let discountCents = 0;
+  let appliedDiscountId: string | null = null;
+
+  const codeInput = parsed.data.discountCode?.toUpperCase();
+  if (codeInput) {
+    // Try to find a matching CODE discount
+    const codeDsc = activeDiscounts.find(
+      (d) =>
+        d.type === "CODE" &&
+        d.code === codeInput &&
+        (d.maxUses === null || d.usageCount < d.maxUses),
+    );
+    if (!codeDsc) {
+      return NextResponse.json({ error: "Código de descuento inválido o vencido." }, { status: 400 });
+    }
+    if (codeDsc.kind === "pct") {
+      discountCents = Math.floor((subtotalCents * Number(codeDsc.value)) / 100);
+    } else {
+      discountCents = Math.min(Math.round(Number(codeDsc.value) * 100), subtotalCents - 1);
+    }
+    appliedDiscountId = codeDsc.id;
+  } else {
+    // Find best automatic discount (BUNDLE or QTYPCT) based on photo count
+    let bestSavings = 0;
+    for (const d of activeDiscounts) {
+      if (d.type === "BUNDLE" && d.qty !== null && photos.length >= d.qty && d.price !== null) {
+        const bundleTotal = Math.round(Number(d.price) * 100) * photos.length;
+        const savings = subtotalCents - bundleTotal;
+        if (savings > bestSavings) {
+          bestSavings = savings;
+          discountCents = savings;
+          appliedDiscountId = d.id;
+        }
+      } else if (d.type === "QTYPCT" && d.qty !== null && photos.length >= d.qty && d.value !== null) {
+        const savings = Math.floor((subtotalCents * Number(d.value)) / 100);
+        if (savings > bestSavings) {
+          bestSavings = savings;
+          discountCents = savings;
+          appliedDiscountId = d.id;
+        }
+      }
+    }
+  }
+
+  const totalCents = Math.max(subtotalCents - discountCents, 0);
   const platformFeeCents = Math.round(
     (totalCents * env.PLATFORM_FEE_PERCENT) / 100,
   );
@@ -118,28 +173,34 @@ export async function POST(req: NextRequest) {
       Date.now() + env.DOWNLOAD_TOKEN_RETENTION_DAYS * 24 * 60 * 60 * 1000,
     );
 
-    const sale = await db.sale.create({
-      data: {
-        sellerId: event.ownerId,
-        eventId: event.id,
-        buyerEmail: parsed.data.buyerEmail,
-        buyerName: parsed.data.buyerName ?? null,
-        buyerPhone: parsed.data.buyerPhone ?? null,
-        subtotalCents,
-        totalCents,
-        platformFeeCents,
-        sellerNetCents,
-        status: "PAID",
-        paidAt: new Date(),
-        downloadToken,
-        downloadTokenExpires: tokenExpiresAt,
-        notes: "TEST MODE — payment bypassed",
-        items: {
-          create: items.map((i) => ({ photoId: i.photoId, priceCents: i.priceCents })),
+    const [sale] = await db.$transaction([
+      db.sale.create({
+        data: {
+          sellerId: event.ownerId,
+          eventId: event.id,
+          buyerEmail: parsed.data.buyerEmail,
+          buyerName: parsed.data.buyerName ?? null,
+          buyerPhone: parsed.data.buyerPhone ?? null,
+          subtotalCents,
+          discountCents,
+          totalCents,
+          platformFeeCents,
+          sellerNetCents,
+          status: "PAID",
+          paidAt: new Date(),
+          downloadToken,
+          downloadTokenExpires: tokenExpiresAt,
+          notes: "TEST MODE — payment bypassed",
+          items: {
+            create: items.map((i) => ({ photoId: i.photoId, priceCents: i.priceCents })),
+          },
         },
-      },
-      select: { id: true },
-    });
+        select: { id: true },
+      }),
+      ...(appliedDiscountId
+        ? [db.discount.update({ where: { id: appliedDiscountId }, data: { usageCount: { increment: 1 } } })]
+        : []),
+    ]);
 
     // Same realtime + cache flow as the real webhook would do.
     publishSale(event.ownerId, {
@@ -183,24 +244,30 @@ export async function POST(req: NextRequest) {
 
   // === REAL MP FLOW ===
   // Create the Sale first (PENDING) — we'll update status from the webhook
-  const sale = await db.sale.create({
-    data: {
-      sellerId: event.ownerId,
-      eventId: event.id,
-      buyerEmail: parsed.data.buyerEmail,
-      buyerName: parsed.data.buyerName ?? null,
-      buyerPhone: parsed.data.buyerPhone ?? null,
-      subtotalCents,
-      totalCents,
-      platformFeeCents,
-      sellerNetCents,
-      status: "PENDING",
-      items: {
-        create: items.map((i) => ({ photoId: i.photoId, priceCents: i.priceCents })),
+  const [sale] = await db.$transaction([
+    db.sale.create({
+      data: {
+        sellerId: event.ownerId,
+        eventId: event.id,
+        buyerEmail: parsed.data.buyerEmail,
+        buyerName: parsed.data.buyerName ?? null,
+        buyerPhone: parsed.data.buyerPhone ?? null,
+        subtotalCents,
+        discountCents,
+        totalCents,
+        platformFeeCents,
+        sellerNetCents,
+        status: "PENDING",
+        items: {
+          create: items.map((i) => ({ photoId: i.photoId, priceCents: i.priceCents })),
+        },
       },
-    },
-    select: { id: true },
-  });
+      select: { id: true },
+    }),
+    ...(appliedDiscountId
+      ? [db.discount.update({ where: { id: appliedDiscountId }, data: { usageCount: { increment: 1 } } })]
+      : []),
+  ]);
 
   // Build URLs
   const base =

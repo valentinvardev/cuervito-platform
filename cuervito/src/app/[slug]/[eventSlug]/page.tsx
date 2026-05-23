@@ -100,6 +100,27 @@ export default async function PublicEventPage(props: {
     })),
   );
 
+  // Active discounts for nudge display and checkout
+  const now = new Date();
+  const discounts = await db.discount.findMany({
+    where: {
+      eventId: event.id,
+      OR: [{ expires: null }, { expires: { gt: now } }],
+    },
+    select: {
+      id: true, type: true, code: true, kind: true, value: true,
+      qty: true, price: true, expires: true, maxUses: true, usageCount: true,
+    },
+  });
+  const activeDiscounts = discounts
+    .filter((d) => d.maxUses === null || d.usageCount < d.maxUses)
+    .map((d) => ({
+      ...d,
+      value: d.value ? Number(d.value) : null,
+      price: d.price ? Number(d.price) : null,
+      expires: d.expires?.toISOString() ?? null,
+    }));
+
   const initials =
     photographer.name
       ?.split(" ")
@@ -153,6 +174,7 @@ export default async function PublicEventPage(props: {
         photosCount: photos.length,
       }}
       photos={photos}
+      discounts={activeDiscounts}
       testMode={testMode}
     />
     </div>

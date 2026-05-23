@@ -32,6 +32,17 @@ type EventInfo = {
   photosCount: number;
 };
 
+export type PublicDiscount = {
+  id: string;
+  type: "CODE" | "BUNDLE" | "QTYPCT";
+  code: string | null;
+  kind: string | null;
+  value: number | null;
+  qty: number | null;
+  price: number | null;
+  expires: string | null;
+};
+
 type Photo = {
   id: string;
   previewUrl: string;
@@ -46,6 +57,7 @@ export function EventCoverageShell(props: {
   photographer: Photographer;
   event: EventInfo;
   photos: Photo[];
+  discounts?: PublicDiscount[];
   testMode?: boolean;
 }) {
   return (
@@ -63,11 +75,13 @@ function ShellInner({
   photographer,
   event,
   photos,
+  discounts = [],
   testMode,
 }: {
   photographer: Photographer;
   event: EventInfo;
   photos: Photo[];
+  discounts?: PublicDiscount[];
   testMode?: boolean;
 }) {
   const { items, openCart, isInCart, add, remove } = useCart();
@@ -347,6 +361,7 @@ function ShellInner({
         eventName={event.name}
         pricePerPhoto={event.pricePerPhoto}
         photos={photos}
+        discounts={discounts}
         testMode={testMode}
       />
 

@@ -177,6 +177,7 @@ export function EventDetailShell({
 
       <section className={`section ${tab === "monetizacion" ? "active" : ""}`}>
         <EventMonetizationSection
+          eventId={event.id}
           revenue={0}
           photosSold={event.salesCount}
           conversion={null}

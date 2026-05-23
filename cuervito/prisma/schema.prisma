@@ -171,15 +171,12 @@ model Event {
     canonicalEventId       String?
     canonicalEvent         CanonicalEvent? @relation(fields: [canonicalEventId], references: [id], onDelete: SetNull)
 
-    // Discount config (legacy JSON, can be normalized later if needed)
-    discountCodes Json?
-    bundleConfig  Json?
-
     isPublished Boolean @default(false)
 
     photos       Photo[]
     sales        Sale[]
     faceRecords  FaceRecord[]
+    discounts    Discount[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -359,6 +356,41 @@ model SaleItem {
     priceCents Int
 
     @@unique([saleId, photoId])
+}
+
+// =============================================================================
+// Discounts
+// =============================================================================
+
+enum DiscountType {
+    CODE    // buyer enters a coupon code
+    BUNDLE  // buy qty photos → pay `price` per photo
+    QTYPCT  // buy qty+ photos → get `value`% off total
+}
+
+model Discount {
+    id         String       @id @default(cuid())
+    eventId    String
+    event      Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    type       DiscountType
+
+    // CODE type
+    code       String?  // e.g. "VERANO20" (stored uppercase)
+    kind       String?  // "pct" | "fixed"
+    value      Decimal? @db.Decimal(10, 2)  // percent (1-99) or fixed ARS amount
+
+    // BUNDLE + QTYPCT: minimum photo count
+    qty        Int?
+    // BUNDLE: per-photo price at bundle rate
+    price      Decimal? @db.Decimal(10, 2)
+
+    expires    DateTime?
+    maxUses    Int?
+    usageCount Int      @default(0)
+
+    createdAt  DateTime @default(now())
+
+    @@index([eventId])
 }
 
 model DownloadLog {
