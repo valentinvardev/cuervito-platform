@@ -79,6 +79,10 @@ export default async function PhotographerPage(props: {
     <div style={brandStyle}>
       <nav className="nav">
         <div className="nav-left">
+          <Link href="/" className="back-btn" aria-label="Volver al inicio">
+            <i className="ti ti-arrow-left" style={{ fontSize: 16 }} />
+          </Link>
+          <div className="nav-divider"></div>
           <Link href="/" className="logo">
             cuerv<span className="logo-dot"></span>to
           </Link>
