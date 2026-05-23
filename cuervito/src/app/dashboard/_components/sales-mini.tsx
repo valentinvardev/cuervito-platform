@@ -107,26 +107,28 @@ export function SalesMini() {
         <span className="meta">{fmt(data.photos)} fotos</span>
       </div>
 
-      <div className="sparkline" aria-hidden="true">
-        <svg viewBox="0 0 160 44" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#F5820A" stopOpacity="0.32" />
-              <stop offset="100%" stopColor="#F5820A" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path fill="url(#spark-grad)" d={spark.area} />
-          <path
-            fill="none"
-            stroke="#F5820A"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d={spark.line}
-          />
-          <circle r="2.6" fill="#F5820A" stroke="#0F0D0B" strokeWidth="1.4" cx={spark.lastX} cy={spark.lastY} />
-        </svg>
-      </div>
+      {data.amount > 0 && (
+        <div className="sparkline" aria-hidden="true">
+          <svg viewBox="0 0 160 44" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#F5820A" stopOpacity="0.32" />
+                <stop offset="100%" stopColor="#F5820A" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path fill="url(#spark-grad)" d={spark.area} />
+            <path
+              fill="none"
+              stroke="#F5820A"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d={spark.line}
+            />
+            <circle r="2.6" fill="#F5820A" stroke="#0F0D0B" strokeWidth="1.4" cx={spark.lastX} cy={spark.lastY} />
+          </svg>
+        </div>
+      )}
 
       <div className={`ts-drop ${open ? "open" : ""}`} ref={ref}>
         <button
