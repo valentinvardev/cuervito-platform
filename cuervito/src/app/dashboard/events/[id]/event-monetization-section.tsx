@@ -156,9 +156,9 @@ function CreateDiscountModal({
   const [expires, setExpires] = useState("");
   const [maxUses, setMaxUses] = useState("");
 
-  // BUNDLE fields
+  // BUNDLE fields — bTotal is the total price for the pack; per-photo = bTotal / bQty
   const [bQty, setBQty] = useState("");
-  const [bPrice, setBPrice] = useState("");
+  const [bTotal, setBTotal] = useState("");
   const [bExpires, setBExpires] = useState("");
 
   // QTYPCT fields
@@ -188,10 +188,12 @@ function CreateDiscountModal({
         maxUses: maxUses ? Number(maxUses) : null,
       };
     } else if (type === "BUNDLE") {
+      const qty = Number(bQty);
+      const total = Number(bTotal);
       body = {
         type,
-        qty: Number(bQty),
-        price: Number(bPrice),
+        qty,
+        price: qty > 0 ? total / qty : total,
         expires: bExpires ? new Date(bExpires).toISOString() : null,
       };
     } else {
@@ -427,27 +429,49 @@ function CreateDiscountModal({
                 </>
               )}
 
-              {type === "BUNDLE" && (
-                <>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    <ModalField label="Cantidad mínima">
-                      <div style={{ position: "relative" }}>
-                        <input type="number" className="input" style={{ paddingRight: 60 }} placeholder="5" min={2} value={bQty} onChange={(e) => setBQty(e.target.value)} />
-                        <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-tertiary)", fontSize: 12 }}>fotos</span>
-                      </div>
+              {type === "BUNDLE" && (() => {
+                const qty = Number(bQty);
+                const total = Number(bTotal);
+                const perPhoto = qty > 0 && total > 0 ? total / qty : null;
+                return (
+                  <>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <ModalField label="Cantidad mínima">
+                        <div style={{ position: "relative" }}>
+                          <input
+                            type="number" className="input"
+                            style={{ paddingRight: 60 }}
+                            placeholder="5" min={2}
+                            value={bQty} onChange={(e) => setBQty(e.target.value)}
+                          />
+                          <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-tertiary)", fontSize: 12 }}>fotos</span>
+                        </div>
+                      </ModalField>
+                      <ModalField label="Precio total del pack ($)">
+                        <div style={{ position: "relative" }}>
+                          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-tertiary)", fontFamily: "var(--font-mono)", fontSize: 13 }}>$</span>
+                          <input
+                            type="number" className="input"
+                            style={{ paddingLeft: 26 }}
+                            placeholder="7500" min={1}
+                            value={bTotal} onChange={(e) => setBTotal(e.target.value)}
+                          />
+                        </div>
+                        {perPhoto !== null && (
+                          <span style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 4 }}>
+                            = <span style={{ fontFamily: "var(--font-mono)", color: "var(--accent)" }}>
+                                ${perPhoto.toLocaleString("es-AR", { maximumFractionDigits: 2 })}
+                              </span>{" "}por foto
+                          </span>
+                        )}
+                      </ModalField>
+                    </div>
+                    <ModalField label="Vence (opcional)">
+                      <input type="date" className="input" value={bExpires} onChange={(e) => setBExpires(e.target.value)} />
                     </ModalField>
-                    <ModalField label="Precio por foto ($)">
-                      <div style={{ position: "relative" }}>
-                        <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-tertiary)", fontFamily: "var(--font-mono)", fontSize: 13 }}>$</span>
-                        <input type="number" className="input" style={{ paddingLeft: 26 }} placeholder="1500" min={1} value={bPrice} onChange={(e) => setBPrice(e.target.value)} />
-                      </div>
-                    </ModalField>
-                  </div>
-                  <ModalField label="Vence (opcional)">
-                    <input type="date" className="input" value={bExpires} onChange={(e) => setBExpires(e.target.value)} />
-                  </ModalField>
-                </>
-              )}
+                  </>
+                );
+              })()}
 
               {type === "QTYPCT" && (
                 <>
