@@ -110,7 +110,6 @@ export function SelfieSearchButton({
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="user"
         hidden
         onChange={(e) => {
           const f = e.target.files?.[0];
