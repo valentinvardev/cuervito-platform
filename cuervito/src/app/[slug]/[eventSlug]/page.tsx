@@ -64,7 +64,7 @@ export default async function PublicEventPage(props: {
       : await getPresignedDownloadUrl(event.coverUrl, { expiresIn: 60 * 60 * 6 })
     : null;
 
-  // Load up to 200 committed photos. We require `previewKey` to exist —
+  // Load all committed photos. We require `previewKey` to exist —
   // without it the falling back to `storageKey` would leak the original
   // un-watermarked image to the public storefront. The owner sees photos
   // in the dashboard immediately after upload; the public gallery only
@@ -78,7 +78,6 @@ export default async function PublicEventPage(props: {
       previewKey: { not: null },
     },
     orderBy: { createdAt: "desc" },
-    take: 200,
     select: {
       id: true,
       storageKey: true,
