@@ -28,6 +28,10 @@ export const env = createEnv({
     AWS_REGION: z.string().default("us-east-2"),
     AWS_S3_BUCKET: z.string().optional(),
     AWS_S3_PREFIX: z.string().default("cuervito"),
+    AWS_S3_ACCELERATE: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((v) => v === "true"),
 
     // Mercado Pago
     MP_CLIENT_ID: z.string().optional(),
@@ -94,6 +98,7 @@ export const env = createEnv({
     AWS_REGION: process.env.AWS_REGION,
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
     AWS_S3_PREFIX: process.env.AWS_S3_PREFIX,
+    AWS_S3_ACCELERATE: process.env.AWS_S3_ACCELERATE,
 
     MP_CLIENT_ID: process.env.MP_CLIENT_ID,
     MP_CLIENT_SECRET: process.env.MP_CLIENT_SECRET,
