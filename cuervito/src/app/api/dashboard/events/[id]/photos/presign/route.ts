@@ -88,44 +88,42 @@ export async function POST(
     );
   }
 
-  // Pre-create Photo rows with a deterministic, unique storage key
-  // (computed from a fresh UUID — Prisma's cuid is generated server-side,
-  // but storageKey has a @unique constraint, so we need to know the path
-  // upfront before insert).
-  const items = await Promise.all(
-    parsed.data.files.map(async (f) => {
-      const ext = EXT_BY_MIME[f.mimeType] ?? "jpg";
-      const photoId = randomUUID();
-      const key = originalPhotoKey(session.user.id, eventId, photoId, ext);
+  // Build all IDs + keys upfront so we can do both steps in parallel.
+  const batch = parsed.data.files.map((f) => {
+    const ext = EXT_BY_MIME[f.mimeType] ?? "jpg";
+    const photoId = randomUUID();
+    const key = originalPhotoKey(session.user.id, eventId, photoId, ext);
+    return { f, photoId, key };
+  });
 
-      const photo = await db.photo.create({
-        data: {
-          id: photoId,
-          eventId,
-          ownerId: session.user.id,
-          storageKey: key,
-          filename: f.name,
-          mimeType: f.mimeType,
-          // fileSize stays null until commit confirms the upload
-        },
-        select: { id: true },
-      });
-
-      const { url } = await getPresignedUploadUrl({
-        key,
-        contentType: f.mimeType,
-        contentLength: f.size,
-      });
-
-      return {
-        photoId: photo.id,
+  // Presigned URL signing is local HMAC — run in parallel with the DB insert.
+  const [uploadUrls] = await Promise.all([
+    Promise.all(
+      batch.map(({ f, key }) =>
+        getPresignedUploadUrl({ key, contentType: f.mimeType, contentLength: f.size }),
+      ),
+    ),
+    // Single round-trip instead of N concurrent db.photo.create calls.
+    db.photo.createMany({
+      data: batch.map(({ f, photoId, key }) => ({
+        id: photoId,
+        eventId,
+        ownerId: session.user.id,
+        storageKey: key,
         filename: f.name,
-        key,
-        uploadUrl: url,
-        contentType: f.mimeType,
-      };
+        mimeType: f.mimeType,
+        // fileSize stays null until commit confirms the upload
+      })),
     }),
-  );
+  ]);
+
+  const items = batch.map(({ f, photoId, key }, i) => ({
+    photoId,
+    filename: f.name,
+    key,
+    uploadUrl: uploadUrls[i]!.url,
+    contentType: f.mimeType,
+  }));
 
   return NextResponse.json({ items });
 }

@@ -91,10 +91,13 @@ export async function GET(
   // Uint8Array from S3 has an ArrayBufferLike that's not narrowed).
   const ab = new ArrayBuffer(bytes.byteLength);
   new Uint8Array(ab).set(bytes);
+  // RFC 5987 encoding: ASCII fallback + UTF-8 encoded filename*
+  const safeFilename = photo.filename.replace(/[^\x20-\x7E]/g, "_");
+  const encodedFilename = encodeURIComponent(photo.filename);
   return new Response(new Blob([ab], { type: contentType }), {
     headers: {
       "content-type": contentType,
-      "content-disposition": `inline; filename="${photo.filename}"`,
+      "content-disposition": `inline; filename="${safeFilename}"; filename*=UTF-8''${encodedFilename}`,
       "cache-control": "private, no-store",
       "content-length": String(bytes.length),
     },
