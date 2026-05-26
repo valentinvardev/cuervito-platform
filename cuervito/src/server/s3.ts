@@ -7,6 +7,7 @@ import {
   DeleteObjectsCommand,
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
+import { NodeHttpHandler } from "@smithy/node-http-handler";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { env } from "~/env";
@@ -21,16 +22,14 @@ if (!bucket) {
 
 export const s3 = new S3Client({
   region,
-  // SDK v3 auto-injects `x-amz-checksum-crc32` headers which the browser then
-  // re-computes when uploading via a presigned PUT — causing
-  // SignatureDoesNotMatch. Disable the auto-checksum on requests we sign.
   requestChecksumCalculation: "WHEN_REQUIRED",
   responseChecksumValidation: "WHEN_REQUIRED",
-  // Routes uploads through the nearest CloudFront edge node instead of
-  // going straight to the S3 region. Cuts RTT from ~200ms (Ohio from
-  // Argentina) to ~5ms. Requires Transfer Acceleration to be enabled on
-  // the bucket in the AWS Console before setting AWS_S3_ACCELERATE=true.
   useAccelerateEndpoint: env.AWS_S3_ACCELERATE,
+  // Default pool is 50 sockets. Bulk uploads trigger many concurrent
+  // watermark downloads which exhausted the pool and caused ECONNRESET.
+  // 300 gives plenty of headroom even before the semaphore in watermark.ts
+  // kicks in.
+  requestHandler: new NodeHttpHandler({ maxSockets: 300 }),
   ...(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY
     ? {
         credentials: {
