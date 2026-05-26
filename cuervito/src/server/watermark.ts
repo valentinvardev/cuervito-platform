@@ -15,6 +15,26 @@ import {
 const PREVIEW_MAX_WIDTH = 2400;
 const PREVIEW_QUALITY = 85;
 
+// ── Concurrency limiter ───────────────────────────────────────────────────────
+// Sharp is CPU + memory intensive. Without a cap, uploading 50 photos at once
+// fires 50 concurrent resize+watermark+S3-upload operations, which OOMs the
+// VPS and produces 502s. Queue extras and process at most 3 at a time.
+const MAX_CONCURRENT = 3;
+let active = 0;
+const waitQueue: Array<() => void> = [];
+
+function acquireSlot(): Promise<void> {
+  return new Promise((resolve) => {
+    if (active < MAX_CONCURRENT) { active++; resolve(); }
+    else waitQueue.push(() => { active++; resolve(); });
+  });
+}
+
+function releaseSlot() {
+  active--;
+  waitQueue.shift()?.();
+}
+
 // ── Watermark cache ───────────────────────────────────────────────────────────
 // We keep one entry for the platform watermark and one per user who has their
 // own. TTL is 60 s so a new upload is reflected quickly without hammering S3.
@@ -111,6 +131,15 @@ async function buildComposite(
  * or null if the original couldn't be processed.
  */
 export async function generatePreview(photoId: string): Promise<string | null> {
+  await acquireSlot();
+  try {
+    return await _generatePreview(photoId);
+  } finally {
+    releaseSlot();
+  }
+}
+
+async function _generatePreview(photoId: string): Promise<string | null> {
   const photo = await db.photo.findUnique({
     where: { id: photoId },
     select: {

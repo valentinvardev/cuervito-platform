@@ -14,10 +14,9 @@ type UpItem = {
   visible: boolean; // shown as a tile in the grid (not in the "+X" overflow)
 };
 
-// Browsers cap concurrent connections to the same origin (~6 in Chrome,
-// Firefox). S3 is a different host, so PUTs to S3 don't share that budget
-// with our own /api requests — 6 in parallel is the sweet spot.
-const MAX_PARALLEL = 6;
+// S3 is a different host so PUTs don't share the browser's per-origin
+// connection budget with our own API calls. 10 matches the reference project.
+const MAX_PARALLEL = 10;
 const MAX_VISIBLE_TILES = 11; // grid shows up to 11 tiles + 1 "+X" tile
 const ACCEPT = "image/jpeg,image/png,image/webp";
 
