@@ -93,34 +93,35 @@ export function PhotoUploader({
   }
 
   async function processBatches(toProcess: UpItem[]) {
-    // Presign in a single round-trip (cheap, just creates Photo rows). This
-    // hands us a signed S3 URL per file so we can fire all uploads in parallel
-    // without a round-trip per file.
-    let presigned:
-      | Array<{ photoId: string; uploadUrl: string; contentType: string }>
-      | null = null;
+    // Presign in chunks of 50 (API limit per request). Collect all results
+    // before starting uploads so the worker pool can drain the full queue.
+    const PRESIGN_CHUNK = 50;
+    const presigned: Array<{ photoId: string; uploadUrl: string; contentType: string }> = [];
     try {
-      const res = await fetch(`/api/dashboard/events/${eventId}/photos/presign`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          files: toProcess.map((b) => ({
-            name: b.file.name,
-            size: b.file.size,
-            mimeType: b.file.type,
-          })),
-        }),
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        const msg = data.error ?? "Error al iniciar la subida";
-        toProcess.forEach((b) => setOne(b.localId, { state: "failed", error: msg }));
-        return;
+      for (let i = 0; i < toProcess.length; i += PRESIGN_CHUNK) {
+        const chunk = toProcess.slice(i, i + PRESIGN_CHUNK);
+        const res = await fetch(`/api/dashboard/events/${eventId}/photos/presign`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            files: chunk.map((b) => ({
+              name: b.file.name,
+              size: b.file.size,
+              mimeType: b.file.type,
+            })),
+          }),
+        });
+        if (!res.ok) {
+          const data = (await res.json().catch(() => ({}))) as { error?: string };
+          const msg = data.error ?? "Error al iniciar la subida";
+          toProcess.forEach((b) => setOne(b.localId, { state: "failed", error: msg }));
+          return;
+        }
+        const data = (await res.json()) as {
+          items: Array<{ photoId: string; uploadUrl: string; contentType: string }>;
+        };
+        presigned.push(...data.items);
       }
-      const data = (await res.json()) as {
-        items: Array<{ photoId: string; uploadUrl: string; contentType: string }>;
-      };
-      presigned = data.items;
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Red caída";
       toProcess.forEach((b) => setOne(b.localId, { state: "failed", error: msg }));
@@ -131,7 +132,7 @@ export function PhotoUploader({
     // the next one. A slow upload doesn't stall the rest — every worker
     // independently drains the queue. Net effect: ~Nx faster on large batches
     // with mixed file sizes.
-    const queue = toProcess.map((b, i) => ({ b, p: presigned![i]! }));
+    const queue = toProcess.map((b, i) => ({ b, p: presigned[i]! }));
     let cursor = 0;
     async function worker() {
       while (true) {
