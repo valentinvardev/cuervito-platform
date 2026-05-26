@@ -8,6 +8,7 @@ import {
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { NodeHttpHandler } from "@smithy/node-http-handler";
+import https from "https";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { env } from "~/env";
@@ -29,7 +30,9 @@ export const s3 = new S3Client({
   // watermark downloads which exhausted the pool and caused ECONNRESET.
   // 300 gives plenty of headroom even before the semaphore in watermark.ts
   // kicks in.
-  requestHandler: new NodeHttpHandler({ maxSockets: 300 }),
+  requestHandler: new NodeHttpHandler({
+    httpsAgent: new https.Agent({ maxSockets: 300 }),
+  }),
   ...(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY
     ? {
         credentials: {
