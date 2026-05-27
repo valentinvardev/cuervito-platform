@@ -94,8 +94,8 @@
     content: '';
     position: absolute; inset: 0;
     background: linear-gradient(135deg,
-      color-mix(in srgb, var(--accent) 55%, transparent) 0%,
-      color-mix(in srgb, var(--accent) 70%, black) 100%);
+      color-mix(in srgb, var(--accent) 28%, transparent) 0%,
+      color-mix(in srgb, var(--accent) 45%, black) 100%);
     mix-blend-mode: multiply;
   }
   /* Bottom darken — garantiza la legibilidad del texto y fade hacia la página */
@@ -131,7 +131,7 @@
     font-family: var(--font-display); font-weight: 800;
     font-size: 30px;
     border: 3px solid var(--bg-base);
-    box-shadow: 0 0 0 1px var(--border-accent), 0 8px 30px rgba(245,130,10,0.25);
+    box-shadow: 0 0 0 1px var(--border-accent), 0 8px 30px color-mix(in srgb, var(--accent) 25%, transparent);
   }
   .photog-info { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .photog-name {
