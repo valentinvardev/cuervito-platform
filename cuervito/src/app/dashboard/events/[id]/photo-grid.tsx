@@ -12,6 +12,8 @@ type PhotoTile = {
   fileSize: number | null;
   previewUrl: string;
   bibNumbers: string | null;
+  width: number | null;
+  height: number | null;
 };
 
 export function PhotoGrid({
@@ -225,7 +227,8 @@ export function PhotoGrid({
               style={{
                 backgroundImage: `url(${p.previewUrl})`,
                 backgroundSize: "cover",
-                backgroundPosition: "center",
+                backgroundPosition:
+                  p.width && p.height && p.width > p.height ? "center" : "top",
               }}
             >
               {p.bibNumbers && (

@@ -195,7 +195,12 @@ async function _generatePreview(photoId: string): Promise<string | null> {
 
     await db.photo.update({
       where: { id: photo.id },
-      data: { previewKey: key, previewGeneratedAt: new Date() },
+      data: {
+        previewKey: key,
+        previewGeneratedAt: new Date(),
+        width: resizedMeta.width ?? w,
+        height: resizedMeta.height ?? h,
+      },
     });
 
     return key;

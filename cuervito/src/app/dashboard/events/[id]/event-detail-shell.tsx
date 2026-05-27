@@ -30,6 +30,8 @@ type PhotoTile = {
   fileSize: number | null;
   previewUrl: string;
   bibNumbers: string | null;
+  width: number | null;
+  height: number | null;
 };
 
 type Tab = "galeria" | "monetizacion" | "info";

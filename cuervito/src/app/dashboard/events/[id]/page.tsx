@@ -63,6 +63,8 @@ export default async function EventDetailPage(props: {
       bibNumbers: true,
       storageKey: true,
       previewKey: true,
+      width: true,
+      height: true,
     },
   });
   const photos = await Promise.all(
@@ -71,6 +73,8 @@ export default async function EventDetailPage(props: {
       filename: p.filename,
       fileSize: p.fileSize,
       bibNumbers: p.bibNumbers,
+      width: p.width,
+      height: p.height,
       previewUrl: await getPresignedDownloadUrl(p.previewKey ?? p.storageKey, {
         expiresIn: 60 * 30,
       }),

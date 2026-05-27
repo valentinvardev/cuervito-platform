@@ -323,7 +323,7 @@ function ShellInner({
                   backgroundImage: `url(${p.previewUrl})`,
                   backgroundSize: "cover",
                   backgroundPosition:
-                    p.height && p.width && p.height > p.width ? "top" : "center",
+                    p.width && p.height && p.width > p.height ? "center" : "top",
                 }}
                 onClick={() => setLightboxIdx(i)}
               >
@@ -365,6 +365,7 @@ function ShellInner({
             <span className="count">· quedan {remaining.toLocaleString("es-AR")}</span>
           </button>
         )}
+
       </main>
 
       <LiveNudge

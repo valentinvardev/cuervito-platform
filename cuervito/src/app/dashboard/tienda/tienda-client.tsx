@@ -548,6 +548,24 @@ export function TiendaClient({
           </div>
         )}
       </section>
+
+      {/* ── Soporte ───────────────────────────────────────────────────────────── */}
+      <section className="section">
+        <div className="section-head">
+          <h2>¿Necesitás ayuda?</h2>
+          <span className="sub">Estamos disponibles todo el día para ayudarte</span>
+        </div>
+        <a
+          href="https://wa.me/5493541578953?text=Hola%2C+necesito+ayuda+con+Cuervito"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-outline"
+          style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#25D366", borderColor: "rgba(37,211,102,0.4)", width: "fit-content" }}
+        >
+          <i className="ti ti-brand-whatsapp" style={{ fontSize: 18 }} />
+          Escribinos por WhatsApp · te ayudamos todo el día
+        </a>
+      </section>
     </main>
   );
 }

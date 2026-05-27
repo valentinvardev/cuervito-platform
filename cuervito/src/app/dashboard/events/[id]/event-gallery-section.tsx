@@ -9,6 +9,8 @@ type Photo = {
   fileSize: number | null;
   previewUrl: string;
   bibNumbers: string | null;
+  width: number | null;
+  height: number | null;
 };
 
 export function EventGallerySection({
