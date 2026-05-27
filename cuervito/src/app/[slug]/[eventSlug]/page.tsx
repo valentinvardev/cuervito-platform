@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { buildTemplateCSSOverride, buildTemplateStyle } from "~/lib/storefront-templates";
+import { buildTemplateStyle } from "~/lib/storefront-templates";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
@@ -151,16 +151,7 @@ export default async function PublicEventPage(props: {
       : {}),
   } as React.CSSProperties;
 
-  const cssOverride = buildTemplateCSSOverride(
-    photographer.storefrontTemplate,
-    photographer.storefrontBrandColor,
-  );
-
   return (
-    <>
-      {cssOverride && (
-        <style dangerouslySetInnerHTML={{ __html: cssOverride }} />
-      )}
     <div style={pageStyle}>
     <EventCoverageShell
       photographer={{
@@ -191,6 +182,5 @@ export default async function PublicEventPage(props: {
       testMode={testMode}
     />
     </div>
-    </>
   );
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { buildTemplateCSSOverride, buildTemplateStyle } from "~/lib/storefront-templates";
+import { buildTemplateStyle } from "~/lib/storefront-templates";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
@@ -79,13 +79,8 @@ export default async function PhotographerPage(props: {
       .join("") || "?";
 
   const pageStyle = buildTemplateStyle(user.storefrontTemplate, user.storefrontBrandColor);
-  const cssOverride = buildTemplateCSSOverride(user.storefrontTemplate, user.storefrontBrandColor);
 
   return (
-    <>
-      {cssOverride && (
-        <style dangerouslySetInnerHTML={{ __html: cssOverride }} />
-      )}
     <div style={pageStyle}>
       <nav className="nav">
         <div className="nav-left">
@@ -276,6 +271,5 @@ export default async function PhotographerPage(props: {
         )}
       </main>
     </div>
-    </>
   );
 }

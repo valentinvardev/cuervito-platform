@@ -89,13 +89,13 @@
     background-position: center;
     background-repeat: no-repeat;
   }
-  /* Orange tint overlay — tinta el photo y unifica con la paleta */
+  /* Tint overlay — adapts to the photographer's brand color */
   .hero-cover::before {
     content: '';
     position: absolute; inset: 0;
     background: linear-gradient(135deg,
-      rgba(245,130,10,0.55) 0%,
-      rgba(80,30,5,0.78) 100%);
+      color-mix(in srgb, var(--accent) 55%, transparent) 0%,
+      color-mix(in srgb, var(--accent) 70%, black) 100%);
     mix-blend-mode: multiply;
   }
   /* Bottom darken — garantiza la legibilidad del texto y fade hacia la página */
@@ -106,7 +106,7 @@
       linear-gradient(180deg,
         rgba(15,13,11,0.10) 0%,
         rgba(15,13,11,0.30) 40%,
-        rgba(15,13,11,0.85) 80%,
+        var(--bg-base, #0F0D0B) 80%,
         var(--bg-base) 100%);
   }
   .hero-inner {
