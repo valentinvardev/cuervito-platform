@@ -322,7 +322,8 @@ function ShellInner({
                 style={{
                   backgroundImage: `url(${p.previewUrl})`,
                   backgroundSize: "cover",
-                  backgroundPosition: "center",
+                  backgroundPosition:
+                    p.height && p.width && p.height > p.width ? "top" : "center",
                 }}
                 onClick={() => setLightboxIdx(i)}
               >

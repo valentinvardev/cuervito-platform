@@ -206,7 +206,7 @@ export default async function PhotographerPage(props: {
                   style={{
                     aspectRatio: "16/10",
                     background: e.coverUrl
-                      ? `url(${e.coverUrl}) center/cover`
+                      ? `url(${e.coverUrl}) top/cover`
                       : "linear-gradient(135deg, rgba(245,130,10,0.3) 0%, rgba(245,130,10,0.05) 60%, var(--bg-base) 100%)",
                   }}
                 />
