@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { buildTemplateStyle } from "~/lib/storefront-templates";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
@@ -28,6 +29,8 @@ export default async function PhotographerPage(props: {
       websiteUrl: true,
       image: true,
       storefrontBrandColor: true,
+      storefrontTemplate: true,
+      logoKey: true,
       status: true,
       onboardingCompletedAt: true,
     },
@@ -50,16 +53,22 @@ export default async function PhotographerPage(props: {
     },
   });
 
-  const events = await Promise.all(
-    eventsRaw.map(async (e) => ({
-      ...e,
-      coverUrl: e.coverUrl
-        ? e.coverUrl.startsWith("http")
-          ? e.coverUrl
-          : await getPresignedDownloadUrl(e.coverUrl, { expiresIn: 60 * 60 * 6 })
-        : null,
-    })),
-  );
+  const [events, avatarUrl, logoUrl] = await Promise.all([
+    Promise.all(
+      eventsRaw.map(async (e) => ({
+        ...e,
+        coverUrl: e.coverUrl
+          ? e.coverUrl.startsWith("http")
+            ? e.coverUrl
+            : await getPresignedDownloadUrl(e.coverUrl, { expiresIn: 60 * 60 * 6 })
+          : null,
+      })),
+    ),
+    resolveAvatarUrl(user.image),
+    user.logoKey
+      ? getPresignedDownloadUrl(user.logoKey, { expiresIn: 60 * 60 * 6 })
+      : null,
+  ]);
 
   const initials =
     user.name
@@ -69,23 +78,26 @@ export default async function PhotographerPage(props: {
       .slice(0, 2)
       .join("") || "?";
 
-  const avatarUrl = await resolveAvatarUrl(user.image);
-
-  const brandStyle = user.storefrontBrandColor
-    ? ({ "--accent": user.storefrontBrandColor } as React.CSSProperties)
-    : undefined;
+  const pageStyle = buildTemplateStyle(user.storefrontTemplate, user.storefrontBrandColor);
 
   return (
-    <div style={brandStyle}>
+    <div style={pageStyle}>
       <nav className="nav">
         <div className="nav-left">
           <Link href="/" className="back-btn" aria-label="Volver al inicio">
             <i className="ti ti-arrow-left" style={{ fontSize: 16 }} />
           </Link>
           <div className="nav-divider"></div>
-          <Link href="/" className="logo">
-            cuerv<span className="logo-dot"></span>to
-          </Link>
+          {logoUrl ? (
+            <Link href="/" aria-label="Inicio">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logoUrl} alt={user.name ?? "Logo"} className="storefront-logo" />
+            </Link>
+          ) : (
+            <Link href="/" className="logo">
+              cuerv<span className="logo-dot"></span>to
+            </Link>
+          )}
         </div>
       </nav>
 

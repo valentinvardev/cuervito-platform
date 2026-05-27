@@ -75,6 +75,10 @@ export function avatarKey(userId: string, ext = "jpg") {
   return `${prefix}/users/${userId}/avatar.${ext.replace(/^\./, "")}`;
 }
 
+export function storefrontLogoKey(userId: string) {
+  return `${prefix}/users/${userId}/storefront-logo`;
+}
+
 export function eventCoverKey(userId: string, eventId: string, ext = "jpg") {
   return `${prefix}/users/${userId}/events/${eventId}/cover.${ext.replace(/^\./, "")}`;
 }

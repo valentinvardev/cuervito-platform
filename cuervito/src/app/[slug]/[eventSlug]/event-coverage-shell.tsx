@@ -16,6 +16,7 @@ type Photographer = {
   instagramUrl: string | null;
   initials: string;
   avatarUrl: string | null;
+  logoUrl: string | null;
 };
 
 type EventInfo = {
@@ -141,9 +142,16 @@ function ShellInner({
             <i className="ti ti-arrow-left" style={{ fontSize: 16 }} />
           </Link>
           <div className="nav-divider"></div>
-          <Link href="/" className="logo">
-            cuerv<span className="logo-dot"></span>to
-          </Link>
+          {photographer.logoUrl ? (
+            <Link href={`/${photographer.slug}`} aria-label="Volver a la galería">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photographer.logoUrl} alt={photographer.name} className="storefront-logo" />
+            </Link>
+          ) : (
+            <Link href="/" className="logo">
+              cuerv<span className="logo-dot"></span>to
+            </Link>
+          )}
           <span className="nav-event-name">{event.name}</span>
         </div>
         <div className="nav-right">

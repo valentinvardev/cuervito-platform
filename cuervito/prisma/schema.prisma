@@ -117,6 +117,7 @@ model User {
     storefrontDomain     String?  @unique // custom domain
     storefrontPublished  Boolean  @default(false)
     watermarkKey         String?  // S3 key for per-user watermark PNG; null = use platform default
+    logoKey              String?  // S3 key for storefront nav logo; null = show Cuervito logo
 
     suspendedAt    DateTime?
     suspendedReason String?  @db.Text

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-import { saveBrandColorAction } from "./actions";
+import { TEMPLATES } from "~/lib/storefront-templates";
+import { saveBrandColorAction, saveTemplateAction } from "./actions";
 import { DomainsSection, type DomainRow } from "./domains-section";
 
 const PRESETS: { name: string; hex: string }[] = [
@@ -18,9 +19,14 @@ const PRESETS: { name: string; hex: string }[] = [
   { name: "Bone", hex: "#F0EBE3" },
 ];
 
+type DeviceMode = "mobile" | "tablet" | "desktop";
+const DEVICE_WIDTHS: Record<DeviceMode, number> = { mobile: 390, tablet: 820, desktop: 1280 };
+
 export function TiendaClient({
   slug,
   brandColor,
+  templateId: initialTemplateId,
+  logoUrl: initialLogoUrl,
   watermarkUrl: initialWatermarkUrl,
   totalPhotos,
   domains,
@@ -28,16 +34,31 @@ export function TiendaClient({
 }: {
   slug: string;
   brandColor: string;
+  templateId: string;
+  logoUrl: string | null;
   watermarkUrl: string | null;
   totalPhotos: number;
   domains: DomainRow[];
   cfEnabled: boolean;
 }) {
   const router = useRouter();
+
+  // ── Brand color ───────────────────────────────────────────────────────────
   const [selected, setSelected] = useState(brandColor.toUpperCase());
   const [copied, setCopied] = useState(false);
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const [colorPending, startColorTransition] = useTransition();
+  const [colorError, setColorError] = useState<string | null>(null);
+
+  // ── Template ──────────────────────────────────────────────────────────────
+  const [activeTemplate, setActiveTemplate] = useState(initialTemplateId);
+  const [tplPending, startTplTransition] = useTransition();
+
+  // ── Logo state ────────────────────────────────────────────────────────────
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(initialLogoUrl);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const [logoToast, setLogoToast] = useState<string | null>(null);
 
   // ── Watermark state ────────────────────────────────────────────────────────
   const wmInputRef = useRef<HTMLInputElement>(null);
@@ -53,11 +74,45 @@ export function TiendaClient({
     initial: number;
   } | null>(null);
 
-  function showToast(msg: string) {
-    setWmToast(msg);
-    setTimeout(() => setWmToast(null), 2500);
+  // ── Device preview modal ───────────────────────────────────────────────────
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [deviceMode, setDeviceMode] = useState<DeviceMode>("mobile");
+
+  function showToast(set: (v: string | null) => void, msg: string) {
+    set(msg);
+    setTimeout(() => set(null), 2500);
   }
 
+  // ── Logo handlers ─────────────────────────────────────────────────────────
+  async function onLogoPick(file: File) {
+    setLogoError(null);
+    const ok = ["image/png", "image/jpeg", "image/webp"].includes(file.type);
+    if (!ok) { setLogoError("Solo PNG, JPG o WebP."); return; }
+    if (file.size > 3 * 1024 * 1024) { setLogoError("Máximo 3 MB."); return; }
+    setLogoUploading(true);
+    try {
+      const form = new FormData();
+      form.append("logo", file);
+      const res = await fetch("/api/dashboard/logo", { method: "POST", body: form });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) { setLogoError(data.error ?? "Subida fallida."); return; }
+      setLogoUrl(URL.createObjectURL(file));
+      showToast(setLogoToast, "Logo guardado");
+      router.refresh();
+    } catch (err) {
+      setLogoError(err instanceof Error ? err.message : "Error de red.");
+    } finally {
+      setLogoUploading(false);
+    }
+  }
+
+  async function onLogoDelete() {
+    setLogoError(null);
+    const res = await fetch("/api/dashboard/logo", { method: "DELETE" });
+    if (res.ok) { setLogoUrl(null); showToast(setLogoToast, "Logo eliminado"); router.refresh(); }
+  }
+
+  // ── Watermark handlers ─────────────────────────────────────────────────────
   async function onWmPick(file: File) {
     setWmError(null);
     if (file.type !== "image/png") { setWmError("Tiene que ser un PNG con transparencia."); return; }
@@ -69,9 +124,8 @@ export function TiendaClient({
       const res = await fetch("/api/dashboard/watermark", { method: "POST", body: form });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) { setWmError(data.error ?? "Subida fallida."); return; }
-      // Show optimistic local preview
       setWmUrl(URL.createObjectURL(file));
-      showToast("Watermark guardado");
+      showToast(setWmToast, "Watermark guardado");
       router.refresh();
     } catch (err) {
       setWmError(err instanceof Error ? err.message : "Error de red.");
@@ -83,7 +137,7 @@ export function TiendaClient({
   async function onWmDelete() {
     setWmError(null);
     const res = await fetch("/api/dashboard/watermark", { method: "DELETE" });
-    if (res.ok) { setWmUrl(null); showToast("Watermark eliminado"); router.refresh(); }
+    if (res.ok) { setWmUrl(null); showToast(setWmToast, "Watermark eliminado"); router.refresh(); }
   }
 
   async function regenerateAll() {
@@ -120,13 +174,26 @@ export function TiendaClient({
   }
 
   function pickColor(hex: string) {
-    setError(null);
+    setColorError(null);
     setSelected(hex);
-    startTransition(async () => {
+    startColorTransition(async () => {
       const res = await saveBrandColorAction(hex);
-      if (res.error) setError(res.error);
+      if (res.error) setColorError(res.error);
     });
   }
+
+  function pickTemplate(id: string) {
+    setActiveTemplate(id);
+    startTplTransition(async () => {
+      await saveTemplateAction(id);
+    });
+  }
+
+  // Device preview scale
+  const PREVIEW_CONTAINER = 560;
+  const iframeWidth = DEVICE_WIDTHS[deviceMode];
+  const scale = Math.min(1, PREVIEW_CONTAINER / iframeWidth);
+  const iframeHeight = Math.round(700 / scale);
 
   return (
     <main className="wrap-tienda">
@@ -135,6 +202,71 @@ export function TiendaClient({
         <div className="sub">Personalizá cómo te ven tus clientes.</div>
       </div>
 
+      {/* ── Toasts ─────────────────────────────────────────────────────────── */}
+      {(wmToast ?? logoToast) && (
+        <div style={{
+          position: "fixed", top: 84, right: 20, zIndex: 60,
+          padding: "10px 14px", background: "var(--bg-surface)",
+          border: "1px solid var(--success)", borderRadius: 10,
+          color: "var(--success)", fontSize: 14,
+          boxShadow: "0 12px 30px rgba(0,0,0,0.4)",
+          display: "inline-flex", alignItems: "center", gap: 8,
+        }}>
+          <i className="ti ti-circle-check-filled" />{wmToast ?? logoToast}
+        </div>
+      )}
+
+      {/* ── Device preview modal ────────────────────────────────────────────── */}
+      {previewOpen && (
+        <div
+          className="preview-modal-overlay"
+          onClick={(e) => { if (e.target === e.currentTarget) setPreviewOpen(false); }}
+        >
+          <div className="preview-modal">
+            <div className="preview-modal-head">
+              <div className="preview-tabs">
+                {(["mobile", "tablet", "desktop"] as DeviceMode[]).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={`preview-tab ${deviceMode === m ? "active" : ""}`}
+                    onClick={() => setDeviceMode(m)}
+                  >
+                    <i className={`ti ti-device-${m === "mobile" ? "mobile" : m === "tablet" ? "tablet" : "laptop"}`} />
+                    {m === "mobile" ? "Móvil" : m === "tablet" ? "Tablet" : "Desktop"}
+                  </button>
+                ))}
+              </div>
+              <button type="button" className="preview-close" onClick={() => setPreviewOpen(false)}>
+                <i className="ti ti-x" />
+              </button>
+            </div>
+            <div
+              className="preview-frame-wrap"
+              style={{ width: PREVIEW_CONTAINER, height: Math.round(iframeHeight * scale) }}
+            >
+              <iframe
+                key={deviceMode}
+                src={`/${slug}`}
+                title="Vista previa"
+                style={{
+                  width: iframeWidth,
+                  height: iframeHeight,
+                  border: "none",
+                  transformOrigin: "top left",
+                  transform: `scale(${scale})`,
+                  pointerEvents: "none",
+                }}
+              />
+            </div>
+            <div className="preview-hint">
+              {iframeWidth}px · {Math.round(scale * 100)}% zoom
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Dominio ──────────────────────────────────────────────────────────── */}
       <section className="section">
         <div className="section-head">
           <h2>Dominio</h2>
@@ -173,11 +305,63 @@ export function TiendaClient({
             <i className="ti ti-external-link" />
             Ver mi página
           </Link>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => setPreviewOpen(true)}
+          >
+            <i className="ti ti-device-mobile" />
+            Vista previa
+          </button>
         </div>
       </section>
 
       <DomainsSection domains={domains} cfEnabled={cfEnabled} />
 
+      {/* ── Templates ────────────────────────────────────────────────────────── */}
+      <section className="section">
+        <div className="section-head">
+          <h2>Estilo visual</h2>
+          <span className="sub">Diseño de tu página de venta</span>
+        </div>
+        <div className="tpl-grid">
+          {TEMPLATES.map((tpl) => (
+            <button
+              key={tpl.id}
+              type="button"
+              className={`tpl-card ${activeTemplate === tpl.id ? "active" : ""}`}
+              onClick={() => pickTemplate(tpl.id)}
+              disabled={tplPending}
+            >
+              <div className={`tpl-preview tpl-preview--${tpl.id}`}>
+                <div className="tpl-preview-nav" />
+                <div className="tpl-preview-hero" />
+                <div className="tpl-preview-cards">
+                  <div className="tpl-preview-card" />
+                  <div className="tpl-preview-card" />
+                  <div className="tpl-preview-card" />
+                </div>
+              </div>
+              <div className="tpl-info">
+                <div className="tpl-name">{tpl.name}</div>
+                <div className="tpl-desc">{tpl.description}</div>
+              </div>
+              {activeTemplate === tpl.id && (
+                <div className="tpl-active-badge">
+                  <i className="ti ti-circle-check-filled" /> Activo
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+        {tplPending && (
+          <div style={{ fontSize: 12.5, color: "var(--text-tertiary)", marginTop: 8 }}>
+            Guardando…
+          </div>
+        )}
+      </section>
+
+      {/* ── Color principal ───────────────────────────────────────────────────── */}
       <section className="section">
         <div className="section-head">
           <h2>Color principal</h2>
@@ -194,7 +378,7 @@ export function TiendaClient({
               onClick={() => pickColor(p.hex)}
               title={p.name}
               aria-label={p.name}
-              disabled={pending}
+              disabled={colorPending}
             />
           ))}
         </div>
@@ -202,9 +386,9 @@ export function TiendaClient({
           Color actual:{" "}
           <span className="accent mono">{selected}</span>
           {matchedName && <> · {matchedName}</>}
-          {pending && <> · Guardando…</>}
+          {colorPending && <> · Guardando…</>}
         </div>
-        {error && (
+        {colorError && (
           <div
             style={{
               marginTop: 10,
@@ -216,32 +400,70 @@ export function TiendaClient({
               borderRadius: 8,
             }}
           >
-            <i className="ti ti-alert-circle" /> {error}
+            <i className="ti ti-alert-circle" /> {colorError}
           </div>
         )}
       </section>
 
-      {/* Watermark toast */}
-      {wmToast && (
-        <div style={{
-          position: "fixed", top: 84, right: 20, zIndex: 60,
-          padding: "10px 14px", background: "var(--bg-surface)",
-          border: "1px solid var(--success)", borderRadius: 10,
-          color: "var(--success)", fontSize: 14,
-          boxShadow: "0 12px 30px rgba(0,0,0,0.4)",
-          display: "inline-flex", alignItems: "center", gap: 8,
-        }}>
-          <i className="ti ti-circle-check-filled" />{wmToast}
+      {/* ── Logo ─────────────────────────────────────────────────────────────── */}
+      <section className="section">
+        <div className="section-head">
+          <h2>Logo</h2>
+          <span className="sub">Reemplaza el logo de Cuervito en el encabezado de tu página</span>
         </div>
-      )}
 
+        <div style={{
+          padding: "20px 24px", background: "var(--bg-base)",
+          border: "1px solid var(--border-subtle)", borderRadius: 10,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          minHeight: 96, marginBottom: 14,
+        }}>
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="Logo" style={{ maxWidth: "100%", maxHeight: 64, objectFit: "contain" }} />
+          ) : (
+            <div style={{ color: "var(--text-tertiary)", fontSize: 13, fontFamily: "var(--font-mono)" }}>
+              Sin logo propio · se muestra el logo de Cuervito
+            </div>
+          )}
+        </div>
+
+        <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) void onLogoPick(f); e.target.value = ""; }} />
+
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+          <button type="button" className="btn btn-primary"
+            onClick={() => logoInputRef.current?.click()} disabled={logoUploading}>
+            {logoUploading
+              ? <><span className="up-spinner" /> Subiendo…</>
+              : <><i className="ti ti-upload" />{logoUrl ? "Reemplazar logo" : "Subir logo"}</>}
+          </button>
+          {logoUrl && (
+            <button type="button" className="btn btn-outline"
+              onClick={onLogoDelete} disabled={logoUploading}
+              style={{ color: "var(--error)", borderColor: "rgba(224,85,85,0.4)" }}>
+              <i className="ti ti-trash" /> Eliminar
+            </button>
+          )}
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: logoError ? 8 : 0 }}>
+          PNG, JPG o WebP, máximo 3 MB. Recomendado: fondo transparente, 400×100 px.
+        </div>
+        {logoError && (
+          <div style={{ padding: "8px 12px", fontSize: 12.5, color: "var(--error)",
+            background: "rgba(224,85,85,0.08)", border: "1px solid rgba(224,85,85,0.4)", borderRadius: 8 }}>
+            <i className="ti ti-alert-circle" /> {logoError}
+          </div>
+        )}
+      </section>
+
+      {/* ── Marca de agua ─────────────────────────────────────────────────────── */}
       <section className="section">
         <div className="section-head">
           <h2>Marca de agua</h2>
           <span className="sub">Se aplica a los previews de tus fotos. Si no subís una, se usa la marca de Cuervito.</span>
         </div>
 
-        {/* Preview panel */}
         <div style={{
           padding: "20px 24px", background: "var(--bg-base)",
           border: "1px solid var(--border-subtle)", borderRadius: 10,
@@ -288,7 +510,6 @@ export function TiendaClient({
           </div>
         )}
 
-        {/* Regenerate */}
         <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid var(--border-subtle)",
           display: "flex", justifyContent: "space-between", alignItems: "start", gap: 16, flexWrap: "wrap" }}>
           <div>
@@ -327,13 +548,6 @@ export function TiendaClient({
           </div>
         )}
       </section>
-
-      <div className="edit-cta">
-        <div className="info">
-          <div className="ttl">Más opciones de personalización</div>
-          <div className="sub">Plantillas y hero personalizado — próximamente.</div>
-        </div>
-      </div>
     </main>
   );
 }

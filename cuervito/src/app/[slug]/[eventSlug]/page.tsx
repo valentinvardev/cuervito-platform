@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { buildTemplateStyle } from "~/lib/storefront-templates";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
@@ -28,6 +29,8 @@ export default async function PublicEventPage(props: {
       instagramUrl: true,
       image: true,
       storefrontBrandColor: true,
+      storefrontTemplate: true,
+      logoKey: true,
       status: true,
       onboardingCompletedAt: true,
     },
@@ -128,27 +131,28 @@ export default async function PublicEventPage(props: {
       .slice(0, 2)
       .join("") || "?";
 
-  const avatarUrl = await resolveAvatarUrl(photographer.image);
-  const brandColor = photographer.storefrontBrandColor;
-  const testMode = await getMpTestMode();
+  const [avatarUrl, logoUrl, testMode] = await Promise.all([
+    resolveAvatarUrl(photographer.image),
+    photographer.logoKey
+      ? getPresignedDownloadUrl(photographer.logoKey, { expiresIn: 60 * 60 * 6 })
+      : null,
+    getMpTestMode(),
+  ]);
+
+  const pageStyle = {
+    ...buildTemplateStyle(photographer.storefrontTemplate, photographer.storefrontBrandColor),
+    // Derive accent hover/tint variables from brand color
+    ...(photographer.storefrontBrandColor
+      ? {
+          "--accent-bright": `color-mix(in srgb, ${photographer.storefrontBrandColor} 85%, white)`,
+          "--accent-deep":   `color-mix(in srgb, ${photographer.storefrontBrandColor} 12%, transparent)`,
+          "--border-accent": `color-mix(in srgb, ${photographer.storefrontBrandColor} 40%, transparent)`,
+        }
+      : {}),
+  } as React.CSSProperties;
 
   return (
-    <div
-      style={
-        brandColor
-          ? ({
-              "--accent": brandColor,
-              // Derive hover/tint variables from the brand color so all
-              // interactive states (button hovers, borders, backgrounds)
-              // respect the photographer's custom palette instead of
-              // falling back to the default orange.
-              "--accent-bright": `color-mix(in srgb, ${brandColor} 85%, white)`,
-              "--accent-deep":   `color-mix(in srgb, ${brandColor} 12%, transparent)`,
-              "--border-accent": `color-mix(in srgb, ${brandColor} 40%, transparent)`,
-            } as React.CSSProperties)
-          : undefined
-      }
-    >
+    <div style={pageStyle}>
     <EventCoverageShell
       photographer={{
         slug,
@@ -158,6 +162,7 @@ export default async function PublicEventPage(props: {
         instagramUrl: photographer.instagramUrl,
         initials,
         avatarUrl,
+        logoUrl,
       }}
       event={{
         id: event.id,

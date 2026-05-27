@@ -6,9 +6,16 @@
     height: 64px;
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 32px;
-    background: rgba(15,13,11,0.85);
+    background: var(--nav-bg, rgba(15,13,11,0.85));
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .storefront-logo {
+    max-height: 36px;
+    max-width: 160px;
+    object-fit: contain;
+    display: block;
   }
   .nav-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
   .back-btn {

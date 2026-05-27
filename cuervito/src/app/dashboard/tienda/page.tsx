@@ -16,15 +16,22 @@ export default async function TiendaPage() {
     select: {
       slug: true,
       storefrontBrandColor: true,
+      storefrontTemplate: true,
       storefrontPublished: true,
       watermarkKey: true,
+      logoKey: true,
     },
   });
   if (!user?.slug) redirect("/onboarding");
 
-  const watermarkUrl = user.watermarkKey
-    ? await getPresignedDownloadUrl(user.watermarkKey, { expiresIn: 60 * 30 })
-    : null;
+  const [watermarkUrl, logoUrl] = await Promise.all([
+    user.watermarkKey
+      ? getPresignedDownloadUrl(user.watermarkKey, { expiresIn: 60 * 30 })
+      : null,
+    user.logoKey
+      ? getPresignedDownloadUrl(user.logoKey, { expiresIn: 60 * 30 })
+      : null,
+  ]);
 
   const totalPhotos = await db.photo.count({
     where: { ownerId: session.user.id, fileSize: { not: null }, deletedAt: null },
@@ -47,6 +54,8 @@ export default async function TiendaPage() {
     <TiendaClient
       slug={user.slug}
       brandColor={user.storefrontBrandColor ?? "#F5820A"}
+      templateId={user.storefrontTemplate ?? "dark"}
+      logoUrl={logoUrl}
       watermarkUrl={watermarkUrl}
       totalPhotos={totalPhotos}
       domains={domains.map((d) => ({
