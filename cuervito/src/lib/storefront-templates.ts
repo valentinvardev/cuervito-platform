@@ -73,3 +73,24 @@ export function buildTemplateStyle(
     color: "var(--text-primary)",
   } as React.CSSProperties;
 }
+
+/**
+ * Generates a <style> tag string that overrides :root CSS vars for the
+ * storefront template. Injected server-side so the body background is correct
+ * before first paint — prevents the dark flash when using light/sport themes.
+ */
+export function buildTemplateCSSOverride(
+  templateId: string | null | undefined,
+  brandColor: string | null | undefined,
+): string {
+  const tpl = getTemplate(templateId);
+  const vars: Record<string, string> = { ...tpl.cssVars };
+  if (brandColor) {
+    vars["--accent"] = brandColor;
+  }
+  if (Object.keys(vars).length === 0) return "";
+  const declarations = Object.entries(vars)
+    .map(([k, v]) => `  ${k}: ${v};`)
+    .join("\n");
+  return `:root {\n${declarations}\n}`;
+}
