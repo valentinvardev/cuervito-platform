@@ -45,8 +45,25 @@ export function AyudaClient() {
     <main className="wrap-ayuda">
       <div className="head">
         <h1>Ayuda</h1>
-        <div className="sub">Guías, FAQ y soporte directo. Respondemos en 12hs hábiles.</div>
+        <div className="sub">Guías, FAQ y soporte directo. Respondemos todo el día.</div>
       </div>
+
+      {/* WhatsApp CTA */}
+      <a
+        href="https://wa.me/5493541578953?text=Hola%2C+necesito+ayuda+con+Cuervito"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="help-item wa-cta"
+      >
+        <div className="icon" style={{ background: "rgba(37,211,102,0.12)", color: "#25D366" }}>
+          <i className="ti ti-brand-whatsapp" />
+        </div>
+        <div className="body">
+          <div className="title">¿Necesitás ayuda para conectar tu dominio o armar tu página de venta?</div>
+          <div className="desc">Escribinos por WhatsApp · te ayudamos todo el día</div>
+        </div>
+        <i className="ti ti-chevron-right chev" />
+      </a>
 
       <div className="help-list">
         <Link href="#guia" className="help-item">
@@ -65,7 +82,7 @@ export function AyudaClient() {
           </div>
           <div className="body">
             <div className="title">Soporte directo</div>
-            <div className="desc">hola@cuervito.app · respuesta en 12hs hábiles</div>
+            <div className="desc">hola@cuervito.app · respondemos todo el día</div>
           </div>
           <i className="ti ti-chevron-right chev" />
         </a>
