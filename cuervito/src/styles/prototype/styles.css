@@ -10,12 +10,14 @@
   --bg-elevated:    #221E19;
   --bg-subtle:      #2A2520;
 
-  /* Acento — naranja ámbar */
+  /* Acento — base color only; derived vars use color-mix so they
+     adapt automatically when --accent is overridden by a template
+     or the photographer's brand color. */
   --accent:         #F5820A;
-  --accent-bright:  #FF9A2E;
-  --accent-muted:   #7A3D05;
-  --accent-glow:    rgba(245, 130, 10, 0.15);
-  --accent-deep:    rgba(245, 130, 10, 0.08);
+  --accent-bright:  color-mix(in srgb, var(--accent) 85%, white);
+  --accent-muted:   color-mix(in srgb, var(--accent) 55%, black);
+  --accent-glow:    color-mix(in srgb, var(--accent) 15%, transparent);
+  --accent-deep:    color-mix(in srgb, var(--accent)  8%, transparent);
 
   /* Texto */
   --text-primary:   #F0EBE3;
@@ -27,7 +29,7 @@
   --border-subtle:  rgba(240, 235, 227, 0.06);
   --border-default: rgba(240, 235, 227, 0.12);
   --border-strong:  rgba(240, 235, 227, 0.20);
-  --border-accent:  rgba(245, 130, 10, 0.40);
+  --border-accent:  color-mix(in srgb, var(--accent) 40%, transparent);
 
   /* Estados */
   --success:        #4CAF7D;

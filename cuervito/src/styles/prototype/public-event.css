@@ -125,7 +125,7 @@
   .photog-avatar {
     width: 76px; height: 76px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #F5820A, #ff9a3a);
+    background: linear-gradient(135deg, var(--accent), var(--accent-bright));
     display: flex; align-items: center; justify-content: center;
     color: #1a0d00;
     font-family: var(--font-display); font-weight: 800;
