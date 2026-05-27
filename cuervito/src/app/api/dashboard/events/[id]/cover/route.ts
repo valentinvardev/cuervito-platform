@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
-import { deleteS3Objects, eventCoverKey, putS3Object } from "~/server/s3";
+import { createCFInvalidation, deleteS3Objects, eventCoverKey, putS3Object } from "~/server/s3";
 
 const MAX_COVER_BYTES = 10 * 1024 * 1024; // 10 MB
 const EXT_BY_MIME: Record<string, string> = {
@@ -62,6 +62,7 @@ export async function POST(
     data: { coverUrl: key },
   });
 
+  void createCFInvalidation([`/${key}`]);
   return NextResponse.json({ ok: true, key });
 }
 

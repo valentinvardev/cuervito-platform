@@ -4,6 +4,7 @@ import sharp from "sharp";
 
 import { db } from "~/server/db";
 import {
+  createCFInvalidation,
   deleteS3Objects,
   getS3ObjectBytes,
   platformWatermarkKey,
@@ -221,6 +222,7 @@ export async function regeneratePreviewsForEvent(eventId: string): Promise<{
   done: number;
   failed: number;
 }> {
+  const event = await db.event.findUnique({ where: { id: eventId }, select: { ownerId: true } });
   const photos = await db.photo.findMany({
     where: { eventId, fileSize: { not: null }, deletedAt: null },
     select: { id: true },
@@ -231,6 +233,13 @@ export async function regeneratePreviewsForEvent(eventId: string): Promise<{
     const ok = await generatePreview(p.id);
     if (ok) done++;
     else failed++;
+  }
+  // Invalidate all previews for this event in CloudFront so stale cached
+  // versions are replaced immediately after watermark regeneration.
+  if (event?.ownerId && done > 0) {
+    const sample = previewPhotoKey(event.ownerId, eventId, "x");
+    const folder = sample.substring(0, sample.lastIndexOf("/") + 1);
+    void createCFInvalidation([`/${folder}*`]);
   }
   return { done, failed };
 }

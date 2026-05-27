@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "~/server/db";
-import { getPresignedDownloadUrl } from "~/server/s3";
+import { resolveMediaUrl } from "~/server/media";
 
 export type LiveEvent = {
   href: string;
@@ -60,7 +60,7 @@ export async function searchLiveEvents(query: string): Promise<LiveEvent[]> {
         try {
           coverUrl = rawKey.startsWith("http")
             ? rawKey
-            : await getPresignedDownloadUrl(rawKey, { expiresIn: 60 * 30 });
+            : await resolveMediaUrl(rawKey);
         } catch {
           coverUrl = null;
         }

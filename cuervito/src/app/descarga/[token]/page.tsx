@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
+import { resolveMediaUrl } from "~/server/media";
 
 import { DescargaClient } from "./descarga-client";
 
@@ -68,9 +69,9 @@ export default async function DescargaPage(props: {
         id: p.id,
         filename: p.filename,
         bibNumbers: p.bibNumbers,
-        previewUrl: await getPresignedDownloadUrl(p.previewKey ?? p.storageKey, {
-          expiresIn: 60 * 30,
-        }),
+        previewUrl: p.previewKey
+          ? await resolveMediaUrl(p.previewKey)
+          : await getPresignedDownloadUrl(p.storageKey, { expiresIn: 60 * 30 }),
       })),
   );
 

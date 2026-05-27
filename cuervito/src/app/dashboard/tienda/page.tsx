@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
 import { isCfConfigured } from "~/server/cloudflare";
 import { db } from "~/server/db";
-import { getPresignedDownloadUrl } from "~/server/s3";
+import { resolveMediaUrl } from "~/server/media";
 
 import { TiendaClient } from "./tienda-client";
 
@@ -26,10 +26,10 @@ export default async function TiendaPage() {
 
   const [watermarkUrl, logoUrl] = await Promise.all([
     user.watermarkKey
-      ? getPresignedDownloadUrl(user.watermarkKey, { expiresIn: 60 * 30 })
+      ? resolveMediaUrl(user.watermarkKey)
       : null,
     user.logoKey
-      ? getPresignedDownloadUrl(user.logoKey, { expiresIn: 60 * 30 })
+      ? resolveMediaUrl(user.logoKey)
       : null,
   ]);
 

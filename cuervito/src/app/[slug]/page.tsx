@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { buildTemplateStyle } from "~/lib/storefront-templates";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
-import { getPresignedDownloadUrl } from "~/server/s3";
+import { resolveMediaUrl } from "~/server/media";
 
 const RESERVED = new Set([
   "dashboard", "admin", "login", "signup", "onboarding", "suspended",
@@ -60,13 +60,13 @@ export default async function PhotographerPage(props: {
         coverUrl: e.coverUrl
           ? e.coverUrl.startsWith("http")
             ? e.coverUrl
-            : await getPresignedDownloadUrl(e.coverUrl, { expiresIn: 60 * 60 * 6 })
+            : await resolveMediaUrl(e.coverUrl)
           : null,
       })),
     ),
     resolveAvatarUrl(user.image),
     user.logoKey
-      ? getPresignedDownloadUrl(user.logoKey, { expiresIn: 60 * 60 * 6 })
+      ? resolveMediaUrl(user.logoKey)
       : null,
   ]);
 

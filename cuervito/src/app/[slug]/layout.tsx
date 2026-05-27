@@ -8,7 +8,7 @@ import { Suspense } from "react";
 import { ExternalStylesheets } from "~/app/_components/external-stylesheets";
 import { buildTemplateCSSOverride } from "~/lib/storefront-templates";
 import { db } from "~/server/db";
-import { getPresignedDownloadUrl } from "~/server/s3";
+import { resolveMediaUrl } from "~/server/media";
 
 function NavSkeleton({ logoUrl }: { logoUrl: string | null }) {
   return (
@@ -46,7 +46,7 @@ export default async function PublicLayout({
     : "";
 
   const logoUrl = user?.logoKey
-    ? await getPresignedDownloadUrl(user.logoKey, { expiresIn: 60 * 60 * 6 })
+    ? await resolveMediaUrl(user.logoKey)
     : null;
 
   return (

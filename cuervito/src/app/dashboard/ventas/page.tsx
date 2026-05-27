@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
+import { resolveMediaUrl } from "~/server/media";
 
 import { VentasClient, type SaleRow } from "./ventas-client";
 
@@ -72,7 +73,7 @@ export default async function VentasPage(props: {
       const firstPhoto = s.items[0]?.photo;
       const thumbKey = firstPhoto?.previewKey ?? firstPhoto?.storageKey ?? null;
       const thumbUrl = thumbKey
-        ? await getPresignedDownloadUrl(thumbKey, { expiresIn: 60 * 60 }).catch(() => null)
+        ? await resolveMediaUrl(thumbKey).catch(() => null)
         : null;
       return {
         id: s.id,

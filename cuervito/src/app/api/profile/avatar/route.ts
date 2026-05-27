@@ -3,11 +3,8 @@ import sharp from "sharp";
 
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
-import {
-  avatarKey,
-  getPresignedDownloadUrl,
-  putS3Object,
-} from "~/server/s3";
+import { avatarKey, createCFInvalidation, putS3Object } from "~/server/s3";
+import { resolveMediaUrl } from "~/server/media";
 
 export const runtime = "nodejs";
 
@@ -70,7 +67,8 @@ export async function POST(req: NextRequest) {
     data: { image: key },
   });
 
-  const previewUrl = await getPresignedDownloadUrl(key, { expiresIn: 60 * 60 });
+  void createCFInvalidation([`/${key}`]);
+  const previewUrl = await resolveMediaUrl(key);
   return NextResponse.json({ ok: true, previewUrl });
 }
 

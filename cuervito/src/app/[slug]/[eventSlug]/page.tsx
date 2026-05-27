@@ -4,6 +4,7 @@ import { buildTemplateStyle } from "~/lib/storefront-templates";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
+import { resolveMediaUrl } from "~/server/media";
 import { getMpTestMode } from "~/server/settings";
 
 import { EventCoverageShell } from "./event-coverage-shell";
@@ -64,7 +65,7 @@ export default async function PublicEventPage(props: {
   const coverSignedUrl = event.coverUrl
     ? event.coverUrl.startsWith("http")
       ? event.coverUrl
-      : await getPresignedDownloadUrl(event.coverUrl, { expiresIn: 60 * 60 * 6 })
+      : await resolveMediaUrl(event.coverUrl)
     : null;
 
   // Load all committed photos. We require `previewKey` to exist —
@@ -93,9 +94,7 @@ export default async function PublicEventPage(props: {
   const photos = await Promise.all(
     rawPhotos.map(async (p) => ({
       id: p.id,
-      previewUrl: await getPresignedDownloadUrl(p.previewKey ?? p.storageKey, {
-        expiresIn: 60 * 30,
-      }),
+      previewUrl: await resolveMediaUrl(p.previewKey!),
       bibNumbers: p.bibNumbers,
       width: p.width,
       height: p.height,
@@ -134,7 +133,7 @@ export default async function PublicEventPage(props: {
   const [avatarUrl, logoUrl, testMode] = await Promise.all([
     resolveAvatarUrl(photographer.image),
     photographer.logoKey
-      ? getPresignedDownloadUrl(photographer.logoKey, { expiresIn: 60 * 60 * 6 })
+      ? resolveMediaUrl(photographer.logoKey)
       : null,
     getMpTestMode(),
   ]);

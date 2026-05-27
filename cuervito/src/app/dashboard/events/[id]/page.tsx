@@ -4,6 +4,7 @@ import { env } from "~/env";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
+import { resolveMediaUrl } from "~/server/media";
 
 import {
   archiveEventAction,
@@ -45,7 +46,7 @@ export default async function EventDetailPage(props: {
   const coverSignedUrl = event.coverUrl
     ? event.coverUrl.startsWith("http")
       ? event.coverUrl
-      : await getPresignedDownloadUrl(event.coverUrl, { expiresIn: 60 * 60 * 6 })
+      : await resolveMediaUrl(event.coverUrl)
     : null;
 
   // Committed, non-soft-deleted photos. Soft-deleted ones disappear from the
@@ -75,9 +76,9 @@ export default async function EventDetailPage(props: {
       bibNumbers: p.bibNumbers,
       width: p.width,
       height: p.height,
-      previewUrl: await getPresignedDownloadUrl(p.previewKey ?? p.storageKey, {
-        expiresIn: 60 * 30,
-      }),
+      previewUrl: p.previewKey
+        ? await resolveMediaUrl(p.previewKey)
+        : await getPresignedDownloadUrl(p.storageKey, { expiresIn: 60 * 30 }),
     })),
   );
 

@@ -7,6 +7,7 @@ import {
   DeleteObjectsCommand,
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
+import { CloudFrontClient, CreateInvalidationCommand } from "@aws-sdk/client-cloudfront";
 import { NodeHttpHandler } from "@smithy/node-http-handler";
 import https from "https";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -42,6 +43,40 @@ export const s3 = new S3Client({
       }
     : {}),
 });
+
+// ── CloudFront ────────────────────────────────────────────────────────────────
+
+const cfCredentials =
+  env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY
+    ? { accessKeyId: env.AWS_ACCESS_KEY_ID, secretAccessKey: env.AWS_SECRET_ACCESS_KEY }
+    : undefined;
+
+const cfClient = env.CLOUDFRONT_DISTRIBUTION_ID
+  ? new CloudFrontClient({ region: "us-east-1", ...(cfCredentials ? { credentials: cfCredentials } : {}) })
+  : null;
+
+/** Returns a stable CloudFront URL for a key, or null if CF is not configured. */
+export function getCFUrl(key: string): string | null {
+  return env.CLOUDFRONT_DOMAIN ? `https://${env.CLOUDFRONT_DOMAIN}/${key}` : null;
+}
+
+/** Invalidates paths in CloudFront. Paths must start with /. Fire-and-forget safe. */
+export async function createCFInvalidation(paths: string[]): Promise<void> {
+  if (!cfClient || !env.CLOUDFRONT_DISTRIBUTION_ID || paths.length === 0) return;
+  try {
+    await cfClient.send(
+      new CreateInvalidationCommand({
+        DistributionId: env.CLOUDFRONT_DISTRIBUTION_ID,
+        InvalidationBatch: {
+          CallerReference: Date.now().toString(),
+          Paths: { Quantity: paths.length, Items: paths },
+        },
+      }),
+    );
+  } catch (err) {
+    console.error("[cloudfront] invalidation failed:", err);
+  }
+}
 
 /* ----------------------------------------------------------------------------
  * Key helpers

@@ -1,5 +1,5 @@
 import { db } from "~/server/db";
-import { getPresignedDownloadUrl } from "~/server/s3";
+import { resolveMediaUrl } from "~/server/media";
 
 import { WatermarkAdminUI } from "./watermark-ui";
 
@@ -29,7 +29,7 @@ export default async function AdminWatermarkPage() {
     ]);
 
   const watermarkUrl = setting?.value
-    ? await getPresignedDownloadUrl(setting.value, { expiresIn: 60 * 30 })
+    ? await resolveMediaUrl(setting.value)
     : null;
 
   return (
