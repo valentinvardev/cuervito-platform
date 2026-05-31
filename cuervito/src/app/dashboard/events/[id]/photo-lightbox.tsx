@@ -186,6 +186,32 @@ export function PhotoLightbox({
         <i className="ti ti-chevron-right" />
       </button>
 
+      {current.bibNumbers && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: "absolute",
+            bottom: 76,
+            left: "50%",
+            transform: "translateX(-50%)",
+            padding: "5px 12px",
+            borderRadius: 999,
+            background: "rgba(245,130,10,0.92)",
+            color: "var(--text-on-accent)",
+            fontFamily: "var(--font-mono)",
+            fontWeight: 600,
+            fontSize: 13,
+            letterSpacing: "0.02em",
+            boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
+            backdropFilter: "blur(4px)",
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        >
+          #{current.bibNumbers}
+        </div>
+      )}
+
       <div className="lb-meta" onClick={(e) => e.stopPropagation()}>
         <span>
           {idx + 1} / {total}
@@ -194,12 +220,6 @@ export function PhotoLightbox({
         <span className="filename" title={current.filename}>
           {current.filename}
         </span>
-        {current.bibNumbers && (
-          <>
-            <span className="sep">·</span>
-            <span className="bib">#{current.bibNumbers}</span>
-          </>
-        )}
         <span className="sep">·</span>
         <button
           type="button"
