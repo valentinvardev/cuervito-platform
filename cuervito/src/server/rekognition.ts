@@ -32,11 +32,24 @@ export function rekCollectionForEvent(eventId: string): string {
   return `cuervito-event-${eventId.replace(/[^a-zA-Z0-9_.\-]/g, "-")}`;
 }
 
+// In-memory cache of collection IDs that we've already created (or that
+// already existed). Prevents calling CreateCollection on every IndexFaces
+// call — previously that fired ~once per photo (7,924 times in May 2026).
+const ensuredCollections = new Set<string>();
+
 async function ensureCollection(rekCollectionId: string): Promise<void> {
+  if (ensuredCollections.has(rekCollectionId)) return;
   try {
     await rekognition.send(new CreateCollectionCommand({ CollectionId: rekCollectionId }));
+    ensuredCollections.add(rekCollectionId);
   } catch (err: unknown) {
-    if ((err as { name?: string }).name !== "ResourceAlreadyExistsException") throw err;
+    if ((err as { name?: string }).name === "ResourceAlreadyExistsException") {
+      // Already exists — mark as ensured so we never call CreateCollection
+      // again for this id in the current process.
+      ensuredCollections.add(rekCollectionId);
+      return;
+    }
+    throw err;
   }
 }
 
@@ -140,9 +153,12 @@ export async function runOcr(photoId: string): Promise<{ bibs: string | null }> 
 export async function runFaceIndex(photoId: string, eventId: string): Promise<void> {
   const photo = await db.photo.findUnique({
     where: { id: photoId },
-    select: { id: true, storageKey: true, ownerId: true },
+    select: { id: true, storageKey: true, ownerId: true, faceProcessedAt: true },
   });
   if (!photo) return;
+  // Already indexed — skip. Without this guard, retries or accidental double
+  // invocations re-index the photo and charge for IndexFaces again.
+  if (photo.faceProcessedAt) return;
 
   const imageBytes = await loadForRekognition(photo.storageKey);
   if (!imageBytes) return;
