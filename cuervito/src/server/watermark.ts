@@ -177,20 +177,23 @@ async function _generatePreview(photoId: string): Promise<string | null> {
         : buf;
     const resizedMeta = w > PREVIEW_MAX_WIDTH ? await sharp(resized).metadata() : { width: w, height: h };
 
-    // 1) Clean preview — same dimensions/quality, no watermark. Shown to the
-    //    photographer in their own dashboard so they don't see their own marca.
-    const cleanOut = await sharp(resized)
-      .webp({ quality: PREVIEW_QUALITY })
-      .toBuffer();
-
-    // 2) Watermarked preview — what the public sees on the storefront.
+    // Generate watermarked preview FIRST so the public-facing image is
+    // guaranteed correct before anything else touches state. Each pipeline
+    // takes its own copy of `resized` to prevent any chance of sharp's
+    // internal state bleeding between the two outputs.
     const composite = await buildComposite(
       resizedMeta.width ?? w,
       resizedMeta.height ?? h,
       photo.ownerId,
     );
-    const watermarkedOut = await sharp(resized)
+    const watermarkedOut = await sharp(Buffer.from(resized))
       .composite([composite])
+      .webp({ quality: PREVIEW_QUALITY })
+      .toBuffer();
+
+    // Clean preview (same dimensions/quality, no watermark) for the
+    // photographer's own dashboard.
+    const cleanOut = await sharp(Buffer.from(resized))
       .webp({ quality: PREVIEW_QUALITY })
       .toBuffer();
 
