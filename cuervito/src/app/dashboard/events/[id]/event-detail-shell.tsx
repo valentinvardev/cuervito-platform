@@ -66,7 +66,7 @@ export function EventDetailShell({
     : "Fecha por definir";
 
   return (
-    <main className="wrap">
+    <main className="wrap ev-detail">
       <EventCover
         eventId={event.id}
         title={event.name}

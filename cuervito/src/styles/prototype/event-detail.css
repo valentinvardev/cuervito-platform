@@ -225,9 +225,11 @@
   }
   .tc-sub { font-size: 12px; color: var(--text-tertiary); }
 
-  /* ==== Sections ==== */
-  .section { display: none; animation: rise 280ms ease-out both; }
-  .section.active { display: block; }
+  /* ==== Sections ====
+     Scoped to .ev-detail so this rule doesn't hide the dashboard's
+     <section className="section"> (which renders the action grid). */
+  .ev-detail .section { display: none; animation: rise 280ms ease-out both; }
+  .ev-detail .section.active { display: block; }
 
   /* ---- Galería section ---- */
   .gallery-head {
