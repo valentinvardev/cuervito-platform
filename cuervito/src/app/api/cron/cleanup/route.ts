@@ -47,13 +47,13 @@ export async function POST(req: NextRequest) {
   const stalePhotos = await db.photo.findMany({
     where: { deletedAt: { not: null, lt: photoCutoff } },
     take: BATCH_SIZE,
-    select: { id: true, storageKey: true, previewKey: true },
+    select: { id: true, storageKey: true, previewKey: true, previewCleanKey: true },
   });
 
   let photosDeleted = 0;
   if (stalePhotos.length > 0) {
     const s3Keys = stalePhotos
-      .flatMap((p) => [p.storageKey, p.previewKey])
+      .flatMap((p) => [p.storageKey, p.previewKey, p.previewCleanKey])
       .filter((k): k is string => Boolean(k));
 
     // Best-effort S3 cleanup. If S3 fails, leave the DB rows so we retry

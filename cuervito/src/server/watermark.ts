@@ -8,6 +8,7 @@ import {
   deleteS3Objects,
   getS3ObjectBytes,
   platformWatermarkKey,
+  previewCleanPhotoKey,
   previewPhotoKey,
   putS3Object,
   userWatermarkKey,
@@ -149,6 +150,7 @@ async function _generatePreview(photoId: string): Promise<string | null> {
       ownerId: true,
       storageKey: true,
       previewKey: true,
+      previewCleanKey: true,
     },
   });
   if (!photo) return null;
@@ -175,36 +177,50 @@ async function _generatePreview(photoId: string): Promise<string | null> {
         : buf;
     const resizedMeta = w > PREVIEW_MAX_WIDTH ? await sharp(resized).metadata() : { width: w, height: h };
 
+    // 1) Clean preview — same dimensions/quality, no watermark. Shown to the
+    //    photographer in their own dashboard so they don't see their own marca.
+    const cleanOut = await sharp(resized)
+      .webp({ quality: PREVIEW_QUALITY })
+      .toBuffer();
+
+    // 2) Watermarked preview — what the public sees on the storefront.
     const composite = await buildComposite(
       resizedMeta.width ?? w,
       resizedMeta.height ?? h,
       photo.ownerId,
     );
-
-    const out = await sharp(resized)
+    const watermarkedOut = await sharp(resized)
       .composite([composite])
       .webp({ quality: PREVIEW_QUALITY })
       .toBuffer();
 
-    // Delete any stale preview before writing the new one
-    if (photo.previewKey) {
-      await deleteS3Objects([photo.previewKey]).catch(() => undefined);
+    // Delete stale previews before writing new ones
+    const stale: string[] = [];
+    if (photo.previewKey) stale.push(photo.previewKey);
+    if (photo.previewCleanKey) stale.push(photo.previewCleanKey);
+    if (stale.length > 0) {
+      await deleteS3Objects(stale).catch(() => undefined);
     }
 
-    const key = previewPhotoKey(photo.ownerId, photo.eventId, photo.id);
-    await putS3Object(key, out, "image/webp");
+    const cleanKey = previewCleanPhotoKey(photo.ownerId, photo.eventId, photo.id);
+    const watermarkedKey = previewPhotoKey(photo.ownerId, photo.eventId, photo.id);
+    await Promise.all([
+      putS3Object(cleanKey, cleanOut, "image/webp"),
+      putS3Object(watermarkedKey, watermarkedOut, "image/webp"),
+    ]);
 
     await db.photo.update({
       where: { id: photo.id },
       data: {
-        previewKey: key,
+        previewKey: watermarkedKey,
+        previewCleanKey: cleanKey,
         previewGeneratedAt: new Date(),
         width: resizedMeta.width ?? w,
         height: resizedMeta.height ?? h,
       },
     });
 
-    return key;
+    return watermarkedKey;
   } catch (err) {
     console.error(`[watermark] error for photoId=${photo.id}:`, err);
     return null;
@@ -237,9 +253,11 @@ export async function regeneratePreviewsForEvent(eventId: string): Promise<{
   // Invalidate all previews for this event in CloudFront so stale cached
   // versions are replaced immediately after watermark regeneration.
   if (event?.ownerId && done > 0) {
-    const sample = previewPhotoKey(event.ownerId, eventId, "x");
-    const folder = sample.substring(0, sample.lastIndexOf("/") + 1);
-    void createCFInvalidation([`/${folder}*`]);
+    const wmSample = previewPhotoKey(event.ownerId, eventId, "x");
+    const wmFolder = wmSample.substring(0, wmSample.lastIndexOf("/") + 1);
+    const cleanSample = previewCleanPhotoKey(event.ownerId, eventId, "x");
+    const cleanFolder = cleanSample.substring(0, cleanSample.lastIndexOf("/") + 1);
+    void createCFInvalidation([`/${wmFolder}*`, `/${cleanFolder}*`]);
   }
   return { done, failed };
 }

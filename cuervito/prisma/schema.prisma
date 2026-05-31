@@ -213,8 +213,9 @@ model Photo {
     ownerId        String   // denormalized from event.ownerId for query speed
     owner          User     @relation("PhotoOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
-    storageKey   String  @unique // S3 key for full-res original
-    previewKey   String? // S3 key for watermarked preview
+    storageKey      String  @unique // S3 key for full-res original
+    previewKey      String? // S3 key for watermarked preview (shown to public)
+    previewCleanKey String? // S3 key for unwatermarked preview (shown to owner in dashboard)
     filename     String
     mimeType     String?
     fileSize     Int?    // bytes

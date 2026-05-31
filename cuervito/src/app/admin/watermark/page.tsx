@@ -11,7 +11,11 @@ export default async function AdminWatermarkPage() {
         where: {
           fileSize: { not: null },
           deletedAt: null,
-          OR: [{ previewKey: null }, { previewGeneratedAt: null }],
+          OR: [
+            { previewKey: null },
+            { previewCleanKey: null },
+            { previewGeneratedAt: null },
+          ],
         },
       }),
       db.photo.count({ where: { fileSize: { not: null }, deletedAt: null } }),

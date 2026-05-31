@@ -11,17 +11,31 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  const body = (await req.json().catch(() => ({}))) as {
+    userId?: string;
+    force?: boolean;
+  };
   // Optional: scope to a single user's photos (for per-user watermark regeneration)
-  let ownerId: string | undefined;
-  try {
-    const body = (await req.json().catch(() => ({}))) as { userId?: string };
-    ownerId = body.userId;
-  } catch { /* empty body is fine */ }
+  const ownerId = body.userId;
+  // `force: true` regenerates every matching photo (e.g. after changing the
+  // platform watermark). Default mode only processes photos missing one of the
+  // previews — used for backfilling new fields without burning CPU on photos
+  // that are already up to date.
+  const force = !!body.force;
 
   const baseWhere = {
     fileSize: { not: null } as { not: null },
     deletedAt: null as null,
     ...(ownerId ? { ownerId } : {}),
+    ...(force
+      ? {}
+      : {
+          OR: [
+            { previewKey: null },
+            { previewCleanKey: null },
+            { previewGeneratedAt: null },
+          ],
+        }),
   };
 
   const photos = await db.photo.findMany({

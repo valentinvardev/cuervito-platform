@@ -96,6 +96,12 @@ export function previewPhotoKey(userId: string, eventId: string, photoId: string
   return `${prefix}/users/${userId}/events/${eventId}/preview/${photoId}.webp`;
 }
 
+/** Unwatermarked preview, shown to the photographer in their dashboard. Same
+ *  dimensions/quality as the watermarked preview but without the marca. */
+export function previewCleanPhotoKey(userId: string, eventId: string, photoId: string) {
+  return `${prefix}/users/${userId}/events/${eventId}/preview-clean/${photoId}.webp`;
+}
+
 /** Per-user watermark (unused — superseded by the global platform watermark). */
 export function userWatermarkKey(userId: string) {
   return `${prefix}/users/${userId}/watermark.png`;

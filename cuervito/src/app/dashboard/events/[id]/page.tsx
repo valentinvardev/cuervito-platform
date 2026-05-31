@@ -64,22 +64,29 @@ export default async function EventDetailPage(props: {
       bibNumbers: true,
       storageKey: true,
       previewKey: true,
+      previewCleanKey: true,
       width: true,
       height: true,
     },
   });
+  // Photographer sees unwatermarked previews of their own photos. Falls back to
+  // the watermarked preview for legacy photos that haven't been re-processed
+  // yet, then to a presigned original as last resort.
   const photos = await Promise.all(
-    rawPhotos.map(async (p) => ({
-      id: p.id,
-      filename: p.filename,
-      fileSize: p.fileSize,
-      bibNumbers: p.bibNumbers,
-      width: p.width,
-      height: p.height,
-      previewUrl: p.previewKey
-        ? await resolveMediaUrl(p.previewKey)
-        : await getPresignedDownloadUrl(p.storageKey, { expiresIn: 60 * 30 }),
-    })),
+    rawPhotos.map(async (p) => {
+      const key = p.previewCleanKey ?? p.previewKey;
+      return {
+        id: p.id,
+        filename: p.filename,
+        fileSize: p.fileSize,
+        bibNumbers: p.bibNumbers,
+        width: p.width,
+        height: p.height,
+        previewUrl: key
+          ? await resolveMediaUrl(key)
+          : await getPresignedDownloadUrl(p.storageKey, { expiresIn: 60 * 30 }),
+      };
+    }),
   );
 
   // Public URL — only meaningful when the event is published. For now we expose

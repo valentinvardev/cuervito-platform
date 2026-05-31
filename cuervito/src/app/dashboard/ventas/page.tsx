@@ -61,7 +61,7 @@ export default async function VentasPage(props: {
       items: {
         take: 1,
         select: {
-          photo: { select: { previewKey: true, storageKey: true, bibNumbers: true } },
+          photo: { select: { previewKey: true, previewCleanKey: true, storageKey: true, bibNumbers: true } },
         },
       },
       _count: { select: { items: true } },
@@ -71,7 +71,10 @@ export default async function VentasPage(props: {
   const rows: SaleRow[] = await Promise.all(
     sales.map(async (s) => {
       const firstPhoto = s.items[0]?.photo;
-      const thumbKey = firstPhoto?.previewKey ?? firstPhoto?.storageKey ?? null;
+      // Photographer's own sales view — prefer the clean preview, fall back to
+      // the watermarked one for legacy photos, then to the original.
+      const thumbKey =
+        firstPhoto?.previewCleanKey ?? firstPhoto?.previewKey ?? firstPhoto?.storageKey ?? null;
       const thumbUrl = thumbKey
         ? await resolveMediaUrl(thumbKey).catch(() => null)
         : null;
