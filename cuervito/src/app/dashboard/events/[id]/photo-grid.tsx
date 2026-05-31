@@ -344,6 +344,7 @@ export function PhotoGrid({
         <PhotoLightbox
           photos={photos}
           startIndex={lightboxIdx}
+          eventId={eventId}
           onClose={() => setLightboxIdx(null)}
           onDelete={async (photoId) => {
             // Close lightbox and route through the styled modal instead

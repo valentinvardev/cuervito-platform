@@ -13,17 +13,48 @@ type Tile = {
 export function PhotoLightbox({
   photos,
   startIndex,
+  eventId,
   onClose,
   onDelete,
 }: {
   photos: Tile[];
   startIndex: number;
+  eventId: string;
   onClose: () => void;
   onDelete?: (photoId: string) => Promise<void> | void;
 }) {
   const [idx, setIdx] = useState(startIndex);
   const [loaded, setLoaded] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const touchStartX = useRef<number | null>(null);
+
+  async function downloadOriginal(photoId: string, filename: string) {
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      const res = await fetch(
+        `/api/dashboard/events/${eventId}/photos/${photoId}/download`,
+      );
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error ?? "No pudimos generar la descarga.");
+      }
+      const data = (await res.json()) as { url: string; filename: string };
+      const a = document.createElement("a");
+      a.href = data.url;
+      a.download = data.filename ?? filename;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : "Error de red.");
+      setTimeout(() => setDownloadError(null), 3000);
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   const total = photos.length;
   const current = photos[idx];
@@ -169,6 +200,17 @@ export function PhotoLightbox({
             <span className="bib">#{current.bibNumbers}</span>
           </>
         )}
+        <span className="sep">·</span>
+        <button
+          type="button"
+          className="action"
+          disabled={downloading}
+          onClick={() => downloadOriginal(current.id, current.filename)}
+          title="Descargar el original (sin marca de agua)"
+        >
+          <i className="ti ti-download" style={{ marginRight: 4 }} />
+          {downloading ? "Preparando…" : "Descargar"}
+        </button>
         {onDelete && (
           <>
             <span className="sep">·</span>
@@ -185,6 +227,30 @@ export function PhotoLightbox({
           </>
         )}
       </div>
+
+      {downloadError && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: "fixed",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            padding: "10px 16px",
+            background: "rgba(224,85,85,0.95)",
+            color: "white",
+            borderRadius: 8,
+            fontSize: 13,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            zIndex: 1,
+          }}
+        >
+          <i className="ti ti-alert-circle" />
+          {downloadError}
+        </div>
+      )}
     </div>
   );
 
