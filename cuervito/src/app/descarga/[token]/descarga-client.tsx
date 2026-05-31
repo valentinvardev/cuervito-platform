@@ -135,6 +135,17 @@ export function DescargaClient({
 
   useEffect(() => {
     if (!fresh) return;
+
+    // Strip ?fresh=1 from the URL so refreshing doesn't replay the
+    // payment-confirmation animation.
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has("fresh")) {
+        url.searchParams.delete("fresh");
+        window.history.replaceState(null, "", url.toString());
+      }
+    }
+
     const timers: ReturnType<typeof setTimeout>[] = [];
     const fadeOut = () => setOverlaySwap(true);
     const fadeIn = () => setOverlaySwap(false);
