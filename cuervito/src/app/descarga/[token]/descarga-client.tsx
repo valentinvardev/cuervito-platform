@@ -456,6 +456,8 @@ function IosStepByStep({
   const [state, setState] = useState<"idle" | "loading" | "done">("idle");
   const [done, setDone] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [useLongPress, setUseLongPress] = useState(false);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
 
   useEffect(() => setMounted(true), []);
 
@@ -480,14 +482,25 @@ function IosStepByStep({
   async function save() {
     if (state !== "idle" || !current) return;
     setState("loading");
-    try {
-      // Same-origin proxy endpoint — needed so iOS Safari's fetch() inside
-      // saveViaShareSheet doesn't fail CORS against S3.
-      const sameOriginUrl = `/api/download/${token}/${current.id}/blob`;
-      await saveViaShareSheet(sameOriginUrl, current.filename);
-    } catch {
-      // ignore — UI still advances so the user can keep going
+    setErrMsg(null);
+    // Same-origin proxy endpoint — needed so iOS Safari's fetch() inside
+    // saveViaShareSheet doesn't fail CORS against S3.
+    const sameOriginUrl = `/api/download/${token}/${current.id}/blob`;
+    const result = await saveViaShareSheet(sameOriginUrl, current.filename);
+
+    if (result === "long-press") {
+      // Web Share API unavailable — show the long-press instruction instead
+      // of pretending the photo was saved.
+      setUseLongPress(true);
+      setState("idle");
+      return;
     }
+    if (result === "error") {
+      setErrMsg("No pudimos preparar la foto. Probá de nuevo.");
+      setState("idle");
+      return;
+    }
+
     setState("done");
     setTimeout(() => {
       const isLast = idx === photos.length - 1;
@@ -503,8 +516,13 @@ function IosStepByStep({
   function skip() {
     if (state !== "idle") return;
     const isLast = idx === photos.length - 1;
-    if (isLast) setDone(true);
-    else setIdx((i) => i + 1);
+    if (isLast) {
+      setDone(true);
+    } else {
+      setIdx((i) => i + 1);
+      setUseLongPress(false);
+      setErrMsg(null);
+    }
   }
 
   if (!current || !mounted) return null;
@@ -557,28 +575,45 @@ function IosStepByStep({
             </div>
           </div>
           <div className="ios-bottom">
-            <p className={`ios-instruct ${state === "done" ? "met" : ""}`}>
-              {state === "done"
-                ? `Guardada · ${idx === photos.length - 1 ? "terminando…" : "siguiente foto…"}`
-                : "Tocá el botón para guardar esta foto en tu galería."}
-            </p>
-            <button className="ios-save-btn" data-state={state} onClick={save}>
-              <span className="state state-idle">
-                <span>Guardar foto</span>
-                <i className="ti ti-download" />
-              </span>
-              <span className="state state-loading">
-                <span>Preparando…</span>
-                <span className="spinner-mini" />
-              </span>
-              <span className="state state-done">
-                <span>Guardada</span>
-                <i className="ti ti-check" />
-              </span>
-            </button>
-            <button className="ios-skip" onClick={skip}>
-              Saltar esta foto →
-            </button>
+            {useLongPress ? (
+              <>
+                <p className="ios-instruct" style={{ color: "var(--accent)" }}>
+                  Mantené el dedo apretado sobre la foto y tocá{" "}
+                  <strong>&quot;Guardar foto&quot;</strong>.
+                </p>
+                <button className="ios-save-btn" data-state="idle" onClick={skip}>
+                  <span className="state state-idle">
+                    <span>Siguiente foto</span>
+                    <i className="ti ti-arrow-right" />
+                  </span>
+                </button>
+              </>
+            ) : (
+              <>
+                <p className={`ios-instruct ${state === "done" ? "met" : ""}`}>
+                  {state === "done"
+                    ? `Guardada · ${idx === photos.length - 1 ? "terminando…" : "siguiente foto…"}`
+                    : errMsg ?? "Tocá el botón para guardar esta foto en tu galería."}
+                </p>
+                <button className="ios-save-btn" data-state={state} onClick={save}>
+                  <span className="state state-idle">
+                    <span>Guardar foto</span>
+                    <i className="ti ti-download" />
+                  </span>
+                  <span className="state state-loading">
+                    <span>Preparando…</span>
+                    <span className="spinner-mini" />
+                  </span>
+                  <span className="state state-done">
+                    <span>Guardada</span>
+                    <i className="ti ti-check" />
+                  </span>
+                </button>
+                <button className="ios-skip" onClick={skip}>
+                  Saltar esta foto →
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
