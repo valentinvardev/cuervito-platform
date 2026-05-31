@@ -573,54 +573,6 @@
     margin-top: 8px;
   }
 
-  /* Items */
-  .items { padding: 0 24px; }
-  .item {
-    display: grid;
-    grid-template-columns: 22px 52px 1fr auto auto;
-    gap: 12px;
-    align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border-subtle);
-  }
-  .item:last-child { border-bottom: none; }
-  .item .idx {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-tertiary);
-  }
-  .item .thumb {
-    width: 52px; height: 52px;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  .item .info { min-width: 0; }
-  .item .info .lab {
-    font-size: 11px;
-    color: var(--text-tertiary);
-    margin-bottom: 1px;
-  }
-  .item .info .num {
-    font-weight: 600;
-    font-size: 15px;
-    line-height: 1.2;
-  }
-  .item .price {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--accent);
-  }
-  .item .rm {
-    width: 30px; height: 30px;
-    border-radius: 8px;
-    color: var(--text-tertiary);
-    display: inline-flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    transition: all 150ms;
-    font-size: 16px;
-  }
-  .item .rm:hover { color: var(--error); background: var(--bg-base); }
-
   /* Code & footer */
   .sheet-foot {
     border-top: 1px solid var(--border-subtle);
@@ -746,11 +698,6 @@
     .nudge { margin: 14px 18px 0; padding: 12px 14px; gap: 10px; grid-template-columns: 32px 1fr; }
     .nudge .ic { width: 32px; height: 32px; font-size: 16px; }
     .empty { margin: 18px; padding: 30px 16px; }
-    .items { padding: 0 18px; }
-    .item { grid-template-columns: 48px 1fr auto 30px; gap: 10px; padding: 12px 0; }
-    .item .idx { display: none; }
-    .item .thumb { width: 48px; height: 48px; }
-    .item .price { font-size: 12px; }
     .sheet-foot { padding: 14px 18px 18px; }
     .checkout-form { padding: 18px 18px; gap: 12px; }
     .checkout-form .grid-2 { grid-template-columns: 1fr; }

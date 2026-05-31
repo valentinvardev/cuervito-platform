@@ -277,16 +277,10 @@ export function DescargaClient({
                 </button>
               </>
             ) : (
-              <>
-                <button className="btn btn-primary" onClick={downloadAll}>
-                  <i className="ti ti-download" />
-                  Descargar todas (.zip)
-                </button>
-                <button className="btn btn-outline" onClick={() => setIosOpen(true)}>
-                  <i className="ti ti-device-mobile" />
-                  Guardar en iPhone (paso a paso)
-                </button>
-              </>
+              <button className="btn btn-primary" onClick={downloadAll}>
+                <i className="ti ti-download" />
+                Descargar todas (.zip)
+              </button>
             )}
           </div>
         </section>
@@ -387,31 +381,33 @@ export function DescargaClient({
           })}
         </div>
 
-        <div className="footer-help">
-          <div className="ic">
-            <i className="ti ti-device-mobile" />
+        {isIos && (
+          <div className="footer-help">
+            <div className="ic">
+              <i className="ti ti-device-mobile" />
+            </div>
+            <div className="body">
+              <strong>¿Estás en iPhone?</strong> Te recomendamos usar{" "}
+              <button
+                type="button"
+                onClick={() => setIosOpen(true)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--accent)",
+                  cursor: "pointer",
+                  font: "inherit",
+                  padding: 0,
+                  textDecoration: "underline",
+                }}
+              >
+                &quot;Guardar en iPhone (paso a paso)&quot;
+              </button>{" "}
+              — vas foto por foto y cada una se guarda con el tap &quot;Guardar foto&quot; de iOS,
+              que es el único método confiable.
+            </div>
           </div>
-          <div className="body">
-            <strong>¿Estás en iPhone?</strong> Te recomendamos usar{" "}
-            <button
-              type="button"
-              onClick={() => setIosOpen(true)}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "var(--accent)",
-                cursor: "pointer",
-                font: "inherit",
-                padding: 0,
-                textDecoration: "underline",
-              }}
-            >
-              &quot;Guardar en iPhone (paso a paso)&quot;
-            </button>{" "}
-            — vas foto por foto y cada una se guarda con el tap &quot;Guardar foto&quot; de iOS,
-            que es el único método confiable.
-          </div>
-        </div>
+        )}
       </main>
 
       {iosOpen && (
