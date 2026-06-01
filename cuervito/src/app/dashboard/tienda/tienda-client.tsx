@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { TEMPLATES } from "~/lib/storefront-templates";
 import { saveBrandColorAction, saveTemplateAction } from "./actions";
+import { ColorPicker } from "./color-picker";
 import { DomainsSection, type DomainRow } from "./domains-section";
 
 const PRESETS: { name: string; hex: string }[] = [
@@ -379,6 +380,32 @@ export function TiendaClient({
         <div className="section-head">
           <h2>Color principal</h2>
           <span className="sub">Se aplica a botones, links y acentos</span>
+        </div>
+
+        <div style={{ marginBottom: 18 }}>
+          <ColorPicker
+            value={selected}
+            onChange={pickColor}
+            disabled={colorPending}
+          />
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            margin: "0 0 12px",
+            fontSize: 11,
+            fontFamily: "var(--font-mono)",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "var(--text-tertiary)",
+          }}
+        >
+          <span style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
+          <span>o elegí un preset</span>
+          <span style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
         </div>
 
         <div className="color-grid">
