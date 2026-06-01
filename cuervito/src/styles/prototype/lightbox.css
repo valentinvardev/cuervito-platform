@@ -107,21 +107,31 @@
   transform: translateX(-50%);
   background: rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  padding: 8px 16px;
+  padding: 8px 18px;
   color: #fff;
   font-family: var(--font-mono);
   font-size: 12px;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  max-width: calc(100vw - 40px);
+  gap: 12px;
+  /* Keep every child on one line — the "2 / 82" count was wrapping when
+     the bar got narrow because the spaces inside the text were treated as
+     break points. nowrap forces the bar to grow horizontally instead. */
+  white-space: nowrap;
+  max-width: calc(100vw - 24px);
+  overflow-x: auto;
+  /* Hide the scrollbar visually but allow scrolling on overflow. */
+  scrollbar-width: none;
 }
+.lb-meta::-webkit-scrollbar { display: none; }
+.lb-meta > * { flex-shrink: 0; }
 .lb-meta .filename {
   color: rgba(255, 255, 255, 0.7);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 240px;
+  max-width: 280px;
+  min-width: 0;
 }
 .lb-meta .bib { color: var(--accent); }
 .lb-meta .sep { color: rgba(255, 255, 255, 0.4); }
@@ -159,8 +169,10 @@
   .lb-meta {
     bottom: 12px;
     font-size: 11px;
+    padding: 8px 14px;
+    gap: 10px;
   }
-  .lb-meta .filename { max-width: 100px; }
+  .lb-meta .filename { max-width: 120px; }
 }
 
 /* =========================================================================

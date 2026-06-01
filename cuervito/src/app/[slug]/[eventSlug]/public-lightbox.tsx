@@ -147,7 +147,7 @@ export function PublicLightbox({
           onClick={(e) => e.stopPropagation()}
           style={{
             position: "absolute",
-            bottom: 76,
+            bottom: 96,
             left: "50%",
             transform: "translateX(-50%)",
             padding: "5px 12px",
