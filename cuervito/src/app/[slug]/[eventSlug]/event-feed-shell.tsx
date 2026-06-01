@@ -278,34 +278,14 @@ function FeedInner({
         />
 
         <div style={{ maxWidth: 640, margin: "0 auto", textAlign: "center" }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "5px 12px",
-              borderRadius: 999,
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
-              fontSize: 11,
-              fontFamily: "var(--font-mono)",
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: "var(--text-tertiary)",
-              marginBottom: 18,
-            }}
-          >
-            <i className="ti ti-bird" style={{ fontSize: 12, color: "var(--accent)" }} />
-            {event.name}
-          </div>
           <h1
             style={{
               fontFamily: "var(--font-display)",
               fontWeight: 800,
-              fontSize: "clamp(34px, 7vw, 56px)",
-              lineHeight: 1.05,
-              letterSpacing: "-0.035em",
-              margin: "0 0 12px",
+              fontSize: "clamp(52px, 11vw, 96px)",
+              lineHeight: 0.98,
+              letterSpacing: "-0.045em",
+              margin: "0 0 18px",
             }}
           >
             Encontrá<br />
@@ -405,7 +385,9 @@ function FeedInner({
               <span style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
             </div>
 
-            <SelfieSearchButton eventId={event.id} onResult={handleSelfie} />
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <SelfieSearchButton eventId={event.id} onResult={handleSelfie} />
+            </div>
           </div>
 
           {selfieMessage && (
@@ -732,7 +714,10 @@ function FeedInner({
                         transition: "all 150ms",
                       }}
                     >
-                      <i className={`ti ${inCart ? "ti-check" : "ti-plus"}`} style={{ fontSize: 14 }} />
+                      <i
+                        className={`ti ${inCart ? "ti-check" : "ti-shopping-cart-plus"}`}
+                        style={{ fontSize: 14 }}
+                      />
                       {inCart ? "En carrito" : "Agregar"}
                     </button>
                   </div>
