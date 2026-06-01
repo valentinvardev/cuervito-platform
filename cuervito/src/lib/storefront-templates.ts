@@ -1,9 +1,17 @@
-export type TemplateId = "dark" | "light" | "sport";
+export type TemplateId = "dark" | "light" | "sport" | "feed";
+
+/**
+ * Layout family: templates with the same layout share the same React shell
+ * and differ only in CSS variables. A different layout requires its own shell
+ * component on the public storefront.
+ */
+export type TemplateLayout = "coverage" | "feed";
 
 export interface StorefrontTemplate {
   id: TemplateId;
   name: string;
   description: string;
+  layout: TemplateLayout;
   cssVars: Record<string, string>;
 }
 
@@ -12,6 +20,7 @@ export const TEMPLATES: readonly StorefrontTemplate[] = [
     id: "dark",
     name: "Oscuro",
     description: "Cálido y profundo — hace resaltar tus fotos",
+    layout: "coverage",
     cssVars: {
       "--nav-bg": "rgba(15,13,11,0.88)",
     },
@@ -20,6 +29,7 @@ export const TEMPLATES: readonly StorefrontTemplate[] = [
     id: "light",
     name: "Claro",
     description: "Limpio y editorial — estilo galería de arte",
+    layout: "coverage",
     cssVars: {
       "--bg-base":        "#F7F4F0",
       "--bg-surface":     "#FFFFFF",
@@ -40,6 +50,7 @@ export const TEMPLATES: readonly StorefrontTemplate[] = [
     id: "sport",
     name: "Deportivo",
     description: "Negro puro, contraste máximo — energía de competencia",
+    layout: "coverage",
     cssVars: {
       "--bg-base":        "#000000",
       "--bg-surface":     "#0D0D0D",
@@ -52,6 +63,18 @@ export const TEMPLATES: readonly StorefrontTemplate[] = [
       "--border-default": "rgba(255,255,255,0.12)",
       "--border-strong":  "rgba(255,255,255,0.22)",
       "--nav-bg":         "rgba(0,0,0,0.92)",
+    },
+  },
+  {
+    id: "feed",
+    name: "Feed",
+    description: "Búsqueda al frente, fotos en feed vertical — pensado para mobile",
+    layout: "feed",
+    cssVars: {
+      "--bg-base":     "#0B0908",
+      "--bg-surface":  "#141110",
+      "--bg-elevated": "#1F1B19",
+      "--nav-bg":      "rgba(11,9,8,0.92)",
     },
   },
 ] as const;

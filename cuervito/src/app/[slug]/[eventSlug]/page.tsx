@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { buildTemplateStyle } from "~/lib/storefront-templates";
+import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
@@ -8,6 +8,7 @@ import { resolveMediaUrl } from "~/server/media";
 import { getMpTestMode } from "~/server/settings";
 
 import { EventCoverageShell } from "./event-coverage-shell";
+import { EventFeedShell } from "./event-feed-shell";
 
 const RESERVED = new Set([
   "dashboard", "admin", "login", "signup", "onboarding", "suspended",
@@ -150,36 +151,44 @@ export default async function PublicEventPage(props: {
       : {}),
   } as React.CSSProperties;
 
+  const shellProps = {
+    photographer: {
+      slug,
+      name: photographer.name ?? "Fotógrafo",
+      bio: photographer.bio,
+      location: photographer.location,
+      instagramUrl: photographer.instagramUrl,
+      initials,
+      avatarUrl,
+      logoUrl,
+    },
+    event: {
+      id: event.id,
+      slug: event.slug,
+      name: event.name,
+      description: event.description,
+      discipline: event.discipline,
+      location: event.location,
+      eventDate: event.eventDate?.toISOString() ?? null,
+      coverUrl: coverSignedUrl,
+      pricePerPhoto: Number(event.pricePerPhoto),
+      currency: event.currency,
+      photosCount: photos.length,
+    },
+    photos,
+    discounts: activeDiscounts,
+    testMode,
+  };
+
+  const layout = getTemplate(photographer.storefrontTemplate).layout;
+
   return (
     <div style={pageStyle}>
-    <EventCoverageShell
-      photographer={{
-        slug,
-        name: photographer.name ?? "Fotógrafo",
-        bio: photographer.bio,
-        location: photographer.location,
-        instagramUrl: photographer.instagramUrl,
-        initials,
-        avatarUrl,
-        logoUrl,
-      }}
-      event={{
-        id: event.id,
-        slug: event.slug,
-        name: event.name,
-        description: event.description,
-        discipline: event.discipline,
-        location: event.location,
-        eventDate: event.eventDate?.toISOString() ?? null,
-        coverUrl: coverSignedUrl,
-        pricePerPhoto: Number(event.pricePerPhoto),
-        currency: event.currency,
-        photosCount: photos.length,
-      }}
-      photos={photos}
-      discounts={activeDiscounts}
-      testMode={testMode}
-    />
+      {layout === "feed" ? (
+        <EventFeedShell {...shellProps} />
+      ) : (
+        <EventCoverageShell {...shellProps} />
+      )}
     </div>
   );
 }

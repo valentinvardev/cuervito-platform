@@ -334,13 +334,26 @@ export function TiendaClient({
               disabled={tplPending}
             >
               <div className={`tpl-preview tpl-preview--${tpl.id}`}>
-                <div className="tpl-preview-nav" />
-                <div className="tpl-preview-hero" />
-                <div className="tpl-preview-cards">
-                  <div className="tpl-preview-card" />
-                  <div className="tpl-preview-card" />
-                  <div className="tpl-preview-card" />
-                </div>
+                {tpl.layout === "feed" ? (
+                  <>
+                    <div className="tpl-preview-nav" />
+                    <div className="tpl-preview-feed-search" />
+                    <div className="tpl-preview-feed-stack">
+                      <div className="tpl-preview-feed-row" />
+                      <div className="tpl-preview-feed-row" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="tpl-preview-nav" />
+                    <div className="tpl-preview-hero" />
+                    <div className="tpl-preview-cards">
+                      <div className="tpl-preview-card" />
+                      <div className="tpl-preview-card" />
+                      <div className="tpl-preview-card" />
+                    </div>
+                  </>
+                )}
               </div>
               <div className="tpl-info">
                 <div className="tpl-name">{tpl.name}</div>

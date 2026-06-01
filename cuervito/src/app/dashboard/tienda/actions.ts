@@ -7,7 +7,7 @@ import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 
 const colorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Color inválido.");
-const VALID_TEMPLATES = ["dark", "light", "sport"] as const;
+const VALID_TEMPLATES = ["dark", "light", "sport", "feed"] as const;
 
 export async function saveBrandColorAction(
   color: string,
