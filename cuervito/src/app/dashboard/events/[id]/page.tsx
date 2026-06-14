@@ -52,11 +52,12 @@ export default async function EventDetailPage(props: {
   // Committed, non-soft-deleted photos. Soft-deleted ones disappear from the
   // dashboard the moment the photographer removes them, even if buyers can
   // still download what they already purchased until the retention window
-  // expires (see /api/cron/cleanup).
+  // expires (see /api/cron/cleanup). No `take` — photographers must see every
+  // photo they own; the grid uses CSS background-image so the browser fetches
+  // thumbnails lazily as cells scroll into view.
   const rawPhotos = await db.photo.findMany({
     where: { eventId: id, fileSize: { not: null }, deletedAt: null },
     orderBy: { createdAt: "desc" },
-    take: 200,
     select: {
       id: true,
       filename: true,
