@@ -135,6 +135,7 @@ model User {
     recognitionUsage  RecognitionUsage[]
     salesAudit        AdminAction[]
     customDomains     CustomDomain[]     @relation("CustomDomainsOwner")
+    editorProjects    EditorProject[]    @relation("EditorProjectOwner")
 }
 
 // =============================================================================
@@ -520,4 +521,26 @@ model AnalyticsEvent {
 
     @@index([type, createdAt])
     @@index([eventId, createdAt])
+}
+
+// =============================================================================
+// Editor (admin-only, Nivel 1 del spec SurCodia)
+// Canvas-based post editor: photo + overlay layers (text/shape/image).
+// Layers are stored as a single JSON blob so we can iterate on the shape
+// without migrations during the MVP.
+// =============================================================================
+
+model EditorProject {
+    id          String   @id @default(cuid())
+    ownerId     String
+    owner       User     @relation("EditorProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+    name        String
+    sourceKey   String?  // S3 key of the source photo (null for blank canvas)
+    layers      Json     // Array<{ id, type, ...props }> — full shape lives in TS
+    width       Int      @default(1080)
+    height      Int      @default(1080)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@index([ownerId, updatedAt])
 }

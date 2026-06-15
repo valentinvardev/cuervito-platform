@@ -191,7 +191,7 @@ export function PhotoLightbox({
           onClick={(e) => e.stopPropagation()}
           style={{
             position: "absolute",
-            bottom: 96,
+            bottom: 80,
             left: "50%",
             transform: "translateX(-50%)",
             padding: "5px 12px",

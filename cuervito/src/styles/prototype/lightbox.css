@@ -17,10 +17,12 @@
   pointer-events: auto;
 }
 
-/* The image — centered, contained, with breathing room around it. */
+/* The image — centered, contained, with breathing room around it.
+   max-height is intentionally < 80vh so portrait shots leave clean space
+   between the photo's bottom edge and the bib pill / meta bar. */
 .lb-img {
   max-width: 70vw;
-  max-height: 80vh;
+  max-height: 72vh;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -150,7 +152,7 @@
 @media (max-width: 700px) {
   .lb-img {
     max-width: calc(100vw - 24px);
-    max-height: 70vh;
+    max-height: 62vh;
   }
   .lb-close {
     top: 12px;

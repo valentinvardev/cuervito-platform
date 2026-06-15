@@ -124,6 +124,11 @@ export function eventCoverKey(userId: string, eventId: string, ext = "jpg") {
   return `${prefix}/users/${userId}/events/${eventId}/cover.${ext.replace(/^\./, "")}`;
 }
 
+/** Source image for an admin editor project (Level 1). */
+export function editorSourceKey(userId: string, projectId: string, ext = "jpg") {
+  return `${prefix}/users/${userId}/editor/${projectId}/source.${ext.replace(/^\./, "")}`;
+}
+
 /** True if a key is one of ours (lives under the cuervito/ prefix). */
 export function isCuervitoKey(key: string): boolean {
   return key.startsWith(`${prefix}/`);
