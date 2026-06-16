@@ -366,6 +366,109 @@ export function parseLayers(raw: unknown): Layer[] {
   });
 }
 
+// ─── Filter presets ─────────────────────────────────────────────────────────
+export type FilterPreset = {
+  id: string;
+  name: string;
+  filters: SourceFilters;
+};
+
+/** Curated Instagram-style filter presets. "Original" sits first as the
+ *  no-op reset button; the rest mix the underlying knobs to taste. */
+export const FILTER_PRESETS: readonly FilterPreset[] = [
+  { id: "original", name: "Original", filters: emptyFilters() },
+  {
+    id: "warm",
+    name: "Cálido",
+    filters: { ...emptyFilters(), brightness: 0.05, saturation: 0.3, hue: -12 },
+  },
+  {
+    id: "cool",
+    name: "Frío",
+    filters: { ...emptyFilters(), brightness: -0.04, saturation: 0.15, hue: 20 },
+  },
+  {
+    id: "drama",
+    name: "Drama",
+    filters: { ...emptyFilters(), contrast: 35, saturation: 0.5 },
+  },
+  {
+    id: "soft",
+    name: "Suave",
+    filters: { ...emptyFilters(), brightness: 0.08, contrast: -15, saturation: -0.1 },
+  },
+  {
+    id: "punch",
+    name: "Punch",
+    filters: { ...emptyFilters(), contrast: 22, saturation: 1.2 },
+  },
+  {
+    id: "fade",
+    name: "Desvanecido",
+    filters: { ...emptyFilters(), brightness: 0.1, contrast: -25, saturation: -0.3 },
+  },
+  {
+    id: "vintage",
+    name: "Vintage",
+    filters: {
+      ...emptyFilters(),
+      brightness: 0.04,
+      contrast: -10,
+      saturation: -0.4,
+      sepia: true,
+    },
+  },
+  {
+    id: "noir",
+    name: "Noir",
+    filters: { ...emptyFilters(), brightness: -0.08, contrast: 40, grayscale: true },
+  },
+  {
+    id: "bw",
+    name: "B/N alto contraste",
+    filters: { ...emptyFilters(), contrast: 25, grayscale: true },
+  },
+  {
+    id: "sunset",
+    name: "Atardecer",
+    filters: { ...emptyFilters(), brightness: 0.05, saturation: 0.4, hue: -15 },
+  },
+  {
+    id: "cinema",
+    name: "Cine",
+    filters: { ...emptyFilters(), contrast: 18, saturation: 0.25, hue: -6 },
+  },
+  {
+    id: "matte",
+    name: "Mate",
+    filters: {
+      ...emptyFilters(),
+      brightness: 0.04,
+      contrast: -22,
+      saturation: -0.05,
+    },
+  },
+];
+
+/**
+ * Build a CSS `filter:` string from a SourceFilters blob, useful for
+ * lightweight thumbnail previews (preset gallery). The Konva pipeline on
+ * the actual canvas uses different APIs, but the visual approximation
+ * here is close enough for picking a preset.
+ */
+export function filtersToCss(f: SourceFilters): string {
+  const parts: string[] = [];
+  if (f.brightness !== 0) parts.push(`brightness(${(1 + f.brightness).toFixed(3)})`);
+  if (f.contrast !== 0) parts.push(`contrast(${(1 + f.contrast / 100).toFixed(3)})`);
+  if (f.saturation !== 0) parts.push(`saturate(${(1 + f.saturation).toFixed(3)})`);
+  if (f.hue !== 0) parts.push(`hue-rotate(${f.hue}deg)`);
+  if (f.blur > 0) parts.push(`blur(${f.blur}px)`);
+  if (f.grayscale) parts.push("grayscale(1)");
+  if (f.sepia) parts.push("sepia(1)");
+  if (f.invert) parts.push("invert(1)");
+  return parts.length === 0 ? "none" : parts.join(" ");
+}
+
 /** Defensive parse of the filters blob, with sane defaults for missing fields. */
 export function parseFilters(raw: unknown): SourceFilters {
   const f = emptyFilters();

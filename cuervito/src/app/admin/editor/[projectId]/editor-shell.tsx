@@ -9,6 +9,8 @@ import {
   duplicateLayer,
   emptyDoc,
   emptyFilters,
+  FILTER_PRESETS,
+  filtersToCss,
   FONTS,
   layerLabel,
   makeEllipseLayer,
@@ -183,6 +185,10 @@ export function EditorShell({
 
   function updateFilters(patch: Partial<SourceFilters>) {
     commitDoc((d) => ({ ...d, filters: { ...d.filters, ...patch } }));
+  }
+
+  function applyFilterPreset(filters: SourceFilters) {
+    commitDoc((d) => ({ ...d, filters }));
   }
 
   function resetFilters() {
@@ -547,9 +553,10 @@ export function EditorShell({
         <PropertiesPanel
           layer={selected}
           filters={doc.filters}
-          hasSource={!!sourceUrl}
+          sourceUrl={sourceUrl}
           onChange={(patch) => selected && updateLayer(selected.id, patch)}
           onUpdateFilters={updateFilters}
+          onApplyPreset={applyFilterPreset}
           onResetFilters={resetFilters}
         />
       </div>
@@ -873,16 +880,18 @@ function PanelHeader({ label }: { label: string }) {
 function PropertiesPanel({
   layer,
   filters,
-  hasSource,
+  sourceUrl,
   onChange,
   onUpdateFilters,
+  onApplyPreset,
   onResetFilters,
 }: {
   layer: Layer | null;
   filters: SourceFilters;
-  hasSource: boolean;
+  sourceUrl: string | null;
   onChange: (patch: Partial<Layer>) => void;
   onUpdateFilters: (patch: Partial<SourceFilters>) => void;
+  onApplyPreset: (filters: SourceFilters) => void;
   onResetFilters: () => void;
 }) {
   return (
@@ -898,8 +907,8 @@ function PropertiesPanel({
     >
       {!layer ? (
         <>
-          <PanelHeader label={hasSource ? "Filtros de foto" : "Foto fuente"} />
-          {!hasSource ? (
+          <PanelHeader label={sourceUrl ? "Filtros de foto" : "Foto fuente"} />
+          {!sourceUrl ? (
             <div style={{ fontSize: 12.5, color: "var(--text-tertiary)" }}>
               Subí una foto desde la toolbar (icono <i className="ti ti-photo-up" />) para
               acceder a los filtros.
@@ -907,7 +916,9 @@ function PropertiesPanel({
           ) : (
             <FilterControls
               filters={filters}
+              sourceUrl={sourceUrl}
               onChange={onUpdateFilters}
+              onApplyPreset={onApplyPreset}
               onReset={onResetFilters}
             />
           )}
@@ -924,15 +935,27 @@ function PropertiesPanel({
 
 function FilterControls({
   filters,
+  sourceUrl,
   onChange,
+  onApplyPreset,
   onReset,
 }: {
   filters: SourceFilters;
+  sourceUrl: string;
   onChange: (patch: Partial<SourceFilters>) => void;
+  onApplyPreset: (filters: SourceFilters) => void;
   onReset: () => void;
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <PresetGallery
+        sourceUrl={sourceUrl}
+        currentFilters={filters}
+        onApply={onApplyPreset}
+      />
+
+      <hr style={{ border: "none", borderTop: "1px solid var(--border-subtle)", margin: 0 }} />
+
       <Slider
         label="Brillo"
         value={filters.brightness}
@@ -1527,6 +1550,96 @@ function Slider({
         onChange={(e) => onChange(Number(e.target.value))}
         style={{ width: "100%", accentColor: "var(--accent)" }}
       />
+    </div>
+  );
+}
+
+// ── Preset gallery ──────────────────────────────────────────────────────────
+function PresetGallery({
+  sourceUrl,
+  currentFilters,
+  onApply,
+}: {
+  sourceUrl: string;
+  currentFilters: SourceFilters;
+  onApply: (f: SourceFilters) => void;
+}) {
+  const currentCss = filtersToCss(currentFilters);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          color: "var(--text-tertiary)",
+        }}
+      >
+        Presets
+      </div>
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          overflowX: "auto",
+          padding: "2px 2px 8px",
+          scrollbarWidth: "thin",
+        }}
+      >
+        {FILTER_PRESETS.map((preset) => {
+          const cssFilter = filtersToCss(preset.filters);
+          const isActive = cssFilter === currentCss;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => onApply(preset.filters)}
+              title={preset.name}
+              style={{
+                flexShrink: 0,
+                width: 70,
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                gap: 5,
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 8,
+                  background: `url(${sourceUrl}) center/cover`,
+                  filter: cssFilter,
+                  border: isActive
+                    ? "2px solid var(--accent)"
+                    : "2px solid var(--border-subtle)",
+                  boxShadow: isActive ? "0 0 0 2px var(--accent-deep)" : "none",
+                  transition: "border-color 150ms, box-shadow 150ms",
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 10.5,
+                  color: isActive ? "var(--accent)" : "var(--text-secondary)",
+                  fontWeight: isActive ? 600 : 400,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: 68,
+                }}
+              >
+                {preset.name}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
