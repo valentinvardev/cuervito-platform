@@ -136,6 +136,7 @@ model User {
     salesAudit        AdminAction[]
     customDomains     CustomDomain[]     @relation("CustomDomainsOwner")
     editorProjects    EditorProject[]    @relation("EditorProjectOwner")
+    editorFolders     EditorFolder[]     @relation("EditorFolderOwner")
 }
 
 // =============================================================================
@@ -175,10 +176,11 @@ model Event {
 
     isPublished Boolean @default(false)
 
-    photos       Photo[]
-    sales        Sale[]
-    faceRecords  FaceRecord[]
-    discounts    Discount[]
+    photos        Photo[]
+    sales         Sale[]
+    faceRecords   FaceRecord[]
+    discounts     Discount[]
+    editorFolders EditorFolder[] @relation("EditorFolderEvent")
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -549,8 +551,32 @@ model EditorProject {
     /** True when this row is a reusable template instead of a working project.
      *  Templates show up in the "Plantillas" picker on the project list. */
     isTemplate  Boolean  @default(false)
+    /** Optional grouping into a folder. Null = lives at the root. */
+    folderId    String?
+    folder      EditorFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
 
     @@index([ownerId, isTemplate, updatedAt])
+    @@index([folderId])
+}
+
+/**
+ * Editor project folder. Optionally bound to an Event so the photographer
+ * can keep "all edits for this race" together and (future) mass-generate
+ * exports based on the linked event's photos.
+ */
+model EditorFolder {
+    id        String   @id @default(cuid())
+    ownerId   String
+    owner     User     @relation("EditorFolderOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+    name      String
+    eventId   String?
+    event     Event?   @relation("EditorFolderEvent", fields: [eventId], references: [id], onDelete: SetNull)
+    projects  EditorProject[]
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([ownerId, updatedAt])
+    @@index([eventId])
 }

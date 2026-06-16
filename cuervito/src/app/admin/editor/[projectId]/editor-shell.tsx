@@ -25,7 +25,12 @@ import {
   type TextLayer,
 } from "~/lib/editor-types";
 
-import { renameProject, saveAsTemplate, saveProjectDoc } from "../actions";
+import {
+  renameProject,
+  saveAsTemplate,
+  saveProjectDoc,
+  updateProjectMetadata,
+} from "../actions";
 
 const EditorCanvas = dynamic(() => import("./editor-canvas"), {
   ssr: false,
@@ -612,6 +617,12 @@ export function EditorShell({
           onUpdateFilters={updateFilters}
           onApplyPreset={applyFilterPreset}
           onResetFilters={resetFilters}
+          onSaveMetadata={async (next) => {
+            // Update local state immediately so the canvas re-renders with the
+            // new values, then persist to the DB.
+            setMetadata(next);
+            await updateProjectMetadata(projectId, next).catch(() => undefined);
+          }}
         />
       </div>
     </div>
@@ -941,6 +952,7 @@ function PropertiesPanel({
   onUpdateFilters,
   onApplyPreset,
   onResetFilters,
+  onSaveMetadata,
 }: {
   layer: Layer | null;
   filters: SourceFilters;
@@ -951,7 +963,10 @@ function PropertiesPanel({
   onUpdateFilters: (patch: Partial<SourceFilters>) => void;
   onApplyPreset: (filters: SourceFilters) => void;
   onResetFilters: () => void;
+  onSaveMetadata: (next: ProjectMetadata) => Promise<void> | void;
 }) {
+  const [metaEditOpen, setMetaEditOpen] = useState(false);
+
   return (
     <aside
       style={{
@@ -965,7 +980,21 @@ function PropertiesPanel({
     >
       {!layer ? (
         <>
-          <MetadataPreview metadata={metadata} hasSource={!!sourceUrl} />
+          <MetadataPreview
+            metadata={metadata}
+            hasSource={!!sourceUrl}
+            onEdit={() => setMetaEditOpen(true)}
+          />
+          {metaEditOpen && (
+            <MetadataEditor
+              metadata={metadata}
+              onClose={() => setMetaEditOpen(false)}
+              onSave={async (next) => {
+                await onSaveMetadata(next);
+                setMetaEditOpen(false);
+              }}
+            />
+          )}
           <PanelHeader label={sourceUrl ? "Filtros de foto" : "Foto fuente"} />
           {!sourceUrl ? (
             <div style={{ fontSize: 12.5, color: "var(--text-tertiary)" }}>
@@ -997,9 +1026,11 @@ function PropertiesPanel({
 function MetadataPreview({
   metadata,
   hasSource,
+  onEdit,
 }: {
   metadata: ProjectMetadata;
   hasSource: boolean;
+  onEdit: () => void;
 }) {
   if (!hasSource) return null;
   const hasAny =
@@ -1018,7 +1049,7 @@ function MetadataPreview({
   if (!hasAny) {
     return (
       <>
-        <PanelHeader label="Metadata de la foto" />
+        <MetadataHeader onEdit={onEdit} />
         <div
           style={{
             padding: "10px 12px",
@@ -1044,9 +1075,25 @@ function MetadataPreview({
             <i className="ti ti-alert-triangle" />
             Sin EXIF
           </div>
-          Esta foto no tiene metadata embebida. Las variables tipo{" "}
+          Esta foto no tiene metadata embebida. Podés{" "}
+          <button
+            type="button"
+            onClick={onEdit}
+            style={{
+              background: "transparent",
+              border: "none",
+              padding: 0,
+              color: "var(--accent)",
+              cursor: "pointer",
+              textDecoration: "underline",
+              font: "inherit",
+            }}
+          >
+            cargarla a mano
+          </button>{" "}
+          o las variables como{" "}
           <code style={{ fontFamily: "var(--font-mono)" }}>{"{{ciudad}}"}</code> se
-          van a ver como texto literal hasta que subas una foto con EXIF.
+          van a ver como texto literal.
           <div
             style={{
               marginTop: 6,
@@ -1054,9 +1101,8 @@ function MetadataPreview({
               color: "var(--text-tertiary)",
             }}
           >
-            Tip: las fotos perdedidas vía WhatsApp / Instagram / capturas de
-            pantalla no tienen EXIF. Probá con una foto del rollo del celular
-            sin compartirla por mensajería.
+            Tip: las fotos por WhatsApp / Instagram / capturas pierden el EXIF.
+            Probá con una del rollo sin pasar por mensajería.
           </div>
         </div>
       </>
@@ -1065,7 +1111,7 @@ function MetadataPreview({
 
   return (
     <>
-      <PanelHeader label="Metadata de la foto" />
+      <MetadataHeader onEdit={onEdit} />
       <div
         style={{
           display: "flex",
@@ -2118,4 +2164,420 @@ function EditorChromeStyles() {
       }
     `}</style>
   );
+}
+
+// ── Metadata header (small "Editar" link next to the panel title) ───────────
+function MetadataHeader({ onEdit }: { onEdit: () => void }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "baseline",
+        padding: "4px 0 10px",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 10.5,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: "var(--text-tertiary)",
+        }}
+      >
+        Metadata de la foto
+      </span>
+      <button
+        type="button"
+        onClick={onEdit}
+        title="Editar a mano. Lo que tipees pisa lo que vino del EXIF."
+        style={{
+          background: "transparent",
+          border: "none",
+          color: "var(--accent)",
+          fontSize: 11,
+          fontWeight: 500,
+          cursor: "pointer",
+          padding: 0,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 3,
+        }}
+      >
+        <i className="ti ti-pencil" />
+        Editar
+      </button>
+    </div>
+  );
+}
+
+// ── Metadata editor (inline form for manual editing) ────────────────────────
+function MetadataEditor({
+  metadata,
+  onClose,
+  onSave,
+}: {
+  metadata: ProjectMetadata;
+  onClose: () => void;
+  onSave: (next: ProjectMetadata) => Promise<void> | void;
+}) {
+  const initialDate = metadata.takenAt
+    ? toLocalDateInput(new Date(metadata.takenAt))
+    : "";
+  const initialTime = metadata.takenAt
+    ? toLocalTimeInput(new Date(metadata.takenAt))
+    : "";
+
+  const [date, setDate] = useState(initialDate);
+  const [time, setTime] = useState(initialTime);
+  const [city, setCity] = useState(metadata.city ?? "");
+  const [region, setRegion] = useState(metadata.region ?? "");
+  const [country, setCountry] = useState(metadata.country ?? "");
+  const [camera, setCamera] = useState(metadata.camera ?? "");
+  const [lens, setLens] = useState(metadata.lens ?? "");
+  const [aperture, setAperture] = useState(metadata.aperture ?? "");
+  const [exposureTime, setExposureTime] = useState(metadata.exposureTime ?? "");
+  const [iso, setIso] = useState(
+    metadata.iso !== undefined ? String(metadata.iso) : "",
+  );
+  const [focalLength, setFocalLength] = useState(metadata.focalLength ?? "");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    let takenAt: string | undefined;
+    if (date) {
+      const dt = new Date(`${date}T${time || "00:00"}:00`);
+      if (!isNaN(dt.getTime())) takenAt = dt.toISOString();
+    }
+    const next: ProjectMetadata = {
+      ...(takenAt ? { takenAt } : {}),
+      ...(city.trim() ? { city: city.trim() } : {}),
+      ...(region.trim() ? { region: region.trim() } : {}),
+      ...(country.trim() ? { country: country.trim() } : {}),
+      ...(camera.trim() ? { camera: camera.trim() } : {}),
+      ...(lens.trim() ? { lens: lens.trim() } : {}),
+      ...(aperture.trim() ? { aperture: aperture.trim() } : {}),
+      ...(exposureTime.trim() ? { exposureTime: exposureTime.trim() } : {}),
+      ...(focalLength.trim() ? { focalLength: focalLength.trim() } : {}),
+      ...(iso.trim() && !isNaN(Number(iso))
+        ? { iso: Math.round(Number(iso)) }
+        : {}),
+      // Preserve GPS coords — we don't expose them in the form.
+      ...(metadata.lat !== undefined ? { lat: metadata.lat } : {}),
+      ...(metadata.lon !== undefined ? { lon: metadata.lon } : {}),
+    };
+    try {
+      await onSave(next);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !saving) onClose();
+      }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(8,6,5,0.72)",
+        backdropFilter: "blur(6px)",
+        zIndex: 200,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
+      }}
+    >
+      <div
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-default)",
+          borderRadius: 14,
+          padding: 22,
+          width: "100%",
+          maxWidth: 460,
+          maxHeight: "85vh",
+          overflowY: "auto",
+          boxShadow: "0 30px 80px rgba(0,0,0,0.55)",
+        }}
+      >
+        <header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            marginBottom: 14,
+          }}
+        >
+          <h3
+            style={{
+              fontFamily: "var(--font-display)",
+              fontWeight: 700,
+              fontSize: 17,
+              letterSpacing: "-0.015em",
+            }}
+          >
+            Editar metadata
+          </h3>
+          <button
+            type="button"
+            onClick={() => !saving && onClose()}
+            aria-label="Cerrar"
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 7,
+              background: "transparent",
+              border: "1px solid var(--border-subtle)",
+              color: "var(--text-secondary)",
+              cursor: saving ? "not-allowed" : "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <i className="ti ti-x" />
+          </button>
+        </header>
+
+        <p
+          style={{
+            fontSize: 12,
+            color: "var(--text-tertiary)",
+            marginBottom: 14,
+            lineHeight: 1.5,
+          }}
+        >
+          Lo que tipees acá pisa lo que vino del EXIF. Dejar un campo vacío
+          deja la variable sin valor (se ve como token literal).
+        </p>
+
+        <MetaSection label="Cuándo">
+          <MetaRow>
+            <MetaField label="Fecha">
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                style={metaInputStyle}
+              />
+            </MetaField>
+            <MetaField label="Hora">
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                style={metaInputStyle}
+              />
+            </MetaField>
+          </MetaRow>
+        </MetaSection>
+
+        <MetaSection label="Dónde">
+          <MetaField label="Ciudad">
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Córdoba"
+              style={metaInputStyle}
+            />
+          </MetaField>
+          <MetaRow>
+            <MetaField label="Provincia">
+              <input
+                type="text"
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                placeholder="Córdoba"
+                style={metaInputStyle}
+              />
+            </MetaField>
+            <MetaField label="País">
+              <input
+                type="text"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="Argentina"
+                style={metaInputStyle}
+              />
+            </MetaField>
+          </MetaRow>
+        </MetaSection>
+
+        <MetaSection label="Cámara">
+          <MetaField label="Modelo">
+            <input
+              type="text"
+              value={camera}
+              onChange={(e) => setCamera(e.target.value)}
+              placeholder="Canon EOS R5"
+              style={metaInputStyle}
+            />
+          </MetaField>
+          <MetaField label="Lente">
+            <input
+              type="text"
+              value={lens}
+              onChange={(e) => setLens(e.target.value)}
+              placeholder="RF 70-200mm F2.8 L IS USM"
+              style={metaInputStyle}
+            />
+          </MetaField>
+          <MetaRow>
+            <MetaField label="Apertura">
+              <input
+                type="text"
+                value={aperture}
+                onChange={(e) => setAperture(e.target.value)}
+                placeholder="f/2.8"
+                style={metaInputStyle}
+              />
+            </MetaField>
+            <MetaField label="Exposición">
+              <input
+                type="text"
+                value={exposureTime}
+                onChange={(e) => setExposureTime(e.target.value)}
+                placeholder="1/200"
+                style={metaInputStyle}
+              />
+            </MetaField>
+          </MetaRow>
+          <MetaRow>
+            <MetaField label="ISO">
+              <input
+                type="number"
+                value={iso}
+                onChange={(e) => setIso(e.target.value)}
+                placeholder="400"
+                style={metaInputStyle}
+              />
+            </MetaField>
+            <MetaField label="Focal">
+              <input
+                type="text"
+                value={focalLength}
+                onChange={(e) => setFocalLength(e.target.value)}
+                placeholder="85mm"
+                style={metaInputStyle}
+              />
+            </MetaField>
+          </MetaRow>
+        </MetaSection>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 8,
+            marginTop: 16,
+          }}
+        >
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={onClose}
+            disabled={saving}
+            style={{ height: 32, padding: "0 14px", fontSize: 13 }}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleSave}
+            disabled={saving}
+            style={{ height: 32, padding: "0 14px", fontSize: 13 }}
+          >
+            {saving ? "Guardando…" : "Guardar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MetaSection({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          color: "var(--text-tertiary)",
+          marginBottom: 8,
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function MetaRow({ children }: { children: React.ReactNode }) {
+  return <div style={{ display: "flex", gap: 8 }}>{children}</div>;
+}
+
+function MetaField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+        flex: 1,
+        minWidth: 0,
+      }}
+    >
+      <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+const metaInputStyle: React.CSSProperties = {
+  width: "100%",
+  background: "var(--bg-base)",
+  border: "1px solid var(--border-subtle)",
+  color: "var(--text-primary)",
+  padding: "7px 10px",
+  borderRadius: 7,
+  fontFamily: "inherit",
+  fontSize: 12.5,
+  outline: "none",
+};
+
+function toLocalDateInput(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function toLocalTimeInput(d: Date): string {
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
 }
