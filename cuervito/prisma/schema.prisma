@@ -542,8 +542,15 @@ model EditorProject {
     /** Filters applied to the source/background photo (brightness, contrast,
      *  saturation, blur, etc). Shape lives in TS (SourceFilters). */
     filters     Json?
+    /** EXIF + reverse-geocoded metadata for the source photo (GPS → city,
+     *  takenAt, camera). Used to autofill template placeholders. Shape
+     *  lives in TS (ProjectMetadata). */
+    metadata    Json?
+    /** True when this row is a reusable template instead of a working project.
+     *  Templates show up in the "Plantillas" picker on the project list. */
+    isTemplate  Boolean  @default(false)
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
 
-    @@index([ownerId, updatedAt])
+    @@index([ownerId, isTemplate, updatedAt])
 }

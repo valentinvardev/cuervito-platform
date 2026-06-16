@@ -33,6 +33,84 @@ export async function createProject(): Promise<void> {
   redirect(`/admin/editor/${project.id}`);
 }
 
+/**
+ * Create a new project pre-populated from a template. Copies the template's
+ * layers + filters + canvas dimensions; the new project starts without a
+ * source photo so the user uploads one and the placeholders autofill.
+ */
+export async function createProjectFromTemplate(templateId: string): Promise<void> {
+  const userId = await adminGuard();
+  const tpl = await db.editorProject.findUnique({
+    where: { id: templateId },
+    select: {
+      ownerId: true,
+      isTemplate: true,
+      name: true,
+      layers: true,
+      filters: true,
+      width: true,
+      height: true,
+    },
+  });
+  if (!tpl || tpl.ownerId !== userId || !tpl.isTemplate) {
+    throw new Error("Plantilla no encontrada");
+  }
+  const project = await db.editorProject.create({
+    data: {
+      ownerId: userId,
+      name: `${tpl.name} — copia`,
+      sourceKey: null,
+      layers: (tpl.layers ?? []) as unknown as object,
+      filters: (tpl.filters ?? emptyFilters()) as unknown as object,
+      width: tpl.width,
+      height: tpl.height,
+      isTemplate: false,
+    },
+    select: { id: true },
+  });
+  revalidatePath("/admin/editor");
+  redirect(`/admin/editor/${project.id}`);
+}
+
+/**
+ * Snapshot the current project as a reusable template. Strips the source
+ * photo + extracted metadata so the template carries only the design.
+ */
+export async function saveAsTemplate(
+  projectId: string,
+  name: string,
+): Promise<{ error: string | null }> {
+  const userId = await adminGuard();
+  const trimmed = name.trim().slice(0, 120) || "Plantilla";
+  const src = await db.editorProject.findUnique({
+    where: { id: projectId },
+    select: {
+      ownerId: true,
+      layers: true,
+      filters: true,
+      width: true,
+      height: true,
+    },
+  });
+  if (!src || src.ownerId !== userId) {
+    return { error: "Proyecto no encontrado." };
+  }
+  await db.editorProject.create({
+    data: {
+      ownerId: userId,
+      name: trimmed,
+      sourceKey: null,
+      layers: (src.layers ?? []) as unknown as object,
+      filters: (src.filters ?? emptyFilters()) as unknown as object,
+      width: src.width,
+      height: src.height,
+      isTemplate: true,
+    },
+  });
+  revalidatePath("/admin/editor");
+  return { error: null };
+}
+
 export async function renameProject(
   projectId: string,
   name: string,

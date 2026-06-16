@@ -17,13 +17,15 @@ import {
   makeImageLayer,
   makeRectLayer,
   makeTextLayer,
+  PLACEHOLDERS,
   type EditorDoc,
   type Layer,
+  type ProjectMetadata,
   type SourceFilters,
   type TextLayer,
 } from "~/lib/editor-types";
 
-import { renameProject, saveProjectDoc } from "../actions";
+import { renameProject, saveAsTemplate, saveProjectDoc } from "../actions";
 
 const EditorCanvas = dynamic(() => import("./editor-canvas"), {
   ssr: false,
@@ -49,13 +51,17 @@ const HISTORY_CAP = 80;
 export function EditorShell({
   projectId,
   projectName,
+  isTemplate,
   initialDoc,
   initialSourceUrl,
+  initialMetadata,
 }: {
   projectId: string;
   projectName: string;
+  isTemplate: boolean;
   initialDoc: EditorDoc;
   initialSourceUrl: string | null;
+  initialMetadata: ProjectMetadata;
 }) {
   // ── History ─────────────────────────────────────────────────────────────
   const [hist, setHist] = useState<{ stack: EditorDoc[]; idx: number }>({
@@ -91,6 +97,7 @@ export function EditorShell({
 
   // ── UI state ───────────────────────────────────────────────────────────
   const [sourceUrl, setSourceUrl] = useState<string | null>(initialSourceUrl);
+  const [metadata, setMetadata] = useState<ProjectMetadata>(initialMetadata);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [name, setName] = useState(projectName);
   const [savedName, setSavedName] = useState(projectName);
@@ -98,6 +105,9 @@ export function EditorShell({
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [shapeMenuOpen, setShapeMenuOpen] = useState(false);
+  const [tplModalOpen, setTplModalOpen] = useState(false);
+  const [tplName, setTplName] = useState("");
+  const [tplSaving, setTplSaving] = useState(false);
   const shapeMenuRef = useRef<HTMLDivElement | null>(null);
 
   const sourceInputRef = useRef<HTMLInputElement>(null);
@@ -260,10 +270,12 @@ export function EditorShell({
         url?: string;
         width?: number;
         height?: number;
+        metadata?: ProjectMetadata;
         error?: string;
       };
       if (!res.ok || !data.ok) throw new Error(data.error ?? "Subida fallida");
       setSourceUrl(data.url ?? null);
+      if (data.metadata) setMetadata(data.metadata);
       commitDoc((d) => ({
         ...d,
         sourceKey: data.key ?? null,
@@ -274,6 +286,21 @@ export function EditorShell({
       setUploadError(err instanceof Error ? err.message : "Error de red.");
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleSaveAsTemplate() {
+    const trimmed = tplName.trim() || savedName;
+    setTplSaving(true);
+    try {
+      const res = await saveAsTemplate(projectId, trimmed);
+      if (res.error) throw new Error(res.error);
+      setTplModalOpen(false);
+      setTplName("");
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Error al guardar plantilla");
+    } finally {
+      setTplSaving(false);
     }
   }
 
@@ -507,6 +534,16 @@ export function EditorShell({
         />
 
         <Sep />
+        {!isTemplate && (
+          <IconBtn
+            icon="ti-template"
+            title="Guardar como plantilla"
+            onClick={() => {
+              setTplName(savedName);
+              setTplModalOpen(true);
+            }}
+          />
+        )}
         <IconBtn icon="ti-eraser" title="Vaciar canvas" onClick={resetCanvas} />
         <button
           type="button"
@@ -518,6 +555,16 @@ export function EditorShell({
           Exportar PNG
         </button>
       </header>
+
+      {tplModalOpen && (
+        <TemplateModal
+          name={tplName}
+          onChange={setTplName}
+          onCancel={() => setTplModalOpen(false)}
+          onSave={handleSaveAsTemplate}
+          saving={tplSaving}
+        />
+      )}
 
       {uploadError && (
         <div
@@ -547,6 +594,8 @@ export function EditorShell({
         <EditorCanvas
           doc={doc}
           sourceUrl={sourceUrl}
+          metadata={metadata}
+          projectName={savedName}
           selectedId={selectedId}
           onSelect={setSelectedId}
           onUpdateLayer={updateLayer}
@@ -557,6 +606,8 @@ export function EditorShell({
           layer={selected}
           filters={doc.filters}
           sourceUrl={sourceUrl}
+          metadata={metadata}
+          isTemplate={isTemplate}
           onChange={(patch) => selected && updateLayer(selected.id, patch)}
           onUpdateFilters={updateFilters}
           onApplyPreset={applyFilterPreset}
@@ -884,6 +935,8 @@ function PropertiesPanel({
   layer,
   filters,
   sourceUrl,
+  metadata,
+  isTemplate,
   onChange,
   onUpdateFilters,
   onApplyPreset,
@@ -892,6 +945,8 @@ function PropertiesPanel({
   layer: Layer | null;
   filters: SourceFilters;
   sourceUrl: string | null;
+  metadata: ProjectMetadata;
+  isTemplate: boolean;
   onChange: (patch: Partial<Layer>) => void;
   onUpdateFilters: (patch: Partial<SourceFilters>) => void;
   onApplyPreset: (filters: SourceFilters) => void;
@@ -910,11 +965,13 @@ function PropertiesPanel({
     >
       {!layer ? (
         <>
+          <MetadataPreview metadata={metadata} hasSource={!!sourceUrl} />
           <PanelHeader label={sourceUrl ? "Filtros de foto" : "Foto fuente"} />
           {!sourceUrl ? (
             <div style={{ fontSize: 12.5, color: "var(--text-tertiary)" }}>
-              Subí una foto desde la toolbar (icono <i className="ti ti-photo-up" />) para
-              acceder a los filtros.
+              {isTemplate
+                ? "Esta es una plantilla. Las fotos se aplican al usarla en un proyecto nuevo."
+                : "Subí una foto desde la toolbar para acceder a los filtros."}
             </div>
           ) : (
             <FilterControls
@@ -933,6 +990,202 @@ function PropertiesPanel({
         </>
       )}
     </aside>
+  );
+}
+
+// ── Metadata preview ────────────────────────────────────────────────────────
+function MetadataPreview({
+  metadata,
+  hasSource,
+}: {
+  metadata: ProjectMetadata;
+  hasSource: boolean;
+}) {
+  const hasAny =
+    metadata.city ||
+    metadata.region ||
+    metadata.country ||
+    metadata.takenAt ||
+    metadata.camera;
+  if (!hasSource || !hasAny) return null;
+  const date = metadata.takenAt ? new Date(metadata.takenAt) : null;
+  return (
+    <>
+      <PanelHeader label="Metadata de la foto" />
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          padding: "10px 12px",
+          background: "var(--bg-base)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: 8,
+          marginBottom: 18,
+          fontSize: 12,
+          color: "var(--text-secondary)",
+        }}
+      >
+        {(metadata.city || metadata.region || metadata.country) && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <i className="ti ti-map-pin" style={{ color: "var(--accent)" }} />
+            {[metadata.city, metadata.region, metadata.country]
+              .filter(Boolean)
+              .join(", ")}
+          </div>
+        )}
+        {date && !isNaN(date.getTime()) && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <i className="ti ti-calendar" style={{ color: "var(--accent)" }} />
+            {date.toLocaleString("es-AR", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </div>
+        )}
+        {metadata.camera && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <i className="ti ti-camera" style={{ color: "var(--accent)" }} />
+            {metadata.camera}
+          </div>
+        )}
+        <div
+          style={{
+            fontSize: 10.5,
+            color: "var(--text-tertiary)",
+            marginTop: 4,
+            paddingTop: 6,
+            borderTop: "1px solid var(--border-subtle)",
+          }}
+        >
+          Usá <code style={{ fontFamily: "var(--font-mono)" }}>{"{{ciudad}}"}</code>,{" "}
+          <code style={{ fontFamily: "var(--font-mono)" }}>{"{{fecha}}"}</code>… en
+          los textos para autocompletar.
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Save-as-template modal ──────────────────────────────────────────────────
+function TemplateModal({
+  name,
+  onChange,
+  onCancel,
+  onSave,
+  saving,
+}: {
+  name: string;
+  onChange: (v: string) => void;
+  onCancel: () => void;
+  onSave: () => void;
+  saving: boolean;
+}) {
+  return (
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !saving) onCancel();
+      }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(8,6,5,0.72)",
+        backdropFilter: "blur(6px)",
+        zIndex: 200,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
+      }}
+    >
+      <div
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-default)",
+          borderRadius: 14,
+          padding: 22,
+          width: "100%",
+          maxWidth: 380,
+          boxShadow: "0 30px 80px rgba(0,0,0,0.55)",
+        }}
+      >
+        <h3
+          style={{
+            fontFamily: "var(--font-display)",
+            fontWeight: 700,
+            fontSize: 17,
+            letterSpacing: "-0.015em",
+            marginBottom: 4,
+          }}
+        >
+          Guardar como plantilla
+        </h3>
+        <p
+          style={{
+            fontSize: 12.5,
+            color: "var(--text-tertiary)",
+            marginBottom: 16,
+            lineHeight: 1.5,
+          }}
+        >
+          Se guarda una copia con los layers + filtros + dimensiones, sin la foto
+          fuente. La vas a poder reusar al crear un proyecto nuevo.
+        </p>
+        <label
+          style={{
+            display: "block",
+            fontFamily: "var(--font-mono)",
+            fontSize: 10,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "var(--text-tertiary)",
+            marginBottom: 5,
+          }}
+        >
+          Nombre
+        </label>
+        <input
+          autoFocus
+          value={name}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Nombre de la plantilla"
+          style={{
+            width: "100%",
+            padding: "9px 12px",
+            background: "var(--bg-base)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: 8,
+            color: "var(--text-primary)",
+            fontSize: 13,
+            outline: "none",
+            marginBottom: 16,
+          }}
+        />
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={onCancel}
+            disabled={saving}
+            style={{ height: 32, padding: "0 14px", fontSize: 13 }}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={onSave}
+            disabled={saving}
+            style={{ height: 32, padding: "0 14px", fontSize: 13 }}
+          >
+            {saving ? "Guardando…" : "Guardar"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1090,6 +1343,31 @@ function LayerProperties({
               rows={3}
               style={inputStyle}
             />
+          </Field>
+
+          <Field label="Insertar metadata">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {PLACEHOLDERS.map((p) => (
+                <button
+                  key={p.token}
+                  type="button"
+                  onClick={() => onChange({ text: layer.text + p.token })}
+                  title={`Inserta ${p.token} en el texto. Se reemplaza al renderizar.`}
+                  style={{
+                    padding: "3px 8px",
+                    borderRadius: 999,
+                    background: "var(--bg-base)",
+                    border: "1px solid var(--border-subtle)",
+                    color: "var(--text-secondary)",
+                    fontSize: 11,
+                    cursor: "pointer",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </Field>
 
           <Field label="Tipografía">

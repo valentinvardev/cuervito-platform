@@ -3,6 +3,7 @@ import sharp from "sharp";
 
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
+import { extractMetadata } from "~/server/editor-metadata";
 import { editorLayerKey, editorSourceKey, putS3Object } from "~/server/s3";
 import { resolveMediaUrl } from "~/server/media";
 
@@ -123,10 +124,30 @@ export async function POST(req: NextRequest) {
   }
 
   if (kind === "source") {
-    // Adopt the photo's aspect as the canvas dimensions so it fills it.
+    // Pull EXIF + reverse-geocoded metadata from the original (not the
+    // sharp-encoded JPEG, since we may have stripped EXIF on re-encode).
+    const metadata = await extractMetadata(raw).catch(() => ({}));
+
+    // Adopt the photo's aspect as the canvas dimensions so it fills it,
+    // and persist the metadata for template placeholders to read.
     await db.editorProject.update({
       where: { id: projectId },
-      data: { sourceKey: key, width, height },
+      data: {
+        sourceKey: key,
+        width,
+        height,
+        metadata: metadata as unknown as object,
+      },
+    });
+
+    const url = await resolveMediaUrl(key);
+    return NextResponse.json({
+      ok: true,
+      key,
+      url,
+      width,
+      height,
+      metadata,
     });
   }
 

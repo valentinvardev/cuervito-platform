@@ -13,11 +13,21 @@ import {
 import useImage from "use-image";
 import Konva from "konva";
 
-import type { EditorDoc, ImageLayer, Layer, SourceFilters, TextLayer } from "~/lib/editor-types";
+import {
+  applyPlaceholders,
+  type EditorDoc,
+  type ImageLayer,
+  type Layer,
+  type ProjectMetadata,
+  type SourceFilters,
+  type TextLayer,
+} from "~/lib/editor-types";
 
 type Props = {
   doc: EditorDoc;
   sourceUrl: string | null;
+  metadata: ProjectMetadata;
+  projectName: string;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onUpdateLayer: (id: string, patch: Partial<Layer>) => void;
@@ -67,6 +77,8 @@ function ImageLayerNode({
 export default function EditorCanvas({
   doc,
   sourceUrl,
+  metadata,
+  projectName,
   selectedId,
   onSelect,
   onUpdateLayer,
@@ -279,10 +291,13 @@ export default function EditorCanvas({
                   const styleParts: string[] = [];
                   if (t.italic) styleParts.push("italic");
                   styleParts.push(String(t.fontWeight));
+                  // Substitute {{ciudad}}, {{fecha}}, ... with the project's
+                  // extracted metadata so templates render with live data.
+                  const renderedText = applyPlaceholders(t.text, metadata, projectName);
                   return (
                     <Text
                       {...commonProps}
-                      text={t.text}
+                      text={renderedText}
                       fontFamily={t.fontFamily}
                       fontSize={t.fontSize}
                       fontStyle={styleParts.join(" ")}

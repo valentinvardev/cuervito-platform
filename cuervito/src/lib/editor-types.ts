@@ -98,6 +98,86 @@ export function emptyDoc(width = 1080, height = 1080): EditorDoc {
   return { width, height, sourceKey: null, layers: [], filters: emptyFilters() };
 }
 
+// ─── Project metadata (EXIF + geocoding) ────────────────────────────────────
+/**
+ * Extracted from the source photo and used to autofill template placeholders.
+ * All fields optional — a photo may have no GPS, no EXIF date, etc.
+ */
+export type ProjectMetadata = {
+  /** ISO date the photo was taken (from EXIF DateTimeOriginal). */
+  takenAt?: string;
+  lat?: number;
+  lon?: number;
+  /** Reverse-geocoded place name, in order of granularity. */
+  city?: string;
+  region?: string;
+  country?: string;
+  /** Camera make + model, e.g. "Canon EOS R5". */
+  camera?: string;
+};
+
+/** Defensive parse for the metadata JSON blob. */
+export function parseMetadata(raw: unknown): ProjectMetadata {
+  if (!raw || typeof raw !== "object") return {};
+  const r = raw as Record<string, unknown>;
+  const out: ProjectMetadata = {};
+  if (typeof r.takenAt === "string") out.takenAt = r.takenAt;
+  if (typeof r.lat === "number") out.lat = r.lat;
+  if (typeof r.lon === "number") out.lon = r.lon;
+  if (typeof r.city === "string") out.city = r.city;
+  if (typeof r.region === "string") out.region = r.region;
+  if (typeof r.country === "string") out.country = r.country;
+  if (typeof r.camera === "string") out.camera = r.camera;
+  return out;
+}
+
+/**
+ * Placeholder substitution. Templates contain `{{ciudad}}`, `{{fecha}}`,
+ * etc. in their text layers; we replace those with the project's actual
+ * metadata when rendering. Tokens missing values render as empty strings
+ * so a template gracefully degrades when EXIF data isn't available.
+ */
+export const PLACEHOLDERS = [
+  { token: "{{ciudad}}", label: "Ciudad", field: "city" as const },
+  { token: "{{provincia}}", label: "Provincia", field: "region" as const },
+  { token: "{{pais}}", label: "País", field: "country" as const },
+  { token: "{{fecha}}", label: "Fecha", field: "date" as const },
+  { token: "{{hora}}", label: "Hora", field: "time" as const },
+  { token: "{{camara}}", label: "Cámara", field: "camera" as const },
+  { token: "{{proyecto}}", label: "Proyecto", field: "projectName" as const },
+] as const;
+
+export function applyPlaceholders(
+  text: string,
+  meta: ProjectMetadata,
+  projectName?: string,
+): string {
+  let dateStr = "";
+  let timeStr = "";
+  if (meta.takenAt) {
+    const d = new Date(meta.takenAt);
+    if (!isNaN(d.getTime())) {
+      dateStr = d.toLocaleDateString("es-AR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+      timeStr = d.toLocaleTimeString("es-AR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+  }
+  return text
+    .replace(/\{\{ciudad\}\}/gi, meta.city ?? "")
+    .replace(/\{\{provincia\}\}/gi, meta.region ?? "")
+    .replace(/\{\{pais\}\}/gi, meta.country ?? "")
+    .replace(/\{\{fecha\}\}/gi, dateStr)
+    .replace(/\{\{hora\}\}/gi, timeStr)
+    .replace(/\{\{camara\}\}/gi, meta.camera ?? "")
+    .replace(/\{\{proyecto\}\}/gi, projectName ?? "");
+}
+
 // ─── Font catalog ────────────────────────────────────────────────────────────
 export type FontDef = {
   /** Display name in the picker. */

@@ -7,6 +7,7 @@ import {
   buildGoogleFontsHref,
   parseFilters,
   parseLayers,
+  parseMetadata,
   type EditorDoc,
   type ImageLayer,
   type Layer,
@@ -30,6 +31,8 @@ export default async function EditorProjectPage(props: {
       sourceKey: true,
       layers: true,
       filters: true,
+      metadata: true,
+      isTemplate: true,
       width: true,
       height: true,
     },
@@ -73,8 +76,10 @@ export default async function EditorProjectPage(props: {
       <EditorShell
         projectId={project.id}
         projectName={project.name}
+        isTemplate={project.isTemplate}
         initialDoc={doc}
         initialSourceUrl={sourceUrl}
+        initialMetadata={parseMetadata(project.metadata)}
       />
     </>
   );
