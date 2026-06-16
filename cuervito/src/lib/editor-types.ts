@@ -104,16 +104,30 @@ export function emptyDoc(width = 1080, height = 1080): EditorDoc {
  * All fields optional — a photo may have no GPS, no EXIF date, etc.
  */
 export type ProjectMetadata = {
+  // When + where
   /** ISO date the photo was taken (from EXIF DateTimeOriginal). */
   takenAt?: string;
   lat?: number;
   lon?: number;
-  /** Reverse-geocoded place name, in order of granularity. */
+  /** Reverse-geocoded place names, in order of granularity. */
   city?: string;
   region?: string;
   country?: string;
-  /** Camera make + model, e.g. "Canon EOS R5". */
+
+  // Camera body + lens
+  /** Combined make + model, e.g. "Canon EOS R5". */
   camera?: string;
+  lens?: string;
+
+  // Shot settings (EXIF)
+  /** Shutter speed as printable fraction, e.g. "1/200". */
+  exposureTime?: string;
+  /** Aperture, e.g. "f/2.8". */
+  aperture?: string;
+  /** ISO sensitivity, e.g. 400. */
+  iso?: number;
+  /** Focal length in mm, e.g. "85mm". */
+  focalLength?: string;
 };
 
 /** Defensive parse for the metadata JSON blob. */
@@ -128,6 +142,11 @@ export function parseMetadata(raw: unknown): ProjectMetadata {
   if (typeof r.region === "string") out.region = r.region;
   if (typeof r.country === "string") out.country = r.country;
   if (typeof r.camera === "string") out.camera = r.camera;
+  if (typeof r.lens === "string") out.lens = r.lens;
+  if (typeof r.exposureTime === "string") out.exposureTime = r.exposureTime;
+  if (typeof r.aperture === "string") out.aperture = r.aperture;
+  if (typeof r.iso === "number") out.iso = r.iso;
+  if (typeof r.focalLength === "string") out.focalLength = r.focalLength;
   return out;
 }
 
@@ -136,46 +155,155 @@ export function parseMetadata(raw: unknown): ProjectMetadata {
  * etc. in their text layers; we replace those with the project's actual
  * metadata when rendering. Tokens missing values render as empty strings
  * so a template gracefully degrades when EXIF data isn't available.
+ *
+ * Grouped by category so the properties panel can render them in sections.
  */
-export const PLACEHOLDERS = [
-  { token: "{{ciudad}}", label: "Ciudad", field: "city" as const },
-  { token: "{{provincia}}", label: "Provincia", field: "region" as const },
-  { token: "{{pais}}", label: "País", field: "country" as const },
-  { token: "{{fecha}}", label: "Fecha", field: "date" as const },
-  { token: "{{hora}}", label: "Hora", field: "time" as const },
-  { token: "{{camara}}", label: "Cámara", field: "camera" as const },
-  { token: "{{proyecto}}", label: "Proyecto", field: "projectName" as const },
+export type PlaceholderGroup = {
+  group: "Lugar" | "Tiempo" | "Cámara" | "Otro";
+  items: { token: string; label: string }[];
+};
+
+export const PLACEHOLDER_GROUPS: readonly PlaceholderGroup[] = [
+  {
+    group: "Lugar",
+    items: [
+      { token: "{{ciudad}}", label: "Ciudad" },
+      { token: "{{provincia}}", label: "Provincia" },
+      { token: "{{pais}}", label: "País" },
+      { token: "{{lugar}}", label: "Ciudad, País" },
+      { token: "{{coords}}", label: "Coordenadas" },
+    ],
+  },
+  {
+    group: "Tiempo",
+    items: [
+      { token: "{{fecha}}", label: "Fecha" },
+      { token: "{{fechacorta}}", label: "Fecha corta" },
+      { token: "{{hora}}", label: "Hora" },
+      { token: "{{dia}}", label: "Día" },
+      { token: "{{mes}}", label: "Mes" },
+      { token: "{{año}}", label: "Año" },
+      { token: "{{semana}}", label: "Día semana" },
+    ],
+  },
+  {
+    group: "Cámara",
+    items: [
+      { token: "{{camara}}", label: "Cámara" },
+      { token: "{{lente}}", label: "Lente" },
+      { token: "{{exposicion}}", label: "Exposición" },
+      { token: "{{apertura}}", label: "Apertura" },
+      { token: "{{iso}}", label: "ISO" },
+      { token: "{{focal}}", label: "Distancia focal" },
+      { token: "{{exif}}", label: "Resumen EXIF" },
+    ],
+  },
+  {
+    group: "Otro",
+    items: [{ token: "{{proyecto}}", label: "Nombre del proyecto" }],
+  },
 ] as const;
+
+/** Flat list — handy for places that don't need the grouping. */
+export const PLACEHOLDERS = PLACEHOLDER_GROUPS.flatMap((g) => g.items);
+
+/**
+ * Substitute one token. If `value` is empty/undefined, KEEP the literal
+ * token text so the editor preview makes clear which slots are waiting for
+ * data. The export reflects whatever the canvas shows, which is the right
+ * default — the user can swap to a photo with metadata or replace the
+ * token manually before exporting.
+ */
+function subToken(text: string, token: RegExp, value: string | undefined): string {
+  if (!value || value.length === 0) return text;
+  return text.replace(token, value);
+}
 
 export function applyPlaceholders(
   text: string,
   meta: ProjectMetadata,
   projectName?: string,
 ): string {
-  let dateStr = "";
-  let timeStr = "";
+  // ── Date/time decomposition ──
+  let dateLong: string | undefined;
+  let dateShort: string | undefined;
+  let timeStr: string | undefined;
+  let dayNum: string | undefined;
+  let monthName: string | undefined;
+  let yearStr: string | undefined;
+  let weekday: string | undefined;
   if (meta.takenAt) {
     const d = new Date(meta.takenAt);
     if (!isNaN(d.getTime())) {
-      dateStr = d.toLocaleDateString("es-AR", {
+      dateLong = d.toLocaleDateString("es-AR", {
         day: "numeric",
         month: "long",
+        year: "numeric",
+      });
+      dateShort = d.toLocaleDateString("es-AR", {
+        day: "2-digit",
+        month: "2-digit",
         year: "numeric",
       });
       timeStr = d.toLocaleTimeString("es-AR", {
         hour: "2-digit",
         minute: "2-digit",
       });
+      dayNum = String(d.getDate());
+      monthName = d.toLocaleDateString("es-AR", { month: "long" });
+      yearStr = String(d.getFullYear());
+      weekday = d.toLocaleDateString("es-AR", { weekday: "long" });
     }
   }
-  return text
-    .replace(/\{\{ciudad\}\}/gi, meta.city ?? "")
-    .replace(/\{\{provincia\}\}/gi, meta.region ?? "")
-    .replace(/\{\{pais\}\}/gi, meta.country ?? "")
-    .replace(/\{\{fecha\}\}/gi, dateStr)
-    .replace(/\{\{hora\}\}/gi, timeStr)
-    .replace(/\{\{camara\}\}/gi, meta.camera ?? "")
-    .replace(/\{\{proyecto\}\}/gi, projectName ?? "");
+
+  // ── Place composites ──
+  const placeParts = [meta.city, meta.country].filter(Boolean);
+  const place = placeParts.length > 0 ? placeParts.join(", ") : undefined;
+  const coords =
+    meta.lat !== undefined && meta.lon !== undefined
+      ? `${meta.lat.toFixed(4)}, ${meta.lon.toFixed(4)}`
+      : undefined;
+
+  // ── EXIF summary ── "1/200 · f/2.8 · ISO 400 · 85mm"
+  const exifParts = [
+    meta.exposureTime,
+    meta.aperture,
+    meta.iso !== undefined ? `ISO ${meta.iso}` : null,
+    meta.focalLength,
+  ].filter(Boolean) as string[];
+  const exifSummary = exifParts.length > 0 ? exifParts.join(" · ") : undefined;
+
+  let out = text;
+  // Place
+  out = subToken(out, /\{\{ciudad\}\}/gi, meta.city);
+  out = subToken(out, /\{\{provincia\}\}/gi, meta.region);
+  out = subToken(out, /\{\{pais\}\}/gi, meta.country);
+  out = subToken(out, /\{\{lugar\}\}/gi, place);
+  out = subToken(out, /\{\{coords\}\}/gi, coords);
+  // Time
+  out = subToken(out, /\{\{fecha\}\}/gi, dateLong);
+  out = subToken(out, /\{\{fechacorta\}\}/gi, dateShort);
+  out = subToken(out, /\{\{hora\}\}/gi, timeStr);
+  out = subToken(out, /\{\{dia\}\}/gi, dayNum);
+  out = subToken(out, /\{\{mes\}\}/gi, monthName);
+  out = subToken(out, /\{\{año\}\}/gi, yearStr);
+  out = subToken(out, /\{\{ano\}\}/gi, yearStr); // keyboards without ñ
+  out = subToken(out, /\{\{semana\}\}/gi, weekday);
+  // Camera
+  out = subToken(out, /\{\{camara\}\}/gi, meta.camera);
+  out = subToken(out, /\{\{lente\}\}/gi, meta.lens);
+  out = subToken(out, /\{\{exposicion\}\}/gi, meta.exposureTime);
+  out = subToken(out, /\{\{apertura\}\}/gi, meta.aperture);
+  out = subToken(
+    out,
+    /\{\{iso\}\}/gi,
+    meta.iso !== undefined ? String(meta.iso) : undefined,
+  );
+  out = subToken(out, /\{\{focal\}\}/gi, meta.focalLength);
+  out = subToken(out, /\{\{exif\}\}/gi, exifSummary);
+  // Other
+  out = subToken(out, /\{\{proyecto\}\}/gi, projectName);
+  return out;
 }
 
 // ─── Font catalog ────────────────────────────────────────────────────────────

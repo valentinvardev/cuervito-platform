@@ -17,7 +17,7 @@ import {
   makeImageLayer,
   makeRectLayer,
   makeTextLayer,
-  PLACEHOLDERS,
+  PLACEHOLDER_GROUPS,
   type EditorDoc,
   type Layer,
   type ProjectMetadata,
@@ -1346,26 +1346,46 @@ function LayerProperties({
           </Field>
 
           <Field label="Insertar metadata">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-              {PLACEHOLDERS.map((p) => (
-                <button
-                  key={p.token}
-                  type="button"
-                  onClick={() => onChange({ text: layer.text + p.token })}
-                  title={`Inserta ${p.token} en el texto. Se reemplaza al renderizar.`}
-                  style={{
-                    padding: "3px 8px",
-                    borderRadius: 999,
-                    background: "var(--bg-base)",
-                    border: "1px solid var(--border-subtle)",
-                    color: "var(--text-secondary)",
-                    fontSize: 11,
-                    cursor: "pointer",
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  {p.label}
-                </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {PLACEHOLDER_GROUPS.map((g) => (
+                <div key={g.group}>
+                  <div
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 9.5,
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      color: "var(--text-tertiary)",
+                      marginBottom: 3,
+                    }}
+                  >
+                    {g.group}
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {g.items.map((p) => (
+                      <button
+                        key={p.token}
+                        type="button"
+                        onClick={() =>
+                          onChange({ text: (layer.text || "") + p.token })
+                        }
+                        title={`Inserta ${p.token}. Si la foto tiene la metadata correspondiente, se reemplaza automáticamente.`}
+                        style={{
+                          padding: "3px 8px",
+                          borderRadius: 999,
+                          background: "var(--bg-base)",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                          fontSize: 11,
+                          cursor: "pointer",
+                          fontFamily: "var(--font-mono)",
+                        }}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </Field>

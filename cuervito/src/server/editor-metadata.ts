@@ -9,6 +9,26 @@ import type { ProjectMetadata } from "~/lib/editor-types";
  * present — a photo without GPS, without EXIF date, etc. all just leave the
  * corresponding fields undefined.
  */
+type ExifShape = {
+  DateTimeOriginal?: Date | string;
+  CreateDate?: Date | string;
+  ModifyDate?: Date | string;
+  Make?: string;
+  Model?: string;
+  LensModel?: string;
+  LensMake?: string;
+  Lens?: string;
+  ExposureTime?: number;
+  FNumber?: number;
+  ApertureValue?: number;
+  ISO?: number;
+  ISOSpeedRatings?: number;
+  FocalLength?: number;
+  FocalLengthIn35mmFormat?: number;
+  latitude?: number;
+  longitude?: number;
+};
+
 export async function extractExif(buffer: Buffer): Promise<ProjectMetadata> {
   const out: ProjectMetadata = {};
   try {
@@ -20,20 +40,20 @@ export async function extractExif(buffer: Buffer): Promise<ProjectMetadata> {
         "ModifyDate",
         "Make",
         "Model",
+        "LensModel",
+        "LensMake",
+        "Lens",
+        "ExposureTime",
+        "FNumber",
+        "ApertureValue",
+        "ISO",
+        "ISOSpeedRatings",
+        "FocalLength",
+        "FocalLengthIn35mmFormat",
         "latitude",
         "longitude",
       ],
-    }).catch(() => null)) as
-      | {
-          DateTimeOriginal?: Date | string;
-          CreateDate?: Date | string;
-          ModifyDate?: Date | string;
-          Make?: string;
-          Model?: string;
-          latitude?: number;
-          longitude?: number;
-        }
-      | null;
+    }).catch(() => null)) as ExifShape | null;
     if (!exif) return out;
 
     // EXIF date — fall back through possible fields.
@@ -54,6 +74,39 @@ export async function extractExif(buffer: Buffer): Promise<ProjectMetadata> {
       .join(" ")
       .trim();
     if (camera) out.camera = camera;
+
+    // Lens — prefer LensModel; fall back to "LensMake LensModel" or Lens.
+    const lens = (exif.LensModel ?? exif.Lens ?? "").trim();
+    if (lens) {
+      out.lens =
+        exif.LensMake && !lens.toLowerCase().includes(exif.LensMake.toLowerCase())
+          ? `${exif.LensMake.trim()} ${lens}`
+          : lens;
+    }
+
+    // Exposure time — print as "1/200" if fractional, else "0.5 s".
+    if (typeof exif.ExposureTime === "number" && exif.ExposureTime > 0) {
+      if (exif.ExposureTime < 1) {
+        out.exposureTime = `1/${Math.round(1 / exif.ExposureTime)}`;
+      } else {
+        out.exposureTime = `${exif.ExposureTime} s`;
+      }
+    }
+
+    // Aperture — "f/2.8".
+    const fNumber = exif.FNumber ?? exif.ApertureValue;
+    if (typeof fNumber === "number" && fNumber > 0) {
+      out.aperture = `f/${fNumber.toFixed(1).replace(/\.0$/, "")}`;
+    }
+
+    const iso = exif.ISO ?? exif.ISOSpeedRatings;
+    if (typeof iso === "number" && iso > 0) out.iso = Math.round(iso);
+
+    // Focal length — "85mm".
+    const focal = exif.FocalLength ?? exif.FocalLengthIn35mmFormat;
+    if (typeof focal === "number" && focal > 0) {
+      out.focalLength = `${Math.round(focal)}mm`;
+    }
   } catch (err) {
     console.error("[editor metadata] EXIF parse failed:", err);
   }
