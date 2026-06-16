@@ -1001,14 +1001,68 @@ function MetadataPreview({
   metadata: ProjectMetadata;
   hasSource: boolean;
 }) {
+  if (!hasSource) return null;
   const hasAny =
     metadata.city ||
     metadata.region ||
     metadata.country ||
     metadata.takenAt ||
-    metadata.camera;
-  if (!hasSource || !hasAny) return null;
+    metadata.camera ||
+    metadata.lens ||
+    metadata.aperture ||
+    metadata.iso !== undefined ||
+    metadata.focalLength;
   const date = metadata.takenAt ? new Date(metadata.takenAt) : null;
+
+  // ── No-metadata warning ──
+  if (!hasAny) {
+    return (
+      <>
+        <PanelHeader label="Metadata de la foto" />
+        <div
+          style={{
+            padding: "10px 12px",
+            background: "rgba(245,182,42,0.08)",
+            border: "1px solid rgba(245,182,42,0.4)",
+            borderRadius: 8,
+            marginBottom: 18,
+            fontSize: 12,
+            color: "var(--text-secondary)",
+            lineHeight: 1.5,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              color: "var(--warning)",
+              fontWeight: 500,
+              marginBottom: 6,
+            }}
+          >
+            <i className="ti ti-alert-triangle" />
+            Sin EXIF
+          </div>
+          Esta foto no tiene metadata embebida. Las variables tipo{" "}
+          <code style={{ fontFamily: "var(--font-mono)" }}>{"{{ciudad}}"}</code> se
+          van a ver como texto literal hasta que subas una foto con EXIF.
+          <div
+            style={{
+              marginTop: 6,
+              fontSize: 10.5,
+              color: "var(--text-tertiary)",
+            }}
+          >
+            Tip: las fotos perdedidas vía WhatsApp / Instagram / capturas de
+            pantalla no tienen EXIF. Probá con una foto del rollo del celular
+            sin compartirla por mensajería.
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <PanelHeader label="Metadata de la foto" />
@@ -1050,6 +1104,34 @@ function MetadataPreview({
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <i className="ti ti-camera" style={{ color: "var(--accent)" }} />
             {metadata.camera}
+            {metadata.lens && (
+              <span style={{ color: "var(--text-tertiary)" }}>
+                · {metadata.lens}
+              </span>
+            )}
+          </div>
+        )}
+        {(metadata.aperture ||
+          metadata.exposureTime ||
+          metadata.iso !== undefined ||
+          metadata.focalLength) && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            <i className="ti ti-aperture" style={{ color: "var(--accent)" }} />
+            {[
+              metadata.exposureTime,
+              metadata.aperture,
+              metadata.iso !== undefined ? `ISO ${metadata.iso}` : null,
+              metadata.focalLength,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </div>
         )}
         <div
@@ -1061,9 +1143,10 @@ function MetadataPreview({
             borderTop: "1px solid var(--border-subtle)",
           }}
         >
-          Usá <code style={{ fontFamily: "var(--font-mono)" }}>{"{{ciudad}}"}</code>,{" "}
-          <code style={{ fontFamily: "var(--font-mono)" }}>{"{{fecha}}"}</code>… en
-          los textos para autocompletar.
+          Insertá variables como{" "}
+          <code style={{ fontFamily: "var(--font-mono)" }}>{"{{ciudad}}"}</code>{" "}
+          o <code style={{ fontFamily: "var(--font-mono)" }}>{"{{exif}}"}</code>{" "}
+          en los textos.
         </div>
       </div>
     </>

@@ -4,11 +4,6 @@ import exifr from "exifr";
 
 import type { ProjectMetadata } from "~/lib/editor-types";
 
-/**
- * Extract EXIF metadata from a photo buffer. Returns whatever fields are
- * present — a photo without GPS, without EXIF date, etc. all just leave the
- * corresponding fields undefined.
- */
 type ExifShape = {
   DateTimeOriginal?: Date | string;
   CreateDate?: Date | string;
@@ -25,50 +20,57 @@ type ExifShape = {
   ISOSpeedRatings?: number;
   FocalLength?: number;
   FocalLengthIn35mmFormat?: number;
-  latitude?: number;
-  longitude?: number;
 };
 
+/**
+ * Extract EXIF metadata from a photo buffer. Returns whatever fields are
+ * present — a photo without GPS, without EXIF date, etc. all just leave the
+ * corresponding fields undefined.
+ *
+ * Important: we make TWO calls to exifr because GPS coordinates and regular
+ * EXIF tags live in different segments of the metadata, and exifr's `pick`
+ * filter doesn't include the computed `latitude`/`longitude` fields. So we
+ * parse the regular EXIF (with pick for efficiency) AND call exifr.gps()
+ * separately for coordinates.
+ */
 export async function extractExif(buffer: Buffer): Promise<ProjectMetadata> {
   const out: ProjectMetadata = {};
   try {
-    const exif = (await exifr.parse(buffer, {
-      gps: true,
-      pick: [
-        "DateTimeOriginal",
-        "CreateDate",
-        "ModifyDate",
-        "Make",
-        "Model",
-        "LensModel",
-        "LensMake",
-        "Lens",
-        "ExposureTime",
-        "FNumber",
-        "ApertureValue",
-        "ISO",
-        "ISOSpeedRatings",
-        "FocalLength",
-        "FocalLengthIn35mmFormat",
-        "latitude",
-        "longitude",
-      ],
-    }).catch(() => null)) as ExifShape | null;
+    const [exif, gps] = await Promise.all([
+      // Regular EXIF tags. exifr.parse() with default config covers TIFF /
+      // IFD0 / EXIF segments which is what we need for date / camera / lens
+      // / exposure / ISO / focal length.
+      exifr.parse(buffer).catch((err: unknown) => {
+        console.error("[editor metadata] exifr.parse failed:", err);
+        return null;
+      }),
+      // GPS coordinates — exifr.gps() is the explicit helper for lat/lon and
+      // is more reliable than asking parse() for `latitude`/`longitude`.
+      exifr.gps(buffer).catch((err: unknown) => {
+        console.error("[editor metadata] exifr.gps failed:", err);
+        return null;
+      }),
+    ]);
+
+    console.log("[editor metadata] raw exif keys:", exif ? Object.keys(exif) : null);
+    console.log("[editor metadata] gps:", gps);
+
+    if (gps && typeof gps.latitude === "number" && typeof gps.longitude === "number") {
+      out.lat = gps.latitude;
+      out.lon = gps.longitude;
+    }
+
     if (!exif) return out;
+    const e = exif as ExifShape;
 
     // EXIF date — fall back through possible fields.
-    const rawDate = exif.DateTimeOriginal ?? exif.CreateDate ?? exif.ModifyDate;
+    const rawDate = e.DateTimeOriginal ?? e.CreateDate ?? e.ModifyDate;
     if (rawDate) {
       const d = rawDate instanceof Date ? rawDate : new Date(rawDate);
       if (!isNaN(d.getTime())) out.takenAt = d.toISOString();
     }
 
-    if (typeof exif.latitude === "number" && typeof exif.longitude === "number") {
-      out.lat = exif.latitude;
-      out.lon = exif.longitude;
-    }
-
-    const camera = [exif.Make, exif.Model]
+    const camera = [e.Make, e.Model]
       .filter(Boolean)
       .map((s) => (s ?? "").trim())
       .join(" ")
@@ -76,40 +78,41 @@ export async function extractExif(buffer: Buffer): Promise<ProjectMetadata> {
     if (camera) out.camera = camera;
 
     // Lens — prefer LensModel; fall back to "LensMake LensModel" or Lens.
-    const lens = (exif.LensModel ?? exif.Lens ?? "").trim();
+    const lens = (e.LensModel ?? e.Lens ?? "").trim();
     if (lens) {
       out.lens =
-        exif.LensMake && !lens.toLowerCase().includes(exif.LensMake.toLowerCase())
-          ? `${exif.LensMake.trim()} ${lens}`
+        e.LensMake && !lens.toLowerCase().includes(e.LensMake.toLowerCase())
+          ? `${e.LensMake.trim()} ${lens}`
           : lens;
     }
 
     // Exposure time — print as "1/200" if fractional, else "0.5 s".
-    if (typeof exif.ExposureTime === "number" && exif.ExposureTime > 0) {
-      if (exif.ExposureTime < 1) {
-        out.exposureTime = `1/${Math.round(1 / exif.ExposureTime)}`;
+    if (typeof e.ExposureTime === "number" && e.ExposureTime > 0) {
+      if (e.ExposureTime < 1) {
+        out.exposureTime = `1/${Math.round(1 / e.ExposureTime)}`;
       } else {
-        out.exposureTime = `${exif.ExposureTime} s`;
+        out.exposureTime = `${e.ExposureTime} s`;
       }
     }
 
     // Aperture — "f/2.8".
-    const fNumber = exif.FNumber ?? exif.ApertureValue;
+    const fNumber = e.FNumber ?? e.ApertureValue;
     if (typeof fNumber === "number" && fNumber > 0) {
       out.aperture = `f/${fNumber.toFixed(1).replace(/\.0$/, "")}`;
     }
 
-    const iso = exif.ISO ?? exif.ISOSpeedRatings;
+    const iso = e.ISO ?? e.ISOSpeedRatings;
     if (typeof iso === "number" && iso > 0) out.iso = Math.round(iso);
 
     // Focal length — "85mm".
-    const focal = exif.FocalLength ?? exif.FocalLengthIn35mmFormat;
+    const focal = e.FocalLength ?? e.FocalLengthIn35mmFormat;
     if (typeof focal === "number" && focal > 0) {
       out.focalLength = `${Math.round(focal)}mm`;
     }
   } catch (err) {
-    console.error("[editor metadata] EXIF parse failed:", err);
+    console.error("[editor metadata] EXIF extraction failed:", err);
   }
+  console.log("[editor metadata] extracted:", out);
   return out;
 }
 
@@ -120,6 +123,7 @@ type NominatimResponse = {
     village?: string;
     hamlet?: string;
     county?: string;
+    municipality?: string;
     state?: string;
     region?: string;
     country?: string;
@@ -148,14 +152,18 @@ export async function reverseGeocode(
         // Nominatim policy: identify yourself.
         "User-Agent": "Cuervito Admin Editor (https://cuervito.app)",
       },
-      // Don't wait forever if Nominatim is slow.
       signal: AbortSignal.timeout(5000),
     });
-    if (!res.ok) return {};
+    if (!res.ok) {
+      console.error("[editor metadata] Nominatim non-OK:", res.status);
+      return {};
+    }
     const data = (await res.json()) as NominatimResponse;
     const a = data.address ?? {};
-    const city = a.city ?? a.town ?? a.village ?? a.hamlet ?? a.county;
+    const city =
+      a.city ?? a.town ?? a.village ?? a.hamlet ?? a.municipality ?? a.county;
     const region = a.state ?? a.region;
+    console.log("[editor metadata] geocoded:", { city, region, country: a.country });
     return {
       ...(city ? { city } : {}),
       ...(region ? { region } : {}),
