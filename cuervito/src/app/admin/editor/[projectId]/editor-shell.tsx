@@ -347,6 +347,7 @@ export function EditorShell({
 
   return (
     <div
+      className="editor-root"
       style={{
         position: "fixed",
         top: 64 + 49,
@@ -358,6 +359,8 @@ export function EditorShell({
         background: "var(--bg-base)",
       }}
     >
+      <EditorChromeStyles />
+
       {/* Toolbar */}
       <header
         style={{
@@ -1641,5 +1644,97 @@ function PresetGallery({
         })}
       </div>
     </div>
+  );
+}
+
+// ── Scoped chrome styles for the editor (sliders + scrollbars) ──────────────
+function EditorChromeStyles() {
+  return (
+    <style>{`
+      .editor-root input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 20px;
+        background: transparent;
+        cursor: pointer;
+        accent-color: var(--accent);
+      }
+      .editor-root input[type="range"]::-webkit-slider-runnable-track {
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(
+          to right,
+          var(--accent) 0%,
+          var(--accent) var(--fill, 50%),
+          rgba(255, 255, 255, 0.12) var(--fill, 50%),
+          rgba(255, 255, 255, 0.12) 100%
+        );
+      }
+      .editor-root input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: 2px solid #fff;
+        margin-top: -5px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(245, 130, 10, 0.4);
+        transition: transform 120ms ease;
+      }
+      .editor-root input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.15);
+      }
+      .editor-root input[type="range"]::-moz-range-track {
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+      }
+      .editor-root input[type="range"]::-moz-range-progress {
+        height: 4px;
+        border-radius: 999px;
+        background: var(--accent);
+      }
+      .editor-root input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: 2px solid #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(245, 130, 10, 0.4);
+      }
+
+      /* Scrollbars — thin and on-brand. Applies to every scrollable area
+         inside the editor (panels + preset strip). */
+      .editor-root *,
+      .editor-root {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(245, 130, 10, 0.45) transparent;
+      }
+      .editor-root *::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      .editor-root *::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .editor-root *::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 999px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+        transition: background 150ms;
+      }
+      .editor-root *::-webkit-scrollbar-thumb:hover {
+        background: rgba(245, 130, 10, 0.6);
+        background-clip: padding-box;
+      }
+      .editor-root *::-webkit-scrollbar-corner {
+        background: transparent;
+      }
+    `}</style>
   );
 }
