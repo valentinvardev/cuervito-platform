@@ -129,6 +129,16 @@ export function editorSourceKey(userId: string, projectId: string, ext = "jpg") 
   return `${prefix}/users/${userId}/editor/${projectId}/source.${ext.replace(/^\./, "")}`;
 }
 
+/** An overlay layer's image asset within an editor project. */
+export function editorLayerKey(
+  userId: string,
+  projectId: string,
+  layerId: string,
+  ext = "png",
+) {
+  return `${prefix}/users/${userId}/editor/${projectId}/layers/${layerId}.${ext.replace(/^\./, "")}`;
+}
+
 /** True if a key is one of ours (lives under the cuervito/ prefix). */
 export function isCuervitoKey(key: string): boolean {
   return key.startsWith(`${prefix}/`);

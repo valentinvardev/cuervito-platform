@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
-import { emptyDoc, type EditorDoc } from "~/lib/editor-types";
+import { emptyDoc, emptyFilters, type EditorDoc } from "~/lib/editor-types";
 
 async function adminGuard() {
   const session = await auth();
@@ -23,6 +23,7 @@ export async function createProject(): Promise<void> {
       name: "Nuevo proyecto",
       sourceKey: null,
       layers: doc.layers as unknown as object,
+      filters: emptyFilters() as unknown as object,
       width: doc.width,
       height: doc.height,
     },
@@ -63,11 +64,21 @@ export async function saveProjectDoc(
     select: { ownerId: true },
   });
   if (!project || project.ownerId !== userId) return { error: "Proyecto no encontrado." };
+  // Strip transient fields (e.g. image-layer URLs) before persisting — the
+  // URL gets re-resolved on every page load from the stored sourceKey.
+  const cleanLayers = doc.layers.map((l) => {
+    if (l.type === "image") {
+      const { url: _url, ...rest } = l;
+      return rest;
+    }
+    return l;
+  });
   await db.editorProject.update({
     where: { id: projectId },
     data: {
       sourceKey: doc.sourceKey,
-      layers: doc.layers as unknown as object,
+      layers: cleanLayers as unknown as object,
+      filters: doc.filters as unknown as object,
       width: doc.width,
       height: doc.height,
     },

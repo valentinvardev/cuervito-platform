@@ -3,16 +3,19 @@ import sharp from "sharp";
 
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
-import { editorSourceKey, putS3Object } from "~/server/s3";
+import { editorLayerKey, editorSourceKey, putS3Object } from "~/server/s3";
 import { resolveMediaUrl } from "~/server/media";
 
-const MAX_BYTES = 25 * 1024 * 1024; // 25 MB raw — gets re-encoded to JPEG
-const MAX_DIMENSION = 4000; // longest side after resize
+const MAX_BYTES = 25 * 1024 * 1024; // 25 MB raw
+const MAX_DIMENSION = 4000;
 
 /**
- * Admin editor: upload a source photo for a project. We re-encode to JPEG
- * (sharp) so the canvas always works with a known format, and cap the longest
- * side so the editor stays responsive.
+ * Admin editor upload. Two modes selected by the `kind` form field:
+ *   - `source` (default): replaces the project's background photo; updates
+ *     project.sourceKey / width / height. Output is JPEG.
+ *   - `layer`: stores an overlay image for a specific layer (requires
+ *     `layerId` form field); preserves transparency as PNG; does not touch
+ *     the project's background.
  */
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -26,6 +29,9 @@ export async function POST(req: NextRequest) {
   const form = await req.formData();
   const file = form.get("file");
   const projectId = form.get("projectId");
+  const kindRaw = form.get("kind");
+  const layerId = form.get("layerId");
+  const kind = kindRaw === "layer" ? "layer" : "source";
 
   if (typeof projectId !== "string" || !projectId) {
     return NextResponse.json({ error: "Falta projectId" }, { status: 400 });
@@ -42,6 +48,9 @@ export async function POST(req: NextRequest) {
       { status: 413 },
     );
   }
+  if (kind === "layer" && (typeof layerId !== "string" || !layerId)) {
+    return NextResponse.json({ error: "Falta layerId" }, { status: 400 });
+  }
 
   const project = await db.editorProject.findUnique({
     where: { id: projectId },
@@ -56,24 +65,41 @@ export async function POST(req: NextRequest) {
   let processed: Buffer;
   let width: number;
   let height: number;
+  let contentType: string;
+  let ext: "jpg" | "png";
   try {
     const pipeline = sharp(raw).rotate();
     const meta = await pipeline.metadata();
     const longest = Math.max(meta.width ?? 0, meta.height ?? 0);
     const needsResize = longest > MAX_DIMENSION;
-    const out = await (needsResize
+    const sized = needsResize
       ? pipeline.resize({
           width: meta.width === longest ? MAX_DIMENSION : undefined,
           height: meta.height === longest ? MAX_DIMENSION : undefined,
           withoutEnlargement: true,
         })
-      : pipeline
-    )
-      .jpeg({ quality: 90, mozjpeg: true })
-      .toBuffer({ resolveWithObject: true });
-    processed = out.data;
-    width = out.info.width;
-    height = out.info.height;
+      : pipeline;
+
+    if (kind === "layer") {
+      // Keep alpha for overlays.
+      const out = await sized
+        .png({ compressionLevel: 9 })
+        .toBuffer({ resolveWithObject: true });
+      processed = out.data;
+      width = out.info.width;
+      height = out.info.height;
+      contentType = "image/png";
+      ext = "png";
+    } else {
+      const out = await sized
+        .jpeg({ quality: 90, mozjpeg: true })
+        .toBuffer({ resolveWithObject: true });
+      processed = out.data;
+      width = out.info.width;
+      height = out.info.height;
+      contentType = "image/jpeg";
+      ext = "jpg";
+    }
   } catch (err) {
     console.error("[editor upload] sharp failed:", err);
     return NextResponse.json(
@@ -82,9 +108,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const key = editorSourceKey(session.user.id, projectId, "jpg");
+  const key =
+    kind === "layer"
+      ? editorLayerKey(session.user.id, projectId, layerId as string, ext)
+      : editorSourceKey(session.user.id, projectId, ext);
   try {
-    await putS3Object(key, processed, "image/jpeg");
+    await putS3Object(key, processed, contentType);
   } catch (err) {
     console.error("[editor upload] s3 put failed:", err);
     return NextResponse.json(
@@ -93,12 +122,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Adopt the photo's aspect as the canvas dimensions so the source fills it.
-  await db.editorProject.update({
-    where: { id: projectId },
-    data: { sourceKey: key, width, height },
-  });
+  if (kind === "source") {
+    // Adopt the photo's aspect as the canvas dimensions so it fills it.
+    await db.editorProject.update({
+      where: { id: projectId },
+      data: { sourceKey: key, width, height },
+    });
+  }
 
   const url = await resolveMediaUrl(key);
-  return NextResponse.json({ ok: true, sourceKey: key, url, width, height });
+  return NextResponse.json({ ok: true, key, url, width, height });
 }

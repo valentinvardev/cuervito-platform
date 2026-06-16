@@ -17,12 +17,15 @@ export type LayerBase = {
 export type TextLayer = LayerBase & {
   type: "text";
   text: string;
-  fontFamily: string;
+  fontFamily: string; // CSS font-family value, e.g. "'Inter', sans-serif"
   fontSize: number;
-  fontWeight: 400 | 500 | 600 | 700 | 800;
+  fontWeight: 300 | 400 | 500 | 600 | 700 | 800 | 900;
+  italic: boolean;
   align: "left" | "center" | "right";
   color: string;
   width: number; // text box width — wraps within
+  letterSpacing: number;
+  lineHeight: number;
 };
 
 export type RectLayer = LayerBase & {
@@ -44,7 +47,42 @@ export type EllipseLayer = LayerBase & {
   strokeWidth: number;
 };
 
-export type Layer = TextLayer | RectLayer | EllipseLayer;
+export type ImageLayer = LayerBase & {
+  type: "image";
+  /** S3 key for this layer's bitmap. */
+  sourceKey: string;
+  /** Cached CF URL — populated by the page server-side, transient. */
+  url?: string;
+  width: number;
+  height: number;
+};
+
+export type Layer = TextLayer | RectLayer | EllipseLayer | ImageLayer;
+
+/** Filters applied to the source/background photo. All optional, 0 / false = off. */
+export type SourceFilters = {
+  brightness: number; // -1..1
+  contrast: number; // -100..100
+  saturation: number; // -2..10  (HSV.saturation; 0 = no change)
+  hue: number; // -180..180
+  blur: number; // 0..40 (px on canvas-space)
+  grayscale: boolean;
+  sepia: boolean;
+  invert: boolean;
+};
+
+export function emptyFilters(): SourceFilters {
+  return {
+    brightness: 0,
+    contrast: 0,
+    saturation: 0,
+    hue: 0,
+    blur: 0,
+    grayscale: false,
+    sepia: false,
+    invert: false,
+  };
+}
 
 export type EditorDoc = {
   width: number;
@@ -53,13 +91,155 @@ export type EditorDoc = {
   sourceKey: string | null;
   /** Bottom-to-top render order. layers[0] = furthest back. */
   layers: Layer[];
+  filters: SourceFilters;
 };
 
 export function emptyDoc(width = 1080, height = 1080): EditorDoc {
-  return { width, height, sourceKey: null, layers: [] };
+  return { width, height, sourceKey: null, layers: [], filters: emptyFilters() };
 }
 
-/** Create a layer with sensible defaults at the canvas center. */
+// ─── Font catalog ────────────────────────────────────────────────────────────
+export type FontDef = {
+  /** Display name in the picker. */
+  family: string;
+  /** Full CSS font-family value to write into the layer. */
+  cssFamily: string;
+  /** Weights available from Google Fonts for this family. */
+  weights: (300 | 400 | 500 | 600 | 700 | 800 | 900)[];
+  /** Whether italic variants exist. */
+  italics: boolean;
+  category: "sans" | "serif" | "display" | "mono" | "handwritten";
+  /** Google Fonts URL spec (without `family=` prefix). */
+  gfQuery: string;
+};
+
+export const FONTS: readonly FontDef[] = [
+  {
+    family: "Inter",
+    cssFamily: "'Inter', system-ui, sans-serif",
+    weights: [300, 400, 500, 600, 700, 800, 900],
+    italics: true,
+    category: "sans",
+    gfQuery: "Inter:ital,wght@0,300..900;1,300..900",
+  },
+  {
+    family: "Bricolage Grotesque",
+    cssFamily: "'Bricolage Grotesque', sans-serif",
+    weights: [400, 600, 700, 800],
+    italics: false,
+    category: "display",
+    gfQuery: "Bricolage+Grotesque:wght@400;600;700;800",
+  },
+  {
+    family: "DM Sans",
+    cssFamily: "'DM Sans', sans-serif",
+    weights: [400, 500, 700],
+    italics: true,
+    category: "sans",
+    gfQuery: "DM+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700",
+  },
+  {
+    family: "Playfair Display",
+    cssFamily: "'Playfair Display', serif",
+    weights: [400, 500, 700, 800, 900],
+    italics: true,
+    category: "serif",
+    gfQuery: "Playfair+Display:ital,wght@0,400;0,500;0,700;0,800;0,900;1,400;1,700",
+  },
+  {
+    family: "Bebas Neue",
+    cssFamily: "'Bebas Neue', sans-serif",
+    weights: [400],
+    italics: false,
+    category: "display",
+    gfQuery: "Bebas+Neue",
+  },
+  {
+    family: "Anton",
+    cssFamily: "'Anton', sans-serif",
+    weights: [400],
+    italics: false,
+    category: "display",
+    gfQuery: "Anton",
+  },
+  {
+    family: "Archivo Black",
+    cssFamily: "'Archivo Black', sans-serif",
+    weights: [900],
+    italics: false,
+    category: "display",
+    gfQuery: "Archivo+Black",
+  },
+  {
+    family: "Space Grotesk",
+    cssFamily: "'Space Grotesk', sans-serif",
+    weights: [300, 400, 500, 600, 700],
+    italics: false,
+    category: "sans",
+    gfQuery: "Space+Grotesk:wght@300;400;500;600;700",
+  },
+  {
+    family: "Oswald",
+    cssFamily: "'Oswald', sans-serif",
+    weights: [300, 400, 500, 600, 700],
+    italics: false,
+    category: "sans",
+    gfQuery: "Oswald:wght@300;400;500;600;700",
+  },
+  {
+    family: "Montserrat",
+    cssFamily: "'Montserrat', sans-serif",
+    weights: [300, 400, 500, 600, 700, 800, 900],
+    italics: true,
+    category: "sans",
+    gfQuery: "Montserrat:ital,wght@0,300..900;1,300..900",
+  },
+  {
+    family: "Roboto Slab",
+    cssFamily: "'Roboto Slab', serif",
+    weights: [300, 400, 500, 700, 900],
+    italics: false,
+    category: "serif",
+    gfQuery: "Roboto+Slab:wght@300;400;500;700;900",
+  },
+  {
+    family: "Caveat",
+    cssFamily: "'Caveat', cursive",
+    weights: [400, 600, 700],
+    italics: false,
+    category: "handwritten",
+    gfQuery: "Caveat:wght@400;600;700",
+  },
+  {
+    family: "Permanent Marker",
+    cssFamily: "'Permanent Marker', cursive",
+    weights: [400],
+    italics: false,
+    category: "handwritten",
+    gfQuery: "Permanent+Marker",
+  },
+  {
+    family: "JetBrains Mono",
+    cssFamily: "'JetBrains Mono', monospace",
+    weights: [400, 500, 600, 700],
+    italics: true,
+    category: "mono",
+    gfQuery: "JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400",
+  },
+] as const;
+
+/** Find a font by its display family name. */
+export function getFont(family: string): FontDef | null {
+  return FONTS.find((f) => f.family === family || f.cssFamily === family) ?? null;
+}
+
+/** Build the Google Fonts CSS URL covering every family in the catalog. */
+export function buildGoogleFontsHref(): string {
+  const qs = FONTS.map((f) => `family=${f.gfQuery}`).join("&");
+  return `https://fonts.googleapis.com/css2?${qs}&display=swap`;
+}
+
+// ─── Layer factories ────────────────────────────────────────────────────────
 export function makeTextLayer(canvasW: number, canvasH: number): TextLayer {
   return {
     id: cryptoRandomId(),
@@ -71,12 +251,15 @@ export function makeTextLayer(canvasW: number, canvasH: number): TextLayer {
     opacity: 1,
     visible: true,
     locked: false,
-    fontFamily: "Inter, system-ui, sans-serif",
+    fontFamily: "'Inter', system-ui, sans-serif",
     fontSize: 64,
     fontWeight: 700,
+    italic: false,
     align: "center",
     color: "#ffffff",
     width: Math.round(canvasW * 0.6),
+    letterSpacing: 0,
+    lineHeight: 1.2,
   };
 }
 
@@ -120,6 +303,45 @@ export function makeEllipseLayer(canvasW: number, canvasH: number): EllipseLayer
   };
 }
 
+export function makeImageLayer(
+  canvasW: number,
+  canvasH: number,
+  sourceKey: string,
+  url: string,
+  imgW: number,
+  imgH: number,
+): ImageLayer {
+  // Fit the image into ~50% of the canvas's shorter side.
+  const target = Math.round(Math.min(canvasW, canvasH) * 0.5);
+  const scale = target / Math.max(imgW, imgH);
+  const w = Math.round(imgW * scale);
+  const h = Math.round(imgH * scale);
+  return {
+    id: cryptoRandomId(),
+    type: "image",
+    x: canvasW / 2,
+    y: canvasH / 2,
+    rotation: 0,
+    opacity: 1,
+    visible: true,
+    locked: false,
+    sourceKey,
+    url,
+    width: w,
+    height: h,
+  };
+}
+
+/** Duplicate a layer with a new id and a small offset. */
+export function duplicateLayer(layer: Layer): Layer {
+  return {
+    ...layer,
+    id: cryptoRandomId(),
+    x: layer.x + 30,
+    y: layer.y + 30,
+  };
+}
+
 function cryptoRandomId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -128,9 +350,10 @@ function cryptoRandomId(): string {
 }
 
 export function layerLabel(layer: Layer): string {
-  if (layer.type === "text") return `T  ${layer.text.slice(0, 24)}`;
+  if (layer.type === "text") return `T  ${layer.text.slice(0, 24) || "Texto"}`;
   if (layer.type === "rect") return "Rectángulo";
-  return "Elipse";
+  if (layer.type === "ellipse") return "Elipse";
+  return "Imagen";
 }
 
 /** Deserialize the JSON layers blob from the DB back to typed shape. */
@@ -139,6 +362,22 @@ export function parseLayers(raw: unknown): Layer[] {
   return raw.filter((l): l is Layer => {
     if (!l || typeof l !== "object") return false;
     const t = (l as { type?: unknown }).type;
-    return t === "text" || t === "rect" || t === "ellipse";
+    return t === "text" || t === "rect" || t === "ellipse" || t === "image";
   });
+}
+
+/** Defensive parse of the filters blob, with sane defaults for missing fields. */
+export function parseFilters(raw: unknown): SourceFilters {
+  const f = emptyFilters();
+  if (!raw || typeof raw !== "object") return f;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.brightness === "number") f.brightness = r.brightness;
+  if (typeof r.contrast === "number") f.contrast = r.contrast;
+  if (typeof r.saturation === "number") f.saturation = r.saturation;
+  if (typeof r.hue === "number") f.hue = r.hue;
+  if (typeof r.blur === "number") f.blur = r.blur;
+  if (typeof r.grayscale === "boolean") f.grayscale = r.grayscale;
+  if (typeof r.sepia === "boolean") f.sepia = r.sepia;
+  if (typeof r.invert === "boolean") f.invert = r.invert;
+  return f;
 }

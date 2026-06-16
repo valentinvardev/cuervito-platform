@@ -539,6 +539,9 @@ model EditorProject {
     layers      Json     // Array<{ id, type, ...props }> — full shape lives in TS
     width       Int      @default(1080)
     height      Int      @default(1080)
+    /** Filters applied to the source/background photo (brightness, contrast,
+     *  saturation, blur, etc). Shape lives in TS (SourceFilters). */
+    filters     Json?
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
 
