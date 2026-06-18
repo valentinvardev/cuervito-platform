@@ -1978,7 +1978,15 @@ function Slider({
         max={max}
         step={step}
         onChange={(e) => onChange(Number(e.target.value))}
-        style={{ width: "100%", accentColor: "var(--accent)" }}
+        style={
+          {
+            width: "100%",
+            accentColor: "var(--accent)",
+            // Tell the CSS gradient where the thumb actually is, so the
+            // orange fill on the track ends exactly under the bolita.
+            "--fill": `${Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))}%`,
+          } as React.CSSProperties
+        }
       />
     </div>
   );
