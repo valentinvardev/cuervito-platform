@@ -35,6 +35,7 @@ export function SaleDrawer({
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const [photos, setPhotos] = useState<SalePhoto[] | null>(null);
   const [photosLoading, setPhotosLoading] = useState(false);
@@ -108,6 +109,14 @@ export function SaleDrawer({
     } finally {
       setSending(false);
     }
+  }
+
+  async function copyLink() {
+    if (!sale.downloadToken) return;
+    const url = `${window.location.origin}/descarga/${sale.downloadToken}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2200);
   }
 
   const canResend = sale.status === "PAID" && sale.downloadToken;
@@ -289,47 +298,75 @@ export function SaleDrawer({
               <i className="ti ti-alert-circle" /> {error}
             </div>
           )}
-          <button
-            type="button"
-            className="btn btn-primary"
-            style={{ width: "100%" }}
-            disabled={!canResend || !!expired || sending || sent}
-            onClick={resendEmail}
-            title={
-              !canResend
-                ? "Solo se puede reenviar a ventas pagadas"
-                : expired
-                  ? "El link de descarga venció"
-                  : undefined
-            }
-          >
-            {sending ? (
-              <>
-                <span
-                  style={{
-                    width: 14,
-                    height: 14,
-                    border: "2px solid currentColor",
-                    borderTopColor: "transparent",
-                    borderRadius: "50%",
-                    display: "inline-block",
-                    animation: "spin 0.9s linear infinite",
-                  }}
-                />
-                Enviando…
-              </>
-            ) : sent ? (
-              <>
-                <i className="ti ti-check" />
-                Email enviado
-              </>
-            ) : (
-              <>
-                <i className="ti ti-mail" />
-                Reenviar email de descarga
-              </>
-            )}
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ flex: 1 }}
+              disabled={!canResend || !!expired || sending || sent}
+              onClick={resendEmail}
+              title={
+                !canResend
+                  ? "Solo se puede reenviar a ventas pagadas"
+                  : expired
+                    ? "El link de descarga venció"
+                    : undefined
+              }
+            >
+              {sending ? (
+                <>
+                  <span
+                    style={{
+                      width: 14,
+                      height: 14,
+                      border: "2px solid currentColor",
+                      borderTopColor: "transparent",
+                      borderRadius: "50%",
+                      display: "inline-block",
+                      animation: "spin 0.9s linear infinite",
+                    }}
+                  />
+                  Enviando…
+                </>
+              ) : sent ? (
+                <>
+                  <i className="ti ti-check" />
+                  Email enviado
+                </>
+              ) : (
+                <>
+                  <i className="ti ti-mail" />
+                  Reenviar email
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ flex: 1 }}
+              disabled={!canResend || !!expired || copied}
+              onClick={copyLink}
+              title={
+                !canResend
+                  ? "Solo disponible en ventas pagadas"
+                  : expired
+                    ? "El link de descarga venció"
+                    : undefined
+              }
+            >
+              {copied ? (
+                <>
+                  <i className="ti ti-check" />
+                  Link copiado
+                </>
+              ) : (
+                <>
+                  <i className="ti ti-copy" />
+                  Copiar link
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </aside>
     </>
