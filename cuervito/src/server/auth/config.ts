@@ -200,4 +200,24 @@ export const authConfig = {
       return true;
     },
   },
+
+  events: {
+    /**
+     * Fires after a successful sign-in (credentials + OAuth). We stamp
+     * lastLoginAt on the User row so the admin dashboard can show recency.
+     * Best-effort — a failed write doesn't block the sign-in.
+     */
+    signIn: async ({ user }) => {
+      const id = (user as { id?: string }).id;
+      if (!id) return;
+      try {
+        await db.user.update({
+          where: { id },
+          data: { lastLoginAt: new Date() },
+        });
+      } catch (err) {
+        console.error("[auth] failed to stamp lastLoginAt:", err);
+      }
+    },
+  },
 } satisfies NextAuthConfig;

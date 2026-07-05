@@ -122,6 +122,10 @@ model User {
     suspendedAt    DateTime?
     suspendedReason String?  @db.Text
 
+    /** Set every time the user successfully signs in (JWT event). Used by the
+     *  admin activity dashboard to surface who's been active recently. */
+    lastLoginAt DateTime?
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
