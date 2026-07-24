@@ -360,8 +360,10 @@ model SaleItem {
     id        String @id @default(cuid())
     saleId    String
     sale      Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
-    photoId   String
-    photo     Photo  @relation(fields: [photoId], references: [id])
+    // Nullable + SetNull so the photographer can hard-delete an entire album
+    // (freeing S3) without wiping the paid Sale rows that reference the photos.
+    photoId   String?
+    photo     Photo? @relation(fields: [photoId], references: [id], onDelete: SetNull)
     priceCents Int
 
     @@unique([saleId, photoId])

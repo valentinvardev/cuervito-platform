@@ -5,6 +5,7 @@ import {
   DetectTextCommand,
   IndexFacesCommand,
   CreateCollectionCommand,
+  DeleteCollectionCommand,
   type TextDetection,
 } from "@aws-sdk/client-rekognition";
 import sharp from "sharp";
@@ -50,6 +51,19 @@ async function ensureCollection(rekCollectionId: string): Promise<void> {
       return;
     }
     throw err;
+  }
+}
+
+/** Delete a Rekognition collection (and every face inside it). No-op if the
+ *  collection was never created. Called on hard-delete of an event. */
+export async function deleteRekCollection(rekCollectionId: string): Promise<void> {
+  try {
+    await rekognition.send(new DeleteCollectionCommand({ CollectionId: rekCollectionId }));
+  } catch (err: unknown) {
+    if ((err as { name?: string }).name === "ResourceNotFoundException") return;
+    throw err;
+  } finally {
+    ensuredCollections.delete(rekCollectionId);
   }
 }
 
