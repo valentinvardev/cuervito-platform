@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { createPortal, useFormStatus } from "react-dom";
 
 export function DeleteEventDialog({
   eventName,
@@ -106,19 +106,7 @@ export function DeleteEventDialog({
                 Cancelar
               </button>
               <form action={action}>
-                <button
-                  type="submit"
-                  className="btn"
-                  disabled={count > 0}
-                  style={{
-                    color: "var(--error)",
-                    border: "1px solid rgba(224,85,85,0.45)",
-                    background: count > 0 ? "transparent" : "rgba(224,85,85,0.08)",
-                    opacity: count > 0 ? 0.55 : 1,
-                  }}
-                >
-                  {count > 0 ? `Eliminar (${count})` : "Sí, eliminar"}
-                </button>
+                <ConfirmButton count={count} />
               </form>
             </div>
           </div>
@@ -126,5 +114,50 @@ export function DeleteEventDialog({
         document.body,
       )}
     </>
+  );
+}
+
+function ConfirmButton({ count }: { count: number }) {
+  const { pending } = useFormStatus();
+  const locked = count > 0 || pending;
+  return (
+    <button
+      type="submit"
+      className="btn"
+      disabled={locked}
+      style={{
+        color: "var(--error)",
+        border: "1px solid rgba(224,85,85,0.45)",
+        background: locked ? "transparent" : "rgba(224,85,85,0.08)",
+        opacity: locked ? 0.75 : 1,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        minWidth: 128,
+        justifyContent: "center",
+      }}
+    >
+      {pending ? (
+        <>
+          <span className="del-spinner" aria-hidden />
+          Eliminando…
+        </>
+      ) : count > 0 ? (
+        `Eliminar (${count})`
+      ) : (
+        "Sí, eliminar"
+      )}
+      <style>{`
+        .del-spinner {
+          width: 14px;
+          height: 14px;
+          border: 2px solid rgba(224,85,85,0.35);
+          border-top-color: var(--error);
+          border-radius: 50%;
+          animation: del-spin 0.7s linear infinite;
+        }
+        @keyframes del-spin { to { transform: rotate(360deg); } }
+      `}</style>
+    </button>
   );
 }
