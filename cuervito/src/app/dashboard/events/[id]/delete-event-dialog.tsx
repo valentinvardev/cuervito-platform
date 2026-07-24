@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 export function DeleteEventDialog({
   eventName,
@@ -11,6 +12,11 @@ export function DeleteEventDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [count, setCount] = useState(2);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -49,7 +55,7 @@ export function DeleteEventDialog({
         Eliminar
       </button>
 
-      {open && (
+      {open && mounted && createPortal(
         <div
           onClick={() => setOpen(false)}
           style={{
@@ -116,7 +122,8 @@ export function DeleteEventDialog({
               </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
