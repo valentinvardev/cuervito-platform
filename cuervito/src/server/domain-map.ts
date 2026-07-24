@@ -1,14 +1,12 @@
-import "server-only";
-
-import { db } from "~/server/db";
+import { env } from "~/env";
 
 /**
  * In-memory lookup for active custom domains.
  *   "www.anaphoto.com.ar" → "ana-liotta"
  *
- * Refreshed every 60s. For ~hundreds of photographers this is cheap and
- * avoids hitting the DB on every storefront request. For thousands, swap
- * for Redis or move to an edge cache.
+ * Refreshed every 60s. This module runs from the Edge middleware, which can't
+ * use Prisma, so the reload fetches an internal Node API route instead of
+ * hitting the DB directly. Payload is a small JSON list of [host, slug] pairs.
  *
  * Survives HMR via globalThis.
  */
@@ -21,20 +19,13 @@ declare global {
 const TTL_MS = 60_000;
 
 async function reload(): Promise<Map<string, string>> {
-  const rows = await db.customDomain.findMany({
-    where: { status: "ACTIVE" },
-    select: {
-      hostname: true,
-      user: { select: { slug: true } },
-    },
+  const base = env.NEXT_PUBLIC_BASE_URL.replace(/\/+$/, "");
+  const res = await fetch(`${base}/api/_internal/domain-map`, {
+    cache: "no-store",
   });
-  const map = new Map<string, string>();
-  for (const r of rows) {
-    if (r.user.slug) {
-      map.set(r.hostname.toLowerCase(), r.user.slug);
-    }
-  }
-  return map;
+  if (!res.ok) throw new Error(`domain-map fetch failed: ${res.status}`);
+  const data = (await res.json()) as { entries: [string, string][] };
+  return new Map(data.entries);
 }
 
 /** Resolve a hostname to a photographer slug, or null if not a custom domain. */
