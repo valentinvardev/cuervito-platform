@@ -3,12 +3,13 @@ import "~/styles/prototype/panel-anim.css";
 import "~/styles/prototype/landing.css";
 
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { auth } from "~/server/auth";
 
 import { LandingMobileNav } from "./_components/landing-mobile-nav";
 import { LiveEventsSearch } from "./_components/live-events-search";
-import { PhotoStrip } from "./_components/photo-strip";
+import { PhotoStrip, PhotoStripSkeleton } from "./_components/photo-strip";
 import { RevealOnScroll } from "./_components/reveal-on-scroll";
 import { ThemeToggle } from "./_components/theme-toggle";
 
@@ -132,7 +133,9 @@ export default async function Home() {
       </header>
 
       {/* PHOTO STRIP — real photos from published events (marquee) */}
-      <PhotoStrip />
+      <Suspense fallback={<PhotoStripSkeleton />}>
+        <PhotoStrip />
+      </Suspense>
 
       {/* HOW IT WORKS */}
       <section className="how-v2" id="como-funciona">

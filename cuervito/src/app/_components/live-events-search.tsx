@@ -8,6 +8,7 @@ import { searchLiveEvents, type LiveEvent } from "./live-events-actions";
 export function LiveEventsSearch() {
   const [q, setQ] = useState("");
   const [events, setEvents] = useState<LiveEvent[]>([]);
+  const [initialLoaded, setInitialLoaded] = useState(false);
   const [, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -17,6 +18,7 @@ export function LiveEventsSearch() {
       startTransition(async () => {
         const res = await searchLiveEvents(query);
         setEvents(res);
+        setInitialLoaded(true);
       });
     }, 200);
   }
@@ -61,7 +63,18 @@ export function LiveEventsSearch() {
         className="le-grid reveal"
         style={{ ["--reveal-delay" as string]: "180ms" }}
       >
-        {events.length === 0 ? (
+        {!initialLoaded ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="le-card-skel" aria-hidden>
+              <div className="skel cover" />
+              <div className="body">
+                <div className="skel bar w-60" />
+                <div className="skel bar w-40" />
+                <div className="skel bar w-30" />
+              </div>
+            </div>
+          ))
+        ) : events.length === 0 ? (
           <div className="le-empty">
             {q ? (
               <>

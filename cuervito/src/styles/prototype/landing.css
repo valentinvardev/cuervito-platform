@@ -1399,6 +1399,67 @@
   .le-empty strong { color: var(--text-primary); }
 
   /* ═══════════════════════════════════════════════════════════════════
+     SKELETONS  — shimmer compartido para loaders de PhotoStrip y grid
+     de eventos. Usa un gradiente en movimiento sobre el color subtle.
+     ═══════════════════════════════════════════════════════════════════ */
+  .skel {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+  }
+  .skel::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0,
+      color-mix(in srgb, var(--text-primary) 8%, transparent) 50%,
+      transparent 100%
+    );
+    transform: translateX(-100%);
+    animation: skel-shimmer 1.4s ease-in-out infinite;
+  }
+  @keyframes skel-shimmer {
+    to { transform: translateX(100%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .skel::after { animation: none; opacity: 0.4; transform: none; }
+  }
+
+  /* Skeleton específico del PhotoStrip: 8 tiles estáticos, sin marquee. */
+  .photo-strip-skel {
+    display: flex; gap: 14px;
+    padding: 0 24px;
+    justify-content: center;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+  .photo-strip-skel .skel {
+    width: 220px;
+    aspect-ratio: 3 / 2;
+    border-radius: 14px;
+    flex: 0 0 auto;
+  }
+
+  /* Skeleton del grid de eventos: cover + dos barras de texto por card. */
+  .le-card-skel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .le-card-skel .cover { aspect-ratio: 16 / 10; border-radius: 0; }
+  .le-card-skel .body {
+    padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .le-card-skel .bar { height: 12px; border-radius: 4px; }
+  .le-card-skel .bar.w-60 { width: 60%; }
+  .le-card-skel .bar.w-40 { width: 40%; }
+  .le-card-skel .bar.w-30 { width: 30%; }
+
+  /* ═══════════════════════════════════════════════════════════════════
      THEME TOGGLE  (sun / moon in nav)
      ═══════════════════════════════════════════════════════════════════ */
   .theme-toggle {

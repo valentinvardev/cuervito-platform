@@ -1,6 +1,20 @@
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 
+// Static skeleton rendered by <Suspense> while PhotoStrip resolves. Occupies
+// the same vertical footprint as the real strip so nothing jumps.
+export function PhotoStripSkeleton() {
+  return (
+    <section className="photo-strip" aria-hidden>
+      <div className="photo-strip-skel">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="skel" />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // Server component: fetches the most recent watermarked previews from published
 // events, then hands them to the client marquee. The list is duplicated inside
 // the client so the CSS keyframe can translate -50% for a seamless loop.
