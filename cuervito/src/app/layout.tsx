@@ -41,11 +41,30 @@ const geist = Geist({
   variable: "--font-geist-sans",
 });
 
+// Runs before body renders. Picks the theme in this order so the correct
+// palette is applied on first paint (no FOUC):
+//   1. localStorage.theme  ("light" | "dark")  — explicit user choice
+//   2. Local hour: 07:00–19:00 ⇒ light, else dark
+//   3. Falls back to dark if anything above throws
+// The value is written to <html data-theme="…"> for the CSS token overrides
+// in styles.css to key off of.
+const themeInitScript = `(function(){try{
+  var t = localStorage.getItem('cuervito-theme');
+  if (t !== 'light' && t !== 'dark') {
+    var h = new Date().getHours();
+    t = (h >= 7 && h < 19) ? 'light' : 'dark';
+  }
+  document.documentElement.dataset.theme = t;
+}catch(e){document.documentElement.dataset.theme='dark';}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={`${geist.variable}`}>
+    <html lang="es" className={`${geist.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body>
         <TRPCReactProvider>{children}</TRPCReactProvider>
       </body>

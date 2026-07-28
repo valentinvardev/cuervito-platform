@@ -1397,3 +1397,136 @@
     font-size: 14px;
   }
   .le-empty strong { color: var(--text-primary); }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     THEME TOGGLE  (sun / moon in nav)
+     ═══════════════════════════════════════════════════════════════════ */
+  .theme-toggle {
+    width: 40px; height: 40px;
+    border-radius: 999px;
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    background: transparent;
+    transition: color 150ms, border-color 150ms, transform 200ms;
+  }
+  .theme-toggle:hover {
+    color: var(--accent);
+    border-color: var(--border-accent);
+    transform: rotate(-15deg);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     PHOTO STRIP  — marquee de fotos reales de eventos publicados
+     Se ubica inmediatamente debajo del hero, contra el edge.
+     ═══════════════════════════════════════════════════════════════════ */
+  .photo-strip {
+    padding: 32px 0 48px;
+    overflow: hidden;
+    position: relative;
+    /* Fade lateral para que las fotos "entren y salgan" en vez de cortarse. */
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+            mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  }
+  .photo-strip-track {
+    display: flex;
+    gap: 14px;
+    width: max-content;
+    animation: photo-strip-scroll 60s linear infinite;
+  }
+  .photo-strip:hover .photo-strip-track { animation-play-state: paused; }
+  @keyframes photo-strip-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  .photo-strip-tile {
+    position: relative;
+    flex: 0 0 auto;
+    width: 220px;
+    aspect-ratio: 3 / 2;
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--bg-elevated);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+  :root[data-theme="light"] .photo-strip-tile {
+    box-shadow: 0 6px 20px rgba(15, 13, 11, 0.12);
+  }
+  .photo-strip-tile img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 400ms ease;
+  }
+  .photo-strip-tile:hover img { transform: scale(1.05); }
+  .photo-strip-tile .tile-caption {
+    position: absolute; left: 10px; right: 10px; bottom: 10px;
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.55);
+    opacity: 0.9;
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .photo-strip-track { animation: none; }
+    .photo-strip { -webkit-mask-image: none; mask-image: none; overflow-x: auto; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     LIGHT-THEME OVERRIDES para landing
+     Correcciones puntuales donde el CSS de dark hardcodeó fondos oscuros.
+     ═══════════════════════════════════════════════════════════════════ */
+
+  /* Nav: fondo blanco cálido semi-transparente en light. */
+  :root[data-theme="light"] .lp .nav {
+    background: rgba(250, 250, 247, 0.85);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  /* Logo: la PNG es blanca-on-transparent y desaparece en light.
+     En light mostramos el texto que ya está en el DOM ("cuervito"+dot)
+     usando la display font. Perdemos el pájaro (asset dark-only) pero
+     ganamos una lockup editorial coherente con el modo día. */
+  :root[data-theme="light"] .lp .logo {
+    background: none;
+    width: auto;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+  :root[data-theme="light"] .lp .logo-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin: 0 1px;
+    vertical-align: 3px;
+  }
+
+  /* Hero bg + panels: los gradientes dark se aclaran en light. */
+  :root[data-theme="light"] .lp .hero-v2-bg {
+    background:
+      radial-gradient(ellipse at 20% 30%, rgba(245, 130, 10, 0.10), transparent 55%),
+      radial-gradient(ellipse at 80% 70%, rgba(245, 130, 10, 0.06), transparent 60%),
+      var(--bg-base) !important;
+  }
+
+  /* Sombras del hero de dashboard/earn-card se ajustan en light. */
+  :root[data-theme="light"] .lp .earn-card {
+    box-shadow: 0 12px 40px rgba(15, 13, 11, 0.08);
+  }
+
+  /* Drawer mobile: fondo elevated ya cambia por token pero el shadow no. */
+  :root[data-theme="light"] .lp .drawer {
+    box-shadow: -20px 0 60px rgba(15, 13, 11, 0.12);
+  }
+  :root[data-theme="light"] .lp .drawer-backdrop {
+    background: rgba(250, 250, 247, 0.6);
+  }

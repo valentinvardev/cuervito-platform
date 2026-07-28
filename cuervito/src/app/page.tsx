@@ -8,7 +8,9 @@ import { auth } from "~/server/auth";
 
 import { LandingMobileNav } from "./_components/landing-mobile-nav";
 import { LiveEventsSearch } from "./_components/live-events-search";
+import { PhotoStrip } from "./_components/photo-strip";
 import { RevealOnScroll } from "./_components/reveal-on-scroll";
+import { ThemeToggle } from "./_components/theme-toggle";
 
 export default async function Home() {
   const session = await auth().catch(() => null);
@@ -40,6 +42,7 @@ export default async function Home() {
             <a href="#como-funciona">Cómo funciona</a>
           </div>
           <div className="nav-cta">
+            <ThemeToggle />
             {session?.user ? (
               <Link href="/dashboard" className="btn btn-primary">
                 <i className="ti ti-layout-dashboard"></i> Ir al panel
@@ -50,7 +53,7 @@ export default async function Home() {
                   Soy fotógrafo
                 </Link>
                 <a href="#eventos" className="btn btn-primary">
-                  <i className="ti ti-search"></i> Buscar mis fotos
+                  <i className="ti ti-search"></i> Buscar mi evento
                 </a>
               </>
             )}
@@ -68,32 +71,32 @@ export default async function Home() {
               className="eyebrow hero-anim"
               style={{ ["--hero-delay" as string]: "180ms" }}
             >
-              <i className="ti ti-bird" style={{ fontSize: 14 }}></i>
-              Reconocimiento visual
+              <i className="ti ti-calendar-event" style={{ fontSize: 14 }}></i>
+              Fotografía de eventos deportivos
             </span>
             <h1
               className="hero-v2-headline hero-anim"
               style={{ ["--hero-delay" as string]: "280ms" }}
             >
-              Cuervito encuentra<br />
-              <span className="accent">tus fotos.</span>
+              Encontrá tus fotos<br />
+              <span className="accent">del evento.</span>
             </h1>
             <p
               className="hero-v2-sub hero-anim"
               style={{ ["--hero-delay" as string]: "420ms" }}
             >
-              Reconocemos personas a través de su foto o número de competición en segundos.
+              Cuervito indexa cada foto de cada carrera por dorsal y por cara. Elegí tu evento y las tuyas aparecen en segundos.
             </p>
             <div
               className="hero-v2-cta hero-anim"
               style={{ ["--hero-delay" as string]: "540ms" }}
             >
               <a href="#eventos" className="btn btn-primary btn-lg">
-                <i className="ti ti-search"></i>Buscar mis fotos
+                <i className="ti ti-calendar-search"></i>Buscar por evento
               </a>
-              <Link href="/signup" className="btn btn-outline btn-lg">
-                <i className="ti ti-camera"></i>Soy fotógrafo
-              </Link>
+              <a href="#como-funciona" className="btn btn-outline btn-lg">
+                <i className="ti ti-scan-eye"></i>Buscar por selfie
+              </a>
             </div>
             <div
               className="hero-v2-trust hero-anim"
@@ -128,6 +131,9 @@ export default async function Home() {
         </div>
       </header>
 
+      {/* PHOTO STRIP — real photos from published events (marquee) */}
+      <PhotoStrip />
+
       {/* HOW IT WORKS */}
       <section className="how-v2" id="como-funciona">
         <div className="container how-grid">
@@ -135,32 +141,32 @@ export default async function Home() {
             <span className="eyebrow">
               <i className="ti ti-scan-eye" style={{ fontSize: 14 }}></i>Cómo funciona
             </span>
-            <h2 className="h-section">Reconocimiento automático.</h2>
+            <h2 className="h-section">Por dorsal o por selfie.</h2>
             <p className="lede">
-              Los fotógrafos suben sus fotos del evento, nuestro motor las indexa por{" "}
-              <strong style={{ color: "var(--text-primary)" }}>cara y número de dorsal</strong>, y
-              cada persona encuentra las suyas en segundos.
+              El fotógrafo del evento sube todo, nosotros lo indexamos por{" "}
+              <strong style={{ color: "var(--text-primary)" }}>cara y número de dorsal</strong>. Vos
+              buscás como te sea más cómodo — las tuyas aparecen en segundos.
             </p>
             <ol className="how-steps">
               <li className="how-step">
                 <div className="num">01</div>
                 <div>
-                  <h3>El fotógrafo sube las fotos</h3>
-                  <p>Subida masiva con drag &amp; drop. Watermark automático para preview.</p>
+                  <h3>El fotógrafo cubre el evento</h3>
+                  <p>Sube todas las fotos con drag &amp; drop. Marca de agua automática en las previews.</p>
                 </div>
               </li>
               <li className="how-step">
                 <div className="num">02</div>
                 <div>
-                  <h3>El motor reconoce caras y dorsales</h3>
-                  <p>Cada foto queda indexada por cara, número y momento del evento.</p>
+                  <h3>Reconocemos caras y dorsales</h3>
+                  <p>Cada foto queda indexada por rostro, número y momento de la carrera.</p>
                 </div>
               </li>
               <li className="how-step">
                 <div className="num">03</div>
                 <div>
-                  <h3>Cada persona encuentra las suyas</h3>
-                  <p>Por selfie o por dorsal. Compra, descarga, listo.</p>
+                  <h3>Vos encontrás las tuyas</h3>
+                  <p>Subís una selfie o ingresás tu dorsal. Comprás y descargás, sin vueltas.</p>
                 </div>
               </li>
             </ol>
@@ -382,8 +388,8 @@ export default async function Home() {
             <span className="eyebrow">
               <i className="ti ti-calendar-event" style={{ fontSize: 14 }}></i>Eventos
             </span>
-            <h2 className="h-section">Buscá tu evento.</h2>
-            <p>Filtrá en vivo a medida que escribís.</p>
+            <h2 className="h-section">Elegí tu evento.</h2>
+            <p>Filtrá en vivo por nombre, ciudad o disciplina.</p>
           </div>
           <LiveEventsSearch />
         </div>
