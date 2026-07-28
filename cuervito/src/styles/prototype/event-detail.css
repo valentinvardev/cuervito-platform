@@ -114,6 +114,51 @@
   }
   .ev-cover .cover-btn.primary:hover { background: var(--accent-bright); border-color: var(--accent-bright); }
 
+  /* El overlay del cover siempre es oscuro abajo (gradient a rgba dark),
+     así que forzamos texto blanco en título, sub, íconos y status pill
+     sin importar el tema. En light el h1 heredaba text-primary (carbón)
+     y quedaba invisible sobre el degradado. */
+  .ev-cover .meta,
+  .ev-cover h1,
+  .ev-cover .sub,
+  .ev-cover .sub .sep {
+    color: #FFFFFF;
+  }
+  .ev-cover .sub .sep { background: rgba(255, 255, 255, 0.55); }
+
+  /* Status pill dentro del cover (ej. Borrador) — glass sobre imagen,
+     texto blanco. Override del hardcoded #0F0D0B del .status-pill base. */
+  .ev-cover .status-pill {
+    background: rgba(15, 13, 11, 0.55);
+    color: #FFFFFF;
+    border-color: rgba(255, 255, 255, 0.28);
+    backdrop-filter: blur(6px);
+  }
+  .ev-cover .status-pill i,
+  .ev-cover .status-pill.draft i { color: rgba(255, 255, 255, 0.85); }
+
+  /* Modo light: los cover-btn dejan de ser cristal negro (invisibles
+     sobre coverUrl claros) y pasan a cristal blanco. El primary
+     'Compartir' se vuelve sólido negro con texto blanco. */
+  :root[data-theme="light"] .ev-cover .cover-btn {
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(15, 13, 11, 0.15);
+    color: var(--text-primary);
+  }
+  :root[data-theme="light"] .ev-cover .cover-btn:hover {
+    border-color: var(--text-primary);
+    background: #FFFFFF;
+  }
+  :root[data-theme="light"] .ev-cover .cover-btn.primary {
+    background: #0F0D0B;
+    color: #FFFFFF;
+    border-color: #0F0D0B;
+  }
+  :root[data-theme="light"] .ev-cover .cover-btn.primary:hover {
+    background: #221E19;
+    border-color: #221E19;
+  }
+
   .share-pop {
     position: fixed;
     z-index: 60;
