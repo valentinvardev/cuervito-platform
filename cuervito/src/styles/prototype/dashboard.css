@@ -1,7 +1,7 @@
 /* Dashboard layout — ported from designs/dashboard.html */
 
 .wrap {
-  max-width: 1080px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 32px 32px 80px;
 }
@@ -880,7 +880,7 @@
 /* =========================================================================
    /dashboard/tienda
    ======================================================================= */
-.wrap-tienda { max-width: 980px; margin: 0 auto; padding: 32px 32px 80px; }
+.wrap-tienda { max-width: 1200px; margin: 0 auto; padding: 32px 32px 80px; }
 @media (max-width: 700px) { .wrap-tienda { padding: 22px 18px 60px; } }
 
 .wrap-tienda .section {
