@@ -1427,7 +1427,7 @@
     .skel::after { animation: none; opacity: 0.4; transform: none; }
   }
 
-  /* Skeleton específico del PhotoStrip: 8 tiles estáticos, sin marquee. */
+  /* Skeleton específico del PhotoStrip: 2 filas de 8 tiles estáticos. */
   .photo-strip-skel {
     display: flex; gap: 14px;
     padding: 0 24px;
@@ -1435,6 +1435,7 @@
     flex-wrap: nowrap;
     overflow: hidden;
   }
+  .photo-strip-skel + .photo-strip-skel { margin-top: 14px; }
   .photo-strip-skel .skel {
     width: 220px;
     aspect-ratio: 3 / 2;
@@ -1483,18 +1484,35 @@
      Se ubica inmediatamente debajo del hero, contra el edge.
      ═══════════════════════════════════════════════════════════════════ */
   .photo-strip {
-    padding: 32px 0 48px;
-    overflow: hidden;
+    padding: 24px 0 0;
     position: relative;
-    /* Fade lateral para que las fotos "entren y salgan" en vez de cortarse. */
-    -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
-            mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+    /* Degradado inferior: la banda dissuelve en el fondo de la página en
+       los últimos ~35% del alto para que la sección "entre" al bloque
+       "Cómo funciona" sin corte duro. */
   }
+  .photo-strip::after {
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 45%;
+    background: linear-gradient(to bottom, transparent 0%, var(--bg-base) 92%);
+    pointer-events: none;
+    z-index: 2;
+  }
+  .photo-strip-row {
+    overflow: hidden;
+    /* Fade lateral para que las fotos "entren y salgan" en vez de cortarse. */
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+            mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  }
+  .photo-strip-row + .photo-strip-row { margin-top: 14px; padding-bottom: 32px; }
   .photo-strip-track {
     display: flex;
     gap: 14px;
     width: max-content;
-    animation: photo-strip-scroll 60s linear infinite;
+    animation: photo-strip-scroll 70s linear infinite;
+  }
+  .photo-strip-track-reverse {
+    animation: photo-strip-scroll 85s linear infinite reverse;
   }
   .photo-strip:hover .photo-strip-track { animation-play-state: paused; }
   @keyframes photo-strip-scroll {
@@ -1532,8 +1550,11 @@
     pointer-events: none;
   }
   @media (prefers-reduced-motion: reduce) {
-    .photo-strip-track { animation: none; }
-    .photo-strip { -webkit-mask-image: none; mask-image: none; overflow-x: auto; }
+    .photo-strip-track,
+    .photo-strip-track-reverse { animation: none; }
+    .photo-strip-row {
+      -webkit-mask-image: none; mask-image: none; overflow-x: auto;
+    }
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -1547,28 +1568,11 @@
     border-bottom: 1px solid var(--border-subtle);
   }
 
-  /* Logo: la PNG es blanca-on-transparent y desaparece en light.
-     En light mostramos el texto que ya está en el DOM ("cuervito"+dot)
-     usando la display font. Perdemos el pájaro (asset dark-only) pero
-     ganamos una lockup editorial coherente con el modo día. */
+  /* Logo: el PNG es blanco-sobre-transparente. En light lo ennegrecemos
+     con filter: brightness(0) — bird y texto ambos quedan negros, se
+     conserva la silueta y la lockup. */
   :root[data-theme="light"] .lp .logo {
-    background: none;
-    width: auto;
-    font-size: 22px;
-    line-height: 1;
-    color: var(--text-primary);
-    font-family: var(--font-display);
-    font-weight: 700;
-    letter-spacing: -0.03em;
-  }
-  :root[data-theme="light"] .lp .logo-dot {
-    display: inline-block;
-    width: 7px;
-    height: 7px;
-    background: var(--accent);
-    border-radius: 50%;
-    margin: 0 1px;
-    vertical-align: 3px;
+    filter: brightness(0);
   }
 
   /* Hero bg + panels: los gradientes dark se aclaran en light. */

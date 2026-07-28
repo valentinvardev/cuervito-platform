@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { Select } from "~/app/_components/select";
+
 export type AdminSaleRow = {
   id: string;
   status: string;
@@ -142,23 +144,32 @@ export function AdminSalesClient({
             }}
           />
         </form>
-        <select
+        <Select
+          ariaLabel="Filtrar por estado"
+          icon="ti-filter"
           value={status}
-          onChange={(e) => applyFilter("status", e.target.value)}
-        >
-          <option value="all">Todas</option>
-          <option value="PAID">Pagadas</option>
-          <option value="PENDING">Pendientes</option>
-          <option value="FAILED">Fallaron</option>
-          <option value="REFUNDED">Reembolsadas</option>
-          <option value="EXPIRED">Expiradas</option>
-        </select>
-        <select value={range} onChange={(e) => applyFilter("range", e.target.value)}>
-          <option value="today">Hoy</option>
-          <option value="7d">Últimos 7 días</option>
-          <option value="30d">Últimos 30 días</option>
-          <option value="all">Todo</option>
-        </select>
+          onChange={(v) => applyFilter("status", v)}
+          options={[
+            { value: "all", label: "Todas" },
+            { value: "PAID", label: "Pagadas" },
+            { value: "PENDING", label: "Pendientes" },
+            { value: "FAILED", label: "Fallaron" },
+            { value: "REFUNDED", label: "Reembolsadas" },
+            { value: "EXPIRED", label: "Expiradas" },
+          ]}
+        />
+        <Select
+          ariaLabel="Filtrar por rango"
+          icon="ti-calendar-stats"
+          value={range}
+          onChange={(v) => applyFilter("range", v)}
+          options={[
+            { value: "today", label: "Hoy" },
+            { value: "7d", label: "Últimos 7 días", meta: "7d" },
+            { value: "30d", label: "Últimos 30 días", meta: "30d" },
+            { value: "all", label: "Todo" },
+          ]}
+        />
         {pending && (
           <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
             cargando…

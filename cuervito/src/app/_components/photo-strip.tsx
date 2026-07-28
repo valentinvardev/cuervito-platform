@@ -6,11 +6,13 @@ import { resolveMediaUrl } from "~/server/media";
 export function PhotoStripSkeleton() {
   return (
     <section className="photo-strip" aria-hidden>
-      <div className="photo-strip-skel">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="skel" />
-        ))}
-      </div>
+      {[0, 1].map((row) => (
+        <div key={row} className="photo-strip-skel">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="skel" />
+          ))}
+        </div>
+      ))}
     </section>
   );
 }
@@ -26,7 +28,7 @@ export async function PhotoStrip() {
       event: { isPublished: true, status: { in: ["ACTIVE", "FINISHED"] } },
     },
     orderBy: { createdAt: "desc" },
-    take: 24,
+    take: 48,
     select: {
       id: true,
       previewKey: true,
@@ -47,20 +49,42 @@ export async function PhotoStrip() {
   const valid = tiles.filter((t): t is typeof t & { url: string } => !!t.url);
   if (valid.length === 0) return null;
 
-  // Duplicate the row so the marquee loop is seamless. Keys are suffixed to
-  // stay unique across the two copies.
-  const doubled = [...valid, ...valid.map((t) => ({ ...t, id: `${t.id}-copy` }))];
+  // Split into two rows for a richer mosaic. Odd-indexed items land in the
+  // top row (scrolls left), even-indexed in the bottom row (scrolls right).
+  // Fallback: if only one row's worth of photos, repeat the same set for the
+  // second row so the layout still feels full.
+  const rowA = valid.filter((_, i) => i % 2 === 0);
+  const rowB = valid.filter((_, i) => i % 2 === 1);
+  const useB = rowB.length >= 6 ? rowB : rowA;
+
+  const dup = <T extends { id: string }>(arr: T[]) => [
+    ...arr,
+    ...arr.map((t) => ({ ...t, id: `${t.id}-copy` })),
+  ];
 
   return (
     <section className="photo-strip" aria-label="Fotos de eventos recientes">
-      <div className="photo-strip-track">
-        {doubled.map((t) => (
-          <div key={t.id} className="photo-strip-tile">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={t.url} alt="" loading="lazy" />
-            <span className="tile-caption">{t.eventName}</span>
-          </div>
-        ))}
+      <div className="photo-strip-row">
+        <div className="photo-strip-track">
+          {dup(rowA).map((t) => (
+            <div key={t.id} className="photo-strip-tile">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={t.url} alt="" loading="lazy" />
+              <span className="tile-caption">{t.eventName}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="photo-strip-row">
+        <div className="photo-strip-track photo-strip-track-reverse">
+          {dup(useB).map((t) => (
+            <div key={t.id} className="photo-strip-tile">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={t.url} alt="" loading="lazy" />
+              <span className="tile-caption">{t.eventName}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

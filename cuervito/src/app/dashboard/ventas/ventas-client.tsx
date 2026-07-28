@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Select } from "~/app/_components/select";
+
 import { SaleDrawer } from "./sale-drawer";
 
 export type SaleRow = {
@@ -95,23 +97,28 @@ export function VentasClient({
       </div>
 
       <div className="filters">
-        <select
+        <Select
+          ariaLabel="Filtrar por evento"
+          icon="ti-calendar-event"
           value={eventFilter}
-          onChange={(e) => updateFilter("event", e.target.value)}
-        >
-          <option value="all">Todos los eventos</option>
-          {events.map((ev) => (
-            <option key={ev.id} value={ev.id}>
-              {ev.name}
-            </option>
-          ))}
-        </select>
-        <select value={range} onChange={(e) => updateFilter("range", e.target.value)}>
-          <option value="today">Hoy</option>
-          <option value="7d">Últimos 7 días</option>
-          <option value="30d">Últimos 30 días</option>
-          <option value="all">Todo</option>
-        </select>
+          onChange={(v) => updateFilter("event", v)}
+          options={[
+            { value: "all", label: "Todos los eventos" },
+            ...events.map((ev) => ({ value: ev.id, label: ev.name })),
+          ]}
+        />
+        <Select
+          ariaLabel="Filtrar por rango"
+          icon="ti-calendar-stats"
+          value={range}
+          onChange={(v) => updateFilter("range", v)}
+          options={[
+            { value: "today", label: "Hoy" },
+            { value: "7d", label: "Últimos 7 días", meta: "7d" },
+            { value: "30d", label: "Últimos 30 días", meta: "30d" },
+            { value: "all", label: "Todo" },
+          ]}
+        />
       </div>
 
       {rows.length === 0 ? (
