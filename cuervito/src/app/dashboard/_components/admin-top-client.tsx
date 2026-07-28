@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { ThemeToggle } from "~/app/_components/theme-toggle";
+
 import { AdminAvatar } from "./admin-avatar";
 
 export function AdminTopClient({
@@ -59,6 +61,7 @@ export function AdminTopClient({
       </div>
 
       <div className="adm-top-right">
+        <ThemeToggle />
         <AdminAvatar
           initials={initials}
           userName={userName}

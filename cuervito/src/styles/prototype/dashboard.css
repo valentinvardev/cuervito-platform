@@ -441,14 +441,14 @@
 
 /* Standalone wrap (events.html, perfil.html, etc) */
 .wrap-narrow {
-  max-width: 880px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 32px 32px 80px;
 }
 @media (max-width: 700px) { .wrap-narrow { padding: 22px 18px 60px; } }
 
 .wrap-narrower {
-  max-width: 720px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 32px 32px 80px;
 }
@@ -1222,7 +1222,7 @@
 /* =========================================================================
    /dashboard/ventas
    ======================================================================= */
-.wrap-ventas { max-width: 880px; margin: 0 auto; padding: 32px 32px 80px; }
+.wrap-ventas { max-width: 1200px; margin: 0 auto; padding: 32px 32px 80px; }
 @media (max-width: 700px) { .wrap-ventas { padding: 22px 18px 60px; } }
 
 .wrap-ventas .filters {

@@ -8,7 +8,7 @@ export function QuotaWidget({ quota }: { quota: QuotaUsage }) {
         border: "1px solid var(--border-subtle)",
         borderRadius: 12,
         padding: "16px 18px",
-        marginBottom: 18,
+        marginBottom: 8,
         display: "grid",
         gap: 14,
       }}

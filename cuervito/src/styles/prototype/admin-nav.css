@@ -15,8 +15,11 @@
   backdrop-filter: blur(10px);
   position: sticky; top: 0; z-index: 30;
 }
+:root[data-theme="light"] .adm-top {
+  background: rgba(250, 250, 247, 0.88);
+}
 .adm-top-left, .adm-top-right { display: flex; align-items: center; }
-.adm-top-right { justify-content: flex-end; }
+.adm-top-right { justify-content: flex-end; gap: 12px; }
 .adm-top-center { display: flex; align-items: center; justify-content: center; }
 
 .adm-nav-btn {

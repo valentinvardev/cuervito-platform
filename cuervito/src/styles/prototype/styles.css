@@ -55,13 +55,11 @@
    negros. El naranja de marca sigue vivo en acentos (eyebrows, íconos,
    focus rings) para que el sistema no pierda identidad.
 
-   Scopeado a `.lp` (la landing) para que dashboard/admin/storefront —
-   que fueron diseñados dark-first y hardcodean colores oscuros — no se
-   rompan. El script en layout.tsx setea html[data-theme="light"] antes
-   de que renderice el body para evitar FOUC. La landing usa .lp así que
-   toma los tokens; el resto queda con los valores default (dark).
+   Aplicado globalmente (:root) para que la landing, dashboard, admin y
+   storefront respondan al mismo toggle. Casos donde algún CSS hardcodea
+   colores dark tienen overrides puntuales en cada archivo.
    ────────────────────────────────────────────────────────────────────── */
-:root[data-theme="light"] .lp {
+:root[data-theme="light"] {
   --bg-base:        #FAFAF7;
   --bg-surface:     #FFFFFF;
   --bg-elevated:    #F2EEE6;
@@ -84,15 +82,36 @@
   --accent-muted:   color-mix(in srgb, var(--accent) 20%, white);
   --accent-glow:    color-mix(in srgb, var(--accent) 22%, transparent);
   --accent-deep:    color-mix(in srgb, var(--accent) 12%, transparent);
+
+  color-scheme: light;
+}
+:root:not([data-theme="light"]) { color-scheme: dark; }
+
+/* ─── Theme toggle (sun/moon) ─── compartido entre landing y dashboard. */
+.theme-toggle {
+  width: 40px; height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  background: transparent;
+  transition: color 150ms, border-color 150ms, transform 200ms;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.theme-toggle:hover {
+  color: var(--accent);
+  border-color: var(--border-accent);
+  transform: rotate(-15deg);
 }
 
-/* La landing pinta su propio fondo — el body sigue leyendo los tokens
-   default. Pintamos .lp explícitamente para que en modo light el fondo
-   blanco cubra la ventana. */
-.lp { background: var(--bg-base); color: var(--text-primary); }
-
-:root[data-theme="light"] { color-scheme: light; }
-:root:not([data-theme="light"]) { color-scheme: dark; }
+/* Logo en modo light: el PNG es blanco sobre transparente. filter:
+   brightness(0) lo ennegrece entero, conserva la silueta del pájaro y
+   la lockup. Aplica a landing + dashboard + admin. */
+:root[data-theme="light"] .logo {
+  filter: brightness(0);
+}
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {

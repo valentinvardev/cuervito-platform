@@ -74,8 +74,8 @@ export default async function DashboardPage() {
 
       <QuotaWidget quota={quota} />
 
-      <section className="section" style={{ marginBottom: 24 }}>
-        <div className="section-head" style={{ marginBottom: 12, paddingLeft: 0, justifyContent: "flex-start" }}>
+      <section className="section" style={{ marginTop: 4, marginBottom: 20 }}>
+        <div className="section-head" style={{ marginBottom: 10, paddingLeft: 0, justifyContent: "flex-start" }}>
           <h2 style={{ margin: 0, paddingLeft: 0, textAlign: "left" }}>¿Qué querés hacer hoy?</h2>
         </div>
 

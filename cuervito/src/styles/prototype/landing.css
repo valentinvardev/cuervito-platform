@@ -1460,24 +1460,8 @@
   .le-card-skel .bar.w-40 { width: 40%; }
   .le-card-skel .bar.w-30 { width: 30%; }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     THEME TOGGLE  (sun / moon in nav)
-     ═══════════════════════════════════════════════════════════════════ */
-  .theme-toggle {
-    width: 40px; height: 40px;
-    border-radius: 999px;
-    border: 1px solid var(--border-default);
-    color: var(--text-secondary);
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 16px;
-    background: transparent;
-    transition: color 150ms, border-color 150ms, transform 200ms;
-  }
-  .theme-toggle:hover {
-    color: var(--accent);
-    border-color: var(--border-accent);
-    transform: rotate(-15deg);
-  }
+  /* .theme-toggle styles vive en styles.css (compartido por landing +
+     dashboard + admin). */
 
   /* ═══════════════════════════════════════════════════════════════════
      PHOTO STRIP  — marquee de fotos reales de eventos publicados
@@ -1568,12 +1552,8 @@
     border-bottom: 1px solid var(--border-subtle);
   }
 
-  /* Logo: el PNG es blanco-sobre-transparente. En light lo ennegrecemos
-     con filter: brightness(0) — bird y texto ambos quedan negros, se
-     conserva la silueta y la lockup. */
-  :root[data-theme="light"] .lp .logo {
-    filter: brightness(0);
-  }
+  /* Logo dark→light: el override global vive en styles.css (aplica a
+     landing, dashboard nav y admin nav). */
 
   /* Hero bg + panels: los gradientes dark se aclaran en light. */
   :root[data-theme="light"] .lp .hero-v2-bg {
