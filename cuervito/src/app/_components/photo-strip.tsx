@@ -21,28 +21,29 @@ export function PhotoStripSkeleton() {
 // events, then hands them to the client marquee. The list is duplicated inside
 // the client so the CSS keyframe can translate -50% for a seamless loop.
 export async function PhotoStrip() {
-  const photos = await db.photo.findMany({
+  // Solo portadas de evento — no llevan watermark, así que quedan limpias
+  // en el hero. Un cover por evento publicado; ordenamos por eventDate
+  // para priorizar lo más reciente.
+  const events = await db.event.findMany({
     where: {
-      deletedAt: null,
-      previewKey: { not: null },
-      event: { isPublished: true, status: { in: ["ACTIVE", "FINISHED"] } },
+      isPublished: true,
+      status: { in: ["ACTIVE", "FINISHED"] },
+      coverUrl: { not: null },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ eventDate: "desc" }, { createdAt: "desc" }],
     take: 48,
     select: {
       id: true,
-      previewKey: true,
-      event: { select: { name: true } },
+      coverUrl: true,
     },
   });
 
   const tiles = await Promise.all(
-    photos
-      .filter((p): p is typeof p & { previewKey: string } => !!p.previewKey)
-      .map(async (p) => ({
-        id: p.id,
-        eventName: p.event.name,
-        url: await resolveMediaUrl(p.previewKey).catch(() => null),
+    events
+      .filter((e): e is typeof e & { coverUrl: string } => !!e.coverUrl)
+      .map(async (e) => ({
+        id: e.id,
+        url: await resolveMediaUrl(e.coverUrl).catch(() => null),
       })),
   );
 
@@ -70,7 +71,6 @@ export async function PhotoStrip() {
             <div key={t.id} className="photo-strip-tile">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={t.url} alt="" loading="lazy" />
-              <span className="tile-caption">{t.eventName}</span>
             </div>
           ))}
         </div>
@@ -81,7 +81,6 @@ export async function PhotoStrip() {
             <div key={t.id} className="photo-strip-tile">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={t.url} alt="" loading="lazy" />
-              <span className="tile-caption">{t.eventName}</span>
             </div>
           ))}
         </div>
