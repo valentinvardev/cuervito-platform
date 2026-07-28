@@ -754,6 +754,7 @@
   background: var(--accent);
   border-color: var(--accent);
 }
+:root[data-theme="light"] .toggle-switch.on { border-color: var(--text-primary); }
 .toggle-switch.on .thumb {
   background: #1a0d00;
   transform: translateX(24px);

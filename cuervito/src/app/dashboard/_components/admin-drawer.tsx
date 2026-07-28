@@ -124,7 +124,9 @@ export function AdminDrawer() {
         overflowY: "auto",
       }}
     >
-      {/* Header */}
+      {/* Header — mismo bg que el drawer (var(--bg-base)) para que no
+         quede una franja de otro tono arriba. La X gana estilo pill con
+         borde para que sea imposible perderla. */}
       <header
         style={{
           height: 64,
@@ -134,11 +136,10 @@ export function AdminDrawer() {
           justifyContent: "space-between",
           padding: "0 22px",
           borderBottom: "1px solid var(--border-subtle)",
-          background: "rgba(15, 13, 11, 0.92)",
+          background: "var(--bg-base)",
           position: "sticky",
           top: 0,
           zIndex: 1,
-          backdropFilter: "blur(8px)",
         }}
       >
         <Link
@@ -154,32 +155,36 @@ export function AdminDrawer() {
           onClick={close}
           aria-label="Cerrar menú"
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: 10,
-            background: "transparent",
-            border: "1px solid transparent",
-            color: "var(--text-secondary)",
             display: "inline-flex",
             alignItems: "center",
-            justifyContent: "center",
+            gap: 8,
+            height: 40,
+            padding: "0 14px 0 12px",
+            borderRadius: 10,
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-default)",
+            color: "var(--text-primary)",
+            fontFamily: "var(--font-ui)",
+            fontSize: 13,
+            fontWeight: 500,
             cursor: "pointer",
-            transition: "background 150ms ease, color 150ms ease, border-color 150ms ease",
+            transition: "background 150ms ease, border-color 150ms ease, color 150ms ease",
           }}
           onMouseEnter={(e) => {
             const el = e.currentTarget as HTMLButtonElement;
-            el.style.background = "var(--bg-surface)";
-            el.style.borderColor = "var(--border-subtle)";
-            el.style.color = "var(--text-primary)";
+            el.style.background = "var(--bg-elevated)";
+            el.style.borderColor = "var(--border-strong)";
+            el.style.color = "var(--accent)";
           }}
           onMouseLeave={(e) => {
             const el = e.currentTarget as HTMLButtonElement;
-            el.style.background = "transparent";
-            el.style.borderColor = "transparent";
-            el.style.color = "var(--text-secondary)";
+            el.style.background = "var(--bg-surface)";
+            el.style.borderColor = "var(--border-default)";
+            el.style.color = "var(--text-primary)";
           }}
         >
-          <i className="ti ti-x" style={{ fontSize: 22 }} />
+          <i className="ti ti-x" style={{ fontSize: 18 }} />
+          <span>Cerrar</span>
         </button>
       </header>
 

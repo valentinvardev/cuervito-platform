@@ -80,8 +80,13 @@
   --btn-primary-shadow:  0 6px 20px rgba(15, 13, 11, 0.18);
 
   --accent-muted:   color-mix(in srgb, var(--accent) 20%, white);
-  --accent-glow:    color-mix(in srgb, var(--accent) 22%, transparent);
+  --accent-glow:    rgba(15, 13, 11, 0.12);
   --accent-deep:    color-mix(in srgb, var(--accent) 12%, transparent);
+
+  /* Outlines: en modo día los bordes acentuados se vuelven negros para
+     leer como una anotación de tinta. Los íconos y textos naranja
+     quedan intactos (siguen usando --accent directamente). */
+  --border-accent:  rgba(15, 13, 11, 0.55);
 
   color-scheme: light;
 }
