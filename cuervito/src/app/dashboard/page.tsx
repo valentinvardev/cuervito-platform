@@ -5,6 +5,7 @@ import { auth } from "~/server/auth";
 import { getCachedQuotaUsage, getDashboardCounts } from "~/server/cached";
 import { db } from "~/server/db";
 
+import { Greeting } from "./_components/greeting";
 import { QuotaWidget } from "./_components/quota-widget";
 import { SalesMini } from "./_components/sales-mini";
 import { DemoSaleTrigger } from "./_components/demo-sale-trigger";
@@ -37,13 +38,16 @@ export default async function DashboardPage() {
   const { activeEvents, finishedEvents, salesCount } = counts;
 
   const greetingName = me.name?.split(" ")[0] ?? "fotógrafo";
+  // Hint inicial de saludo desde el server (hora Argentina). El client
+  // reemplaza inmediatamente con la hora real del navegador.
+  const serverHour = new Date().getHours();
 
   return (
     <main className="wrap">
       <DemoSaleTrigger />
 
       <div className="greeting">
-        <h1>Buen día, {greetingName}.</h1>
+        <Greeting name={greetingName} serverHour={serverHour} />
         <p>
           {salesCount > 0
             ? `${salesCount.toLocaleString("es-AR")} ventas registradas.`

@@ -118,6 +118,15 @@
   filter: brightness(0);
 }
 
+/* Logos de Mercado Pago: los SVG de la carpeta /assets/mp/ vienen en
+   blanco. En light quedan invisibles sobre el fondo blanco cálido —
+   aplicamos el mismo brightness(0) que al logo principal. Cubre el
+   uso en /dashboard/cobros, /onboarding/mp y el landing. */
+:root[data-theme="light"] .mp-logo img,
+:root[data-theme="light"] .paid-with img {
+  filter: brightness(0);
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   background: var(--bg-base);
