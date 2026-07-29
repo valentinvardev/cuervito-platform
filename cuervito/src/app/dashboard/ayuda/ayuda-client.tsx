@@ -136,12 +136,15 @@ export function AyudaClient() {
                 type="button"
                 className={`faq-item ${open ? "open" : ""}`}
                 onClick={() => setOpenIdx(open ? null : i)}
+                aria-expanded={open}
               >
                 <div className="faq-q">
                   <span>{f.q}</span>
-                  <i className={`ti ${open ? "ti-minus" : "ti-plus"} chev`} />
+                  <i className="ti ti-plus chev" aria-hidden />
                 </div>
-                {open && <div className="faq-a">{f.a}</div>}
+                <div className="faq-a-wrap">
+                  <div className="faq-a">{f.a}</div>
+                </div>
               </button>
             );
           })}

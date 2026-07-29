@@ -1553,12 +1553,36 @@
   font-size: 16px;
   flex-shrink: 0;
 }
-.faq-item.open .faq-q .chev { color: var(--accent); }
+.faq-q .chev { transition: transform 220ms cubic-bezier(.2, .8, .2, 1), color 150ms; }
+.faq-item.open .faq-q .chev {
+  color: var(--accent);
+  transform: rotate(45deg); /* + gira 45º → aparenta x sin swap de ícono */
+}
+/* Contenedor colapsable con el grid-row 0fr→1fr trick para animar
+   height:auto sin fijar max-height. Requiere una sola grid-row child. */
+.faq-a-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 260ms cubic-bezier(.2, .8, .2, 1);
+}
+.faq-item.open .faq-a-wrap { grid-template-rows: 1fr; }
 .faq-a {
-  padding: 0 18px 16px;
+  overflow: hidden;
+  padding: 0 18px;
   font-size: 13.5px;
   line-height: 1.6;
   color: var(--text-secondary);
+  opacity: 0;
+  transition: opacity 220ms ease 40ms, padding 260ms cubic-bezier(.2, .8, .2, 1);
+}
+.faq-item.open .faq-a {
+  opacity: 1;
+  padding: 0 18px 16px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .faq-a-wrap,
+  .faq-a,
+  .faq-q .chev { transition: none; }
 }
 
 /* =========================================================================
