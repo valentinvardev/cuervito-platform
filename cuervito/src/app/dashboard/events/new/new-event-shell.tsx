@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 
+import { DateInput } from "~/app/_components/date-input";
+
 import { createEventAction, type EventFormState } from "../actions";
 
 export function NewEventShell() {
@@ -68,13 +70,12 @@ export function NewEventShell() {
         >
           <div className="new-field">
             <label className="label" htmlFor="ne-date">Fecha del evento</label>
-            <input
+            <DateInput
               id="ne-date"
-              type="date"
               name="eventDate"
-              className={`input ${fe.eventDate ? "input-error" : ""}`}
               value={eventDate}
-              onChange={(e) => setEventDate(e.target.value)}
+              onChange={setEventDate}
+              ariaLabel="Fecha del evento"
             />
           </div>
 
