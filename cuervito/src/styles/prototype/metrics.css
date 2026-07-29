@@ -1,0 +1,348 @@
+/* ===========================================================================
+   metrics.css — modal de métricas del fotógrafo
+   Jerarquía de lectura: neto del período (hero + gráfico) → stats de apoyo
+   → conversión con lectura contextual → ranking de eventos.
+   =========================================================================== */
+
+.mx-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(8, 6, 5, 0.72);
+  backdrop-filter: blur(8px);
+  z-index: 240;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.mx-panel {
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 720px;
+  max-height: calc(100vh - 48px);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+}
+:root[data-theme="light"] .mx-panel {
+  box-shadow: 0 24px 70px rgba(15, 13, 11, 0.16);
+}
+
+/* ---- Header ---- */
+.mx-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.mx-head-title { display: flex; align-items: flex-start; gap: 12px; }
+.mx-head-icon {
+  width: 40px; height: 40px;
+  border-radius: 11px;
+  background: var(--accent-deep);
+  color: var(--accent);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 21px;
+  flex-shrink: 0;
+}
+:root[data-theme="light"] .mx-head-icon { border: none; }
+.mx-head h2 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 19px; letter-spacing: -0.02em;
+  color: var(--text-primary); margin: 0;
+}
+.mx-head p {
+  font-size: 12.5px; color: var(--text-tertiary);
+  margin-top: 2px; line-height: 1.45;
+}
+.mx-close {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: color 140ms, background 140ms;
+}
+.mx-close:hover { color: var(--text-primary); background: var(--bg-elevated); }
+
+/* ---- Range pills ---- */
+.mx-ranges {
+  display: flex; gap: 4px;
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.mx-range {
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-ui); font-size: 13px; font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+  transition: color 140ms, background 140ms;
+}
+.mx-range:hover { color: var(--text-primary); background: var(--bg-elevated); }
+.mx-range.active {
+  background: var(--accent-deep);
+  color: var(--accent);
+  border-color: var(--border-accent);
+}
+
+.mx-body {
+  padding: 20px 22px 24px;
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 18px;
+}
+
+/* ---- Hero ---- */
+.mx-hero {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 18px 20px 8px;
+}
+.mx-hero-label {
+  font-size: 11px; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.07em;
+}
+.mx-hero-value {
+  font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(30px, 5vw, 40px); letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--text-primary);
+  margin: 4px 0 6px;
+}
+.mx-hero-meta {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  font-size: 12.5px;
+}
+.mx-hero-meta > span { display: inline-flex; align-items: center; gap: 5px; }
+.mx-up { color: var(--success); font-family: var(--font-mono); }
+.mx-down { color: var(--error); font-family: var(--font-mono); }
+.mx-flat, .mx-muted { color: var(--text-tertiary); }
+.mx-sep {
+  width: 3px; height: 3px; border-radius: 50%;
+  background: var(--text-tertiary); opacity: 0.5;
+}
+
+/* ---- Chart ---- */
+.mx-chart { position: relative; margin-top: 14px; }
+.mx-chart svg {
+  width: 100%; height: 120px; display: block;
+  cursor: crosshair;
+}
+.mx-chart-tip {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 6px 10px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+:root[data-theme="light"] .mx-chart-tip {
+  box-shadow: 0 6px 18px rgba(15, 13, 11, 0.12);
+}
+.mx-chart-tip strong {
+  display: block;
+  font-family: var(--font-mono); font-size: 13px;
+  color: var(--accent);
+}
+.mx-chart-tip span {
+  display: block;
+  font-size: 11px; color: var(--text-tertiary);
+  margin-top: 1px;
+}
+.mx-chart-empty {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12.5px; color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+/* ---- Stats ---- */
+.mx-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+@media (max-width: 620px) {
+  .mx-stats { grid-template-columns: repeat(2, 1fr); }
+}
+.mx-stat {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px;
+  min-width: 0;
+}
+.mx-stat-icon {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: var(--accent-deep);
+  color: var(--accent);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+:root[data-theme="light"] .mx-stat-icon { border: none; }
+.mx-stat-label {
+  font-size: 10.5px; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mx-stat-value {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 17px; letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin-top: 1px;
+}
+
+/* ---- Conversión ---- */
+.mx-conversion {
+  display: flex; align-items: stretch; gap: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 16px 18px;
+  flex-wrap: wrap;
+}
+.mx-conv-main {
+  display: flex; align-items: center; gap: 12px;
+  padding-right: 16px;
+  border-right: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+@media (max-width: 560px) {
+  .mx-conv-main { border-right: none; padding-right: 0; }
+}
+.mx-conv-num {
+  font-family: var(--font-display); font-weight: 800;
+  font-size: 34px; letter-spacing: -0.03em; line-height: 1;
+  color: var(--accent);
+}
+.mx-conv-lbl {
+  font-size: 11px; color: var(--text-tertiary);
+  line-height: 1.35;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.mx-conv-read { flex: 1; min-width: 220px; }
+.mx-conv-text {
+  font-size: 13px; line-height: 1.5;
+  color: var(--text-secondary);
+  display: flex; align-items: flex-start; gap: 7px;
+}
+.mx-conv-text i { flex-shrink: 0; margin-top: 2px; font-size: 15px; }
+.mx-conv-text.mx-good i { color: var(--accent); }
+.mx-conv-text.mx-ok i { color: var(--success); }
+.mx-conv-text.mx-low i { color: var(--warning); }
+.mx-conv-base {
+  font-size: 11.5px; color: var(--text-tertiary);
+  margin-top: 6px;
+}
+
+/* ---- Top eventos ---- */
+.mx-top h3 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 15px; letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.mx-top-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.mx-top-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 11px;
+  padding: 11px 14px;
+}
+.mx-rank {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  color: var(--text-tertiary);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 11px;
+  flex-shrink: 0;
+}
+.mx-top-row:first-child .mx-rank {
+  background: var(--accent-deep); color: var(--accent);
+}
+.mx-top-info { flex: 1; min-width: 0; }
+.mx-top-name {
+  font-size: 13.5px; font-weight: 500; color: var(--text-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mx-top-meta { font-size: 11.5px; color: var(--text-tertiary); margin-top: 1px; }
+.mx-bar {
+  height: 3px; border-radius: 2px;
+  background: var(--bg-elevated);
+  margin-top: 7px; overflow: hidden;
+}
+.mx-bar span {
+  display: block; height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.mx-top-amt {
+  font-family: var(--font-mono); font-size: 13.5px;
+  color: var(--accent); flex-shrink: 0;
+}
+
+.mx-empty {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px;
+  background: var(--bg-surface);
+  border: 1px dashed var(--border-subtle);
+  border-radius: 12px;
+}
+.mx-empty > i { font-size: 26px; color: var(--text-tertiary); flex-shrink: 0; }
+.mx-empty strong { display: block; font-size: 13.5px; color: var(--text-primary); }
+.mx-empty span {
+  display: block; font-size: 12.5px;
+  color: var(--text-tertiary); margin-top: 2px;
+}
+
+/* ---- Skeleton ---- */
+.mx-skel { display: flex; flex-direction: column; gap: 18px; }
+.mx-skel-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+@media (max-width: 620px) {
+  .mx-skel-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---- Trigger dentro de la tarjeta de ventas ----
+   Se agrupa con el selector de rango en una sola celda del grid de
+   .sales-mini, que sigue siendo de 3 columnas (el sparkline es
+   condicional y agregar un 4o hijo lo desalineaba). */
+.sm-actions {
+  display: flex; align-items: center; gap: 8px;
+  justify-self: end;
+}
+.sm-metrics-btn {
+  width: 38px; height: 38px;
+  border-radius: 9px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 17px;
+  cursor: pointer;
+  transition: color 140ms, border-color 140ms, background 140ms;
+  flex-shrink: 0;
+}
+.sm-metrics-btn:hover {
+  color: var(--accent);
+  border-color: var(--border-accent);
+  background: var(--accent-deep);
+}

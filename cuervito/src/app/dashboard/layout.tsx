@@ -2,6 +2,7 @@ import "~/styles/prototype/styles.css";
 import "~/styles/prototype/panel-anim.css";
 import "~/styles/prototype/admin-nav.css";
 import "~/styles/prototype/dashboard.css";
+import "~/styles/prototype/metrics.css";
 
 import { TooltipProvider } from "~/app/_components/tooltip-provider";
 

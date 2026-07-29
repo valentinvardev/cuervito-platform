@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { MetricsModal } from "./metrics-modal";
+
 type Range = "7d" | "30d" | "90d" | "1y";
 
 const TS: Record<
@@ -63,6 +65,7 @@ function buildSpark(points: number[], w = 160, h = 44) {
 export function SalesMini() {
   const [range, setRange] = useState<Range>("30d");
   const [open, setOpen] = useState(false);
+  const [metricsOpen, setMetricsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -130,6 +133,19 @@ export function SalesMini() {
         </div>
       )}
 
+      {metricsOpen && <MetricsModal onClose={() => setMetricsOpen(false)} />}
+
+      <div className="sm-actions">
+      <button
+        type="button"
+        className="sm-metrics-btn"
+        onClick={() => setMetricsOpen(true)}
+        aria-label="Ver métricas"
+        data-tip="Ver tus métricas: recaudación, conversión y eventos que más rinden"
+      >
+        <i className="ti ti-chart-histogram" />
+      </button>
+
       <div className={`ts-drop ${open ? "open" : ""}`} ref={ref}>
         <button
           className={`ts-trigger ${open ? "open" : ""}`}
@@ -162,6 +178,7 @@ export function SalesMini() {
             </button>
           ))}
         </div>
+      </div>
       </div>
     </section>
   );

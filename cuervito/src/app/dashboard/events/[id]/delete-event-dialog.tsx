@@ -44,14 +44,11 @@ export function DeleteEventDialog({
     <>
       <button
         type="button"
-        className="btn"
-        style={{
-          color: "var(--error)",
-          border: "1px solid rgba(224,85,85,0.45)",
-          background: "transparent",
-        }}
+        className="btn btn-danger-solid"
+        data-tip="Borra el evento, sus fotos de S3 y su colección de reconocimiento"
         onClick={() => setOpen(true)}
       >
+        <i className="ti ti-trash" />
         Eliminar
       </button>
 
@@ -125,16 +122,10 @@ function ConfirmButton({ count }: { count: number }) {
   return (
     <button
       type="submit"
-      className="btn"
+      className="btn btn-danger-solid"
       disabled={locked}
       style={{
-        color: "var(--error)",
-        border: "1px solid rgba(224,85,85,0.45)",
-        background: locked ? "transparent" : "rgba(224,85,85,0.08)",
-        opacity: locked ? 0.75 : 1,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
+        opacity: locked ? 0.55 : 1,
         minWidth: 128,
         justifyContent: "center",
       }}
@@ -153,8 +144,8 @@ function ConfirmButton({ count }: { count: number }) {
         .del-spinner {
           width: 14px;
           height: 14px;
-          border: 2px solid rgba(224,85,85,0.35);
-          border-top-color: var(--error);
+          border: 2px solid rgba(255,255,255,0.4);
+          border-top-color: #fff;
           border-radius: 50%;
           animation: del-spin 0.7s linear infinite;
         }

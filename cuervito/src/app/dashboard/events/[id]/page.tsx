@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { env } from "~/env";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
+import { resolveAvatarUrl } from "~/server/avatar";
 import { getPresignedDownloadUrl } from "~/server/s3";
 import { resolveMediaUrl } from "~/server/media";
 
@@ -90,6 +91,9 @@ export default async function EventDetailPage(props: {
     }),
   );
 
+  // User.image guarda una key de S3, no una URL — hay que firmarla.
+  const hostAvatarUrl = await resolveAvatarUrl(event.owner.image);
+
   // Public URL — only meaningful when the event is published. For now we expose
   // it always so the share button works in the panel (page may 404 until Fase 4).
   const publicPath =
@@ -127,7 +131,7 @@ export default async function EventDetailPage(props: {
       host={{
         name: event.owner.name ?? null,
         email: event.owner.email ?? null,
-        image: event.owner.image ?? null,
+        image: hostAvatarUrl,
       }}
       publicPath={publicPath}
       photos={photos}

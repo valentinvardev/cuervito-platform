@@ -163,18 +163,27 @@ export function EventInfoSection({
           <button
             type="button"
             className="btn btn-outline"
+            data-tip="Lo saca del listado activo pero conserva fotos y ventas"
             onClick={() => {
               if (confirm("¿Archivar el evento? Lo sacamos del listado activo.")) {
                 void archiveAction();
               }
             }}
           >
+            <i className="ti ti-archive" />
             Archivar
           </button>
           <Link href="/dashboard/events" className="btn btn-outline">
+            <i className="ti ti-x" />
             Cancelar
           </Link>
-          <button type="submit" className="btn btn-primary" disabled={pending}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={pending}
+            data-tip="Guardar los datos del evento"
+          >
+            <i className={pending ? "ti ti-loader-2 spin-icon" : "ti ti-device-floppy"} />
             {pending ? "Guardando…" : "Guardar cambios"}
           </button>
         </div>

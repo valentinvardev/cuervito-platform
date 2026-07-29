@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
+import { resolveAvatarUrl } from "~/server/avatar";
 
 const inviteSchema = z.object({
   email: z.string().email().transform((s) => s.toLowerCase().trim()),
@@ -37,14 +38,19 @@ export async function GET(
     },
   });
 
+  // User.image es una key de S3 — hay que firmarla antes de mandarla.
+  const avatars = await Promise.all(
+    rows.map((r) => resolveAvatarUrl(r.user?.image)),
+  );
+
   return NextResponse.json(
-    rows.map((r) => ({
+    rows.map((r, i) => ({
       id: r.id,
       email: r.invitedEmail,
       userId: r.userId,
       userName: r.user?.name ?? null,
       userEmail: r.user?.email ?? null,
-      userImage: r.user?.image ?? null,
+      userImage: avatars[i] ?? null,
       commissionScope: r.commissionScope,
       commissionPct: r.commissionPct,
       status: r.status,

@@ -537,6 +537,25 @@ img { max-width: 100%; display: block; }
   color: var(--text-primary);
 }
 .btn-outline:hover { background: var(--bg-elevated); border-color: var(--border-default); }
+/* Acción destructiva: rojo sólido en ambos temas. */
+.btn-danger-solid {
+  background: var(--error);
+  color: #fff;
+  border: 1px solid var(--error);
+}
+.btn-danger-solid:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--error) 85%, black);
+  border-color: color-mix(in srgb, var(--error) 85%, black);
+  box-shadow: 0 4px 16px rgba(224, 85, 85, 0.28);
+}
+.btn-danger-solid:disabled { cursor: default; }
+.btn-danger-solid i { font-size: 15px; }
+
+/* Ícono que rota mientras una acción está en curso. */
+.spin-icon { animation: spin-icon-rot 0.8s linear infinite; }
+@keyframes spin-icon-rot { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin-icon { animation: none; } }
+
 .btn-ghost { color: var(--text-secondary); }
 .btn-ghost:hover { color: var(--text-primary); background: var(--bg-subtle); }
 .btn-lg { height: 48px; padding: 12px 24px; font-size: 15px; }
