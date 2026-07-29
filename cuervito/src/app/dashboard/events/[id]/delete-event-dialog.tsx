@@ -57,6 +57,7 @@ export function DeleteEventDialog({
 
       {open && mounted && createPortal(
         <div
+          className="cs-modal-backdrop"
           onClick={() => setOpen(false)}
           style={{
             position: "fixed",
@@ -71,6 +72,7 @@ export function DeleteEventDialog({
           }}
         >
           <div
+            className="cs-modal-panel"
             onClick={(e) => e.stopPropagation()}
             style={{
               background: "var(--bg-surface)",

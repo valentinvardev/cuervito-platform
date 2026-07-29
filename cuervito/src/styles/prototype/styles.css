@@ -187,6 +187,33 @@
   .cs-tooltip { animation: none; }
 }
 
+/* ─── Modal entrance animations ────────────────────────────────────
+   Clases utilitarias que se aplican a wrappers de modales (backdrop +
+   panel) para animar la apertura. Los modales que las usen ganan un
+   fade en el backdrop y un scale-in suave en el panel, uniformando el
+   feeling en toda la plataforma.
+   ──────────────────────────────────────────────────────────────── */
+.cs-modal-backdrop {
+  animation: cs-modal-backdrop-in 200ms ease-out;
+}
+.cs-modal-panel {
+  animation: cs-modal-panel-in 240ms cubic-bezier(.2, .8, .2, 1);
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+@keyframes cs-modal-backdrop-in {
+  from { opacity: 0; backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); }
+  to   { opacity: 1; }
+}
+@keyframes cs-modal-panel-in {
+  from { opacity: 0; transform: scale(0.94) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-modal-backdrop,
+  .cs-modal-panel { animation: none; }
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   background: var(--bg-base);

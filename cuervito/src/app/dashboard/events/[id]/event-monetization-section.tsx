@@ -67,6 +67,7 @@ function DeleteConfirm({
 
   return createPortal(
     <div
+      className="cs-modal-backdrop"
       style={{
         position: "fixed", inset: 0,
         background: "rgba(8,6,5,0.72)",
@@ -78,6 +79,7 @@ function DeleteConfirm({
       onClick={onCancel}
     >
       <div
+        className="cs-modal-panel"
         style={{
           background: "var(--bg-surface)",
           border: "1px solid var(--border-subtle)",
@@ -243,6 +245,7 @@ function CreateDiscountModal({
 
   return createPortal(
     <div
+      className="cs-modal-backdrop"
       style={{
         position: "fixed", inset: 0,
         background: "rgba(8,6,5,0.72)",
@@ -254,6 +257,7 @@ function CreateDiscountModal({
       onClick={onClose}
     >
       <div
+        className="cs-modal-panel"
         style={{
           background: "var(--bg-surface)",
           border: "1px solid var(--border-subtle)",
