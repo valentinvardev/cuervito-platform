@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { Select } from "~/app/_components/select";
+
+import { loadMoreAdminSalesAction } from "./actions";
 
 export type AdminSaleRow = {
   id: string;
@@ -52,13 +54,16 @@ const STATUS_PILL: Record<string, { label: string; color: string }> = {
 };
 
 export function AdminSalesClient({
-  rows,
+  initialRows,
+  initialHasMore,
   range,
   status,
   q,
   totals,
+  pageSize,
 }: {
-  rows: AdminSaleRow[];
+  initialRows: AdminSaleRow[];
+  initialHasMore: boolean;
   range: string;
   status: string;
   q: string;
@@ -68,20 +73,96 @@ export function AdminSalesClient({
     paidCount: number;
     total: number;
   };
+  pageSize: number;
 }) {
   const router = useRouter();
   const params = useSearchParams();
   const [search, setSearch] = useState(q);
   const [pending, startTransition] = useTransition();
 
+  // Rows paginados en client — se hidratan con los que trajo el server.
+  const [rows, setRows] = useState<AdminSaleRow[]>(initialRows);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadAllProgress, setLoadAllProgress] = useState<number | null>(null);
+
+  // Si el server manda otra tanda (por cambio de filtros vía SPA nav)
+  // reseteamos las rows locales.
+  useEffect(() => {
+    setRows(initialRows);
+    setHasMore(initialHasMore);
+    setLoadAllProgress(null);
+  }, [initialRows, initialHasMore]);
+
   function applyFilter(key: string, value: string) {
     const next = new URLSearchParams(params);
-    if (value === "all" || value === "") next.delete(key);
+    // Para 'status' el default del server ya es 'all' → borrar el param
+    // deja la URL prolija. Para 'range' el default es '30d', así que
+    // siempre lo persistimos (aunque sea 'all') para no perder la
+    // intención del usuario en un refresh.
+    if (value === "") next.delete(key);
+    else if (key === "status" && value === "all") next.delete(key);
     else next.set(key, value);
     const qs = next.toString();
     startTransition(() => {
       router.push(`/admin/sales${qs ? `?${qs}` : ""}`);
     });
+  }
+
+  async function loadMore() {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await loadMoreAdminSalesAction({
+        range,
+        status,
+        q,
+        offset: rows.length,
+        take: pageSize,
+      });
+      setRows((prev) => [...prev, ...res.rows]);
+      setHasMore(res.hasMore);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  async function loadAll() {
+    if (loadingMore) return;
+    const remaining = totals.total - rows.length;
+    if (remaining <= 0) return;
+    if (remaining > 500) {
+      const ok = confirm(
+        `Vas a cargar ${remaining.toLocaleString("es-AR")} ventas más de una sola vez. Puede tardar y ralentizar la vista. ¿Seguir?`,
+      );
+      if (!ok) return;
+    }
+    setLoadingMore(true);
+    setLoadAllProgress(rows.length);
+    try {
+      let offset = rows.length;
+      let more = true;
+      const acc: AdminSaleRow[] = [];
+      const BATCH = 200;
+      while (more) {
+        const res = await loadMoreAdminSalesAction({
+          range,
+          status,
+          q,
+          offset,
+          take: BATCH,
+        });
+        acc.push(...res.rows);
+        offset += res.rows.length;
+        more = res.hasMore;
+        setLoadAllProgress(rows.length + acc.length);
+      }
+      setRows((prev) => [...prev, ...acc]);
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+      setLoadAllProgress(null);
+    }
   }
 
   function onSearchSubmit(e: React.FormEvent) {
@@ -278,6 +359,52 @@ export function AdminSalesClient({
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {rows.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            marginTop: 18,
+            padding: "12px 4px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ fontSize: 12.5, color: "var(--text-tertiary)" }}>
+            Mostrando <strong style={{ color: "var(--text-primary)" }}>{rows.length.toLocaleString("es-AR")}</strong>{" "}
+            de <strong style={{ color: "var(--text-primary)" }}>{totals.total.toLocaleString("es-AR")}</strong>{" "}
+            registros
+            {loadAllProgress != null && (
+              <> · cargando… ({loadAllProgress.toLocaleString("es-AR")})</>
+            )}
+          </div>
+          {hasMore && (
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={loadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore && loadAllProgress == null
+                  ? "Cargando…"
+                  : `Cargar ${pageSize} más`}
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={loadAll}
+                disabled={loadingMore}
+                title="Trae todos los registros restantes de una vez. Puede afectar el rendimiento con muchos datos."
+              >
+                Cargar todas
+              </button>
+            </div>
+          )}
         </div>
       )}
     </main>

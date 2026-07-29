@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 
-import { AdminSalesClient, type AdminSaleRow } from "./admin-sales-client";
+import { AdminSalesClient } from "./admin-sales-client";
+import { loadMoreAdminSalesAction } from "./actions";
 
 const RANGES = {
   "30d": 30,
@@ -12,6 +13,8 @@ const RANGES = {
   all: null,
 } as const;
 type Range = keyof typeof RANGES;
+
+const INITIAL_PAGE_SIZE = 30;
 
 export default async function AdminSalesPage(props: {
   searchParams: Promise<{
@@ -24,7 +27,7 @@ export default async function AdminSalesPage(props: {
   if (session?.user?.role !== "ADMIN") redirect("/dashboard");
 
   const sp = await props.searchParams;
-  const range = (sp.range ?? "30d") as Range;
+  const range = ((sp.range as Range) ?? "30d") as Range;
   const status = sp.status ?? "all";
   const q = (sp.q ?? "").trim();
 
@@ -33,80 +36,58 @@ export default async function AdminSalesPage(props: {
       ? new Date(Date.now() - RANGES[range]! * 24 * 60 * 60 * 1000)
       : null;
 
-  const sales = await db.sale.findMany({
-    where: {
-      ...(since ? { createdAt: { gte: since } } : {}),
-      ...(status !== "all" ? { status: status as "PAID" | "PENDING" | "FAILED" | "REFUNDED" | "EXPIRED" } : {}),
-      ...(q
-        ? {
-            OR: [
-              { buyerEmail: { contains: q, mode: "insensitive" } },
-              { buyerName: { contains: q, mode: "insensitive" } },
-              { id: { contains: q } },
-              { event: { name: { contains: q, mode: "insensitive" } } },
-              { seller: { name: { contains: q, mode: "insensitive" } } },
-              { seller: { email: { contains: q, mode: "insensitive" } } },
-            ],
-          }
-        : {}),
-    },
-    orderBy: { createdAt: "desc" },
-    take: 300,
-    select: {
-      id: true,
-      status: true,
-      totalCents: true,
-      platformFeeCents: true,
-      sellerNetCents: true,
-      buyerEmail: true,
-      buyerName: true,
-      createdAt: true,
-      paidAt: true,
-      downloadCount: true,
-      event: { select: { name: true, slug: true } },
-      seller: { select: { name: true, email: true, slug: true } },
-      _count: { select: { items: true } },
-    },
-  });
+  const where = {
+    ...(since ? { createdAt: { gte: since } } : {}),
+    ...(status !== "all"
+      ? { status: status as "PAID" | "PENDING" | "FAILED" | "REFUNDED" | "EXPIRED" }
+      : {}),
+    ...(q
+      ? {
+          OR: [
+            { buyerEmail: { contains: q, mode: "insensitive" as const } },
+            { buyerName: { contains: q, mode: "insensitive" as const } },
+            { id: { contains: q } },
+            { event: { name: { contains: q, mode: "insensitive" as const } } },
+            { seller: { name: { contains: q, mode: "insensitive" as const } } },
+            { seller: { email: { contains: q, mode: "insensitive" as const } } },
+          ],
+        }
+      : {}),
+  };
 
-  const rows: AdminSaleRow[] = sales.map((s) => ({
-    id: s.id,
-    status: s.status,
-    totalCents: s.totalCents,
-    platformFeeCents: s.platformFeeCents,
-    sellerNetCents: s.sellerNetCents,
-    buyerEmail: s.buyerEmail,
-    buyerName: s.buyerName,
-    createdAt: s.createdAt.toISOString(),
-    paidAt: s.paidAt?.toISOString() ?? null,
-    downloadCount: s.downloadCount,
-    eventName: s.event.name,
-    sellerName: s.seller.name ?? s.seller.email ?? "—",
-    sellerSlug: s.seller.slug ?? null,
-    itemCount: s._count.items,
-  }));
+  // Traemos la primera tanda (30) + agregados globales en paralelo.
+  const [initial, totalCount, paidAgg] = await Promise.all([
+    loadMoreAdminSalesAction({
+      range,
+      status,
+      q,
+      offset: 0,
+      take: INITIAL_PAGE_SIZE,
+    }),
+    db.sale.count({ where }),
+    db.sale.aggregate({
+      where: { ...where, status: "PAID" },
+      _sum: { totalCents: true, platformFeeCents: true },
+      _count: true,
+    }),
+  ]);
 
-  // Aggregate KPIs across the same filter
-  const totals = rows.reduce(
-    (acc, r) => {
-      if (r.status === "PAID") {
-        acc.paidGross += r.totalCents;
-        acc.platformFee += r.platformFeeCents;
-        acc.paidCount += 1;
-      }
-      acc.total += 1;
-      return acc;
-    },
-    { paidGross: 0, platformFee: 0, paidCount: 0, total: 0 },
-  );
+  const totals = {
+    paidGross: paidAgg._sum.totalCents ?? 0,
+    platformFee: paidAgg._sum.platformFeeCents ?? 0,
+    paidCount: paidAgg._count,
+    total: totalCount,
+  };
 
   return (
     <AdminSalesClient
-      rows={rows}
+      initialRows={initial.rows}
+      initialHasMore={initial.hasMore}
       range={range}
       status={status}
       q={q}
       totals={totals}
+      pageSize={INITIAL_PAGE_SIZE}
     />
   );
 }
