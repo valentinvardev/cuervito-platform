@@ -20,6 +20,8 @@ export default async function CobrosPage(props: {
       mpUserId: true,
       mpConnectedAt: true,
       mpLiveMode: true,
+      role: true,
+      testModeEnabled: true,
     },
   });
   if (!user) redirect("/login");
@@ -34,6 +36,8 @@ export default async function CobrosPage(props: {
       platformFeePercent={env.PLATFORM_FEE_PERCENT}
       successFlag={sp.connected === "1"}
       errorParam={sp.error ?? null}
+      isAdmin={user.role === "ADMIN"}
+      testModeEnabled={user.testModeEnabled}
     />
   );
 }

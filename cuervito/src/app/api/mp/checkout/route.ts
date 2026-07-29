@@ -21,9 +21,9 @@ const checkoutSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const testMode = await getMpTestMode();
+  const globalTestMode = await getMpTestMode();
 
-  if (!testMode && !isMpConfigured()) {
+  if (!globalTestMode && !isMpConfigured()) {
     return NextResponse.json(
       { error: "Mercado Pago no está configurado." },
       { status: 503 },
@@ -58,6 +58,8 @@ export async function POST(req: NextRequest) {
           mpAccessToken: true,
           mpConnectedAt: true,
           status: true,
+          role: true,
+          testModeEnabled: true,
         },
       },
     },
@@ -72,6 +74,15 @@ export async function POST(req: NextRequest) {
       { status: 403 },
     );
   }
+
+  // Test mode efectivo: el switch global de plataforma, o el switch
+  // por vendedor. El segundo exige role=ADMIN verificado ACÁ y no solo
+  // el flag — si a un admin le sacan el rol, el bypass muere aunque la
+  // columna siga en true.
+  const sellerTestMode =
+    event.owner.role === "ADMIN" && event.owner.testModeEnabled;
+  const testMode = globalTestMode || sellerTestMode;
+
   if (!testMode && !event.owner.mpAccessToken) {
     return NextResponse.json(
       { error: "El fotógrafo aún no conectó Mercado Pago." },
@@ -190,7 +201,9 @@ export async function POST(req: NextRequest) {
           paidAt: new Date(),
           downloadToken,
           downloadTokenExpires: tokenExpiresAt,
-          notes: "TEST MODE — payment bypassed",
+          notes: sellerTestMode
+            ? "TEST MODE (vendedor admin) — pago no verificado"
+            : "TEST MODE (global) — pago no verificado",
           items: {
             create: items.map((i) => ({ photoId: i.photoId, priceCents: i.priceCents })),
           },

@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+
+import { setSellerTestModeAction } from "./actions";
 
 export function CobrosClient({
   email,
@@ -12,6 +14,8 @@ export function CobrosClient({
   platformFeePercent,
   successFlag,
   errorParam,
+  isAdmin,
+  testModeEnabled,
 }: {
   email: string;
   mpUserId: string | null;
@@ -21,6 +25,8 @@ export function CobrosClient({
   platformFeePercent: number;
   successFlag: boolean;
   errorParam: string | null;
+  isAdmin: boolean;
+  testModeEnabled: boolean;
 }) {
   const router = useRouter();
   const isConnected = !!mpUserId;
@@ -31,6 +37,8 @@ export function CobrosClient({
     errorParam ? errorLabel(errorParam) : null,
   );
   const [disconnecting, setDisconnecting] = useState(false);
+  const [testMode, setTestMode] = useState(testModeEnabled);
+  const [togglingTest, startToggleTest] = useTransition();
 
   useEffect(() => {
     if (!savedToast) return;
@@ -212,6 +220,59 @@ export function CobrosClient({
           </>
         )}
       </div>
+
+      {/* Modo de prueba — solo admins */}
+      {isAdmin && (
+        <div className={`testmode-card ${testMode ? "on" : ""}`}>
+          <div className="tm-icon">
+            <i className={testMode ? "ti ti-flask-filled" : "ti ti-flask"} />
+          </div>
+          <div className="tm-body">
+            <div className="tm-title">
+              Modo de prueba
+              <span className="tm-badge">admin</span>
+            </div>
+            <p className="tm-desc">
+              {testMode
+                ? "Las compras en tus eventos se aprueban sin pasar por Mercado Pago. Sirve para probar el flujo completo — nadie paga nada de verdad."
+                : "Activalo para comprar en tus propios eventos sin que se cobre. La venta se marca como pagada y se genera el link de descarga, igual que en una compra real."}
+            </p>
+            {testMode && (
+              <div className="tm-warn">
+                <i className="ti ti-alert-triangle" />
+                Mientras esté activo, cualquiera que compre en tus eventos
+                recibe las fotos sin pagar.
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={testMode}
+            aria-label="Modo de prueba"
+            disabled={togglingTest}
+            data-tip={
+              testMode
+                ? "Desactivar: las compras vuelven a cobrarse por Mercado Pago"
+                : "Activar: las compras en tus eventos no se cobran"
+            }
+            className={`toggle-switch ${testMode ? "on" : ""}`}
+            onClick={() => {
+              const next = !testMode;
+              setTestMode(next);
+              startToggleTest(async () => {
+                const res = await setSellerTestModeAction(next);
+                if (!res.ok) {
+                  setTestMode(!next);
+                  setError(res.error ?? "No pudimos cambiar el modo de prueba.");
+                }
+              });
+            }}
+          >
+            <span className="thumb" />
+          </button>
+        </div>
+      )}
 
       {/* Info notes */}
       <div className="info-note" style={{ marginBottom: 12 }}>

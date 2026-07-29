@@ -111,6 +111,14 @@ model User {
     mpLiveMode       Boolean   @default(false)
     mpConnectedAt    DateTime?
 
+    /** Modo de prueba por vendedor: cuando está en true, los checkouts
+     *  de SUS eventos saltean Mercado Pago y la venta se marca PAID
+     *  directo, para poder testear el flujo post-pago end to end.
+     *  Solo se respeta si el usuario TAMBIÉN tiene role=ADMIN — el
+     *  checkout revalida el rol en vivo, así una degradación de permisos
+     *  desactiva el bypass aunque el flag quede en true. */
+    testModeEnabled  Boolean   @default(false)
+
     // Storefront customization
     storefrontBrandColor String?  // hex, e.g. "#F5820A"
     storefrontTemplate   String?  // template id from frontend catalog

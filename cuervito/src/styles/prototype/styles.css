@@ -115,7 +115,7 @@
    que antes marcaba hover con border-color ahora eleva con sombra.
    ═══════════════════════════════════════════════════════════════════ */
 :root[data-theme="light"] .action-icon,
-:root[data-theme="light"] .tc-icon,
+:root[data-theme="light"] .tc:not(.active) .tc-icon,
 :root[data-theme="light"] .stat-icon,
 :root[data-theme="light"] .new-form-icon,
 :root[data-theme="light"] .cp-icon,
