@@ -6,6 +6,9 @@ export type SelectOption = {
   value: string;
   label: string;
   meta?: string;
+  /** Texto corto para el trigger cuando el label completo no entra
+   *  (ej. label "Últimos 7 días" → trigger "7 días"). Cae al label. */
+  triggerLabel?: string;
 };
 
 /**
@@ -106,7 +109,9 @@ export function Select({
         onKeyDown={onTriggerKey}
       >
         {icon && <i className={`ti ${icon}`} aria-hidden />}
-        <span className="val">{selected?.label ?? placeholder ?? "Elegir"}</span>
+        <span className="val">
+          {selected?.triggerLabel ?? selected?.label ?? placeholder ?? "Elegir"}
+        </span>
         <i className="ti ti-chevron-down chev" aria-hidden />
       </button>
       {open && (

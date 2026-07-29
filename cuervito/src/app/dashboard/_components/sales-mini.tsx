@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+
+import { Select } from "~/app/_components/select";
 
 import { MetricsModal } from "./metrics-modal";
 
@@ -64,25 +66,7 @@ function buildSpark(points: number[], w = 160, h = 44) {
 
 export function SalesMini() {
   const [range, setRange] = useState<Range>("30d");
-  const [open, setOpen] = useState(false);
   const [metricsOpen, setMetricsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onClick(e: MouseEvent) {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("click", onClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("click", onClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
 
   const data = TS[range];
   const spark = useMemo(() => buildSpark(data.points), [data.points]);
@@ -136,9 +120,9 @@ export function SalesMini() {
       {metricsOpen && <MetricsModal onClose={() => setMetricsOpen(false)} />}
 
       <div className="sm-actions">
-      <button
-        type="button"
-        className="sm-metrics-btn"
+        <button
+          type="button"
+          className="sm-metrics-btn"
         onClick={() => setMetricsOpen(true)}
         aria-label="Ver métricas"
         data-tip="Ver tus métricas: recaudación, conversión y eventos que más rinden"
@@ -146,39 +130,19 @@ export function SalesMini() {
         <i className="ti ti-chart-histogram" />
       </button>
 
-      <div className={`ts-drop ${open ? "open" : ""}`} ref={ref}>
-        <button
-          className={`ts-trigger ${open ? "open" : ""}`}
-          type="button"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpen((o) => !o);
-          }}
-        >
-          <i className="ti ti-calendar-stats" style={{ fontSize: 14, color: "var(--text-tertiary)" }} />
-          <span className="val">{data.trigger}</span>
-          <i className="ti ti-chevron-down chev" />
-        </button>
-        <div className="ts-menu" role="listbox">
-          {(["7d", "30d", "90d", "1y"] as Range[]).map((r) => (
-            <button
-              key={r}
-              type="button"
-              className={`ts-option ${r === range ? "active" : ""}`}
-              onClick={() => {
-                setRange(r);
-                setOpen(false);
-              }}
-            >
-              <span>{TS[r].label}</span>
-              <span className="meta">{r}</span>
-              <i className="ti ti-check check" />
-            </button>
-          ))}
-        </div>
-      </div>
+      <Select
+        ariaLabel="Período del resumen"
+        tip="Cambiar el período del resumen de ventas"
+        icon="ti-calendar-stats"
+        value={range}
+        onChange={(v) => setRange(v as Range)}
+        options={(["7d", "30d", "90d", "1y"] as Range[]).map((r) => ({
+          value: r,
+          label: TS[r].label,
+          triggerLabel: TS[r].trigger,
+          meta: r,
+        }))}
+      />
       </div>
     </section>
   );
