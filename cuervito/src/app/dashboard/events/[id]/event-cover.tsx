@@ -279,12 +279,6 @@ export function EventCover({
                   <span>{location}</span>
                 </>
               )}
-              {discipline && (
-                <>
-                  <span className="sep" />
-                  <span style={{ textTransform: "capitalize" }}>{discipline}</span>
-                </>
-              )}
             </div>
           </div>
         </div>

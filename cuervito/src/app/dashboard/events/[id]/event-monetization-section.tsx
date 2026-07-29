@@ -601,7 +601,10 @@ export function EventMonetizationSection({
     <>
       <div className="stats-grid">
         <div className="stat">
-          <div className="label">Recaudado</div>
+          <div className="stat-head">
+            <span className="stat-icon"><i className="ti ti-cash" /></span>
+            <div className="label">Recaudado</div>
+          </div>
           <div className="value accent">${revenue.toLocaleString("es-AR")}</div>
           <div className="delta">
             <i className="ti ti-minus" style={{ fontSize: 12, color: "var(--text-tertiary)" }} />
@@ -609,11 +612,17 @@ export function EventMonetizationSection({
           </div>
         </div>
         <div className="stat">
-          <div className="label">Fotos vendidas</div>
+          <div className="stat-head">
+            <span className="stat-icon"><i className="ti ti-photo-check" /></span>
+            <div className="label">Fotos vendidas</div>
+          </div>
           <div className="value mono">{photosSold.toLocaleString("es-AR")}</div>
         </div>
         <div className="stat">
-          <div className="label">Precio por foto</div>
+          <div className="stat-head">
+            <span className="stat-icon"><i className="ti ti-tag" /></span>
+            <div className="label">Precio por foto</div>
+          </div>
           <div className="value mono">${pricePerPhoto.toLocaleString("es-AR")}</div>
         </div>
       </div>

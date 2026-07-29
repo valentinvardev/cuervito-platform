@@ -26,7 +26,6 @@ export function NewEventShell() {
   // Controlled inputs so the preview reflects what the photographer types
   // in real time. On submit these still go through FormData via `name` attrs.
   const [name, setName] = useState("");
-  const [discipline, setDiscipline] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [location, setLocation] = useState("");
   const [pricePerPhoto, setPricePerPhoto] = useState("2400");
@@ -120,17 +119,6 @@ export function NewEventShell() {
             {fe.name && <FieldError msg={fe.name} />}
           </div>
 
-          <div className="new-field">
-            <label className="label" htmlFor="ne-discipline">Disciplina</label>
-            <input
-              id="ne-discipline"
-              name="discipline"
-              className={`input ${fe.discipline ? "input-error" : ""}`}
-              placeholder="Running, trail, ciclismo…"
-              value={discipline}
-              onChange={(e) => setDiscipline(e.target.value)}
-            />
-          </div>
         </FormSection>
 
         <FormSection
@@ -338,9 +326,6 @@ export function NewEventShell() {
                 <i className="ti ti-photo" />
                 <span>Elegí una portada en el bloque de arriba</span>
               </div>
-            )}
-            {discipline && (
-              <span className="preview-discipline">{discipline.trim()}</span>
             )}
           </div>
           <div className="preview-body">

@@ -54,16 +54,6 @@ export function EventForm({
           />
         </div>
 
-        <div className="field">
-          <label className="label">Disciplina</label>
-          <input
-            name="discipline"
-            className={`input ${fe.discipline ? "input-error" : ""}`}
-            placeholder="Running, trail, ciclismo…"
-            defaultValue={initial?.discipline ?? ""}
-          />
-        </div>
-
         <div className="field full">
           <label className="label">Ubicación</label>
           <input
