@@ -99,6 +99,7 @@ export function VentasClient({
       <div className="filters">
         <Select
           ariaLabel="Filtrar por evento"
+          tip="Ver solo las ventas de un evento puntual"
           icon="ti-calendar-event"
           value={eventFilter}
           onChange={(v) => updateFilter("event", v)}
@@ -109,6 +110,7 @@ export function VentasClient({
         />
         <Select
           ariaLabel="Filtrar por rango"
+          tip="Acotar el período de las ventas mostradas"
           icon="ti-calendar-stats"
           value={range}
           onChange={(v) => updateFilter("range", v)}

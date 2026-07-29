@@ -21,6 +21,7 @@ export function Select({
   placeholder,
   icon,
   ariaLabel,
+  tip,
   className,
 }: {
   value: string;
@@ -29,6 +30,8 @@ export function Select({
   placeholder?: string;
   icon?: string;
   ariaLabel?: string;
+  /** Texto del tooltip global (data-tip). Cae al ariaLabel si no se pasa. */
+  tip?: string;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -95,6 +98,7 @@ export function Select({
         aria-expanded={open}
         aria-controls={listboxId}
         aria-label={ariaLabel}
+        data-tip={open ? undefined : (tip ?? ariaLabel)}
         onClick={(e) => {
           e.stopPropagation();
           setOpen((o) => !o);

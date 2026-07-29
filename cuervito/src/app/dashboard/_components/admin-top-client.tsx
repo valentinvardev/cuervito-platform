@@ -32,6 +32,8 @@ export function AdminTopClient({
           <button
             className="adm-nav-btn"
             aria-label="Abrir menú"
+            data-tip="Abrir el menú de secciones"
+            data-tip-side="bottom"
             onClick={() => window.dispatchEvent(new CustomEvent("cuervito:open-drawer"))}
           >
             <span className="adm-nav-icons">
@@ -42,7 +44,13 @@ export function AdminTopClient({
             </span>
           </button>
         ) : (
-          <Link href="/dashboard" className="adm-nav-btn" aria-label="Volver al panel">
+          <Link
+            href="/dashboard"
+            className="adm-nav-btn"
+            aria-label="Volver al panel"
+            data-tip="Volver al panel principal"
+            data-tip-side="bottom"
+          >
             <span className="adm-nav-icons">
               <i
                 className="ti ti-arrow-left adm-icon-back"

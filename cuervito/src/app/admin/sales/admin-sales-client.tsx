@@ -227,6 +227,7 @@ export function AdminSalesClient({
         </form>
         <Select
           ariaLabel="Filtrar por estado"
+          tip="Filtrar por estado de pago de la venta"
           icon="ti-filter"
           value={status}
           onChange={(v) => applyFilter("status", v)}
@@ -241,6 +242,7 @@ export function AdminSalesClient({
         />
         <Select
           ariaLabel="Filtrar por rango"
+          tip="Acotar el período de las ventas mostradas"
           icon="ti-calendar-stats"
           value={range}
           onChange={(v) => applyFilter("range", v)}
@@ -389,6 +391,7 @@ export function AdminSalesClient({
                 className="btn btn-outline"
                 onClick={loadMore}
                 disabled={loadingMore}
+                data-tip="Traer la siguiente tanda de ventas"
               >
                 {loadingMore && loadAllProgress == null
                   ? "Cargando…"
@@ -399,7 +402,7 @@ export function AdminSalesClient({
                 className="btn btn-primary"
                 onClick={loadAll}
                 disabled={loadingMore}
-                title="Trae todos los registros restantes de una vez. Puede afectar el rendimiento con muchos datos."
+                data-tip="Trae todos los registros restantes de una vez. Con muchos datos puede ralentizar la vista."
               >
                 Cargar todas
               </button>

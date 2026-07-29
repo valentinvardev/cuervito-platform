@@ -52,6 +52,7 @@ export function CollaboratorsPanel({
           type="button"
           className="btn btn-outline"
           onClick={() => setShowAdd(true)}
+          data-tip="Invitar a otro fotógrafo a subir fotos en este evento"
         >
           <i className="ti ti-user-plus" />
           Agregar colaborador
@@ -116,7 +117,7 @@ export function CollaboratorsPanel({
                   className="btn btn-ghost btn-icon"
                   onClick={() => setEditing(c)}
                   aria-label="Editar comisión"
-                  title="Editar comisión"
+                  data-tip="Cambiar el porcentaje y alcance de su comisión"
                 >
                   <i className="ti ti-adjustments-alt" />
                 </button>
@@ -132,7 +133,7 @@ export function CollaboratorsPanel({
                     await load();
                   }}
                   aria-label="Quitar colaborador"
-                  title="Quitar colaborador"
+                  data-tip="Sacarlo del evento (no afecta ventas ya hechas)"
                   style={{ color: "var(--error)" }}
                 >
                   <i className="ti ti-x" />

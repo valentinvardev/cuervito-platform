@@ -173,7 +173,15 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
                 name="role"
                 value={user.role === "ADMIN" ? "PHOTOGRAPHER" : "ADMIN"}
               />
-              <button type="submit" className="btn btn-outline">
+              <button
+                type="submit"
+                className="btn btn-outline"
+                data-tip={
+                  user.role === "ADMIN"
+                    ? "Le saca acceso al panel de administración"
+                    : "Le da acceso completo al panel de administración"
+                }
+              >
                 {user.role === "ADMIN" ? "Degradar a fotógrafo" : "Promover a admin"}
               </button>
             </form>
@@ -225,7 +233,11 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
               </div>
               <form action={reactivateUserAction}>
                 <input type="hidden" name="userId" value={user.id} />
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  data-tip="Vuelve a habilitar el login y la operación normal"
+                >
                   Reactivar cuenta
                 </button>
               </form>

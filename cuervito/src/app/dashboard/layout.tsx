@@ -3,6 +3,8 @@ import "~/styles/prototype/panel-anim.css";
 import "~/styles/prototype/admin-nav.css";
 import "~/styles/prototype/dashboard.css";
 
+import { TooltipProvider } from "~/app/_components/tooltip-provider";
+
 import { AdminTop } from "./_components/admin-top";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -21,6 +23,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <AdminTop />
       {children}
+      <TooltipProvider />
     </>
   );
 }

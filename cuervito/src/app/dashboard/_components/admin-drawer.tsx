@@ -253,6 +253,7 @@ export function AdminDrawer() {
                 }}
               >
                 <span
+                  className="nav-icon-chip"
                   style={{
                     width: 42,
                     height: 42,

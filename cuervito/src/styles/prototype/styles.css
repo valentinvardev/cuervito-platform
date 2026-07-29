@@ -82,17 +82,89 @@
   --btn-primary-shadow:  0 6px 20px rgba(15, 13, 11, 0.18);
 
   --accent-muted:   color-mix(in srgb, var(--accent) 20%, white);
-  --accent-glow:    rgba(15, 13, 11, 0.12);
+  --accent-glow:    color-mix(in srgb, var(--accent) 18%, transparent);
   --accent-deep:    color-mix(in srgb, var(--accent) 12%, transparent);
 
-  /* Outlines: en modo día los bordes acentuados se vuelven negros para
-     leer como una anotación de tinta. Los íconos y textos naranja
-     quedan intactos (siguen usando --accent directamente). */
-  --border-accent:  rgba(15, 13, 11, 0.55);
+  /* --border-accent lo usan ~84 reglas para hover/focus/active y para
+     el marco de los chips de íconos. Un negro sólido acá dibujaba una
+     línea dura en cada hover de toda la plataforma. En modo día el
+     énfasis lo lleva la sombra (--hover-shadow), no el trazo, así que
+     el borde queda como un tinte casi imperceptible. */
+  --border-accent:  color-mix(in srgb, var(--accent) 22%, transparent);
+
+  /* Elevación: reemplaza al borde como señal de hover/active en light. */
+  --hover-shadow:        0 4px 14px rgba(15, 13, 11, 0.07);
+  --hover-shadow-strong: 0 10px 26px rgba(15, 13, 11, 0.11);
+  --hover-shadow-accent: 0 10px 26px rgba(245, 130, 10, 0.16);
 
   color-scheme: light;
 }
-:root:not([data-theme="light"]) { color-scheme: dark; }
+/* En dark el borde sigue siendo la señal principal — sombras a cero
+   para que las reglas compartidas no agreguen nada. */
+:root:not([data-theme="light"]) {
+  color-scheme: dark;
+  --hover-shadow:        none;
+  --hover-shadow-strong: none;
+  --hover-shadow-accent: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LIGHT THEME · hover sin trazo
+   Los chips que envuelven íconos (fondo accent-deep) pierden el borde:
+   sobre blanco el marco competía con el ícono. Y todo lo clickeable
+   que antes marcaba hover con border-color ahora eleva con sombra.
+   ═══════════════════════════════════════════════════════════════════ */
+:root[data-theme="light"] .action-icon,
+:root[data-theme="light"] .tc-icon,
+:root[data-theme="light"] .stat-icon,
+:root[data-theme="light"] .new-form-icon,
+:root[data-theme="light"] .cp-icon,
+:root[data-theme="light"] .ec-icon,
+:root[data-theme="light"] .disc-icon,
+:root[data-theme="light"] .collab-avatar,
+:root[data-theme="light"] .collab-preview,
+:root[data-theme="light"] .nav-icon-chip,
+:root[data-theme="light"] .help-item .ic,
+:root[data-theme="light"] .mp-inline-status .ic {
+  border: none !important;
+  box-shadow: none;
+}
+
+/* Tarjetas y filas clickeables: elevación en lugar de trazo. */
+:root[data-theme="light"] .action-card:hover,
+:root[data-theme="light"] .event-card:hover,
+:root[data-theme="light"] .ev-row:hover,
+:root[data-theme="light"] .help-item:hover,
+:root[data-theme="light"] .card:hover,
+:root[data-theme="light"] .photo-tile:hover,
+:root[data-theme="light"] .le-card:hover,
+:root[data-theme="light"] .tpl-card:hover,
+:root[data-theme="light"] .disc-item:hover,
+:root[data-theme="light"] .sale-row:hover,
+:root[data-theme="light"] .preview-card:hover {
+  border-color: var(--border-subtle) !important;
+  box-shadow: var(--hover-shadow);
+}
+:root[data-theme="light"] .action-card.primary:hover,
+:root[data-theme="light"] .action-card:focus-visible {
+  box-shadow: var(--hover-shadow-strong);
+}
+
+/* Ningún elemento interactivo debe pintar el outline nativo del
+   navegador (rectángulo negro). El foco se marca con nuestro ring. */
+:root[data-theme="light"] button:focus,
+:root[data-theme="light"] a:focus,
+:root[data-theme="light"] [role="button"]:focus,
+:root[data-theme="light"] [role="tab"]:focus {
+  outline: none;
+}
+:root[data-theme="light"] button:focus-visible,
+:root[data-theme="light"] a:focus-visible,
+:root[data-theme="light"] [role="button"]:focus-visible,
+:root[data-theme="light"] [role="tab"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
 
 /* ─── Theme toggle (sun/moon) ─── compartido entre landing y dashboard. */
 .theme-toggle {

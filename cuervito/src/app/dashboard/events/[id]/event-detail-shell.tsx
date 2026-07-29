@@ -133,6 +133,11 @@ export function EventDetailShell({
           <button
             type="submit"
             className={event.isPublished ? "btn btn-outline" : "btn btn-primary"}
+            data-tip={
+              event.isPublished
+                ? "Sacar el evento del buscador público"
+                : "Hacer visible el evento para que la gente compre"
+            }
           >
             {event.isPublished ? "Despublicar" : "Publicar evento"}
           </button>
@@ -146,6 +151,7 @@ export function EventDetailShell({
           className={`tc ${tab === "galeria" ? "active" : ""}`}
           onClick={() => setTab("galeria")}
           role="tab"
+          data-tip="Subir y administrar las fotos del evento"
         >
           <div className="tc-icon">
             <i className="ti ti-photo" />
@@ -165,6 +171,7 @@ export function EventDetailShell({
           className={`tc ${tab === "monetizacion" ? "active" : ""}`}
           onClick={() => setTab("monetizacion")}
           role="tab"
+          data-tip="Precio, descuentos y recaudación del evento"
         >
           <div className="tc-icon">
             <i className="ti ti-coin" />
@@ -180,6 +187,7 @@ export function EventDetailShell({
           className={`tc ${tab === "info" ? "active" : ""}`}
           onClick={() => setTab("info")}
           role="tab"
+          data-tip="Datos del evento, colaboradores y publicación"
         >
           <div className="tc-icon">
             <i className="ti ti-info-circle" />

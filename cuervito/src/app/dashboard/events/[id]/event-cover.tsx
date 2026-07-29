@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
 import { Tooltip } from "~/app/_components/tooltip";
@@ -35,6 +36,8 @@ export function EventCover({
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [showCoachHint, setShowCoachHint] = useState(false);
+  const uploadBtnRef = useRef<HTMLButtonElement>(null);
+  const [coachPos, setCoachPos] = useState<{ top: number; left: number } | null>(null);
 
   // Coach popup para primera vez: si nunca hay portada y el usuario
   // no la descartó antes, mostramos un callout apuntando al CTA.
@@ -45,6 +48,27 @@ export function EventCover({
     const id = setTimeout(() => setShowCoachHint(true), 600);
     return () => clearTimeout(id);
   }, [coverUrl]);
+
+  // El popup se portaliza al body porque .ev-cover tiene overflow:hidden
+  // y lo recortaba. Posición fija calculada desde el botón de portada.
+  useEffect(() => {
+    if (!showCoachHint || !uploadBtnRef.current) return;
+    const compute = () => {
+      const r = uploadBtnRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const W = 300;
+      let left = r.left;
+      if (left + W > window.innerWidth - 12) left = window.innerWidth - W - 12;
+      setCoachPos({ top: r.bottom + 10, left: Math.max(12, left) });
+    };
+    compute();
+    window.addEventListener("scroll", compute, true);
+    window.addEventListener("resize", compute);
+    return () => {
+      window.removeEventListener("scroll", compute, true);
+      window.removeEventListener("resize", compute);
+    };
+  }, [showCoachHint]);
 
   function dismissCoachHint() {
     setShowCoachHint(false);
@@ -200,6 +224,7 @@ export function EventCover({
               align="start"
             >
               <button
+                ref={uploadBtnRef}
                 className="cover-btn"
                 type="button"
                 onClick={() => {
@@ -222,29 +247,36 @@ export function EventCover({
               </button>
             </Tooltip>
 
-            {/* Coach callout anclado al botón — flecha apunta hacia arriba. */}
-            {showCoachHint && !coverUrl && (
-              <div className="cover-coach" role="status">
-                <span className="cc-arrow" aria-hidden />
-                <div className="cc-body">
-                  <i className="ti ti-bulb-filled" />
-                  <div>
-                    <div className="cc-title">Empezá por la portada</div>
-                    <div className="cc-desc">
-                      Los eventos con portada se ven mejor en el buscador y venden más.
+            {/* Coach callout: portalizado al body porque .ev-cover tiene
+               overflow:hidden y lo recortaba contra el borde del banner. */}
+            {showCoachHint && !coverUrl && coachPos &&
+              createPortal(
+                <div
+                  className="cover-coach"
+                  role="status"
+                  style={{ top: coachPos.top, left: coachPos.left }}
+                >
+                  <span className="cc-arrow" aria-hidden />
+                  <div className="cc-body">
+                    <i className="ti ti-bulb-filled" />
+                    <div>
+                      <div className="cc-title">Empezá por la portada</div>
+                      <div className="cc-desc">
+                        Los eventos con portada se ven mejor en el buscador y venden más.
+                      </div>
                     </div>
+                    <button
+                      type="button"
+                      className="cc-dismiss"
+                      onClick={dismissCoachHint}
+                      aria-label="Cerrar sugerencia"
+                    >
+                      <i className="ti ti-x" />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="cc-dismiss"
-                    onClick={dismissCoachHint}
-                    aria-label="Cerrar sugerencia"
-                  >
-                    <i className="ti ti-x" />
-                  </button>
-                </div>
-              </div>
-            )}
+                </div>,
+                document.body,
+              )}
           </div>
 
           <Tooltip

@@ -253,7 +253,7 @@ export function PhotoUploader({
           </div>
           <h4>Arrastrá fotos acá</h4>
           <p>O hacé click para elegir. Procesamos las fotos en segundo plano.</p>
-          <button className="btn btn-primary" type="button" onClick={pickFiles}>
+          <button className="btn btn-primary" type="button" onClick={pickFiles} data-tip="Seleccioná las fotos del evento desde tu computadora">
             <i className="ti ti-folder" />
             Elegir archivos
           </button>

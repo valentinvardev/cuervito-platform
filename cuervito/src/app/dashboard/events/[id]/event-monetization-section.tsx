@@ -658,6 +658,7 @@ export function EventMonetizationSection({
             type="button"
             className="btn btn-primary"
             onClick={() => setShowCreate(true)}
+            data-tip="Armar un código promocional o descuento por cantidad"
           >
             <i className="ti ti-plus" />
             Crear descuento

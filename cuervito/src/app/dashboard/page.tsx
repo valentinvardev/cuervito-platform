@@ -84,7 +84,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="action-grid">
-          <Link className="action-card primary" href="/dashboard/events">
+          <Link className="action-card primary" href="/dashboard/events" data-tip="Crear eventos, subir fotos y publicar galerías">
             <div className="action-icon">
               <i className="ti ti-calendar-event" />
             </div>
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
             </div>
           </Link>
 
-          <Link className="action-card" href="/dashboard/ventas">
+          <Link className="action-card" href="/dashboard/ventas" data-tip="Ver cada venta con su comprador, monto y descargas">
             <div className="action-icon">
               <i className="ti ti-list-details" />
             </div>
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
             </div>
           </Link>
 
-          <Link className="action-card" href="/dashboard/tienda">
+          <Link className="action-card" href="/dashboard/tienda" data-tip="Personalizar tu página pública: plantilla, colores y dominio">
             <div className="action-icon">
               <i className="ti ti-template" />
             </div>
@@ -141,7 +141,7 @@ export default async function DashboardPage() {
             </div>
           </Link>
 
-          <Link className="action-card" href="/dashboard/cobros">
+          <Link className="action-card" href="/dashboard/cobros" data-tip="Conectar Mercado Pago y ver cómo cobrás">
             <div className="action-icon">
               <i className="ti ti-credit-card-pay" />
             </div>
@@ -171,7 +171,7 @@ export default async function DashboardPage() {
             </div>
           </Link>
 
-          <Link className="action-card" href="/dashboard/perfil">
+          <Link className="action-card" href="/dashboard/perfil" data-tip="Editar tu nombre, bio y redes">
             <div className="action-icon">
               <i className="ti ti-user-circle" />
             </div>
@@ -187,7 +187,7 @@ export default async function DashboardPage() {
             </div>
           </Link>
 
-          <Link className="action-card" href="/dashboard/ayuda">
+          <Link className="action-card" href="/dashboard/ayuda" data-tip="Guías, preguntas frecuentes y soporte">
             <div className="action-icon">
               <i className="ti ti-lifebuoy" />
             </div>

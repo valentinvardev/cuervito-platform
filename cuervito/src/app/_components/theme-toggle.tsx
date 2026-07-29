@@ -32,7 +32,8 @@ export function ThemeToggle() {
       type="button"
       className="theme-toggle"
       onClick={toggle}
-      title={label}
+      data-tip={label}
+      data-tip-side="bottom"
       aria-label={label}
     >
       <i className={`ti ${theme === "light" ? "ti-moon" : "ti-sun"}`} aria-hidden />

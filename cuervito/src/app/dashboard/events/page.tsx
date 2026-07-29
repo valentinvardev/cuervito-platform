@@ -19,7 +19,7 @@ export default async function EventsPage() {
           <h1>Eventos</h1>
           <div className="sub">Gestioná tus eventos activos y finalizados.</div>
         </div>
-        <Link href="/dashboard/events/new" className="btn btn-primary">
+        <Link href="/dashboard/events/new" className="btn btn-primary" data-tip="Crear un evento nuevo y empezar a subir fotos">
           <i className="ti ti-plus" />
           Nuevo evento
         </Link>
@@ -34,7 +34,7 @@ export default async function EventsPage() {
           </div>
           <h3>Todavía no tenés eventos</h3>
           <p>Creá tu primer evento y empezá a vender fotos. Tarda un minuto.</p>
-          <Link href="/dashboard/events/new" className="btn btn-primary">
+          <Link href="/dashboard/events/new" className="btn btn-primary" data-tip="Crear un evento nuevo y empezar a subir fotos">
             <i className="ti ti-plus" />
             Crear primer evento
           </Link>
@@ -42,7 +42,7 @@ export default async function EventsPage() {
       )}
 
       {events.length > 0 && (
-        <Link href="/dashboard/events/new" className="event-list-add">
+        <Link href="/dashboard/events/new" className="event-list-add" data-tip="Crear un evento nuevo">
           <i className="ti ti-plus" />
           Crear nuevo evento
         </Link>

@@ -7,6 +7,8 @@ import { redirect } from "next/navigation";
 
 import { auth } from "~/server/auth";
 
+import { TooltipProvider } from "~/app/_components/tooltip-provider";
+
 import { AdminTabs } from "./_components/admin-tabs";
 import { AdminTop } from "./_components/admin-top";
 
@@ -33,6 +35,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <AdminTabs />
 
       {children}
+      <TooltipProvider />
     </>
   );
 }
