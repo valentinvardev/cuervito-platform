@@ -67,7 +67,14 @@ export async function deleteRekCollection(rekCollectionId: string): Promise<void
   }
 }
 
-/** Compress image if over Rekognition's 5MB limit. */
+/** Camino de respaldo: baja el original de S3 y lo comprime si supera el
+ *  límite de 5MB de Rekognition.
+ *
+ *  Solo se usa cuando el llamador no pudo pasar bytes ya preparados —
+ *  reprocesos manuales, fotos legacy, o cuando generatePreview falló. En
+ *  el camino normal de subida los bytes llegan por parámetro y esto no
+ *  se ejecuta: evita dos descargas del original (~30MB por foto) y dos
+ *  resizes con sharp. */
 async function loadForRekognition(storageKey: string): Promise<Uint8Array | null> {
   try {
     const rawBytes = await getS3ObjectBytes(storageKey);
@@ -125,7 +132,11 @@ function extractAllBibs(detections: TextDetection[]): string[] {
 }
 
 /** Run DetectText against a single photo, store bibs as comma-separated. */
-export async function runOcr(photoId: string): Promise<{ bibs: string | null }> {
+export async function runOcr(
+  photoId: string,
+  /** JPEG ya preparado por generatePreview. Si no viene, se baja el original. */
+  preparedBytes?: Uint8Array | null,
+): Promise<{ bibs: string | null }> {
   const photo = await db.photo.findUnique({
     where: { id: photoId },
     select: { id: true, storageKey: true, bibNumbers: true, ownerId: true },
@@ -133,7 +144,8 @@ export async function runOcr(photoId: string): Promise<{ bibs: string | null }> 
   if (!photo) return { bibs: null };
   if (photo.bibNumbers !== null) return { bibs: photo.bibNumbers };
 
-  const imageBytes = await loadForRekognition(photo.storageKey);
+  const imageBytes =
+    preparedBytes ?? (await loadForRekognition(photo.storageKey));
   if (!imageBytes) return { bibs: null };
 
   try {
@@ -164,7 +176,12 @@ export async function runOcr(photoId: string): Promise<{ bibs: string | null }> 
  * Face indexing
  * ===========================================================================*/
 
-export async function runFaceIndex(photoId: string, eventId: string): Promise<void> {
+export async function runFaceIndex(
+  photoId: string,
+  eventId: string,
+  /** JPEG ya preparado por generatePreview. Si no viene, se baja el original. */
+  preparedBytes?: Uint8Array | null,
+): Promise<void> {
   const photo = await db.photo.findUnique({
     where: { id: photoId },
     select: { id: true, storageKey: true, ownerId: true, faceProcessedAt: true },
@@ -174,7 +191,8 @@ export async function runFaceIndex(photoId: string, eventId: string): Promise<vo
   // invocations re-index the photo and charge for IndexFaces again.
   if (photo.faceProcessedAt) return;
 
-  const imageBytes = await loadForRekognition(photo.storageKey);
+  const imageBytes =
+    preparedBytes ?? (await loadForRekognition(photo.storageKey));
   if (!imageBytes) return;
 
   const rekCollectionId = rekCollectionForEvent(eventId);

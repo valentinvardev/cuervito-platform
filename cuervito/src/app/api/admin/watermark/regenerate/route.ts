@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   let failed = 0;
   for (const p of photos) {
     const r = await generatePreview(p.id);
-    if (r) done++;
+    if (r.watermarkedKey) done++;
     else failed++;
   }
 

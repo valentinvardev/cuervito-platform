@@ -26,6 +26,11 @@ export const env = createEnv({
     AWS_ACCESS_KEY_ID: z.string().optional(),
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
     AWS_REGION: z.string().default("us-east-2"),
+    /** Escape hatch: fuerza a que OCR y face-index vuelvan a bajar el
+     *  original full-res en vez de reusar el JPEG 2400px que produce
+     *  generatePreview. Solo para diagnosticar si la detección de dorsales
+     *  empeorara — cuesta 2 descargas + 2 resizes por foto. */
+    REKOGNITION_USE_ORIGINAL: z.coerce.boolean().default(false),
     AWS_S3_BUCKET: z.string().optional(),
     AWS_S3_PREFIX: z.string().default("cuervito"),
     AWS_S3_ACCELERATE: z
@@ -99,6 +104,7 @@ export const env = createEnv({
     AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
     AWS_REGION: process.env.AWS_REGION,
+    REKOGNITION_USE_ORIGINAL: process.env.REKOGNITION_USE_ORIGINAL,
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
     AWS_S3_PREFIX: process.env.AWS_S3_PREFIX,
     AWS_S3_ACCELERATE: process.env.AWS_S3_ACCELERATE,

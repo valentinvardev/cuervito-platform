@@ -25,7 +25,7 @@ export async function POST() {
   let failed = 0;
   for (const p of photos) {
     const ok = await generatePreview(p.id);
-    if (ok) done++;
+    if (ok.watermarkedKey) done++;
     else failed++;
   }
 

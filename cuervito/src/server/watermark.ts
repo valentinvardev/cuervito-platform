@@ -132,7 +132,17 @@ async function buildComposite(
  * update Photo.previewKey + previewGeneratedAt. Returns the new preview key
  * or null if the original couldn't be processed.
  */
-export async function generatePreview(photoId: string): Promise<string | null> {
+/** Resultado de generar las previews de una foto.
+ *  `rekognitionBytes` es el mismo buffer 2400px re-encodeado a JPEG: se
+ *  devuelve para que OCR y face-index lo reusen en vez de volver a bajar
+ *  el original de S3. Rekognition no acepta WebP, por eso no sirve el
+ *  previewClean que guardamos en el bucket. */
+export type PreviewResult = {
+  watermarkedKey: string | null;
+  rekognitionBytes: Uint8Array | null;
+};
+
+export async function generatePreview(photoId: string): Promise<PreviewResult> {
   await acquireSlot();
   try {
     return await _generatePreview(photoId);
@@ -141,7 +151,7 @@ export async function generatePreview(photoId: string): Promise<string | null> {
   }
 }
 
-async function _generatePreview(photoId: string): Promise<string | null> {
+async function _generatePreview(photoId: string): Promise<PreviewResult> {
   const photo = await db.photo.findUnique({
     where: { id: photoId },
     select: {
@@ -153,14 +163,14 @@ async function _generatePreview(photoId: string): Promise<string | null> {
       previewCleanKey: true,
     },
   });
-  if (!photo) return null;
+  if (!photo) return { watermarkedKey: null, rekognitionBytes: null };
 
   let raw: Uint8Array;
   try {
     raw = await getS3ObjectBytes(photo.storageKey);
   } catch (err) {
     console.error("[watermark] download failed:", photo.storageKey, err);
-    return null;
+    return { watermarkedKey: null, rekognitionBytes: null };
   }
 
   const buf = Buffer.from(raw);
@@ -197,6 +207,13 @@ async function _generatePreview(photoId: string): Promise<string | null> {
       .webp({ quality: PREVIEW_QUALITY })
       .toBuffer();
 
+    // Derivado JPEG para Rekognition. No se sube a S3: viaja en memoria
+    // hasta runOcr/runFaceIndex y se descarta. Reusa `resized`, así que
+    // cuesta un encode y ahorra dos descargas del original + dos resizes.
+    const rekognitionBytes = await sharp(Buffer.from(resized))
+      .jpeg({ quality: PREVIEW_QUALITY })
+      .toBuffer();
+
     // Delete stale previews before writing new ones
     const stale: string[] = [];
     if (photo.previewKey) stale.push(photo.previewKey);
@@ -223,10 +240,10 @@ async function _generatePreview(photoId: string): Promise<string | null> {
       },
     });
 
-    return watermarkedKey;
+    return { watermarkedKey, rekognitionBytes: new Uint8Array(rekognitionBytes) };
   } catch (err) {
     console.error(`[watermark] error for photoId=${photo.id}:`, err);
-    return null;
+    return { watermarkedKey: null, rekognitionBytes: null };
   }
 }
 
@@ -250,7 +267,7 @@ export async function regeneratePreviewsForEvent(eventId: string): Promise<{
   let failed = 0;
   for (const p of photos) {
     const ok = await generatePreview(p.id);
-    if (ok) done++;
+    if (ok.watermarkedKey) done++;
     else failed++;
   }
   // Invalidate all previews for this event in CloudFront so stale cached

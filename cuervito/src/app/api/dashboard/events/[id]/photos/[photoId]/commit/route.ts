@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { env } from "~/env";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { runFaceIndex, runOcr } from "~/server/rekognition";
@@ -57,13 +58,22 @@ export async function POST(
   // soon as possible. OCR + face index can take longer and aren't required
   // for the photo to be sellable.
   void (async () => {
+    // generatePreview ya bajó el original y lo tiene resizeado a 2400px en
+    // memoria, así que devuelve además un JPEG listo para Rekognition. Se
+    // lo pasamos a OCR y a face-index: sin eso cada uno volvía a bajar el
+    // original completo de S3 (~15MB c/u) y a comprimirlo con sharp por su
+    // cuenta. Si generatePreview falla, ambos caen al camino viejo solos.
+    let rekBytes: Uint8Array | null = null;
     try {
-      await generatePreview(photo.id);
+      const preview = await generatePreview(photo.id);
+      rekBytes = env.REKOGNITION_USE_ORIGINAL ? null : preview.rekognitionBytes;
     } catch (err) {
       console.error("[commit bg] generatePreview:", err);
     }
-    void runOcr(photo.id).catch((err) => console.error("[commit bg] runOcr:", err));
-    void runFaceIndex(photo.id, eventId).catch((err) =>
+    void runOcr(photo.id, rekBytes).catch((err) =>
+      console.error("[commit bg] runOcr:", err),
+    );
+    void runFaceIndex(photo.id, eventId, rekBytes).catch((err) =>
       console.error("[commit bg] runFaceIndex:", err),
     );
   })();
