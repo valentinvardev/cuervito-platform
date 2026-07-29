@@ -32,7 +32,7 @@
   }
 
   /* ===== Mobile drawer ===== */
-  .drawer-backdrop {
+  .lp .drawer-backdrop {
     position: fixed; inset: 0;
     background: rgba(8,6,5,0.55);
     backdrop-filter: blur(4px);
@@ -40,8 +40,8 @@
     opacity: 0; pointer-events: none;
     transition: opacity 220ms ease;
   }
-  .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
-  .drawer {
+  .lp .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+  .lp .drawer {
     position: fixed; top: 0; right: 0; bottom: 0;
     width: min(340px, 88vw);
     background: var(--bg-elevated, #1c1916);
@@ -51,17 +51,17 @@
     display: flex; flex-direction: column;
     box-shadow: -20px 0 60px rgba(0,0,0,0.5);
   }
-  .drawer.open { transform: translateX(0); }
-  .drawer::before {
+  .lp .drawer.open { transform: translateX(0); }
+  .lp .drawer::before {
     content: ''; position: absolute; left: 0; top: 0; bottom: 0;
     width: 3px; background: var(--accent);
   }
-  .drawer-head {
+  .lp .drawer-head {
     display: flex; justify-content: space-between; align-items: center;
     padding: 18px 22px;
     border-bottom: 1px solid var(--border-subtle);
   }
-  .drawer-close {
+  .lp .drawer-close {
     width: 36px; height: 36px;
     border-radius: 999px;
     border: 1px solid var(--border-default);
@@ -70,13 +70,13 @@
     cursor: pointer;
     transition: all 150ms;
   }
-  .drawer-close:hover { color: var(--accent); border-color: var(--border-accent); }
-  .drawer-links {
+  .lp .drawer-close:hover { color: var(--accent); border-color: var(--border-accent); }
+  .lp .drawer-links {
     display: flex; flex-direction: column;
     padding: 14px 12px;
     flex: 1;
   }
-  .drawer-links a {
+  .lp .drawer-links a {
     display: flex; align-items: center; justify-content: space-between;
     padding: 14px 14px;
     border-radius: 10px;
@@ -85,15 +85,15 @@
     font-weight: 500;
     transition: all 150ms;
   }
-  .drawer-links a:hover { background: var(--bg-base); color: var(--accent); }
-  .drawer-links a i { color: var(--text-tertiary); transition: color 150ms; }
-  .drawer-links a:hover i { color: var(--accent); }
-  .drawer-foot {
+  .lp .drawer-links a:hover { background: var(--bg-base); color: var(--accent); }
+  .lp .drawer-links a i { color: var(--text-tertiary); transition: color 150ms; }
+  .lp .drawer-links a:hover i { color: var(--accent); }
+  .lp .drawer-foot {
     padding: 16px 18px 22px;
     border-top: 1px solid var(--border-subtle);
     display: flex; flex-direction: column; gap: 10px;
   }
-  .drawer-foot .btn { width: 100%; height: 48px; }
+  .lp .drawer-foot .btn { width: 100%; height: 48px; }
 
   /* Hero — scoped to .lp so storefront /[slug] doesn't inherit
      min-height: 100vh on its compact hero. */
@@ -257,10 +257,10 @@
   .trust .sep { width: 3px; height: 3px; background: var(--text-tertiary); border-radius: 50%; opacity: 0.6; }
 
   /* ===== Section: Cómo funciona ===== */
-  .section { padding: 120px 0; position: relative; }
-  .section-head { text-align: center; max-width: 720px; margin: 0 auto 64px; }
-  .section-head .h-section { margin-top: 16px; }
-  .section-head p { color: var(--text-secondary); margin-top: 16px; font-size: 17px; }
+  .lp .section { padding: 120px 0; position: relative; }
+  .lp .section-head { text-align: center; max-width: 720px; margin: 0 auto 64px; }
+  .lp .section-head .h-section { margin-top: 16px; }
+  .lp .section-head p { color: var(--text-secondary); margin-top: 16px; font-size: 17px; }
 
   .steps {
     display: grid;
@@ -1402,13 +1402,13 @@
      SKELETONS  — shimmer compartido para loaders de PhotoStrip y grid
      de eventos. Usa un gradiente en movimiento sobre el color subtle.
      ═══════════════════════════════════════════════════════════════════ */
-  .skel {
+  .lp .skel {
     position: relative;
     overflow: hidden;
     background: var(--bg-elevated);
     border-radius: 8px;
   }
-  .skel::after {
+  .lp .skel::after {
     content: '';
     position: absolute; inset: 0;
     background: linear-gradient(
@@ -1424,7 +1424,7 @@
     to { transform: translateX(100%); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .skel::after { animation: none; opacity: 0.4; transform: none; }
+    .lp .skel::after { animation: none; opacity: 0.4; transform: none; }
   }
 
   /* Skeleton específico del PhotoStrip: 2 filas de 8 tiles estáticos. */
