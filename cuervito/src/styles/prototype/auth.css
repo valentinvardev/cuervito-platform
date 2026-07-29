@@ -120,6 +120,12 @@
 
 /* ===== Google sign-in button ===== */
 .auth-google-form { margin: 0 0 18px; }
+/* Colores fijos, no tokens: el botón usaba background var(--text-primary)
+   con color negro hardcodeado. En dark eso daba crema sobre negro y se
+   leía, pero en light --text-primary pasa a #0F0D0B y quedaba texto
+   negro sobre fondo negro. Además el logo G es a color y necesita
+   fondo claro sí o sí, así que fijamos el botón canónico de Google en
+   ambos temas. */
 .btn-google {
   display: inline-flex;
   align-items: center;
@@ -127,20 +133,25 @@
   gap: 10px;
   width: 100%;
   padding: 12px 18px;
-  background: var(--text-primary);
-  color: #0f0d0b;
-  border: 1px solid var(--text-primary);
+  background: #FFFFFF;
+  color: #1F1F1F;
+  border: 1px solid rgba(15, 13, 11, 0.16);
   border-radius: 10px;
   font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.005em;
   cursor: pointer;
-  transition: background 150ms ease, transform 150ms ease;
+  transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
 }
 .btn-google:hover {
-  background: #fff;
+  background: #F5F5F5;
+  border-color: rgba(15, 13, 11, 0.28);
   transform: translateY(-1px);
 }
 .btn-google:active { transform: translateY(0); }
+.btn-google:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
 .btn-google svg { flex-shrink: 0; }
