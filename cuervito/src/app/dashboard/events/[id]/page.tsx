@@ -36,7 +36,7 @@ export default async function EventDetailPage(props: {
       isPublished: true,
       ownerId: true,
       coverUrl: true,
-      owner: { select: { slug: true } },
+      owner: { select: { slug: true, name: true, email: true, image: true } },
       _count: { select: { photos: true, sales: true } },
     },
   });
@@ -123,6 +123,11 @@ export default async function EventDetailPage(props: {
         photosCount: event._count.photos,
         salesCount: event._count.sales,
         isPublished: event.isPublished,
+      }}
+      host={{
+        name: event.owner.name ?? null,
+        email: event.owner.email ?? null,
+        image: event.owner.image ?? null,
       }}
       publicPath={publicPath}
       photos={photos}

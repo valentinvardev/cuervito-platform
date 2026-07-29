@@ -5,6 +5,8 @@ import { useActionState, useEffect, useState } from "react";
 
 import type { EventFormState } from "../actions";
 
+import { CollaboratorsPanel } from "./collaborators-panel";
+
 type EventData = {
   id: string;
   name: string;
@@ -18,11 +20,13 @@ type EventData = {
 
 export function EventInfoSection({
   event,
+  host,
   updateAction,
   archiveAction,
   deleteSlot,
 }: {
   event: EventData;
+  host: { name: string | null; email: string | null; image: string | null };
   updateAction: (state: EventFormState, fd: FormData) => Promise<EventFormState>;
   archiveAction: () => Promise<void>;
   deleteSlot: React.ReactNode;
@@ -175,6 +179,12 @@ export function EventInfoSection({
           </button>
         </div>
       </form>
+
+      <CollaboratorsPanel
+        eventId={event.id}
+        host={host}
+        pricePerPhoto={event.pricePerPhoto}
+      />
     </>
   );
 }

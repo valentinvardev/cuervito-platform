@@ -38,6 +38,7 @@ type Tab = "galeria" | "monetizacion" | "info";
 
 export function EventDetailShell({
   event,
+  host,
   publicPath,
   photos,
   maxPhotoBytes,
@@ -47,6 +48,7 @@ export function EventDetailShell({
   togglePublishedAction,
 }: {
   event: EventData;
+  host: { name: string | null; email: string | null; image: string | null };
   publicPath: string | null;
   photos: PhotoTile[];
   maxPhotoBytes: number;
@@ -212,6 +214,7 @@ export function EventDetailShell({
       <section className={`section ${tab === "info" ? "active" : ""}`}>
         <EventInfoSection
           event={event}
+          host={host}
           updateAction={updateAction}
           archiveAction={archiveAction}
           deleteSlot={

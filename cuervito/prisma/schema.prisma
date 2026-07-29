@@ -134,6 +134,7 @@ model User {
 
     eventsOwned       Event[]            @relation("EventOwner")
     photosOwned       Photo[]            @relation("PhotoOwner")
+    photosUploaded    Photo[]            @relation("PhotoUploader")
     sales             Sale[]             @relation("SaleSeller")
     salesReferred     Sale[]             @relation("SaleReferrer")
     recognitionUsage  RecognitionUsage[]
@@ -141,6 +142,8 @@ model User {
     customDomains     CustomDomain[]     @relation("CustomDomainsOwner")
     editorProjects    EditorProject[]    @relation("EditorProjectOwner")
     editorFolders     EditorFolder[]     @relation("EditorFolderOwner")
+    collaboratedIn    EventCollaborator[] @relation("CollaboratorUser")
+    collaboratorsInvited EventCollaborator[] @relation("CollaboratorInviter")
 }
 
 // =============================================================================
@@ -185,6 +188,7 @@ model Event {
     faceRecords   FaceRecord[]
     discounts     Discount[]
     editorFolders EditorFolder[] @relation("EditorFolderEvent")
+    collaborators EventCollaborator[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -192,6 +196,56 @@ model Event {
     @@index([ownerId, status])
     @@index([canonicalEventId])
     @@index([eventDate])
+}
+
+// =============================================================================
+// Event collaborators
+// Un fotógrafo host puede invitar a otros fotógrafos a colaborar en un evento.
+// - `commissionScope`:
+//     NONE  → colaborador no cobra comisión (uploader "manager")
+//     OWN   → cobra sobre ventas de las fotos que él subió
+//     ALL   → cobra sobre todas las ventas del evento
+// - `commissionPct` es el % que se lleva del `Sale.sellerNetCents` (post platform fee).
+// - `status` PENDING mientras el invitado no aceptó; ACCEPTED cuando aceptó.
+// - `userId` es null hasta que la invitación es aceptada por un usuario existente.
+//   Guardamos siempre el email invitado para poder matchear al signup.
+// =============================================================================
+
+enum CollaboratorScope {
+    NONE
+    OWN
+    ALL
+}
+
+enum CollaboratorStatus {
+    PENDING
+    ACCEPTED
+    REVOKED
+}
+
+model EventCollaborator {
+    id              String              @id @default(cuid())
+    eventId         String
+    event           Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+    invitedEmail    String
+    userId          String?             // null hasta que se acepta
+    user            User?               @relation("CollaboratorUser", fields: [userId], references: [id], onDelete: SetNull)
+
+    invitedById     String
+    invitedBy       User                @relation("CollaboratorInviter", fields: [invitedById], references: [id], onDelete: Cascade)
+
+    commissionScope CollaboratorScope   @default(NONE)
+    commissionPct   Int                 @default(0) // 0-100
+
+    status          CollaboratorStatus  @default(PENDING)
+    inviteToken     String              @unique @default(cuid())
+    invitedAt       DateTime            @default(now())
+    acceptedAt      DateTime?
+
+    @@unique([eventId, invitedEmail])
+    @@index([userId])
+    @@index([status])
 }
 
 // Canonical events are admin-curated buckets. Multiple Events from different
@@ -219,6 +273,10 @@ model Photo {
     event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
     ownerId        String   // denormalized from event.ownerId for query speed
     owner          User     @relation("PhotoOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+    // Quien subió la foto. Puede ser el owner del evento o un
+    // colaborador invitado. Nullable para retro-compat con fotos viejas.
+    uploadedById   String?
+    uploadedBy     User?    @relation("PhotoUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
 
     storageKey      String  @unique // S3 key for full-res original
     previewKey      String? // S3 key for watermarked preview (shown to public)
