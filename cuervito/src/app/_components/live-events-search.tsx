@@ -60,7 +60,7 @@ export function LiveEventsSearch() {
       </div>
 
       <div
-        className="le-grid reveal"
+        className={`le-grid reveal ${!initialLoaded ? "lp-skel-area" : ""}`}
         style={{ ["--reveal-delay" as string]: "180ms" }}
       >
         {!initialLoaded ? (

@@ -1402,29 +1402,37 @@
      SKELETONS  — shimmer compartido para loaders de PhotoStrip y grid
      de eventos. Usa un gradiente en movimiento sobre el color subtle.
      ═══════════════════════════════════════════════════════════════════ */
+  /* Bloques planos: el brillo lo aporta un único barrido sobre el
+     contenedor (.lp-skel-area), no cada bloque por su cuenta. Así toda
+     la sección se lee como una superficie en movimiento en vez de N
+     cajas parpadeando fuera de fase. */
   .lp .skel {
-    position: relative;
-    overflow: hidden;
     background: var(--bg-elevated);
     border-radius: 8px;
   }
-  .lp .skel::after {
+
+  .lp-skel-area { position: relative; overflow: hidden; }
+  .lp-skel-area::before {
     content: '';
-    position: absolute; inset: 0;
+    position: absolute;
+    top: 0; bottom: 0;
+    left: -40%;
+    width: 40%;
     background: linear-gradient(
-      90deg,
-      transparent 0,
-      color-mix(in srgb, var(--text-primary) 8%, transparent) 50%,
+      100deg,
+      transparent 0%,
+      color-mix(in srgb, var(--text-primary) 7%, transparent) 50%,
       transparent 100%
     );
-    transform: translateX(-100%);
-    animation: skel-shimmer 1.4s ease-in-out infinite;
+    animation: lp-skel-sweep 1.7s cubic-bezier(.4, 0, .3, 1) infinite;
+    pointer-events: none;
+    z-index: 2;
   }
-  @keyframes skel-shimmer {
-    to { transform: translateX(100%); }
+  @keyframes lp-skel-sweep {
+    to { left: 140%; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .lp .skel::after { animation: none; opacity: 0.4; transform: none; }
+    .lp-skel-area::before { animation: none; opacity: 0.35; left: 30%; }
   }
 
   /* Skeleton específico del PhotoStrip: 2 filas de 8 tiles estáticos. */

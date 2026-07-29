@@ -6,13 +6,15 @@ import { resolveMediaUrl } from "~/server/media";
 export function PhotoStripSkeleton() {
   return (
     <section className="photo-strip" aria-hidden>
-      {[0, 1].map((row) => (
-        <div key={row} className="photo-strip-skel">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="skel" />
-          ))}
-        </div>
-      ))}
+      <div className="lp-skel-area">
+        {[0, 1].map((row) => (
+          <div key={row} className="photo-strip-skel">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="skel" />
+            ))}
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
