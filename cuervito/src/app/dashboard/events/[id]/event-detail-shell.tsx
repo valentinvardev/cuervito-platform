@@ -94,10 +94,32 @@ export function EventDetailShell({
         }}
       >
         <div>
-          <div style={{ fontWeight: 500, fontSize: 14 }}>
-            {event.isPublished
-              ? "✅ Evento publicado — visible al público"
-              : "Evento todavía sin publicar"}
+          <div
+            style={{
+              fontWeight: 500,
+              fontSize: 14,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            {event.isPublished ? (
+              <>
+                <i
+                  className="ti ti-circle-check-filled"
+                  style={{ color: "var(--success)", fontSize: 18 }}
+                />
+                <span>Evento publicado — visible al público</span>
+              </>
+            ) : (
+              <>
+                <i
+                  className="ti ti-pencil"
+                  style={{ color: "var(--text-tertiary)", fontSize: 16 }}
+                />
+                <span>Evento todavía sin publicar</span>
+              </>
+            )}
           </div>
           <div style={{ fontSize: 12.5, color: "var(--text-tertiary)", marginTop: 2 }}>
             {event.isPublished

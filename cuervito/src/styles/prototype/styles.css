@@ -62,8 +62,10 @@
 :root[data-theme="light"] {
   --bg-base:        #FAFAF7;
   --bg-surface:     #FFFFFF;
-  --bg-elevated:    #F2EEE6;
-  --bg-subtle:      #EAE5DB;
+  --bg-elevated:    #F4F1EA;
+  /* --bg-subtle es el fondo de los <input>. Antes era #EAE5DB (mustard
+     sucio); ahora un cream más claro que respira mejor sobre --bg-base. */
+  --bg-subtle:      #F7F3EB;
 
   --text-primary:   #0F0D0B;
   --text-secondary: #4A4038;

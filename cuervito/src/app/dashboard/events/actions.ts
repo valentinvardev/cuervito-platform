@@ -38,7 +38,13 @@ async function uniqueSlug(base: string, userId: string, ignoreId?: string): Prom
   return `${base}-${Date.now()}`;
 }
 
-export type EventFormState = { error: string | null; fieldErrors?: Record<string, string> };
+export type EventFormState = {
+  error: string | null;
+  fieldErrors?: Record<string, string>;
+  /** ID del evento recién creado. Lo devolvemos para que el client
+   *  pueda subir la portada opcional y redirigir sin perder el flujo. */
+  eventId?: string;
+};
 
 const eventSchema = z.object({
   name: z.string().trim().min(3, "Mín 3 caracteres.").max(120),
@@ -98,7 +104,9 @@ export async function createEventAction(
   busUserDashboardCache(session.user.id);
   revalidatePath("/dashboard/events");
   revalidatePath("/dashboard");
-  redirect(`/dashboard/events/${event.id}`);
+  // Devolvemos el eventId sin redirigir: el client puede subir la
+  // portada opcional y después redirigir a /events/{id}.
+  return { error: null, eventId: event.id };
 }
 
 export async function updateEventAction(

@@ -1926,6 +1926,24 @@
   padding: 22px 24px;
 }
 .new-form-section header { margin-bottom: 16px; }
+.new-form-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.new-form-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent-deep);
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+:root[data-theme="light"] .new-form-icon { border: none; }
 .new-form-section h3 {
   font-family: var(--font-display);
   font-weight: 700;
@@ -2116,3 +2134,73 @@
   line-height: 1.55;
   white-space: pre-wrap;
 }
+
+/* Cover picker dentro de /events/new — botón grande + preview con
+   thumbnail cuando ya se eligió archivo. */
+.cover-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-subtle);
+  border: 1px dashed var(--border-default);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: border-color 150ms, background 150ms;
+  text-align: left;
+}
+.cover-picker-btn:hover {
+  border-color: var(--border-accent);
+  background: var(--bg-elevated);
+}
+.cover-picker-btn .cp-icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  background: var(--accent-deep);
+  color: var(--accent);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.cover-picker-btn .cp-title {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.cover-picker-btn .cp-sub {
+  display: block;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.cover-picker-selected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+}
+.cover-picker-selected img {
+  width: 88px; height: 58px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.cps-info { flex: 1; min-width: 0; }
+.cps-name {
+  font-weight: 500;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cps-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.cps-actions { display: flex; gap: 4px; flex-shrink: 0; }

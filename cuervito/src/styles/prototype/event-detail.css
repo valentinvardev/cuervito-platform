@@ -384,6 +384,22 @@
     border-color: var(--border-accent);
     background: linear-gradient(140deg, var(--bg-surface) 0%, rgba(245,130,10,0.06) 100%);
   }
+  /* Light theme: el borde acentuado (que en dark daba glow) se ve
+     demasiado marcado sobre blanco. Cambiamos a sombra suave para el
+     hover/active y quitamos el borde del contenedor del ícono. */
+  :root[data-theme="light"] .tc {
+    transition: box-shadow 180ms ease, transform 160ms ease, background 180ms ease;
+  }
+  :root[data-theme="light"] .tc:hover {
+    border-color: var(--border-subtle);
+    box-shadow: 0 6px 18px rgba(15, 13, 11, 0.08);
+  }
+  :root[data-theme="light"] .tc.active {
+    border-color: var(--border-subtle);
+    background: linear-gradient(140deg, var(--bg-surface) 0%, rgba(245,130,10,0.08) 100%);
+    box-shadow: 0 10px 28px rgba(245, 130, 10, 0.14);
+  }
+
   .tc-icon {
     width: 40px; height: 40px;
     border-radius: 10px;
@@ -394,11 +410,13 @@
     font-size: 18px;
     transition: all 200ms ease;
   }
+  :root[data-theme="light"] .tc-icon { border: none; }
   .tc.active .tc-icon {
     background: var(--accent-deep);
     color: var(--accent);
     border-color: var(--border-accent);
   }
+  :root[data-theme="light"] .tc.active .tc-icon { border: none; }
   .tc-title {
     font-family: var(--font-display);
     font-weight: 700;
