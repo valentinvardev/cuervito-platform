@@ -367,6 +367,58 @@
 .ev-revenue .amt { font-family: var(--font-mono); font-weight: 500; font-size: 14px; color: var(--accent); }
 .ev-revenue .photos { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
 .ev-arrow { color: var(--text-tertiary); }
+
+/* ── Evento en vivo (status ACTIVE) ────────────────────────────────
+   La tarjeta se pinta de naranja para que los eventos que están
+   vendiendo salten a la vista en la lista. El gradiente profundiza
+   hacia abajo: el naranja plano contra blanco da ~2.6:1, insuficiente
+   para el texto secundario. Con el tramo oscuro llega a ~4:1.
+   ─────────────────────────────────────────────────────────────────── */
+.event-item.is-live {
+  position: relative;
+  background: linear-gradient(135deg, #F5820A 0%, #D2690A 55%, #B0560A 100%);
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(245, 130, 10, 0.22);
+}
+.event-item.is-live:hover {
+  background: linear-gradient(135deg, #FF8E14 0%, #DE7108 55%, #BC5D08 100%);
+  border-color: transparent;
+  box-shadow: 0 10px 28px rgba(245, 130, 10, 0.32) !important;
+  transform: translateY(-2px);
+}
+/* Filo superior claro: da volumen y evita que se lea como un bloque plano. */
+.event-item.is-live::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+}
+
+.event-item.is-live .ev-info .title { color: #FFFFFF; }
+.event-item.is-live .ev-info .sub { color: rgba(255, 255, 255, 0.9); }
+.event-item.is-live .ev-info .sub .sep {
+  background: rgba(255, 255, 255, 0.7);
+  opacity: 1;
+}
+.event-item.is-live .ev-revenue .amt { color: #FFFFFF; }
+.event-item.is-live .ev-revenue .photos { color: rgba(255, 255, 255, 0.75); }
+.event-item.is-live .ev-arrow { color: rgba(255, 255, 255, 0.85); }
+
+/* Thumb y pill pasan a vidrio blanco para seguir legibles sobre naranja. */
+.event-item.is-live .ev-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
+}
+.event-item.is-live .status-pill {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #FFFFFF !important;
+  backdrop-filter: blur(4px);
+}
+.event-item.is-live .status-pill i,
+.event-item.is-live .status-pill .spin-ring { color: #FFFFFF !important; }
+
 @media (max-width: 600px) {
   .event-item { grid-template-columns: 50px 1fr auto; }
   .ev-arrow { display: none; }

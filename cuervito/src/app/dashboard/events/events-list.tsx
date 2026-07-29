@@ -72,7 +72,11 @@ export function EventsList({ events }: { events: Item[] }) {
 
       <div className="event-list">
         {filtered.map((e) => (
-          <Link key={e.id} href={`/dashboard/events/${e.id}`} className="event-item">
+          <Link
+            key={e.id}
+            href={`/dashboard/events/${e.id}`}
+            className={`event-item ${e.status === "ACTIVE" ? "is-live" : ""}`}
+          >
             <div className="ev-thumb">
               <i className="ti ti-photo" />
             </div>
