@@ -217,11 +217,16 @@
   .ev-cover.is-empty .meta { display: none; }
   .ev-cover.is-empty .cover-actions { z-index: 2; }
 
-  /* ══ Coach callout apuntando al botón 'Subir portada' (1ra vez) ═══ */
+  /* Wrapper del botón 'Subir portada' — sirve de anclaje al coach. */
+  .cover-upload-wrap { position: relative; display: inline-flex; }
+
+  /* ══ Coach callout apuntando al botón 'Subir portada' (1ra vez) ═══
+     Ancla al wrapper del botón: sale desde su borde inferior con flecha
+     centrada sobre el botón. */
   .cover-coach {
     position: absolute;
-    top: 62px;
-    right: 14px;
+    top: calc(100% + 10px);
+    left: 0;
     z-index: 5;
     width: 300px;
     max-width: calc(100vw - 32px);
@@ -230,7 +235,7 @@
   .cover-coach .cc-arrow {
     position: absolute;
     top: -6px;
-    right: 76px;
+    left: 32px;
     width: 12px; height: 12px;
     background: var(--bg-elevated);
     border: 1px solid var(--border-default);

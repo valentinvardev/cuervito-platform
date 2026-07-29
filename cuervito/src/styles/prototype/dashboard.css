@@ -397,8 +397,24 @@
   font-size: 11px;
   font-weight: 500;
   white-space: nowrap;
-  color: var(--text-secondary);
+  color: #F0EBE3;
 }
+/* En light el chip queda dark-on-light: mismo look que el que va sobre
+   el cover del evento (glass oscuro con texto blanco). Consistencia
+   entre la lista y el detalle. */
+:root[data-theme="light"] .status-pill {
+  background: rgba(15, 13, 11, 0.82);
+  border-color: rgba(15, 13, 11, 0.4);
+  color: #FFFFFF;
+}
+:root[data-theme="light"] .status-pill.draft i,
+:root[data-theme="light"] .status-pill.processing,
+:root[data-theme="light"] .status-pill.uploaded {
+  color: #FFFFFF;
+}
+:root[data-theme="light"] .status-pill.uploaded i { color: #FFFFFF; }
+:root[data-theme="light"] .status-pill.processing i,
+:root[data-theme="light"] .status-pill.processing .spin-ring { color: var(--warning); }
 .status-pill.processing { color: var(--warning); }
 .status-pill.processing .spin-ring {
   width: 10px; height: 10px;
@@ -527,6 +543,47 @@
 .form-row select.has-error {
   border-color: var(--error);
 }
+
+/* Input with prefix — variante standalone (fuera de .form-row) usada
+   por el form de crear evento. Necesita anular el borde del <input>
+   interno porque la caja del wrapper es la que dibuja el borde. */
+.input-with-prefix {
+  display: flex;
+  align-items: stretch;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 150ms, box-shadow 150ms;
+  height: 40px;
+}
+.input-with-prefix:focus-within {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.input-with-prefix > .prefix {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-tertiary);
+  user-select: none;
+}
+.input-with-prefix > input.input,
+.input-with-prefix > input {
+  flex: 1;
+  min-width: 0;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0;
+  height: 100%;
+  box-shadow: none !important;
+  padding: 0 14px;
+}
+.input-with-prefix > input.input-error { border: none !important; }
 
 /* Input with prefix (e.g. cuervito.app/) */
 .form-row .input-with-prefix {

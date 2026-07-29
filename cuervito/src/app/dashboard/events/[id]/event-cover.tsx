@@ -193,33 +193,60 @@ export function EventCover({
         )}
 
         <div className="cover-actions">
-          <Tooltip
-            content={coverUrl ? "Cambiá la portada del evento" : "Elegí una foto para el banner"}
-            side="bottom"
-            align="end"
-          >
-            <button
-              className="cover-btn"
-              type="button"
-              onClick={() => {
-                dismissCoachHint();
-                fileInputRef.current?.click();
-              }}
-              disabled={uploading}
+          <div className="cover-upload-wrap">
+            <Tooltip
+              content={coverUrl ? "Cambiá la portada del evento" : "Elegí una foto para el banner"}
+              side="bottom"
+              align="start"
             >
-              {uploading ? (
-                <>
-                  <span className="up-spinner" />
-                  Subiendo…
-                </>
-              ) : (
-                <>
-                  <i className="ti ti-photo-edit" />
-                  {coverUrl ? "Cambiar portada" : "Subir portada"}
-                </>
-              )}
-            </button>
-          </Tooltip>
+              <button
+                className="cover-btn"
+                type="button"
+                onClick={() => {
+                  dismissCoachHint();
+                  fileInputRef.current?.click();
+                }}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <>
+                    <span className="up-spinner" />
+                    Subiendo…
+                  </>
+                ) : (
+                  <>
+                    <i className="ti ti-photo-edit" />
+                    {coverUrl ? "Cambiar portada" : "Subir portada"}
+                  </>
+                )}
+              </button>
+            </Tooltip>
+
+            {/* Coach callout anclado al botón — flecha apunta hacia arriba. */}
+            {showCoachHint && !coverUrl && (
+              <div className="cover-coach" role="status">
+                <span className="cc-arrow" aria-hidden />
+                <div className="cc-body">
+                  <i className="ti ti-bulb-filled" />
+                  <div>
+                    <div className="cc-title">Empezá por la portada</div>
+                    <div className="cc-desc">
+                      Los eventos con portada se ven mejor en el buscador y venden más.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="cc-dismiss"
+                    onClick={dismissCoachHint}
+                    aria-label="Cerrar sugerencia"
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <Tooltip
             content={publicPath ? "Copiá el link público del evento" : "Publicá el evento primero desde Info"}
             side="bottom"
@@ -235,30 +262,6 @@ export function EventCover({
               Compartir
             </button>
           </Tooltip>
-
-          {/* Coach callout apuntando al botón de subir portada la 1ra vez. */}
-          {showCoachHint && !coverUrl && (
-            <div className="cover-coach" role="status">
-              <span className="cc-arrow" aria-hidden />
-              <div className="cc-body">
-                <i className="ti ti-bulb-filled" />
-                <div>
-                  <div className="cc-title">Empezá por la portada</div>
-                  <div className="cc-desc">
-                    Los eventos con portada se ven mejor en el buscador y venden más.
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="cc-dismiss"
-                  onClick={dismissCoachHint}
-                  aria-label="Cerrar sugerencia"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
         {coverUrl && <div className="overlay" />}
