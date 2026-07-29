@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { Tooltip } from "~/app/_components/tooltip";
+
 export function EventCover({
   eventId,
   title,
@@ -32,6 +34,26 @@ export function EventCover({
   const [drag, setDrag] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showCoachHint, setShowCoachHint] = useState(false);
+
+  // Coach popup para primera vez: si nunca hay portada y el usuario
+  // no la descartó antes, mostramos un callout apuntando al CTA.
+  useEffect(() => {
+    if (coverUrl) return;
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem("cuervito.event-cover.hint-dismissed") === "1") return;
+    const id = setTimeout(() => setShowCoachHint(true), 600);
+    return () => clearTimeout(id);
+  }, [coverUrl]);
+
+  function dismissCoachHint() {
+    setShowCoachHint(false);
+    try {
+      localStorage.setItem("cuervito.event-cover.hint-dismissed", "1");
+    } catch {
+      // noop
+    }
+  }
 
   const fullUrl =
     typeof window !== "undefined" && publicPath
@@ -116,7 +138,7 @@ export function EventCover({
   return (
     <>
       <div
-        className={`ev-cover ${drag ? "drag-over" : ""}`}
+        className={`ev-cover ${drag ? "drag-over" : ""} ${!coverUrl ? "is-empty" : ""}`}
         style={
           coverUrl
             ? {
@@ -124,10 +146,7 @@ export function EventCover({
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }
-            : {
-                background:
-                  "linear-gradient(135deg, rgba(245,130,10,0.35) 0%, rgba(245,130,10,0.05) 60%, rgba(15,13,11,1) 100%)",
-              }
+            : undefined
         }
         onDragOver={(e) => {
           e.preventDefault();
@@ -153,37 +172,96 @@ export function EventCover({
           }}
         />
 
-        <div className="cover-actions">
+        {/* Empty state grande cuando no hay portada — click abre el
+           file picker igual que el botón de arriba a la derecha. */}
+        {!coverUrl && (
           <button
-            className="cover-btn"
             type="button"
+            className="ev-cover-empty"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
+            aria-label="Subir portada"
           >
-            {uploading ? (
-              <>
-                <span className="up-spinner" />
-                Subiendo…
-              </>
-            ) : (
-              <>
-                <i className="ti ti-photo-edit" />
-                {coverUrl ? "Cambiar portada" : "Subir portada"}
-              </>
-            )}
+            <span className="ec-icon">
+              <i className="ti ti-photo-plus" />
+            </span>
+            <span className="ec-title">Subí una portada</span>
+            <span className="ec-sub">
+              Arrastrá una imagen acá o hacé click. JPG, PNG o WebP · hasta 10 MB.
+            </span>
           </button>
-          <button
-            ref={shareBtnRef}
-            className="cover-btn primary"
-            type="button"
-            onClick={toggleShare}
+        )}
+
+        <div className="cover-actions">
+          <Tooltip
+            content={coverUrl ? "Cambiá la portada del evento" : "Elegí una foto para el banner"}
+            side="bottom"
+            align="end"
           >
-            <i className="ti ti-share-3" />
-            Compartir
-          </button>
+            <button
+              className="cover-btn"
+              type="button"
+              onClick={() => {
+                dismissCoachHint();
+                fileInputRef.current?.click();
+              }}
+              disabled={uploading}
+            >
+              {uploading ? (
+                <>
+                  <span className="up-spinner" />
+                  Subiendo…
+                </>
+              ) : (
+                <>
+                  <i className="ti ti-photo-edit" />
+                  {coverUrl ? "Cambiar portada" : "Subir portada"}
+                </>
+              )}
+            </button>
+          </Tooltip>
+          <Tooltip
+            content={publicPath ? "Copiá el link público del evento" : "Publicá el evento primero desde Info"}
+            side="bottom"
+            align="end"
+          >
+            <button
+              ref={shareBtnRef}
+              className="cover-btn primary"
+              type="button"
+              onClick={toggleShare}
+            >
+              <i className="ti ti-share-3" />
+              Compartir
+            </button>
+          </Tooltip>
+
+          {/* Coach callout apuntando al botón de subir portada la 1ra vez. */}
+          {showCoachHint && !coverUrl && (
+            <div className="cover-coach" role="status">
+              <span className="cc-arrow" aria-hidden />
+              <div className="cc-body">
+                <i className="ti ti-bulb-filled" />
+                <div>
+                  <div className="cc-title">Empezá por la portada</div>
+                  <div className="cc-desc">
+                    Los eventos con portada se ven mejor en el buscador y venden más.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="cc-dismiss"
+                  onClick={dismissCoachHint}
+                  aria-label="Cerrar sugerencia"
+                >
+                  <i className="ti ti-x" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="overlay" />
+        {coverUrl && <div className="overlay" />}
         <div className="meta">
           <div>
             <div className="ev-status-row" style={{ marginBottom: 10 }}>

@@ -127,6 +127,66 @@
   filter: brightness(0);
 }
 
+/* ─── Tooltip ─────────────────────────────────────────────────────────
+   Estilos del componente <Tooltip> portalizado. El fondo se invierte
+   respecto al tema activo para que siempre resalte. Tanto la burbuja
+   como la flechita usan la misma paleta.
+   ────────────────────────────────────────────────────────────────── */
+.cs-tooltip {
+  position: fixed;
+  z-index: 9998;
+  background: #0F0D0B;
+  color: #FAFAF7;
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+  max-width: 240px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  animation: cs-tooltip-in 140ms ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+:root[data-theme="light"] .cs-tooltip {
+  background: #FFFFFF;
+  color: #0F0D0B;
+  border-color: rgba(15, 13, 11, 0.08);
+  box-shadow: 0 6px 20px rgba(15, 13, 11, 0.14);
+}
+.cs-tooltip-arrow {
+  position: absolute;
+  width: 8px; height: 8px;
+  transform: rotate(45deg);
+  background: inherit;
+  border: inherit;
+}
+.cs-tooltip-top .cs-tooltip-arrow {
+  bottom: -5px; left: 50%; margin-left: -4px;
+  border-top: none; border-left: none;
+}
+.cs-tooltip-bottom .cs-tooltip-arrow {
+  top: -5px; left: 50%; margin-left: -4px;
+  border-bottom: none; border-right: none;
+}
+.cs-tooltip-left .cs-tooltip-arrow {
+  right: -5px; top: 50%; margin-top: -4px;
+  border-left: none; border-bottom: none;
+}
+.cs-tooltip-right .cs-tooltip-arrow {
+  left: -5px; top: 50%; margin-top: -4px;
+  border-right: none; border-top: none;
+}
+@keyframes cs-tooltip-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-tooltip { animation: none; }
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   background: var(--bg-base);
