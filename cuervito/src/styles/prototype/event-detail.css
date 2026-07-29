@@ -1655,3 +1655,96 @@
   .ev-skel-bar.w-64 { width: 64%; max-width: 300px; }
   .ev-skel-bar.w-72 { width: 72%; max-width: 380px; }
   .ev-skel-bar.w-84 { width: 84%; }
+
+  /* ═════════════════════════════════════════════════════════════════
+     Ventas por vendedor (reparto con colaboradores)
+     ═════════════════════════════════════════════════════════════════ */
+  .rs-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin: 18px 0;
+  }
+  .rs-head h3 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 16px; letter-spacing: -0.01em;
+    color: var(--text-primary); margin: 0;
+  }
+  .rs-head p {
+    font-size: 12.5px; color: var(--text-tertiary);
+    margin-top: 2px; line-height: 1.45;
+  }
+  .rs-list {
+    display: flex; flex-direction: column; gap: 6px;
+    margin-top: 14px;
+  }
+  .rs-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 13px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+  }
+  .rs-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bg-subtle);
+    color: var(--text-primary);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 13px;
+    overflow: hidden; flex-shrink: 0;
+  }
+  .rs-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .rs-info { flex: 1; min-width: 0; }
+  .rs-name {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 13.5px; font-weight: 500; color: var(--text-primary);
+  }
+  .rs-tag {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 4px;
+    background: var(--accent-deep); color: var(--accent);
+  }
+  .rs-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+  .rs-amt { text-align: right; flex-shrink: 0; }
+  .rs-amt-val {
+    display: block;
+    font-family: var(--font-mono); font-size: 14px;
+    color: var(--accent);
+  }
+  .rs-amt-lbl {
+    display: block;
+    font-size: 10.5px; color: var(--text-tertiary);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    margin-top: 1px;
+  }
+  .rs-totals {
+    margin-top: 14px; padding-top: 12px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .rs-total-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 13px; color: var(--text-secondary);
+  }
+  .rs-total-row.muted { color: var(--text-tertiary); }
+  .rs-total-row.strong {
+    font-weight: 600; color: var(--text-primary);
+    padding-top: 7px; border-top: 1px solid var(--border-subtle);
+  }
+  .rs-total-row.strong .mono { color: var(--accent); font-size: 15px; }
+  .rs-note {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin-top: 12px; padding: 10px 12px;
+    background: var(--bg-elevated);
+    border-radius: 9px;
+    font-size: 12px; color: var(--text-tertiary); line-height: 1.5;
+  }
+  .rs-note i { flex-shrink: 0; margin-top: 1px; font-size: 14px; }
+  .rs-note.warn { color: var(--warning); background: color-mix(in srgb, var(--warning) 10%, transparent); }
+
+  .gallery-head-right {
+    display: flex; align-items: center; gap: 12px;
+    flex-wrap: wrap;
+  }

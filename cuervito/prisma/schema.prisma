@@ -152,6 +152,7 @@ model User {
     editorFolders     EditorFolder[]     @relation("EditorFolderOwner")
     collaboratedIn    EventCollaborator[] @relation("CollaboratorUser")
     collaboratorsInvited EventCollaborator[] @relation("CollaboratorInviter")
+    commissionsEarned SaleCommission[]    @relation("CommissionEarner")
 }
 
 // =============================================================================
@@ -411,7 +412,8 @@ model Sale {
     updatedAt DateTime @updatedAt
     paidAt    DateTime?
 
-    downloads DownloadLog[]
+    downloads   DownloadLog[]
+    commissions SaleCommission[]
 
     @@index([sellerId])
     @@index([eventId])
@@ -468,6 +470,35 @@ model Discount {
     createdAt  DateTime @default(now())
 
     @@index([eventId])
+}
+
+// Comisión devengada por un colaborador sobre una venta concreta.
+//
+// IMPORTANTE: esto es un registro contable, NO un split de pago. Mercado
+// Pago liquida la venta completa a la cuenta del dueño del evento; la
+// comisión queda anotada acá como deuda del dueño hacia el colaborador,
+// para que ambos vean el mismo número. Un split real requeriría que MP
+// soporte múltiples receptores en una preferencia, que hoy no es el caso.
+//
+// Se congela al momento del pago: guardamos scope y pct vigentes en ese
+// instante, así cambiar los parámetros del colaborador más adelante no
+// reescribe la historia.
+model SaleCommission {
+    id        String   @id @default(cuid())
+    saleId    String
+    sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+    userId    String   // colaborador que cobra
+    user      User     @relation("CommissionEarner", fields: [userId], references: [id], onDelete: Cascade)
+
+    scope     CollaboratorScope // congelado al momento del pago
+    pct       Int               // congelado al momento del pago
+    amountCents Int             // lo que le corresponde, ya calculado
+
+    createdAt DateTime @default(now())
+
+    @@unique([saleId, userId])
+    @@index([userId])
 }
 
 model DownloadLog {

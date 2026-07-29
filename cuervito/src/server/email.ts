@@ -505,3 +505,48 @@ export function downloadEmailHtml(opts: {
 }): string {
   return deliveryEmailHtml(opts);
 }
+
+/* ============================================================================
+ * 4) Collaborator invite — to the invited photographer
+ * ========================================================================= */
+
+export type CollaboratorInviteInput = {
+  inviterName: string;
+  eventName: string;
+  acceptUrl: string;
+  /** Texto ya redactado de la comisión pactada. */
+  commissionLine: string;
+};
+
+export function collaboratorInviteHtml(input: CollaboratorInviteInput): string {
+  const body = `
+    ${eyebrow("Te invitaron a colaborar")}
+    ${heading(`Sumate a cubrir ${escapeHtml(input.eventName)}.`)}
+    ${paragraph(
+      `<strong style="color:${COLORS.textPrimary};">${escapeHtml(input.inviterName)}</strong> te invitó a colaborar en <strong style="color:${COLORS.textPrimary};">${escapeHtml(input.eventName)}</strong>. Si aceptás vas a poder subir tus fotos al evento y compartir las ventas.`,
+    )}
+
+    <div bgcolor="${COLORS.bgElevated}" class="cv-elevated" style="padding:14px 16px;background:${COLORS.bgElevated};border:1px solid ${COLORS.border};border-radius:10px;font-size:13px;color:${COLORS.textSecondary};line-height:1.55;margin-bottom:22px;">
+      <div style="font-family:${FONT_MONO};font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${COLORS.textTertiary};margin-bottom:6px;">Tu comisión</div>
+      ${escapeHtml(input.commissionLine)}
+    </div>
+
+    <div style="margin:0 0 24px;">
+      ${ctaButton("Aceptar invitación", input.acceptUrl)}
+    </div>
+
+    <div style="font-size:12.5px;color:${COLORS.textTertiary};line-height:1.5;">
+      Para cobrar necesitás tener Mercado Pago conectado — si todavía no lo hiciste, te lo vamos a pedir al aceptar. Si no esperabas esta invitación, ignorá este mail.
+    </div>
+
+    <p style="margin:22px 0 0;font-size:12.5px;color:${COLORS.textTertiary};line-height:1.5;word-break:break-all;">
+      Si el botón no funciona, pegá este link en tu navegador:<br>
+      <span style="color:${COLORS.textSecondary};">${input.acceptUrl}</span>
+    </p>
+  `;
+
+  return layout({
+    preheader: `${input.inviterName} te invitó a colaborar en ${input.eventName}.`,
+    body,
+  });
+}

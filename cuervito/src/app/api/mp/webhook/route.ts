@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 
 import { env } from "~/env";
 import { db } from "~/server/db";
+import { accrueCommissionsForSale } from "~/server/commissions";
 import { deliveryEmailHtml, sendEmail } from "~/server/email";
 import { fetchPayment } from "~/server/mp";
 import { recordPendingAndMaybeNotify } from "~/server/sale-notifier";
@@ -163,6 +164,12 @@ async function handlePayment(paymentId: string) {
   // Also send the buyer their download link, and queue the seller email
   // (which batches progressively — see sale-notifier.ts).
   if (newStatus === "PAID" && sale.status !== "PAID") {
+    // Devengar comisiones de colaboradores. Es idempotente, así que un
+    // reenvío del webhook no duplica.
+    void accrueCommissionsForSale(sale.id).catch((err: unknown) =>
+      console.error("[mp webhook] accrueCommissions failed:", err),
+    );
+
     publishSale(sale.sellerId, {
       saleId: sale.id,
       amount: sale.totalCents,

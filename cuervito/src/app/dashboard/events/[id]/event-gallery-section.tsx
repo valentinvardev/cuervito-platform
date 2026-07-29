@@ -1,5 +1,6 @@
 "use client";
 
+import { InviteCollaboratorButton } from "./invite-collaborator-button";
 import { PhotoGrid } from "./photo-grid";
 import { PhotoUploader } from "./photo-uploader";
 
@@ -15,11 +16,13 @@ type Photo = {
 
 export function EventGallerySection({
   eventId,
+  pricePerPhoto,
   photosCount,
   photos,
   maxPhotoBytes,
 }: {
   eventId: string;
+  pricePerPhoto: number;
   photosCount: number;
   photos: Photo[];
   maxPhotoBytes: number;
@@ -28,11 +31,18 @@ export function EventGallerySection({
     <>
       <div className="gallery-head">
         <h2>Galería</h2>
-        <span className="meta">
-          {photosCount > 0
-            ? `${photosCount.toLocaleString("es-AR")} fotos`
-            : "Aún sin fotos"}
-        </span>
+        <div className="gallery-head-right">
+          <span className="meta">
+            {photosCount > 0
+              ? `${photosCount.toLocaleString("es-AR")} fotos`
+              : "Aún sin fotos"}
+          </span>
+          <InviteCollaboratorButton
+            eventId={eventId}
+            pricePerPhoto={pricePerPhoto}
+            label="Colaborador"
+          />
+        </div>
       </div>
 
       <PhotoUploader eventId={eventId} maxPhotoBytes={maxPhotoBytes} />

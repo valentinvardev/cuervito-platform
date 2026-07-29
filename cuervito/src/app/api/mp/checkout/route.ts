@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { env } from "~/env";
 import { db } from "~/server/db";
+import { accrueCommissionsForSale } from "~/server/commissions";
 import { deliveryEmailHtml, sendEmail } from "~/server/email";
 import { createPreference, isMpConfigured } from "~/server/mp";
 import { recordPendingAndMaybeNotify } from "~/server/sale-notifier";
@@ -215,7 +216,11 @@ export async function POST(req: NextRequest) {
         : []),
     ]);
 
-    // Same realtime + cache flow as the real webhook would do.
+    // Mismo flujo que el webhook real, comisiones incluidas.
+    void accrueCommissionsForSale(sale.id).catch((err: unknown) =>
+      console.error("[checkout test-mode] accrueCommissions failed:", err),
+    );
+
     publishSale(event.ownerId, {
       saleId: sale.id,
       amount: totalCents,

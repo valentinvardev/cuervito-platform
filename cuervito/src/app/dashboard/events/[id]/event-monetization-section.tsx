@@ -1,6 +1,8 @@
 "use client";
 
 import { createPortal } from "react-dom";
+
+import { RevenueSplitSection } from "./revenue-split-section";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type DiscountType = "CODE" | "BUNDLE" | "QTYPCT";
@@ -626,6 +628,8 @@ export function EventMonetizationSection({
           <div className="value mono">${pricePerPhoto.toLocaleString("es-AR")}</div>
         </div>
       </div>
+
+      <RevenueSplitSection eventId={eventId} />
 
       <div className="insight">
         <i className="ti ti-info-circle" />

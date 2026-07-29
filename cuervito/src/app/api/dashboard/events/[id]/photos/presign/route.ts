@@ -5,6 +5,7 @@ import { z } from "zod";
 import { env } from "~/env";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
+import { canUploadToEvent } from "~/server/event-access";
 import { assertStorageQuota } from "~/server/quotas";
 import { getPresignedUploadUrl, originalPhotoKey } from "~/server/s3";
 
@@ -41,11 +42,9 @@ export async function POST(
   }
 
   const { id: eventId } = await ctx.params;
-  const event = await db.event.findUnique({
-    where: { id: eventId },
-    select: { id: true, ownerId: true },
-  });
-  if (!event || event.ownerId !== session.user.id) {
+  // Suben el dueño y los colaboradores que aceptaron la invitación.
+  const access = await canUploadToEvent(eventId, session.user.id);
+  if (!access) {
     return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
   }
 
@@ -80,7 +79,8 @@ export async function POST(
   // Quota: total bytes about to be uploaded
   const totalBytes = parsed.data.files.reduce((a, b) => a + b.size, 0);
   try {
-    await assertStorageQuota(session.user.id, totalBytes);
+    // El storage lo paga el dueño del evento aunque suba un colaborador.
+    await assertStorageQuota(access.ownerId, totalBytes);
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Sin cuota suficiente." },
@@ -92,7 +92,7 @@ export async function POST(
   const batch = parsed.data.files.map((f) => {
     const ext = EXT_BY_MIME[f.mimeType] ?? "jpg";
     const photoId = randomUUID();
-    const key = originalPhotoKey(session.user.id, eventId, photoId, ext);
+    const key = originalPhotoKey(access.ownerId, eventId, photoId, ext);
     return { f, photoId, key };
   });
 
@@ -108,7 +108,11 @@ export async function POST(
       data: batch.map(({ f, photoId, key }) => ({
         id: photoId,
         eventId,
-        ownerId: session.user.id,
+        // ownerId = dueño del evento (cobra y paga storage).
+        // uploadedById = quien realmente subió, para repartir comisiones
+        // con scope OWN.
+        ownerId: access.ownerId,
+        uploadedById: session.user.id,
         storageKey: key,
         filename: f.name,
         mimeType: f.mimeType,

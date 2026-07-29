@@ -87,8 +87,15 @@ export const getCachedQuotaUsage = async (userId: string) => {
 export const getCachedEventsList = (userId: string) =>
   unstable_cache(
     async () => {
+      // Propios + aquellos donde el usuario es colaborador aceptado.
       const events = await db.event.findMany({
-        where: { ownerId: userId, NOT: { status: "ARCHIVED" } },
+        where: {
+          NOT: { status: "ARCHIVED" },
+          OR: [
+            { ownerId: userId },
+            { collaborators: { some: { userId, status: "ACCEPTED" } } },
+          ],
+        },
         orderBy: [{ eventDate: "desc" }, { createdAt: "desc" }],
         select: {
           id: true,
@@ -98,6 +105,8 @@ export const getCachedEventsList = (userId: string) =>
           location: true,
           discipline: true,
           status: true,
+          ownerId: true,
+          owner: { select: { name: true } },
           _count: { select: { photos: true, sales: true } },
         },
       });
@@ -112,6 +121,9 @@ export const getCachedEventsList = (userId: string) =>
         status: e.status,
         photos: e._count.photos,
         sales: e._count.sales,
+        // Cuando no sos el dueño, la lista lo aclara y oculta las ventas.
+        isCollaborator: e.ownerId !== userId,
+        ownerName: e.ownerId !== userId ? (e.owner.name ?? null) : null,
       }));
     },
     ["events-list", userId],

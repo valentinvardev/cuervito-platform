@@ -200,7 +200,7 @@ function StatusBadge({ status }: { status: CollaboratorRow["status"] }) {
 
 // ─────────────────────────────── Modal ────────────────────────────────
 
-function AddCollaboratorModal({
+export function AddCollaboratorModal({
   eventId,
   pricePerPhoto,
   onClose,

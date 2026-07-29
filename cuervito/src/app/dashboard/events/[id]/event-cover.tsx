@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 
 import { Tooltip } from "~/app/_components/tooltip";
 
+import { InviteCollaboratorButton } from "./invite-collaborator-button";
+
 export function EventCover({
   eventId,
   title,
@@ -15,6 +17,7 @@ export function EventCover({
   status,
   coverUrl,
   publicPath,
+  pricePerPhoto,
 }: {
   eventId: string;
   title: string;
@@ -24,6 +27,7 @@ export function EventCover({
   status: string;
   coverUrl: string | null;
   publicPath: string | null;
+  pricePerPhoto: number;
 }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -278,6 +282,13 @@ export function EventCover({
                 document.body,
               )}
           </div>
+
+          <InviteCollaboratorButton
+            eventId={eventId}
+            pricePerPhoto={pricePerPhoto}
+            variant="cover"
+            label="Colaborador"
+          />
 
           <Tooltip
             content={publicPath ? "Copiá el link público del evento" : "Publicá el evento primero desde Info"}

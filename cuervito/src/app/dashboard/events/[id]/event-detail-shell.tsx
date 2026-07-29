@@ -77,6 +77,7 @@ export function EventDetailShell({
         discipline={event.discipline}
         status={event.status}
         coverUrl={event.coverUrl}
+        pricePerPhoto={event.pricePerPhoto}
         publicPath={event.isPublished ? publicPath : null}
       />
 
@@ -203,6 +204,7 @@ export function EventDetailShell({
       <section className={`section ${tab === "galeria" ? "active" : ""}`}>
         <EventGallerySection
           eventId={event.id}
+          pricePerPhoto={event.pricePerPhoto}
           photosCount={event.photosCount}
           photos={photos}
           maxPhotoBytes={maxPhotoBytes}

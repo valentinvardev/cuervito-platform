@@ -4,6 +4,8 @@ import { z } from "zod";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { resolveAvatarUrl } from "~/server/avatar";
+import { collaboratorInviteHtml, sendEmail } from "~/server/email";
+import { env } from "~/env";
 
 const inviteSchema = z.object({
   email: z.string().email().transform((s) => s.toLowerCase().trim()),
@@ -74,7 +76,7 @@ export async function POST(
 
   const event = await db.event.findUnique({
     where: { id: eventId },
-    select: { ownerId: true },
+    select: { ownerId: true, name: true },
   });
   if (!event || event.ownerId !== session.user.id) {
     return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
@@ -90,12 +92,11 @@ export async function POST(
   }
 
   // No dejar que el owner se invite a sí mismo.
-  const ownerEmail = (
-    await db.user.findUnique({
-      where: { id: session.user.id },
-      select: { email: true },
-    })
-  )?.email?.toLowerCase();
+  const owner = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { email: true, name: true },
+  });
+  const ownerEmail = owner?.email?.toLowerCase();
   if (parsed.data.email === ownerEmail) {
     return NextResponse.json(
       { error: "Ya sos el fotógrafo host de este evento." },
@@ -121,21 +122,34 @@ export async function POST(
       },
     });
 
-    // TODO: enviar email real. Por ahora sólo log — la próxima iteración
-    // agrega provider (Resend/SES).
-    console.info(
-      "[collaborators] invite created",
-      JSON.stringify({
-        eventId,
-        email: created.invitedEmail,
-        token: created.inviteToken,
-        userExists: !!existingUser,
+    const baseUrl = env.NEXT_PUBLIC_BASE_URL.replace(/\/+$/, "");
+    const acceptUrl = `${baseUrl}/invitacion/${created.inviteToken}`;
+    const commissionLine =
+      parsed.data.commissionScope === "NONE"
+        ? "Sin comisión — colaborás subiendo fotos al evento."
+        : parsed.data.commissionScope === "OWN"
+          ? `${parsed.data.commissionPct}% sobre las ventas de las fotos que subas vos.`
+          : `${parsed.data.commissionPct}% sobre todas las ventas del evento.`;
+
+    // Best-effort: si el mail falla, la invitación igual queda creada y el
+    // link se puede compartir a mano. No abortamos por eso.
+    void sendEmail({
+      to: created.invitedEmail,
+      subject: `Te invitaron a colaborar en ${event.name}`,
+      html: collaboratorInviteHtml({
+        inviterName: owner?.name ?? "Un fotógrafo",
+        eventName: event.name,
+        acceptUrl,
+        commissionLine,
       }),
+    }).catch((err: unknown) =>
+      console.error("[collaborators] invite email failed:", err),
     );
 
     return NextResponse.json({
       id: created.id,
       inviteToken: created.inviteToken,
+      acceptUrl,
     });
   } catch (err: unknown) {
     // Unique constraint (eventId, invitedEmail)
