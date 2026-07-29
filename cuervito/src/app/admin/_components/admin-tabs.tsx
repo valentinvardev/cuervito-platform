@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/admin/users", label: "Usuarios", icon: "ti-users" },
   { href: "/admin/sales", label: "Ventas", icon: "ti-shopping-cart" },
+  { href: "/admin/metricas", label: "Métricas", icon: "ti-chart-bar" },
   { href: "/admin/watermark", label: "Watermark", icon: "ti-watermark" },
   { href: "/admin/editor", label: "Editor", icon: "ti-color-swatch" },
   { href: "/admin/settings", label: "Settings", icon: "ti-settings" },
@@ -15,45 +16,15 @@ export function AdminTabs() {
   const pathname = usePathname() ?? "";
 
   return (
-    <div
-      style={{
-        background: "rgba(15, 13, 11, 0.85)",
-        backdropFilter: "blur(10px)",
-        borderBottom: "1px solid var(--border-subtle)",
-        position: "sticky",
-        top: 64,
-        zIndex: 19,
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 880,
-          margin: "0 auto",
-          padding: "0 32px",
-          display: "flex",
-          gap: 4,
-          overflowX: "auto",
-        }}
-      >
+    <div className="admin-tabs">
+      <div className="admin-tabs-inner">
         {TABS.map((t) => {
           const active = pathname.startsWith(t.href);
           return (
             <Link
               key={t.href}
               href={t.href}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "12px 16px",
-                fontSize: 13.5,
-                fontWeight: 500,
-                color: active ? "var(--accent)" : "var(--text-secondary)",
-                borderBottom: `2px solid ${active ? "var(--accent)" : "transparent"}`,
-                whiteSpace: "nowrap",
-                textDecoration: "none",
-                transition: "color 150ms",
-              }}
+              className={`admin-tab ${active ? "active" : ""}`}
             >
               <i className={`ti ${t.icon}`} />
               {t.label}
