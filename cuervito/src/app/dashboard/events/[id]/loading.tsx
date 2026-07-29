@@ -1,32 +1,53 @@
-import { SkelLine, SkelPhotoGrid } from "../../_components/skeletons";
-
+/**
+ * Skeleton de la página de evento.
+ *
+ * Espeja la estructura real (portada → banner de publicación → 3 tabs
+ * de navegación → galería) para que al resolverse no haya salto de
+ * layout. Los bloques son superficies planas: el brillo lo aporta un
+ * único barrido sobre el contenedor, así toda la sección se lee como
+ * una sola pieza en vez de veinte cajas parpadeando desincronizadas.
+ */
 export default function Loading() {
   return (
-    <main className="wrap">
-      {/* Cover */}
-      <div
-        className="skel"
-        style={{
-          aspectRatio: "16/6",
-          width: "100%",
-          borderRadius: 14,
-          marginBottom: 22,
-        }}
-      />
+    <main className="wrap ev-skel" aria-busy="true" aria-label="Cargando evento">
+      {/* Portada */}
+      <div className="ev-skel-cover" />
 
-      {/* Title + sub */}
-      <SkelLine width={320} height={32} style={{ borderRadius: 8, marginBottom: 8 }} />
-      <SkelLine width={420} height={14} style={{ marginBottom: 22 }} />
-
-      {/* Tabs / actions row */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 22, flexWrap: "wrap" }}>
-        <SkelLine width={140} height={36} style={{ borderRadius: 8 }} />
-        <SkelLine width={120} height={36} style={{ borderRadius: 8 }} />
-        <SkelLine width={100} height={36} style={{ borderRadius: 8 }} />
+      {/* Banner de publicación */}
+      <div className="ev-skel-banner">
+        <div className="ev-skel-banner-text">
+          <span className="ev-skel-bar w-52" />
+          <span className="ev-skel-bar w-72 sm" />
+        </div>
+        <span className="ev-skel-btn" />
       </div>
 
-      {/* Photo grid */}
-      <SkelPhotoGrid count={12} />
+      {/* Tabs de navegación */}
+      <div className="ev-skel-tabs">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="ev-skel-tab">
+            <span className="ev-skel-chip" />
+            <div className="ev-skel-tab-text">
+              <span className="ev-skel-bar w-58" />
+              <span className="ev-skel-bar w-84 sm" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Zona de subida */}
+      <div className="ev-skel-upload">
+        <span className="ev-skel-chip lg" />
+        <span className="ev-skel-bar w-40" />
+        <span className="ev-skel-bar w-64 sm" />
+      </div>
+
+      {/* Grilla de fotos */}
+      <div className="ev-skel-grid">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="ev-skel-photo" />
+        ))}
+      </div>
     </main>
   );
 }

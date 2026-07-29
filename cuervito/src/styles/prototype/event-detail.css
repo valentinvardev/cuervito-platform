@@ -380,30 +380,22 @@
   }
   .tc:hover { border-color: var(--border-default); transform: translateY(-1px); }
   /* ── Tab seleccionada ──────────────────────────────────────────────
-     La tarjeta activa se pinta de naranja para que se lea de un vistazo
-     en qué sección estás. El gradiente profundiza hacia abajo: el
-     naranja plano contra blanco da ~2.6:1 de contraste, insuficiente
-     para el subtítulo. Con el tramo oscuro llega a ~4:1.
+     La tarjeta activa se pinta de naranja plano para que se lea de un
+     vistazo en qué sección estás.
      ─────────────────────────────────────────────────────────────────── */
   .tc.active,
   .tc.active:hover,
   .tc.active:focus,
   .tc.active:focus-visible {
-    background: linear-gradient(135deg, #F5820A 0%, #D2690A 55%, #B0560A 100%);
+    background: var(--accent);
     border-color: transparent !important;
     box-shadow: 0 8px 24px rgba(245, 130, 10, 0.28);
     outline: none;
   }
-  /* Filo superior claro: da volumen y evita que se lea como un bloque plano. */
-  .tc.active::before {
-    content: '';
-    position: absolute; inset: 0;
-    border-radius: inherit;
-    border-top: 1px solid rgba(255, 255, 255, 0.28);
-    pointer-events: none;
-  }
   .tc.active .tc-title { color: #FFFFFF; }
-  .tc.active .tc-sub { color: rgba(255, 255, 255, 0.85); }
+  /* El subtítulo va casi en blanco puro: sobre naranja plano el margen
+     de contraste es corto y bajarle opacidad lo volvería ilegible. */
+  .tc.active .tc-sub { color: rgba(255, 255, 255, 0.95); }
 
   /* El chip del ícono pasa a vidrio blanco para seguir legible. */
   .tc.active .tc-icon {
@@ -1544,3 +1536,122 @@
   .status-pill.draft i { font-size: 12px; color: var(--text-tertiary); }
   @keyframes status-spin { to { transform: rotate(360deg); } }
 
+
+
+  /* ═════════════════════════════════════════════════════════════════
+     SKELETON de la página de evento
+     Un solo barrido de luz recorre toda la sección (::after sobre el
+     contenedor) en vez de animar cada bloque por separado: así se lee
+     como una superficie única y no como cajas parpadeando fuera de
+     fase. Las medidas espejan el layout real para que no haya salto
+     cuando entra el contenido.
+     ═════════════════════════════════════════════════════════════════ */
+  .ev-skel { position: relative; overflow: hidden; }
+  .ev-skel::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    left: -40%;
+    width: 40%;
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      color-mix(in srgb, var(--text-primary) 7%, transparent) 50%,
+      transparent 100%
+    );
+    animation: ev-skel-sweep 1.7s cubic-bezier(.4, 0, .3, 1) infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+  @keyframes ev-skel-sweep {
+    to { left: 140%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ev-skel::after { animation: none; opacity: 0.35; left: 30%; }
+  }
+
+  /* Superficies planas — el brillo viene del barrido de arriba. */
+  .ev-skel-cover,
+  .ev-skel-banner,
+  .ev-skel-tab,
+  .ev-skel-upload,
+  .ev-skel-photo {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+  }
+  .ev-skel-bar,
+  .ev-skel-chip,
+  .ev-skel-btn {
+    display: block;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+  }
+
+  .ev-skel-cover {
+    aspect-ratio: 16 / 6;
+    width: 100%;
+    border-radius: 16px;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 700px) { .ev-skel-cover { aspect-ratio: 16 / 11; } }
+  @media (max-width: 480px) { .ev-skel-cover { aspect-ratio: 4 / 3; } }
+
+  .ev-skel-banner {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+  }
+  .ev-skel-banner-text { flex: 1; min-width: 0; }
+  .ev-skel-btn { width: 132px; height: 38px; border-radius: 8px; flex-shrink: 0; }
+
+  .ev-skel-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  @media (max-width: 760px) { .ev-skel-tabs { grid-template-columns: 1fr; } }
+  .ev-skel-tab {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 16px 18px;
+    border-radius: 14px;
+  }
+  .ev-skel-tab-text { min-width: 0; }
+  .ev-skel-chip {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+  .ev-skel-chip.lg { width: 52px; height: 52px; border-radius: 14px; margin-bottom: 14px; }
+
+  .ev-skel-upload {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 34px 20px;
+    border-radius: 14px;
+    border-style: dashed;
+    margin-bottom: 18px;
+  }
+
+  .ev-skel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  .ev-skel-photo { aspect-ratio: 4 / 3; border-radius: 10px; }
+
+  /* Barras de texto — anchos como fracción para que respiren igual en
+     cualquier ancho de columna. */
+  .ev-skel-bar { height: 13px; margin-bottom: 8px; }
+  .ev-skel-bar:last-child { margin-bottom: 0; }
+  .ev-skel-bar.sm { height: 11px; opacity: 0.65; }
+  .ev-skel-bar.w-40 { width: 40%; max-width: 180px; }
+  .ev-skel-bar.w-52 { width: 52%; max-width: 260px; }
+  .ev-skel-bar.w-58 { width: 58%; }
+  .ev-skel-bar.w-64 { width: 64%; max-width: 300px; }
+  .ev-skel-bar.w-72 { width: 72%; max-width: 380px; }
+  .ev-skel-bar.w-84 { width: 84%; }
