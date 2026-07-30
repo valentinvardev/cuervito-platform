@@ -907,3 +907,60 @@
     100% { background-position: -200% 0; }
   }
 
+
+/* ═══════════════════════════════════════════════════════════════════════
+   STOREFRONT · tema fijo en oscuro
+   Esta es la página de marca del fotógrafo: lleva su brandColor y su
+   template, y tiene que verse igual para todos los compradores. Un
+   visitante que llega desde WhatsApp la vería clara u oscura según un
+   localStorage que nunca configuró (o según la hora del día), y el
+   fotógrafo no controlaría cómo se ve su propia página.
+
+   Re-declaramos los tokens oscuros con `html:root[data-theme]` (0,2,1),
+   que le gana a `:root[data-theme="light"]` (0,2,0) sin depender del
+   orden en que Next arme los chunks de CSS.
+   ═══════════════════════════════════════════════════════════════════════ */
+html:root[data-theme] {
+  --bg-base:        #0F0D0B;
+  --bg-surface:     #181511;
+  --bg-elevated:    #221E19;
+  --bg-subtle:      #2A2520;
+
+  --text-primary:   #F0EBE3;
+  --text-secondary: #A89880;
+  --text-tertiary:  #6B5D50;
+  --text-on-accent: #0F0D0B;
+
+  --border-subtle:  rgba(240, 235, 227, 0.06);
+  --border-default: rgba(240, 235, 227, 0.12);
+  --border-strong:  rgba(240, 235, 227, 0.20);
+  --border-accent:  color-mix(in srgb, var(--accent) 40%, transparent);
+
+  --btn-primary-bg:      var(--accent);
+  --btn-primary-color:   var(--text-on-accent);
+  --btn-primary-hover:   var(--accent-bright);
+  --btn-primary-shadow:  0 4px 24px var(--accent-glow);
+
+  --accent-muted:   color-mix(in srgb, var(--accent) 55%, black);
+  --accent-glow:    color-mix(in srgb, var(--accent) 15%, transparent);
+  --accent-deep:    color-mix(in srgb, var(--accent)  8%, transparent);
+
+  /* En oscuro la señal de hover es el borde, no la sombra. */
+  --hover-shadow:        none;
+  --hover-shadow-strong: none;
+  --hover-shadow-accent: none;
+
+  color-scheme: dark;
+}
+
+/* El logo se ennegrece en modo día para leerse sobre fondo claro; acá el
+   fondo vuelve a ser oscuro, así que se restaura. */
+html:root[data-theme] .logo { filter: none; }
+
+/* Las reglas globales de tema claro que quitan bordes a los chips de
+   íconos y cambian hover por sombra no aplican en el storefront. */
+html:root[data-theme] .action-card:hover,
+html:root[data-theme] .card:hover,
+html:root[data-theme] .photo-tile:hover {
+  box-shadow: none;
+}
