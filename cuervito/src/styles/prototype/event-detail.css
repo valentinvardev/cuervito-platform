@@ -1540,37 +1540,11 @@
 
   /* ═════════════════════════════════════════════════════════════════
      SKELETON de la página de evento
-     Un solo barrido de luz recorre toda la sección (::after sobre el
-     contenedor) en vez de animar cada bloque por separado: así se lee
-     como una superficie única y no como cajas parpadeando fuera de
-     fase. Las medidas espejan el layout real para que no haya salto
-     cuando entra el contenido.
+     La onda vive DENTRO de cada bloque y se escalona por posición: se
+     lee como un frente que recorre la página sin pintar los huecos
+     entre tarjetas. Las medidas espejan el layout real para que no
+     haya salto cuando entra el contenido.
      ═════════════════════════════════════════════════════════════════ */
-  .ev-skel { position: relative; overflow: hidden; }
-  .ev-skel::after {
-    content: '';
-    position: absolute;
-    top: 0; bottom: 0;
-    left: -40%;
-    width: 40%;
-    background: linear-gradient(
-      100deg,
-      transparent 0%,
-      color-mix(in srgb, var(--text-primary) 7%, transparent) 50%,
-      transparent 100%
-    );
-    animation: ev-skel-sweep 1.7s cubic-bezier(.4, 0, .3, 1) infinite;
-    pointer-events: none;
-    z-index: 1;
-  }
-  @keyframes ev-skel-sweep {
-    to { left: 140%; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .ev-skel::after { animation: none; opacity: 0.35; left: 30%; }
-  }
-
-  /* Superficies planas — el brillo viene del barrido de arriba. */
   .ev-skel-cover,
   .ev-skel-banner,
   .ev-skel-tab,
@@ -1581,11 +1555,57 @@
   }
   .ev-skel-bar,
   .ev-skel-chip,
+  .ev-skel-btn,
+  .ev-skel-cover,
+  .ev-skel-photo {
+    position: relative;
+    overflow: hidden;
+  }
+  .ev-skel-bar,
+  .ev-skel-chip,
   .ev-skel-btn {
     display: block;
     background: var(--bg-elevated);
     border-radius: 6px;
   }
+  .ev-skel-bar::after,
+  .ev-skel-chip::after,
+  .ev-skel-btn::after,
+  .ev-skel-cover::after,
+  .ev-skel-photo::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: -60%;
+    width: 60%;
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      color-mix(in srgb, var(--text-primary) 9%, transparent) 50%,
+      transparent 100%
+    );
+    animation: ev-skel-wave 1.5s cubic-bezier(.4, 0, .3, 1) infinite;
+    animation-delay: var(--wave-delay, 0ms);
+    pointer-events: none;
+  }
+  @keyframes ev-skel-wave {
+    to { left: 160%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ev-skel-bar::after, .ev-skel-chip::after, .ev-skel-btn::after,
+    .ev-skel-cover::after, .ev-skel-photo::after {
+      animation: none; opacity: 0.3; left: 20%;
+    }
+  }
+
+  /* El frente baja por la página. */
+  .ev-skel-banner { --wave-delay: 90ms; }
+  .ev-skel-tabs .ev-skel-tab:nth-child(1) { --wave-delay: 150ms; }
+  .ev-skel-tabs .ev-skel-tab:nth-child(2) { --wave-delay: 210ms; }
+  .ev-skel-tabs .ev-skel-tab:nth-child(3) { --wave-delay: 270ms; }
+  .ev-skel-upload { --wave-delay: 330ms; }
+  .ev-skel-grid .ev-skel-photo:nth-child(3n+1) { --wave-delay: 380ms; }
+  .ev-skel-grid .ev-skel-photo:nth-child(3n+2) { --wave-delay: 440ms; }
+  .ev-skel-grid .ev-skel-photo:nth-child(3n)   { --wave-delay: 500ms; }
 
   .ev-skel-cover {
     aspect-ratio: 16 / 6;
@@ -1622,11 +1642,7 @@
     border-radius: 14px;
   }
   .ev-skel-tab-text { min-width: 0; }
-  .ev-skel-chip {
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    flex-shrink: 0;
-  }
+  .ev-skel-chip { width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0; }
   .ev-skel-chip.lg { width: 52px; height: 52px; border-radius: 14px; margin-bottom: 14px; }
 
   .ev-skel-upload {
@@ -1644,8 +1660,6 @@
   }
   .ev-skel-photo { aspect-ratio: 4 / 3; border-radius: 10px; }
 
-  /* Barras de texto — anchos como fracción para que respiren igual en
-     cualquier ancho de columna. */
   .ev-skel-bar { height: 13px; margin-bottom: 8px; }
   .ev-skel-bar:last-child { margin-bottom: 0; }
   .ev-skel-bar.sm { height: 11px; opacity: 0.65; }

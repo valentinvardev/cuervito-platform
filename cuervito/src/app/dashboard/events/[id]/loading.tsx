@@ -3,13 +3,13 @@
  *
  * Espeja la estructura real (portada → banner de publicación → 3 tabs
  * de navegación → galería) para que al resolverse no haya salto de
- * layout. Los bloques son superficies planas: el brillo lo aporta un
- * único barrido sobre el contenedor, así toda la sección se lee como
- * una sola pieza en vez de veinte cajas parpadeando desincronizadas.
+ * layout. La onda de carga vive dentro de cada bloque y se escalona por
+ * posición, de modo que se lee como un frente que baja por la página sin
+ * pintar los huecos entre tarjetas.
  */
 export default function Loading() {
   return (
-    <main className="wrap ev-skel" aria-busy="true" aria-label="Cargando evento">
+    <main className="wrap" aria-busy="true" aria-label="Cargando evento">
       {/* Portada */}
       <div className="ev-skel-cover" />
 
