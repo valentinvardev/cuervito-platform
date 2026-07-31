@@ -6,6 +6,7 @@ import "~/styles/prototype/lightbox.css";
 import { Suspense } from "react";
 
 import { ExternalStylesheets } from "~/app/_components/external-stylesheets";
+import { StorefrontTheme } from "~/app/_components/storefront-theme";
 import { buildTemplateCSSOverride } from "~/lib/storefront-templates";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
@@ -51,6 +52,16 @@ export default async function PublicLayout({
 
   return (
     <>
+      {/* El storefront va siempre en oscuro: es la página de marca del
+         fotógrafo y debe verse igual para todo comprador. El script
+         cubre la carga inicial (sin flash) y StorefrontTheme cubre las
+         navegaciones SPA, restaurando la preferencia real al salir. */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `document.documentElement.dataset.theme='dark'`,
+        }}
+      />
+      <StorefrontTheme />
       <ExternalStylesheets />
       {cssOverride && (
         <style dangerouslySetInnerHTML={{ __html: cssOverride }} />
