@@ -60,7 +60,7 @@ export function LiveEventsSearch() {
       </div>
 
       <div
-        className={`le-grid reveal ${!initialLoaded ? "lp-skel-area" : ""}`}
+        className="le-grid reveal"
         style={{ ["--reveal-delay" as string]: "180ms" }}
       >
         {!initialLoaded ? (
@@ -68,9 +68,13 @@ export function LiveEventsSearch() {
             <div key={i} className="le-card-skel" aria-hidden>
               <div className="skel cover" />
               <div className="body">
-                <div className="skel bar w-60" />
-                <div className="skel bar w-40" />
-                <div className="skel bar w-30" />
+                <div className="skel bar title" />
+                <div className="meta-row">
+                  <div className="skel bar date" />
+                  <span className="dot" />
+                  <div className="skel bar place" />
+                </div>
+                <div className="skel bar photos" />
               </div>
             </div>
           ))

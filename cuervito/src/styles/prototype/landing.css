@@ -576,7 +576,8 @@
     transition: opacity 600ms ease-out, transform 600ms cubic-bezier(.2,.7,.2,1);
     transition-delay: var(--reveal-delay, 0ms);
   }
-  .reveal.in {
+  .reveal.in,
+  .reveal[data-revealed] {
     opacity: 1;
     transform: translateY(0);
   }
@@ -1402,40 +1403,53 @@
      SKELETONS  — shimmer compartido para loaders de PhotoStrip y grid
      de eventos. Usa un gradiente en movimiento sobre el color subtle.
      ═══════════════════════════════════════════════════════════════════ */
-  /* Bloques planos: el brillo lo aporta un único barrido sobre el
-     contenedor (.lp-skel-area), no cada bloque por su cuenta. Así toda
-     la sección se lee como una superficie en movimiento en vez de N
-     cajas parpadeando fuera de fase. */
   .lp .skel {
     background: var(--bg-elevated);
     border-radius: 8px;
   }
 
-  .lp-skel-area { position: relative; overflow: hidden; }
-  .lp-skel-area::before {
+
+  /* ── Skeletons ──────────────────────────────────────────────────────
+     La onda vive DENTRO de cada bloque (clipeada por su borde) y se
+     escalona por posición, así se lee como un frente que recorre la
+     grilla sin pintar los huecos entre tarjetas.
+     ─────────────────────────────────────────────────────────────────── */
+  .lp .skel {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+  }
+  .lp .skel::after {
     content: '';
     position: absolute;
-    top: 0; bottom: 0;
-    left: -40%;
-    width: 40%;
+    top: 0; bottom: 0; left: -60%;
+    width: 60%;
     background: linear-gradient(
       100deg,
       transparent 0%,
-      color-mix(in srgb, var(--text-primary) 7%, transparent) 50%,
+      color-mix(in srgb, var(--text-primary) 9%, transparent) 50%,
       transparent 100%
     );
-    animation: lp-skel-sweep 1.7s cubic-bezier(.4, 0, .3, 1) infinite;
-    pointer-events: none;
-    z-index: 2;
+    animation: lp-skel-wave 1.5s cubic-bezier(.4, 0, .3, 1) infinite;
+    animation-delay: var(--wave-delay, 0ms);
   }
-  @keyframes lp-skel-sweep {
-    to { left: 140%; }
+  @keyframes lp-skel-wave {
+    to { left: 160%; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .lp-skel-area::before { animation: none; opacity: 0.35; left: 30%; }
+    .lp .skel::after { animation: none; opacity: 0.3; left: 20%; }
   }
 
-  /* Skeleton específico del PhotoStrip: 2 filas de 8 tiles estáticos. */
+  /* El frente avanza tarjeta a tarjeta. */
+  .le-card-skel:nth-child(1) { --wave-delay: 0ms; }
+  .le-card-skel:nth-child(2) { --wave-delay: 90ms; }
+  .le-card-skel:nth-child(3) { --wave-delay: 180ms; }
+  .le-card-skel:nth-child(4) { --wave-delay: 70ms; }
+  .le-card-skel:nth-child(5) { --wave-delay: 160ms; }
+  .le-card-skel:nth-child(6) { --wave-delay: 250ms; }
+
+  /* Skeleton del PhotoStrip: 2 filas de 8 tiles. */
   .photo-strip-skel {
     display: flex; gap: 14px;
     padding: 0 24px;
@@ -1449,6 +1463,60 @@
     aspect-ratio: 3 / 2;
     border-radius: 14px;
     flex: 0 0 auto;
+  }
+  .photo-strip-skel .skel:nth-child(1) { --wave-delay: 0ms; }
+  .photo-strip-skel .skel:nth-child(2) { --wave-delay: 60ms; }
+  .photo-strip-skel .skel:nth-child(3) { --wave-delay: 120ms; }
+  .photo-strip-skel .skel:nth-child(4) { --wave-delay: 180ms; }
+  .photo-strip-skel .skel:nth-child(5) { --wave-delay: 240ms; }
+  .photo-strip-skel .skel:nth-child(6) { --wave-delay: 300ms; }
+  .photo-strip-skel .skel:nth-child(7) { --wave-delay: 360ms; }
+  .photo-strip-skel .skel:nth-child(8) { --wave-delay: 420ms; }
+
+  /* ── Tarjeta skeleton del buscador ──────────────────────────────────
+     Calca la estructura real de .le-card: portada, título, fila de meta
+     (fecha · lugar) y contador de fotos en acento.
+     ─────────────────────────────────────────────────────────────────── */
+  .le-card-skel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .le-card-skel .cover {
+    aspect-ratio: 16 / 10;
+    border-radius: 0;
+    position: relative;
+  }
+  /* Marca de foto ausente, como el placeholder real de portada. */
+  .le-card-skel .cover::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 34px; height: 26px;
+    margin: -13px 0 0 -17px;
+    border-radius: 5px;
+    border: 2px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
+    z-index: 1;
+  }
+  .le-card-skel .body {
+    padding: 14px 16px 15px;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+  .le-card-skel .bar { height: 12px; border-radius: 4px; }
+  .le-card-skel .bar.title { height: 15px; width: 78%; }
+  .le-card-skel .meta-row { display: flex; align-items: center; gap: 7px; }
+  .le-card-skel .meta-row .bar { height: 10px; }
+  .le-card-skel .meta-row .bar.date { width: 74px; }
+  .le-card-skel .meta-row .bar.place { width: 96px; }
+  .le-card-skel .meta-row .dot {
+    width: 3px; height: 3px; border-radius: 50%;
+    background: var(--text-tertiary); opacity: 0.4;
+    flex-shrink: 0;
+  }
+  .le-card-skel .bar.photos {
+    height: 10px; width: 58px;
+    background: color-mix(in srgb, var(--accent) 22%, var(--bg-elevated));
   }
 
   /* Skeleton del grid de eventos: cover + dos barras de texto por card. */
