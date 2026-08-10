@@ -17,7 +17,9 @@ const profileSchema = z.object({
     .min(3, "El usuario tiene que tener al menos 3 caracteres.")
     .max(40)
     .regex(/^[a-z0-9-]+$/, "Solo minúsculas, números y guiones."),
-  bio: z.string().trim().min(20, "Contanos un poco más (mín 20 caracteres).").max(280),
+  // Opcional: pedir 20 caracteres mínimos frenaba el onboarding sin
+  // aportar nada. El storefront ya maneja el caso vacío.
+  bio: z.string().trim().max(280).optional(),
   instagramUrl: z.string().trim().max(80).optional(),
   websiteUrl: z.string().trim().url("URL inválida.").or(z.literal("")).optional(),
 });
@@ -69,7 +71,7 @@ export async function saveProfileAction(
     data: {
       name,
       slug,
-      bio,
+      bio: bio || null,
       instagramUrl: instagramUrl || null,
       websiteUrl: websiteUrl || null,
       onboardingCompletedAt: new Date(),

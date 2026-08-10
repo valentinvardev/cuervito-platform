@@ -224,7 +224,7 @@ export function PerfilForm({
         </div>
 
         <div className="form-row">
-          <label>Bio (aparece en tu perfil público)</label>
+          <label>Bio (opcional, aparece en tu perfil público)</label>
           <textarea
             name="bio"
             rows={3}
@@ -232,7 +232,6 @@ export function PerfilForm({
             onChange={(e) => setBio(e.target.value)}
             maxLength={BIO_MAX}
             className={fe.bio ? "has-error" : undefined}
-            required
           />
           {fe.bio ? (
             <div className="err">
@@ -241,7 +240,9 @@ export function PerfilForm({
             </div>
           ) : (
             <div className="hint">
-              {bio.length}/{BIO_MAX} caracteres
+              {bio.length > 0
+                ? `${bio.length}/${BIO_MAX} caracteres`
+                : "Si la dejás vacía, tu perfil muestra solo tu nombre y tus eventos."}
             </div>
           )}
         </div>

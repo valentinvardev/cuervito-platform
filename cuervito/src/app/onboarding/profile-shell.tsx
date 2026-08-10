@@ -86,7 +86,7 @@ export function ProfileShell({ initial }: { initial: Initial }) {
           </div>
 
           <div className="field full">
-            <label className="label">Bio profesional</label>
+            <label className="label">Bio profesional (opcional)</label>
             <textarea
               name="bio"
               className={`input ${fe.bio ? "input-error" : ""}`}
@@ -94,11 +94,16 @@ export function ProfileShell({ initial }: { initial: Initial }) {
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               maxLength={BIO_MAX}
-              required
             />
             {fe.bio
               ? <div className="field-error"><i className="ti ti-alert-circle" />{fe.bio}</div>
-              : <div className="field-hint">{bio.length}/{BIO_MAX} caracteres</div>}
+              : (
+                <div className="field-hint">
+                  {bio.length > 0
+                    ? `${bio.length}/${BIO_MAX} caracteres`
+                    : "Podés dejarla vacía y completarla después desde tu perfil."}
+                </div>
+              )}
           </div>
 
           <div className="field full">
