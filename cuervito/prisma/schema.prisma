@@ -198,6 +198,7 @@ model Event {
     discounts     Discount[]
     editorFolders EditorFolder[] @relation("EditorFolderEvent")
     collaborators EventCollaborator[]
+    faceSearches  FaceSearchLog[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -359,6 +360,17 @@ model RecognitionUsage {
 // Sales (was Purchase in SINCHI)
 // =============================================================================
 
+// De dónde vino el comprador. Se decide en el primer contacto (cookie
+// de 7 días) y se congela en la venta.
+//   PLATFORM → llegó por el buscador o el carrusel de Cuervito
+//   DIRECT   → entró al link que compartió el fotógrafo
+//   UNKNOWN  → ventas anteriores a la medición, o sin cookie
+enum SaleTrafficSource {
+    PLATFORM
+    DIRECT
+    UNKNOWN
+}
+
 enum SaleStatus {
     PENDING
     PAID
@@ -400,6 +412,10 @@ model Sale {
     mpOrderId      String?
 
     status SaleStatus @default(PENDING)
+
+    /** Origen del comprador. Define si la venta la generó la plataforma
+     *  o el propio fotógrafo — insumo para decidir el modelo de cobro. */
+    trafficSource SaleTrafficSource @default(UNKNOWN)
 
     // 72-hour expiring download token (SINCHI pattern)
     downloadToken         String?   @unique
@@ -499,6 +515,26 @@ model SaleCommission {
 
     @@unique([saleId, userId])
     @@index([userId])
+}
+
+// Cada búsqueda por selfie: qué fotos le mostró el reconocimiento a esa
+// persona. Sirve para medir si el motor encuentra bien (matchCount) y si
+// encontrar convierte (cruce contra SaleItem).
+//
+// photoIds guarda los ids que se mostraron. No es una relación porque
+// las fotos pueden borrarse y el registro histórico tiene que sobrevivir.
+model FaceSearchLog {
+    id         String   @id @default(cuid())
+    eventId    String
+    event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    /** Cookie del visitante. Permite atar la búsqueda a su compra. */
+    visitorId  String?
+    matchCount Int
+    photoIds   String[]
+    createdAt  DateTime @default(now())
+
+    @@index([eventId, createdAt])
+    @@index([visitorId])
 }
 
 model DownloadLog {

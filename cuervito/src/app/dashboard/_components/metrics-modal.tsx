@@ -198,6 +198,9 @@ function MetricsContent({ data }: { data: PhotographerMetrics }) {
         </div>
       </section>
 
+      {/* Reconocimiento facial */}
+      {data.faceSearches > 0 && <FaceRecognition data={data} />}
+
       {/* Top eventos */}
       <section className="mx-top">
         <h3>Eventos que más recaudaron</h3>
@@ -411,6 +414,121 @@ function RevenueChart({
         )}
       </svg>
       {empty && <div className="mx-chart-empty">Sin ventas en el período</div>}
+    </div>
+  );
+}
+
+
+/**
+ * Embudo del reconocimiento facial. Responde dos preguntas distintas:
+ *   ¿encuentra?  → búsquedas con resultado sobre el total
+ *   ¿convierte?  → de las fotos que mostró, cuántas se vendieron
+ * Un motor que encuentra pero no convierte es un problema de precio o de
+ * calidad; uno que no encuentra es un problema de indexado.
+ */
+function FaceRecognition({ data }: { data: PhotographerMetrics }) {
+  const withResults = data.faceSearches - data.faceSearchesEmpty;
+  const hitRate = data.faceSearches > 0
+    ? (withResults / data.faceSearches) * 100
+    : 0;
+  const buyRate = data.facePhotosShown > 0
+    ? (data.facePhotosSold / data.facePhotosShown) * 100
+    : 0;
+
+  return (
+    <section className="mx-face">
+      <div className="mx-face-head">
+        <h3>
+          <i className="ti ti-scan-eye" />
+          Búsquedas por selfie
+        </h3>
+        <span className="mx-face-count">
+          {data.faceSearches.toLocaleString("es-AR")}{" "}
+          {data.faceSearches === 1 ? "búsqueda" : "búsquedas"}
+        </span>
+      </div>
+
+      <div className="mx-funnel">
+        <FunnelStep
+          label="Encontraron fotos"
+          value={`${withResults.toLocaleString("es-AR")} de ${data.faceSearches.toLocaleString("es-AR")}`}
+          pct={hitRate}
+        />
+        <FunnelStep
+          label="Fotos que mostró"
+          value={data.facePhotosShown.toLocaleString("es-AR")}
+          pct={100}
+          muted
+        />
+        <FunnelStep
+          label="De esas, vendidas"
+          value={data.facePhotosSold.toLocaleString("es-AR")}
+          pct={buyRate}
+          accent
+        />
+      </div>
+
+      <p className="mx-face-read">
+        {data.faceSearches < 10 ? (
+          <>
+            <i className="ti ti-info-circle" />
+            Todavía son pocas búsquedas para sacar conclusiones. El número se
+            vuelve confiable a partir de unas 30.
+          </>
+        ) : hitRate < 60 ? (
+          <>
+            <i className="ti ti-alert-triangle" />
+            <span>
+              <strong>{(100 - hitRate).toFixed(0)}% de las selfies no encontró nada.</strong>{" "}
+              Suele pasar cuando la persona no salió en las fotos, o cuando
+              aparece de espaldas o muy lejos.
+            </span>
+          </>
+        ) : buyRate < 5 ? (
+          <>
+            <i className="ti ti-bulb" />
+            <span>
+              El reconocimiento encuentra bien, pero solo se vende{" "}
+              <strong>{buyRate.toFixed(1)}%</strong> de lo que muestra. Cuando
+              encontrar funciona y comprar no, casi siempre es el precio.
+            </span>
+          </>
+        ) : (
+          <>
+            <i className="ti ti-circle-check" />
+            <span>
+              De cada 100 fotos que el reconocimiento le muestra a alguien,{" "}
+              <strong>{buyRate.toFixed(0)}</strong> se compran.
+            </span>
+          </>
+        )}
+      </p>
+    </section>
+  );
+}
+
+function FunnelStep({
+  label,
+  value,
+  pct,
+  muted = false,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  pct: number;
+  muted?: boolean;
+  accent?: boolean;
+}) {
+  return (
+    <div className={`mx-funnel-step ${muted ? "muted" : ""} ${accent ? "accent" : ""}`}>
+      <div className="mx-funnel-top">
+        <span className="mx-funnel-label">{label}</span>
+        <span className="mx-funnel-value">{value}</span>
+      </div>
+      <div className="mx-funnel-bar">
+        <span style={{ width: `${Math.max(2, Math.min(100, pct))}%` }} />
+      </div>
     </div>
   );
 }

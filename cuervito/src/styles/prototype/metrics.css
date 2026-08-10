@@ -407,3 +407,62 @@
   font-size: 12.5px; line-height: 1.45;
 }
 .tm-warn i { flex-shrink: 0; margin-top: 1px; font-size: 15px; }
+
+/* ---- Embudo del reconocimiento facial ---- */
+.mx-face {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+.mx-face-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.mx-face-head h3 {
+  display: flex; align-items: center; gap: 7px;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 15px; letter-spacing: -0.01em;
+  color: var(--text-primary); margin: 0;
+}
+.mx-face-head h3 i { color: var(--accent); font-size: 17px; }
+.mx-face-count {
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.mx-funnel { display: flex; flex-direction: column; gap: 11px; }
+.mx-funnel-step.muted { opacity: 0.7; }
+.mx-funnel-top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; margin-bottom: 5px;
+}
+.mx-funnel-label { font-size: 12.5px; color: var(--text-secondary); }
+.mx-funnel-value {
+  font-family: var(--font-mono); font-size: 13px;
+  color: var(--text-primary);
+}
+.mx-funnel-step.accent .mx-funnel-value { color: var(--accent); }
+.mx-funnel-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-elevated);
+  overflow: hidden;
+}
+.mx-funnel-bar span {
+  display: block; height: 100%;
+  border-radius: 3px;
+  background: var(--text-tertiary);
+  transition: width 400ms cubic-bezier(.2, .8, .2, 1);
+}
+.mx-funnel-step.accent .mx-funnel-bar span { background: var(--accent); }
+.mx-funnel-step.muted .mx-funnel-bar span { background: var(--border-strong); }
+
+.mx-face-read {
+  display: flex; align-items: flex-start; gap: 8px;
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 12.5px; line-height: 1.5;
+  color: var(--text-secondary);
+}
+.mx-face-read i { flex-shrink: 0; margin-top: 1px; font-size: 15px; color: var(--accent); }

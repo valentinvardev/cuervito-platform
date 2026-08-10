@@ -66,7 +66,9 @@ export async function searchLiveEvents(query: string): Promise<LiveEvent[]> {
         }
       }
       return {
-        href: e.owner.slug ? `/${e.owner.slug}/${e.slug}` : `#`,
+        // ?src=search marca que el descubrimiento lo aportó el buscador
+        // de Cuervito, no el link que compartió el fotógrafo.
+        href: e.owner.slug ? `/${e.owner.slug}/${e.slug}?src=search` : `#`,
         name: e.name,
         date: e.eventDate
           ? new Date(e.eventDate).toLocaleDateString("es-AR", {

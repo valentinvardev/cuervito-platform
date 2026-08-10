@@ -7,6 +7,7 @@ import { Suspense } from "react";
 
 import { ExternalStylesheets } from "~/app/_components/external-stylesheets";
 import { StorefrontTheme } from "~/app/_components/storefront-theme";
+import { VisitorTracker } from "~/app/_components/visitor-tracker";
 import { buildTemplateCSSOverride } from "~/lib/storefront-templates";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
@@ -62,6 +63,9 @@ export default async function PublicLayout({
         }}
       />
       <StorefrontTheme />
+      <Suspense fallback={null}>
+        <VisitorTracker />
+      </Suspense>
       <ExternalStylesheets />
       {cssOverride && (
         <style dangerouslySetInnerHTML={{ __html: cssOverride }} />

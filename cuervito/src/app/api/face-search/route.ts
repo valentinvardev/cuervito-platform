@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SearchFacesByImageCommand } from "@aws-sdk/client-rekognition";
 
 import { db } from "~/server/db";
+import { VISITOR_COOKIE } from "~/lib/visitor";
 import {
   bumpRecognitionUsage,
   rekCollectionForEvent,
@@ -70,7 +71,16 @@ export async function POST(req: NextRequest) {
     // Track quota (the event owner pays for the search)
     void bumpRecognitionUsage(event.ownerId, "search", 1).catch(() => undefined);
 
+    const visitorId = req.cookies.get(VISITOR_COOKIE)?.value ?? null;
+
     if (matchedPhotoIds.length === 0) {
+      // Se registra igual: una búsqueda sin resultados es justamente la
+      // señal de que el reconocimiento no está encontrando.
+      void db.faceSearchLog
+        .create({ data: { eventId, visitorId, matchCount: 0, photoIds: [] } })
+        .catch((err: unknown) =>
+          console.error("[face-search] log failed:", err),
+        );
       return NextResponse.json({ photoIds: [] });
     }
 
@@ -81,11 +91,21 @@ export async function POST(req: NextRequest) {
       select: { id: true },
     });
 
+    const shown = photos.map((p) => p.id);
+
     console.log(
-      `[face-search] eventId=${eventId} matched=${photos.length}/${matchedPhotoIds.length}`,
+      `[face-search] eventId=${eventId} matched=${shown.length}/${matchedPhotoIds.length}`,
     );
 
-    return NextResponse.json({ photoIds: photos.map((p) => p.id) });
+    // Qué fotos vio esta persona. Cruzado después contra SaleItem da la
+    // conversión real del reconocimiento.
+    void db.faceSearchLog
+      .create({
+        data: { eventId, visitorId, matchCount: shown.length, photoIds: shown },
+      })
+      .catch((err: unknown) => console.error("[face-search] log failed:", err));
+
+    return NextResponse.json({ photoIds: shown });
   } catch (err) {
     console.error("[face-search] error:", err);
     return NextResponse.json({ error: "Búsqueda fallida" }, { status: 500 });

@@ -32,6 +32,14 @@ export type PhotographerMetrics = {
   }[];
   /** Descargas registradas en el período. */
   downloads: number;
+  /** Búsquedas por selfie sobre eventos del usuario en el período. */
+  faceSearches: number;
+  /** Búsquedas que no encontraron ninguna foto. */
+  faceSearchesEmpty: number;
+  /** Fotos distintas que el reconocimiento le mostró a alguien. */
+  facePhotosShown: number;
+  /** De esas, cuántas terminaron vendidas (en cualquier momento). */
+  facePhotosSold: number;
 };
 
 const RANGE_DAYS: Record<MetricsRange, number> = {
@@ -58,7 +66,7 @@ export async function getPhotographerMetrics(
   // Ventana anterior del mismo largo, para calcular la variación.
   const prevSince = new Date(since.getTime() - days * 86400_000);
 
-  const [sales, prevAgg, photosUploaded, downloads] = await Promise.all([
+  const [sales, prevAgg, photosUploaded, downloads, searches] = await Promise.all([
     db.sale.findMany({
       where: { sellerId: userId, status: "PAID", paidAt: { gte: since } },
       select: {
@@ -84,7 +92,31 @@ export async function getPhotographerMetrics(
     db.downloadLog.count({
       where: { sale: { sellerId: userId }, createdAt: { gte: since } },
     }),
+    db.faceSearchLog.findMany({
+      where: { event: { ownerId: userId }, createdAt: { gte: since } },
+      select: { matchCount: true, photoIds: true },
+    }),
   ]);
+
+  // ── Conversión del reconocimiento ───────────────────────────────
+  // De todas las fotos que el motor le mostró a alguien por selfie,
+  // cuántas terminaron vendidas. Se deduplica: una foto que apareció en
+  // diez búsquedas cuenta una sola vez.
+  const shownPhotoIds = new Set<string>();
+  let faceSearchesEmpty = 0;
+  for (const s of searches) {
+    if (s.matchCount === 0) faceSearchesEmpty += 1;
+    for (const id of s.photoIds) shownPhotoIds.add(id);
+  }
+  const facePhotosSold =
+    shownPhotoIds.size > 0
+      ? await db.saleItem.count({
+          where: {
+            photoId: { in: [...shownPhotoIds] },
+            sale: { status: "PAID" },
+          },
+        })
+      : 0;
 
   // ── Serie diaria ────────────────────────────────────────────────
   // Pre-sembramos todos los días del rango en cero para que el gráfico
@@ -156,5 +188,9 @@ export async function getPhotographerMetrics(
     deltaPct,
     topEvents,
     downloads,
+    faceSearches: searches.length,
+    faceSearchesEmpty,
+    facePhotosShown: shownPhotoIds.size,
+    facePhotosSold,
   };
 }

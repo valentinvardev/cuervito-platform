@@ -11,6 +11,7 @@ import { createPreference, isMpConfigured } from "~/server/mp";
 import { recordPendingAndMaybeNotify } from "~/server/sale-notifier";
 import { publishSale } from "~/server/sales-bus";
 import { getMpTestMode } from "~/server/settings";
+import { SOURCE_COOKIE, parseTrafficSource } from "~/lib/visitor";
 
 const checkoutSchema = z.object({
   eventId: z.string(),
@@ -170,6 +171,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Origen del comprador, congelado en la venta. Viene de la cookie de
+  // primer contacto que escribe VisitorTracker en el storefront.
+  const trafficSource = parseTrafficSource(
+    req.cookies.get(SOURCE_COOKIE)?.value,
+  );
+
   const totalCents = Math.max(subtotalCents - discountCents, 0);
   const platformFeeCents = Math.round(
     (totalCents * env.PLATFORM_FEE_PERCENT) / 100,
@@ -200,6 +207,7 @@ export async function POST(req: NextRequest) {
           sellerNetCents,
           status: "PAID",
           paidAt: new Date(),
+          trafficSource,
           downloadToken,
           downloadTokenExpires: tokenExpiresAt,
           notes: sellerTestMode
@@ -276,6 +284,7 @@ export async function POST(req: NextRequest) {
         platformFeeCents,
         sellerNetCents,
         status: "PENDING",
+        trafficSource,
         items: {
           create: items.map((i) => ({ photoId: i.photoId, priceCents: i.priceCents })),
         },

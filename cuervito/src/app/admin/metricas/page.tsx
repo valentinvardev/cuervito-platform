@@ -22,7 +22,8 @@ export default async function AdminMetricasPage() {
   const session = await auth();
   if (session?.user?.role !== "ADMIN") redirect("/dashboard");
 
-  const [photographers, salesAgg, itemsByEvent, photosByOwner] = await Promise.all([
+  const [photographers, salesAgg, itemsByEvent, photosByOwner, bySource, faceSearchAgg] =
+    await Promise.all([
     db.user.findMany({
       where: { role: "PHOTOGRAPHER" },
       select: {
@@ -53,7 +54,29 @@ export default async function AdminMetricasPage() {
       where: { deletedAt: null },
       _count: true,
     }),
+    // De dónde vino el comprador. Es el dato que define si Cuervito
+    // cobra como mercado (genera demanda) o como herramienta (no).
+    db.sale.groupBy({
+      by: ["trafficSource"],
+      where: { status: "PAID" },
+      _sum: { totalCents: true },
+      _count: true,
+    }),
+    db.faceSearchLog.aggregate({ _count: true, _avg: { matchCount: true } }),
   ]);
+
+  const sourceRows = ["PLATFORM", "DIRECT", "UNKNOWN"].map((k) => {
+    const row = bySource.find((r) => r.trafficSource === k);
+    return {
+      source: k,
+      sales: row?._count ?? 0,
+      grossCents: row?._sum.totalCents ?? 0,
+    };
+  });
+  const attributedSales = sourceRows
+    .filter((r) => r.source !== "UNKNOWN")
+    .reduce((a, r) => a + r.sales, 0);
+  const platformSales = sourceRows.find((r) => r.source === "PLATFORM")?.sales ?? 0;
 
   // Necesitamos mapear saleId → sellerId para agregar fotos vendidas por vendedor.
   // Traemos los sale.id → sellerId de las PAID.
@@ -190,6 +213,96 @@ export default async function AdminMetricasPage() {
           icon="ti-cash"
         />
       </div>
+
+      {/* Origen de las ventas — el dato que define el modelo de cobro */}
+      <section className="src-panel">
+        <div className="src-head">
+          <div>
+            <h2>Origen de las ventas</h2>
+            <p>
+              Si la mayoría llega por el link del fotógrafo, Cuervito es una
+              herramienta y la comisión es difícil de justificar. Si llega por
+              el buscador, Cuervito genera la demanda y la comisión vale.
+            </p>
+          </div>
+          {attributedSales > 0 && (
+            <div className="src-headline">
+              <span className="src-headline-num">
+                {((platformSales / attributedSales) * 100).toFixed(0)}%
+              </span>
+              <span className="src-headline-lbl">
+                generado por
+                <br />
+                la plataforma
+              </span>
+            </div>
+          )}
+        </div>
+
+        {attributedSales === 0 ? (
+          <div className="src-empty">
+            <i className="ti ti-clock" />
+            <div>
+              <strong>Todavía no hay ventas atribuidas.</strong>
+              <span>
+                La medición arranca desde ahora: las ventas anteriores figuran
+                como sin atribuir porque no existía la cookie de origen.
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="src-rows">
+            {sourceRows.map((r) => {
+              const label =
+                r.source === "PLATFORM"
+                  ? "Buscador de Cuervito"
+                  : r.source === "DIRECT"
+                    ? "Link del fotógrafo"
+                    : "Sin atribuir";
+              const icon =
+                r.source === "PLATFORM"
+                  ? "ti-search"
+                  : r.source === "DIRECT"
+                    ? "ti-share-3"
+                    : "ti-help-circle";
+              const base = attributedSales || 1;
+              const pct = r.source === "UNKNOWN" ? 0 : (r.sales / base) * 100;
+              return (
+                <div key={r.source} className={`src-row ${r.source.toLowerCase()}`}>
+                  <span className="src-icon">
+                    <i className={`ti ${icon}`} />
+                  </span>
+                  <div className="src-info">
+                    <div className="src-label">{label}</div>
+                    <div className="src-bar">
+                      <span style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                  <div className="src-nums">
+                    <span className="src-sales">
+                      {r.sales.toLocaleString("es-AR")}{" "}
+                      {r.sales === 1 ? "venta" : "ventas"}
+                    </span>
+                    <span className="src-gross">
+                      ${(r.grossCents / 100).toLocaleString("es-AR")}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="src-foot">
+          <i className="ti ti-scan-eye" />
+          <span>
+            {faceSearchAgg._count.toLocaleString("es-AR")} búsquedas por selfie
+            registradas
+            {faceSearchAgg._avg.matchCount != null &&
+              ` · ${faceSearchAgg._avg.matchCount.toFixed(1)} fotos encontradas en promedio`}
+          </span>
+        </div>
+      </section>
 
       {/* Table */}
       <section
