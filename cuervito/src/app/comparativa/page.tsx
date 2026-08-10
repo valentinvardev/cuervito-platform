@@ -167,8 +167,8 @@ export default function ComparativaPage() {
             {/* Almacenamiento */}
             <Section title="Almacenamiento y límites" icon="ti-database" />
             <Row label="Almacenamiento">
-              <Win><strong>Ilimitado</strong></Win>
-              <Cell>100 GB</Cell>
+              <Win><strong>100 GB</strong></Win>
+              <Cell>30 GB</Cell>
             </Row>
             <Row label="Álbumes / eventos">
               <Win><strong>Sin límite</strong></Win>
