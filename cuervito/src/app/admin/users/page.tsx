@@ -5,13 +5,14 @@ import { db } from "~/server/db";
 const PAGE_SIZE = 25;
 
 export default async function AdminUsersPage(props: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; mp?: string }>;
 }) {
   const sp = await props.searchParams;
   const q = (sp.q ?? "").trim();
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
+  const mp = sp.mp === "yes" || sp.mp === "no" ? sp.mp : "all";
 
-  const where = q
+  const searchWhere = q
     ? {
         OR: [
           { email: { contains: q, mode: "insensitive" as const } },
@@ -21,7 +22,18 @@ export default async function AdminUsersPage(props: {
       }
     : {};
 
-  const [users, total] = await Promise.all([
+  // El filtro de MP se aplica al listado, pero los contadores de arriba
+  // se calculan solo sobre la búsqueda — así el "X de Y conectados"
+  // sigue teniendo sentido mientras filtrás.
+  const mpWhere =
+    mp === "yes"
+      ? { mpConnectedAt: { not: null } }
+      : mp === "no"
+        ? { mpConnectedAt: null }
+        : {};
+  const where = { ...searchWhere, ...mpWhere };
+
+  const [users, total, connectedCount, searchTotal] = await Promise.all([
     db.user.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -35,10 +47,13 @@ export default async function AdminUsersPage(props: {
         role: true,
         status: true,
         createdAt: true,
+        mpConnectedAt: true,
         _count: { select: { eventsOwned: true, sales: true, photosOwned: true } },
       },
     }),
     db.user.count({ where }),
+    db.user.count({ where: { ...searchWhere, mpConnectedAt: { not: null } } }),
+    db.user.count({ where: searchWhere }),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -49,12 +64,21 @@ export default async function AdminUsersPage(props: {
         <div>
           <h1>Usuarios</h1>
           <div className="sub">
-            {total.toLocaleString("es-AR")} cuentas registradas.
+            {searchTotal.toLocaleString("es-AR")} cuentas ·{" "}
+            <strong style={{ color: "var(--success)" }}>
+              {connectedCount.toLocaleString("es-AR")}
+            </strong>{" "}
+            con Mercado Pago ·{" "}
+            <strong style={{ color: "var(--warning)" }}>
+              {(searchTotal - connectedCount).toLocaleString("es-AR")}
+            </strong>{" "}
+            sin conectar
           </div>
         </div>
       </div>
 
       <form className="filters" action="/admin/users" method="get">
+        {mp !== "all" && <input type="hidden" name="mp" value={mp} />}
         <div className="search">
           <i className="ti ti-search" />
           <input
@@ -70,6 +94,28 @@ export default async function AdminUsersPage(props: {
           )}
         </div>
       </form>
+
+      <div className="mp-filter" role="group" aria-label="Filtrar por Mercado Pago">
+        {(
+          [
+            { v: "all", label: "Todos", icon: "ti-users" },
+            { v: "yes", label: "Con Mercado Pago", icon: "ti-circle-check" },
+            { v: "no", label: "Sin conectar", icon: "ti-alert-circle" },
+          ] as const
+        ).map((o) => (
+          <Link
+            key={o.v}
+            href={`/admin/users?${new URLSearchParams({
+              ...(q ? { q } : {}),
+              ...(o.v !== "all" ? { mp: o.v } : {}),
+            }).toString()}`}
+            className={`mp-filter-btn ${mp === o.v ? "active" : ""}`}
+          >
+            <i className={`ti ${o.icon}`} />
+            {o.label}
+          </Link>
+        ))}
+      </div>
 
       <div className="event-list">
         {users.map((u) => (
@@ -98,6 +144,8 @@ export default async function AdminUsersPage(props: {
                 <span>{u._count.sales} ventas</span>
                 <span className="sep" />
                 <RolePill role={u.role} />
+                <span className="sep" />
+                <MpPill connectedAt={u.mpConnectedAt} />
                 {u.status !== "ACTIVE" && (
                   <>
                     <span className="sep" />
@@ -133,7 +181,7 @@ export default async function AdminUsersPage(props: {
         <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 22 }}>
           {page > 1 && (
             <Link
-              href={`/admin/users?${new URLSearchParams({ ...(q ? { q } : {}), page: String(page - 1) }).toString()}`}
+              href={`/admin/users?${new URLSearchParams({ ...(q ? { q } : {}), ...(mp !== "all" ? { mp } : {}), page: String(page - 1) }).toString()}`}
               className="btn btn-outline"
               style={{ height: 36, padding: "0 14px", fontSize: 13 }}
             >
@@ -153,7 +201,7 @@ export default async function AdminUsersPage(props: {
           </span>
           {page < totalPages && (
             <Link
-              href={`/admin/users?${new URLSearchParams({ ...(q ? { q } : {}), page: String(page + 1) }).toString()}`}
+              href={`/admin/users?${new URLSearchParams({ ...(q ? { q } : {}), ...(mp !== "all" ? { mp } : {}), page: String(page + 1) }).toString()}`}
               className="btn btn-outline"
               style={{ height: 36, padding: "0 14px", fontSize: 13 }}
             >
@@ -164,6 +212,33 @@ export default async function AdminUsersPage(props: {
         </div>
       )}
     </main>
+  );
+}
+
+/** Estado de conexión con Mercado Pago. Sin conectar el fotógrafo no
+ *  puede cobrar, así que ese estado se marca en ámbar para que salte. */
+function MpPill({ connectedAt }: { connectedAt: Date | null }) {
+  if (connectedAt) {
+    return (
+      <span
+        className="status-pill"
+        style={{ color: "var(--success)" }}
+        title={`Conectado el ${connectedAt.toLocaleDateString("es-AR")}`}
+      >
+        <i className="ti ti-circle-check-filled" style={{ fontSize: 12 }} />
+        MP
+      </span>
+    );
+  }
+  return (
+    <span
+      className="status-pill"
+      style={{ color: "var(--warning)", borderColor: "rgba(245,200,66,0.4)" }}
+      title="No puede cobrar hasta conectar Mercado Pago"
+    >
+      <i className="ti ti-alert-circle" style={{ fontSize: 12 }} />
+      Sin MP
+    </span>
   );
 }
 
