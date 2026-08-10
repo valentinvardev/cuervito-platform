@@ -351,11 +351,14 @@ npm run build
 pm2 restart cuervito
 ```
 
-`prisma db push` hace dos cosas: sincroniza la base **y** regenera el cliente. Si
-se lo saltea cuando hubo cambios de schema, el build falla con
-`Property 'x' does not exist on type 'PrismaClient'` — y como el build aborta,
-`.next/` queda con el bundle viejo, incluido el CSS. Es la causa habitual de
-"agregaste estilos pero no se ven".
+`prisma db push` sincroniza la base y regenera el cliente. El `npm run build`
+corre `prisma generate` por su cuenta, así que un cliente desactualizado ya no
+rompe la compilación — pero **si el schema cambió, `db push` sigue siendo
+obligatorio**: sin él el cliente compila pero las columnas no existen y falla en
+runtime.
+
+Cuando el build aborta por cualquier motivo, `.next/` queda con el bundle viejo
+**incluido el CSS**. Es la causa habitual de "agregaste estilos pero no se ven".
 
 **Variables de entorno:** ~36. Las críticas son `DATABASE_URL` (usar la URL del
 pooler de Supabase, no la directa — es IPv6 y el VPS puede no alcanzarla),
