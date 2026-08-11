@@ -4,21 +4,21 @@ import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 
 /**
- * "No nos creas, probá vos" — pero apuntando a un evento real.
- *
- * La versión anterior de este bloque mandaba a /dashboard/events, que está
- * detrás del login: el visitante deslogueado no podía probar nada. Acá
- * elegimos el evento publicado más reciente que tenga fotos, así el link
- * nunca queda viejo ni hay que mantener una demo aparte. Si todavía no hay
- * ninguno, la sección no se renderiza.
+ * Evento elegido como demo pública. Es una decisión editorial, no técnica:
+ * conviene el que tenga portada propia, volumen de fotos y dorsales bien
+ * visibles, porque es lo primero que prueba un fotógrafo que está evaluando
+ * la plataforma.
  */
-export async function DemoEventCta() {
-  const event = await db.event.findFirst({
+const DEMO_EVENT_SLUG = "duatlon-club-ciclista-chivilcoy";
+
+function findDemoEvent(slug?: string) {
+  return db.event.findFirst({
     where: {
       isPublished: true,
       status: { in: ["ACTIVE", "FINISHED"] },
       owner: { slug: { not: null } },
       photos: { some: { fileSize: { not: null }, deletedAt: null } },
+      ...(slug ? { slug } : {}),
     },
     orderBy: [{ eventDate: "desc" }, { createdAt: "desc" }],
     select: {
@@ -30,8 +30,8 @@ export async function DemoEventCta() {
       _count: {
         select: { photos: { where: { fileSize: { not: null }, deletedAt: null } } },
       },
-      // Fallback de portada: la mayoría de los eventos no tienen coverUrl
-      // cargada y el bloque quedaba con un rectángulo gris.
+      // Fallback de portada: muchos eventos no tienen coverUrl cargada y el
+      // bloque quedaba con un rectángulo gris.
       photos: {
         where: { previewKey: { not: null }, deletedAt: null },
         orderBy: { createdAt: "desc" },
@@ -40,6 +40,20 @@ export async function DemoEventCta() {
       },
     },
   });
+}
+
+/**
+ * "No nos creas, probá vos" apuntando a un evento real.
+ *
+ * La versión anterior de este bloque mandaba a /dashboard/events, que está
+ * detrás del login: el visitante deslogueado no podía probar nada.
+ *
+ * Usa el evento fijado arriba y, si ese dejara de estar publicado, cae al
+ * evento publicado más reciente con fotos. Así despublicarlo no vacía la
+ * sección ni deja un link roto en la home.
+ */
+export async function DemoEventCta() {
+  const event = (await findDemoEvent(DEMO_EVENT_SLUG)) ?? (await findDemoEvent());
 
   if (!event?.owner.slug) return null;
 
