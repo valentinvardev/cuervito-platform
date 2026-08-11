@@ -46,8 +46,8 @@ export default function ComparativaPage() {
           </p>
           <p className="lede" style={{ marginTop: -18 }}>
             Mejor diseño, mejor UX, mejor tasa de conversión. Las fotos se entregan al instante por{" "}
-            <strong style={{ color: "var(--text-primary)" }}>email y WhatsApp</strong> — aunque no
-            hace falta esperar:{" "}
+            <strong style={{ color: "var(--text-primary)" }}>email</strong> — aunque no hace falta
+            esperar:{" "}
             <strong style={{ color: "var(--text-primary)" }}>
               se descargan directo apenas se confirma el pago
             </strong>
@@ -66,7 +66,11 @@ export default function ComparativaPage() {
           <div className="try-boxes">
             <span className="try-eyebrow">No nos creas — probá vos</span>
 
-            <Link className="try-box" href="/dashboard/events">
+            {/* Antes apuntaba a /dashboard/events, que está detrás del login:
+                el visitante deslogueado terminaba en una pantalla de sesión.
+                Ahora el "probá vos" del lado fotógrafo empieza donde puede
+                empezar de verdad. */}
+            <Link className="try-box" href="/signup">
               <div className="ic">
                 <i className="ti ti-cloud-upload" />
               </div>
@@ -82,7 +86,7 @@ export default function ComparativaPage() {
               </span>
             </Link>
 
-            <a className="try-box" href="#eventos">
+            <Link className="try-box" href="/eventos">
               <div className="ic">
                 <i className="ti ti-shopping-cart-plus" />
               </div>
@@ -96,9 +100,9 @@ export default function ComparativaPage() {
                 Probar el flujo
                 <i className="ti ti-arrow-right" />
               </span>
-            </a>
+            </Link>
 
-            <a className="try-box" href="#eventos">
+            <Link className="try-box" href="/eventos">
               <div className="ic">
                 <i className="ti ti-download" />
               </div>
@@ -112,7 +116,7 @@ export default function ComparativaPage() {
                 Probar el flujo
                 <i className="ti ti-arrow-right" />
               </span>
-            </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -218,15 +222,12 @@ export default function ComparativaPage() {
             </Row>
 
             {/* Experiencia */}
+            {/* Sólo filas comprobables. "Interfaz moderna" y "animaciones
+                premium" eran autoevaluación: al lado de datos duros como los
+                100 GB o el dominio propio, le bajaban credibilidad a toda la
+                tabla. La calidad de la interfaz se demuestra dejándola probar,
+                no puntuándola uno mismo. */}
             <Section title="Experiencia (lo que realmente cambia)" icon="ti-sparkles" />
-            <Row label="Interfaz moderna 2026">
-              <Win><Yes>Sí</Yes></Win>
-              <Cell><No>No</No></Cell>
-            </Row>
-            <Row label="Animaciones premium">
-              <Win><Yes>Sí</Yes></Win>
-              <Cell><No>No</No></Cell>
-            </Row>
             <Row label="Búsqueda en vivo del evento">
               <Win><Yes>Sí</Yes></Win>
               <Cell><No>No</No></Cell>
