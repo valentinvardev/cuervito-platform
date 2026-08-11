@@ -197,7 +197,9 @@ export function PhotoLightbox({
             padding: "5px 12px",
             borderRadius: 999,
             background: "rgba(245,130,10,0.92)",
-            color: "var(--text-on-accent)",
+            // El lightbox es oscuro en ambos temas: el token se volvía
+            // blanco sobre naranja en modo día. Carbón fijo.
+            color: "#1A0D00",
             fontFamily: "var(--font-mono)",
             fontWeight: 600,
             fontSize: 13,
@@ -236,7 +238,7 @@ export function PhotoLightbox({
             <span className="sep">·</span>
             <button
               type="button"
-              className="action"
+              className="action danger"
               onClick={async () => {
                 if (!confirm("¿Eliminar esta foto?")) return;
                 await onDelete(current.id);

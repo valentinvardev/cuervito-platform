@@ -137,8 +137,10 @@
 }
 .lb-meta .bib { color: var(--accent); }
 .lb-meta .sep { color: rgba(255, 255, 255, 0.4); }
+/* Las acciones son verdes por defecto — descargar es la acción segura y el
+   rojo la leía como destructiva. Solo lo destructivo lleva .danger. */
 .lb-meta .action {
-  color: #ff7777;
+  color: #6fd9a6;
   cursor: pointer;
   background: transparent;
   border: none;
@@ -146,7 +148,9 @@
   border-radius: 6px;
   font: inherit;
 }
-.lb-meta .action:hover { background: rgba(255, 119, 119, 0.15); }
+.lb-meta .action:hover { background: rgba(111, 217, 166, 0.15); }
+.lb-meta .action.danger { color: #ff7777; }
+.lb-meta .action.danger:hover { background: rgba(255, 119, 119, 0.15); }
 
 /* Phone tweaks. */
 @media (max-width: 700px) {

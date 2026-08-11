@@ -242,7 +242,10 @@ export function PhotoGrid({
                     borderRadius: 4,
                     fontFamily: "var(--font-mono)",
                     fontSize: 11,
-                    color: "var(--text-primary)",
+                    // Va sobre la foto: el vidrio oscuro se mantiene en ambos
+                    // temas, así que el texto es blanco fijo — con el token
+                    // quedaba negro sobre negro en modo día.
+                    color: "#FFFFFF",
                     backdropFilter: "blur(6px)",
                   }}
                 >
@@ -297,9 +300,12 @@ export function PhotoGrid({
                     width: 28,
                     height: 28,
                     borderRadius: "50%",
+                    // Mismo criterio que el tag de bib: sobre la foto el chip
+                    // es oscuro en ambos temas, así que ícono y borde van en
+                    // blanco fijo en vez de tokens que se invierten.
                     background: "rgba(15,13,11,0.85)",
-                    border: "1px solid var(--border-default)",
-                    color: "var(--text-primary)",
+                    border: "1px solid rgba(255,255,255,0.22)",
+                    color: "#FFFFFF",
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
