@@ -14,23 +14,36 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   {
-    href: "#eventos",
-    label: "Eventos",
-    desc: "Buscá fotos de las carreras y eventos cubiertos por Cuervito.",
-    icon: "ti-calendar-event",
+    href: "#como-funciona",
+    label: "Cómo funciona",
+    desc: "De la tarjeta de memoria a tu cuenta de Mercado Pago.",
+    icon: "ti-route",
   },
   {
-    href: "/signup",
-    label: "Fotógrafos",
-    desc: "Vendé tus fotos con reconocimiento facial y de dorsales.",
-    icon: "ti-camera",
+    href: "#precio",
+    label: "Precio",
+    desc: "Gratis. 10% por venta, sólo cuando cobrás vos.",
+    icon: "ti-receipt",
+  },
+  {
+    href: "#preguntas",
+    label: "Preguntas",
+    desc: "Cuándo cobrás, qué incluye y qué pasa con tus fotos.",
+    icon: "ti-help-circle",
+  },
+  {
+    href: "/comparativa",
+    label: "Comparativa",
+    desc: "Qué cambia respecto de la plataforma que usás hoy.",
+    icon: "ti-versus",
     internal: true,
   },
   {
-    href: "#como-funciona",
-    label: "Cómo funciona",
-    desc: "El paso a paso de comprar y descargar tus fotos.",
-    icon: "ti-info-circle",
+    href: "/eventos",
+    label: "Buscar mis fotos",
+    desc: "¿Corriste una carrera? Encontrá tus fotos acá.",
+    icon: "ti-run",
+    internal: true,
   },
 ];
 
@@ -266,13 +279,13 @@ export function LandingMobileNav({ loggedIn }: { loggedIn: boolean }) {
             </Link>
           ) : (
             <>
-              <a href="#eventos" className="btn btn-primary" onClick={close}>
+              <Link href="/signup" className="btn btn-primary" onClick={close}>
+                <i className="ti ti-camera"></i>
+                Crear cuenta gratis
+              </Link>
+              <Link href="/eventos" className="btn btn-outline" onClick={close}>
                 <i className="ti ti-search"></i>
                 Buscar mis fotos
-              </a>
-              <Link href="/signup" className="btn btn-outline" onClick={close}>
-                <i className="ti ti-camera"></i>
-                Soy fotógrafo
               </Link>
               <Link
                 href="/login"

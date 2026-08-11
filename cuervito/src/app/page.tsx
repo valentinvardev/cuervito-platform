@@ -2,34 +2,59 @@ import "~/styles/prototype/styles.css";
 import "~/styles/prototype/panel-anim.css";
 import "~/styles/prototype/landing.css";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
 import { auth } from "~/server/auth";
+import { db } from "~/server/db";
 
+import { AthleteSearchBar } from "./_components/athlete-search-bar";
+import { DemoEventCta } from "./_components/demo-event-cta";
+import { ExternalStylesheets } from "./_components/external-stylesheets";
+import { LandingFaq } from "./_components/landing-faq";
 import { LandingMobileNav } from "./_components/landing-mobile-nav";
-import { LiveEventsSearch } from "./_components/live-events-search";
+import { LandingTestimonials } from "./_components/landing-testimonials";
 import { PhotoStrip, PhotoStripSkeleton } from "./_components/photo-strip";
 import { RevealOnScroll } from "./_components/reveal-on-scroll";
 import { ThemeToggle } from "./_components/theme-toggle";
 
+/**
+ * Los números del catálogo salen de la base, no de una constante. Debajo de
+ * estos umbrales no mostramos nada: un contador honesto pero chico convence
+ * menos que no poner contador, y uno inventado se desmiente scrolleando
+ * hasta la grilla de eventos.
+ */
+const MIN_EVENTS = 8;
+const MIN_PHOTOS = 500;
+
+async function getCatalogStats() {
+  const [events, photos] = await Promise.all([
+    db.event.count({ where: { isPublished: true, NOT: { status: "ARCHIVED" } } }),
+    db.photo.count({ where: { fileSize: { not: null }, deletedAt: null } }),
+  ]);
+  return {
+    events,
+    photos,
+    show: events >= MIN_EVENTS && photos >= MIN_PHOTOS,
+  };
+}
+
 export default async function Home() {
   const session = await auth().catch(() => null);
+  const stats = await getCatalogStats().catch(() => ({
+    events: 0,
+    photos: 0,
+    show: false,
+  }));
 
   return (
     <div className="lp">
       <RevealOnScroll />
+      <ExternalStylesheets />
 
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
-      />
-      <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css"
-      />
+      {/* CARRIL DEL ATLETA — arriba de todo, sin scroll */}
+      <AthleteSearchBar />
 
       {/* NAV */}
       <nav className="nav hero-anim" style={{ ["--hero-delay" as string]: "0ms" }}>
@@ -38,9 +63,10 @@ export default async function Home() {
             cuerv<span className="logo-dot"></span>to
           </Link>
           <div className="nav-links">
-            <a href="#eventos">Eventos</a>
-            <Link href="/signup">Fotógrafos</Link>
             <a href="#como-funciona">Cómo funciona</a>
+            <a href="#precio">Precio</a>
+            <a href="#preguntas">Preguntas</a>
+            <Link href="/comparativa">Comparativa</Link>
           </div>
           <div className="nav-cta">
             <ThemeToggle />
@@ -50,12 +76,12 @@ export default async function Home() {
               </Link>
             ) : (
               <>
-                <Link href="/signup" className="btn btn-outline">
-                  Soy fotógrafo
+                <Link href="/login" className="btn btn-outline">
+                  Iniciar sesión
                 </Link>
-                <a href="#eventos" className="btn btn-primary">
-                  <i className="ti ti-search"></i> Buscar mi evento
-                </a>
+                <Link href="/signup" className="btn btn-primary">
+                  Crear cuenta gratis
+                </Link>
               </>
             )}
             <LandingMobileNav loggedIn={!!session?.user} />
@@ -63,7 +89,7 @@ export default async function Home() {
         </div>
       </nav>
 
-      {/* HERO */}
+      {/* HERO — tesis única: el fotógrafo */}
       <header className="hero-v2">
         <div className="hero-v2-bg"></div>
         <div className="container hero-v2-grid">
@@ -72,51 +98,45 @@ export default async function Home() {
               className="eyebrow hero-anim"
               style={{ ["--hero-delay" as string]: "180ms" }}
             >
-              <i className="ti ti-calendar-event" style={{ fontSize: 14 }}></i>
-              Fotografía de eventos deportivos
+              <i className="ti ti-camera" style={{ fontSize: 14 }}></i>
+              Para fotógrafos de eventos deportivos
             </span>
             <h1
-              className="hero-v2-headline hero-anim"
+              className="hero-v2-headline compact hero-anim"
               style={{ ["--hero-delay" as string]: "280ms" }}
             >
-              Encontrá tus fotos<br />
-              <span className="accent">del evento.</span>
+              Vendé las fotos de la carrera.<br />
+              <span className="accent">Cobrás en tu Mercado Pago.</span>
             </h1>
             <p
               className="hero-v2-sub hero-anim"
               style={{ ["--hero-delay" as string]: "420ms" }}
             >
-              Cuervito indexa cada foto de cada carrera por dorsal y por cara. Elegí tu evento y las tuyas aparecen en segundos.
+              Subís las fotos y listo: reconocemos cara y dorsal, armamos tu
+              página de venta con tu marca, y cada compra entra directo a tu
+              cuenta — menos el 10%. Nosotros nunca tocamos tu plata.
             </p>
             <div
               className="hero-v2-cta hero-anim"
               style={{ ["--hero-delay" as string]: "540ms" }}
             >
-              <a href="#eventos" className="btn btn-primary btn-lg">
-                <i className="ti ti-calendar-search"></i>Buscar por evento
-              </a>
-              <a href="#como-funciona" className="btn btn-outline btn-lg">
-                <i className="ti ti-scan-eye"></i>Buscar por selfie
+              <Link href="/signup" className="btn btn-primary btn-lg">
+                <i className="ti ti-arrow-right"></i>Crear mi cuenta gratis
+              </Link>
+              <a href="#demo" className="btn btn-outline btn-lg">
+                <i className="ti ti-hand-click"></i>Ver un evento real
               </a>
             </div>
             <div
               className="hero-v2-trust hero-anim"
               style={{ ["--hero-delay" as string]: "660ms" }}
             >
-              <span>
-                <strong>2.400+</strong> eventos
-              </span>
+              <span>Sin cuota mensual</span>
+              <span className="sep"></span>
+              <span>Sin tarjeta</span>
               <span className="sep"></span>
               <span>
-                <strong>180K+</strong> fotos
-              </span>
-              <span className="sep"></span>
-              <span>
-                <i
-                  className="ti ti-shield-check"
-                  style={{ fontSize: 13, color: "var(--success)", verticalAlign: -1, marginRight: 4 }}
-                ></i>
-                Pago seguro
+                <strong>10%</strong> sólo si vendés
               </span>
             </div>
           </div>
@@ -126,50 +146,73 @@ export default async function Home() {
             aria-hidden="true"
             style={{ ["--hero-delay" as string]: "380ms" }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/assets/illustrations/hero.png" alt="" />
+            <Image
+              src="/assets/illustrations/hero.png"
+              alt=""
+              width={950}
+              height={839}
+              priority
+              sizes="(max-width: 960px) 90vw, 640px"
+            />
           </div>
         </div>
       </header>
 
-      {/* PHOTO STRIP — real photos from published events (marquee) */}
+      {/* TIRA DE FOTOS — prueba visual, ahora con epígrafe */}
       <Suspense fallback={<PhotoStripSkeleton />}>
         <PhotoStrip />
       </Suspense>
+      {stats.show && (
+        <p className="strip-caption">
+          Fotos de eventos publicados en Cuervito ·{" "}
+          <strong>{stats.events.toLocaleString("es-AR")}</strong> eventos ·{" "}
+          <strong>{stats.photos.toLocaleString("es-AR")}</strong> fotos
+        </p>
+      )}
 
-      {/* HOW IT WORKS */}
+      {/* CÓMO FUNCIONA — del lado del fotógrafo */}
       <section className="how-v2" id="como-funciona">
         <div className="container how-grid">
           <div className="how-text reveal">
             <span className="eyebrow">
-              <i className="ti ti-scan-eye" style={{ fontSize: 14 }}></i>Cómo funciona
+              <i className="ti ti-route" style={{ fontSize: 14 }}></i>Cómo
+              funciona
             </span>
-            <h2 className="h-section">Por dorsal o por selfie.</h2>
+            <h2 className="h-section">De la tarjeta de memoria a tu cuenta.</h2>
             <p className="lede">
-              El fotógrafo del evento sube todo, nosotros lo indexamos por{" "}
-              <strong style={{ color: "var(--text-primary)" }}>cara y número de dorsal</strong>. Vos
-              buscás como te sea más cómodo — las tuyas aparecen en segundos.
+              Vos cubrís el evento. Todo lo demás —indexar, publicar, cobrar,
+              entregar— lo hace la plataforma.
             </p>
             <ol className="how-steps">
               <li className="how-step">
                 <div className="num">01</div>
                 <div>
-                  <h3>El fotógrafo cubre el evento</h3>
-                  <p>Sube todas las fotos con drag &amp; drop. Marca de agua automática en las previews.</p>
+                  <h3>Subís las fotos del evento</h3>
+                  <p>
+                    Drag &amp; drop masivo. La marca de agua va sólo en las
+                    previews: el original queda intacto para el que compra.
+                  </p>
                 </div>
               </li>
               <li className="how-step">
                 <div className="num">02</div>
                 <div>
-                  <h3>Reconocemos caras y dorsales</h3>
-                  <p>Cada foto queda indexada por rostro, número y momento de la carrera.</p>
+                  <h3>Indexamos y armamos tu página</h3>
+                  <p>
+                    Reconocimiento de cara y de dorsal en cada foto, y tu
+                    galería publicada con tu plantilla, tu color y tu dominio.
+                  </p>
                 </div>
               </li>
               <li className="how-step">
                 <div className="num">03</div>
                 <div>
-                  <h3>Vos encontrás las tuyas</h3>
-                  <p>Subís una selfie o ingresás tu dorsal. Comprás y descargás, sin vueltas.</p>
+                  <h3>El atleta compra y vos cobrás</h3>
+                  <p>
+                    Encuentra las suyas en segundos y paga sin crear cuenta. La
+                    plata entra a tu Mercado Pago en el momento, con el 10% ya
+                    descontado.
+                  </p>
                 </div>
               </li>
             </ol>
@@ -271,39 +314,60 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* FOR PHOTOGRAPHERS */}
+      {/* TRES RAZONES — plata, marca, conversión */}
       <section className="photog-v2">
         <div className="container photog-v2-grid">
           <div className="photog-v2-text reveal">
             <span className="eyebrow">
-              <i className="ti ti-camera" style={{ fontSize: 14 }}></i>Para fotógrafos
+              <i className="ti ti-coin" style={{ fontSize: 14 }}></i>Por qué
+              Cuervito
             </span>
-            <h2 className="h-section">Tus fotos, tu plata.</h2>
-            <p className="lede">
-              Subís las fotos, nosotros nos ocupamos del resto: reconocimiento, página de venta,
-              cobranza y soporte.
-            </p>
-            <ul>
+            <h2 className="h-section">Tus fotos, tu página, tu plata.</h2>
+
+            <ul className="value-list">
               <li>
-                <i className="ti ti-cloud-upload"></i>Subida masiva con detección automática
+                <i className="ti ti-building-bank"></i>
+                <div>
+                  <strong>Cobrás vos, no nosotros.</strong>
+                  <p>
+                    La compra entra a tu cuenta de Mercado Pago en el momento,
+                    con el 10% ya descontado. Sin retiros, sin mínimos y sin
+                    esperar treinta días.
+                  </p>
+                </div>
               </li>
               <li>
-                <i className="ti ti-coin"></i>Recibís el <strong>90%</strong> de cada venta
+                <i className="ti ti-template"></i>
+                <div>
+                  <strong>Tu marca, tu dominio.</strong>
+                  <p>
+                    Cuatro plantillas editables, tu color, tu logo y tu dominio
+                    propio. El atleta te compra a vos, no a una galería con el
+                    logo de otro arriba.
+                  </p>
+                </div>
               </li>
               <li>
-                <i className="ti ti-template"></i>Tu página de venta con plantillas editables
-              </li>
-              <li>
-                <i className="ti ti-shield-check"></i>
-                <span className="paid-with">
-                  Cobrado con{" "}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/assets/mp/mp-pluma-horizontal.svg" alt="Mercado Pago" />
-                </span>
+                <i className="ti ti-bolt"></i>
+                <div>
+                  <strong>El atleta encuentra sus fotos en 30 segundos.</strong>
+                  <p>
+                    Busca por dorsal o sube una selfie, compra sin crear cuenta
+                    y descarga al acreditarse el pago. Menos fricción, más fotos
+                    vendidas por evento.
+                  </p>
+                </div>
               </li>
             </ul>
+
+            <div className="paid-with">
+              Cobrado con{" "}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/assets/mp/mp-pluma-horizontal.svg" alt="Mercado Pago" />
+            </div>
+
             <Link href="/signup" className="btn btn-primary btn-lg">
-              <i className="ti ti-arrow-right"></i>Sumarme como fotógrafo
+              <i className="ti ti-arrow-right"></i>Crear mi cuenta gratis
             </Link>
           </div>
 
@@ -314,16 +378,16 @@ export default async function Home() {
           >
             <div className="earn-head">
               <span className="label">Ventas · hoy</span>
-              <span className="earn-live">
-                <span className="dot"></span>En vivo
-              </span>
+              {/* Mock de producto, no datos reales: se rotula como tal. */}
+              <span className="earn-tag">Ejemplo</span>
             </div>
             <div className="earn-amount">
               <span className="currency">$</span>
               <span className="big">48.200</span>
             </div>
             <div className="earn-delta">
-              <i className="ti ti-trending-up" style={{ fontSize: 14 }}></i>+18% vs ayer
+              <i className="ti ti-trending-up" style={{ fontSize: 14 }}></i>+18%
+              vs ayer
             </div>
 
             <div className="earn-spark">
@@ -368,33 +432,128 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* COMPARE CTA */}
+      {/* DEMO — el flujo del comprador, en un evento real.
+          Sin <Suspense>: el boundary abría un hueco vacío entre este bloque
+          y precio, y el contenido llegaba al final del stream. Es una sola
+          query indexada y la página ya es dinámica, así que se espera. */}
+      <DemoEventCta />
+
+      {/* PRECIO */}
+      <section className="pricing" id="precio">
+        <div className="container">
+          <div className="pricing-head reveal">
+            <span className="eyebrow">
+              <i className="ti ti-receipt" style={{ fontSize: 14 }}></i>Precio
+            </span>
+            <h2 className="h-section">
+              Gratis. Te cobramos sólo cuando cobrás vos.
+            </h2>
+          </div>
+
+          <div className="price-card reveal">
+            <div className="price-figures">
+              <div className="price-block">
+                <span className="pf-value">
+                  <span className="cur">$</span>0
+                </span>
+                <span className="pf-label">por mes</span>
+                <span className="pf-note">Sin alta, sin tarjeta, sin permanencia.</span>
+              </div>
+              <div className="price-div" aria-hidden="true"></div>
+              <div className="price-block">
+                <span className="pf-value">10%</span>
+                <span className="pf-label">por venta</span>
+                <span className="pf-note">
+                  Se descuenta en la misma operación de Mercado Pago.
+                </span>
+              </div>
+            </div>
+
+            <div className="price-includes">
+              <span className="pi-title">Todo incluido</span>
+              <ul>
+                <li>
+                  <i className="ti ti-check"></i>100 GB de almacenamiento
+                </li>
+                <li>
+                  <i className="ti ti-check"></i>Eventos y fotos ilimitados
+                </li>
+                <li>
+                  <i className="ti ti-check"></i>Reconocimiento de cara y dorsal
+                </li>
+                <li>
+                  <i className="ti ti-check"></i>Marca de agua automática
+                </li>
+                <li>
+                  <i className="ti ti-check"></i>Tu página con dominio propio
+                </li>
+                <li>
+                  <i className="ti ti-check"></i>Códigos y descuentos por cantidad
+                </li>
+                <li>
+                  <i className="ti ti-check"></i>Colaboradores con comisión propia
+                </li>
+                <li>
+                  <i className="ti ti-check"></i>Entrega y descarga automáticas
+                </li>
+              </ul>
+              <p className="price-foot">
+                Si un mes no vendés, pagás <strong>$0</strong>.
+              </p>
+              <Link href="/signup" className="btn btn-primary btn-lg">
+                <i className="ti ti-arrow-right"></i>Empezar gratis
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PRUEBA SOCIAL — se renderiza cuando haya testimonios reales */}
+      <LandingTestimonials />
+
+      {/* PREGUNTAS */}
+      <LandingFaq />
+
+      {/* COMPARATIVA */}
       <section className="compare-cta">
         <div className="container">
           <div className="compare-card reveal">
             <span className="compare-eyebrow">
-              <i className="ti ti-versus" style={{ fontSize: 14 }}></i>Cuervito vs el resto
+              <i className="ti ti-versus" style={{ fontSize: 14 }}></i>Cuervito
+              vs el resto
             </span>
-            <h2>¿Usás otra plataforma?</h2>
-            <p>Hay muchas razones por las que deberías usar la nuestra.</p>
+            <h2>¿Ya vendés en otra plataforma?</h2>
+            <p>
+              Misma comisión. Pero cobrás en el acto, en tu cuenta, y con tu
+              marca adelante.
+            </p>
             <Link href="/comparativa" className="btn-on-accent">
-              Ver comparativa<i className="ti ti-arrow-right"></i>
+              Ver la tabla completa<i className="ti ti-arrow-right"></i>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* LIVE EVENTS SEARCH */}
-      <section className="live-events" id="eventos">
+      {/* CTA FINAL */}
+      <section className="final-strip">
         <div className="container">
-          <div className="le-head reveal">
-            <span className="eyebrow">
-              <i className="ti ti-calendar-event" style={{ fontSize: 14 }}></i>Eventos
-            </span>
-            <h2 className="h-section">Elegí tu evento.</h2>
-            <p>Filtrá en vivo por nombre, ciudad o disciplina.</p>
+          <div className="cta-strip reveal">
+            <div className="cta-strip-inner">
+              <h2 className="h-section">Publicá tu primer evento hoy.</h2>
+              <p>
+                Creás la cuenta, conectás Mercado Pago y subís las fotos. El
+                mismo día podés estar vendiendo.
+              </p>
+              <div className="btn-row">
+                <Link href="/signup" className="btn btn-primary btn-lg">
+                  <i className="ti ti-arrow-right"></i>Crear mi cuenta gratis
+                </Link>
+                <Link href="/eventos" className="btn btn-outline btn-lg">
+                  <i className="ti ti-search"></i>Buscar mis fotos
+                </Link>
+              </div>
+            </div>
           </div>
-          <LiveEventsSearch />
         </div>
       </section>
 
@@ -407,29 +566,38 @@ export default async function Home() {
                 cuerv<span className="logo-dot"></span>to
               </Link>
               <p>
-                Encontrá tus fotos del evento. Buscá por dorsal, por selfie, o explorá galerías. Tan
-                simple como eso.
+                La plataforma para vender fotos de eventos deportivos en
+                Argentina. Tu marca adelante, tu plata en tu cuenta.
               </p>
-            </div>
-            <div>
-              <h5>Plataforma</h5>
-              <ul>
-                <li>
-                  <a href="#eventos">Buscar eventos</a>
-                </li>
-                <li>
-                  <a href="#como-funciona">Reconocimiento facial</a>
-                </li>
-              </ul>
             </div>
             <div>
               <h5>Fotógrafos</h5>
               <ul>
                 <li>
-                  <Link href="/signup">Sumarte</Link>
+                  <Link href="/signup">Crear cuenta gratis</Link>
                 </li>
                 <li>
                   <Link href="/login">Iniciar sesión</Link>
+                </li>
+                <li>
+                  <Link href="/comparativa">Comparativa</Link>
+                </li>
+                <li>
+                  <a href="#precio">Precio</a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h5>Atletas</h5>
+              <ul>
+                <li>
+                  <Link href="/eventos">Buscar mis fotos</Link>
+                </li>
+                <li>
+                  <a href="#como-funciona">Cómo funciona</a>
+                </li>
+                <li>
+                  <a href="#preguntas">Preguntas frecuentes</a>
                 </li>
               </ul>
             </div>
@@ -437,13 +605,10 @@ export default async function Home() {
               <h5>Legal</h5>
               <ul>
                 <li>
-                  <a href="#">Términos</a>
+                  <Link href="/terminos">Términos</Link>
                 </li>
                 <li>
-                  <a href="#">Privacidad</a>
-                </li>
-                <li>
-                  <a href="#">Contacto</a>
+                  <Link href="/privacidad">Privacidad</Link>
                 </li>
               </ul>
             </div>
@@ -451,16 +616,12 @@ export default async function Home() {
           <div className="footer-bottom">
             <span>© 2026 cuervito.app · Hecho en Argentina</span>
             <div style={{ display: "flex", gap: 18, alignItems: "center" }}>
-              <Link href="/terminos" className="footer-legal-link">Términos</Link>
-              <Link href="/privacidad" className="footer-legal-link">Privacidad</Link>
-              <div className="footer-social">
-                <a href="#" aria-label="Instagram">
-                  <i className="ti ti-brand-instagram"></i>
-                </a>
-                <a href="#" aria-label="WhatsApp">
-                  <i className="ti ti-brand-whatsapp"></i>
-                </a>
-              </div>
+              <Link href="/terminos" className="footer-legal-link">
+                Términos
+              </Link>
+              <Link href="/privacidad" className="footer-legal-link">
+                Privacidad
+              </Link>
             </div>
           </div>
         </div>
