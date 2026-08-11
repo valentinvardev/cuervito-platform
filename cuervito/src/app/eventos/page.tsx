@@ -54,7 +54,7 @@ export default function EventosPage() {
             <h1 className="h-section">Elegí tu evento.</h1>
             <p>
               Filtrá por nombre, ciudad o disciplina. Adentro buscás tus fotos
-              por número de dorsal o subiendo una selfie — y la selfie no se
+              por número de dorsal o subiendo una selfie. La selfie no se
               guarda.
             </p>
           </div>

@@ -1,3 +1,5 @@
+import { whatsappUrl } from "~/lib/support";
+
 type Item = { q: string; a: React.ReactNode };
 
 /**
@@ -51,7 +53,7 @@ const ITEMS: Item[] = [
     q: "¿Qué pasa con la selfie que sube el atleta?",
     a: (
       <>
-        Se usa para buscar y se descarta. <strong>No la guardamos</strong> — no
+        Se usa para buscar y se descarta. <strong>No la guardamos</strong>: no
         va a nuestro storage ni a la base de datos.
       </>
     ),
@@ -82,6 +84,25 @@ const ITEMS: Item[] = [
       <>
         Sí. Invitás colaboradores al evento y definís qué porcentaje se lleva
         cada uno; las comisiones se calculan solas en cada venta.
+      </>
+    ),
+  },
+  {
+    q: "¿A quién le escribo si algo falla?",
+    a: (
+      <>
+        A nosotros, por WhatsApp, a la hora que sea. Las carreras arrancan a
+        las 7 de la mañana y terminan de noche, así que el soporte atiende{" "}
+        <strong>las 24 horas</strong>.{" "}
+        <a
+          href={whatsappUrl("Hola, necesito ayuda con Cuervito.")}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "var(--accent)" }}
+        >
+          Escribinos ahora
+        </a>
+        .
       </>
     ),
   },

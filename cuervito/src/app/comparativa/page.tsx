@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { whatsappUrl } from "~/lib/support";
+
 import { RevealOnScroll } from "../_components/reveal-on-scroll";
 
 export default function ComparativaPage() {
@@ -41,12 +43,12 @@ export default function ComparativaPage() {
           </h1>
           <p className="lede">
             Somos una plataforma diseñada con criterio profesional, priorizando la experiencia del usuario.
-            El fotógrafo vende más porque sus clientes encuentran y compran más rápido — y el atleta
+            El fotógrafo vende más porque sus clientes encuentran y compran más rápido, y el atleta
             se lleva una experiencia de compra premium, no un trámite.
           </p>
           <p className="lede" style={{ marginTop: -18 }}>
             Mejor diseño, mejor UX, mejor tasa de conversión. Las fotos se entregan al instante por{" "}
-            <strong style={{ color: "var(--text-primary)" }}>email</strong> — aunque no hace falta
+            <strong style={{ color: "var(--text-primary)" }}>email</strong>, aunque no hace falta
             esperar:{" "}
             <strong style={{ color: "var(--text-primary)" }}>
               se descargan directo apenas se confirma el pago
@@ -64,7 +66,7 @@ export default function ComparativaPage() {
           </div>
 
           <div className="try-boxes">
-            <span className="try-eyebrow">No nos creas — probá vos</span>
+            <span className="try-eyebrow">No nos creas: probá vos</span>
 
             {/* Antes apuntaba a /dashboard/events, que está detrás del login:
                 el visitante deslogueado terminaba en una pantalla de sesión.
@@ -274,7 +276,7 @@ export default function ComparativaPage() {
             <h2>Las features son iguales. La experiencia, no.</h2>
             <p>
               Todas las plataformas reconocen caras y dorsales. Lo que cambia es{" "}
-              <strong style={{ color: "var(--text-primary)" }}>cómo se siente usarlas</strong> —
+              <strong style={{ color: "var(--text-primary)" }}>cómo se siente usarlas</strong>,
               tanto para vos como para tu cliente.
             </p>
           </div>
@@ -299,7 +301,7 @@ export default function ComparativaPage() {
               <h3>Experiencia premium.</h3>
               <p>
                 Animaciones, transiciones, búsqueda en vivo, flujo iOS paso a paso, upsells en el
-                carrito. La interfaz que tus clientes esperan en 2026 — no la del 2018.
+                carrito. La interfaz que tus clientes esperan en 2026, no la del 2018.
               </p>
               <div className="micro">Diseñado con criterio editorial</div>
             </article>
@@ -397,7 +399,12 @@ export default function ComparativaPage() {
                 <i className="ti ti-arrow-right" />
                 Empezar gratis
               </Link>
-              <a href="https://wa.me/" className="btn btn-outline" target="_blank" rel="noopener">
+              <a
+                href={whatsappUrl("Hola, quiero migrar mi evento a Cuervito.")}
+                className="btn btn-outline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <i className="ti ti-brand-whatsapp" />
                 Hablamos por WhatsApp
               </a>

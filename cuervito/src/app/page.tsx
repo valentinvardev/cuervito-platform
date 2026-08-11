@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { whatsappUrl } from "~/lib/support";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 
@@ -114,7 +115,7 @@ export default async function Home() {
             >
               Subís las fotos y listo: reconocemos cara y dorsal, armamos tu
               página de venta con tu marca, y cada compra entra directo a tu
-              cuenta — menos el 10%. Nosotros nunca tocamos tu plata.
+              cuenta, menos el 10%. Nosotros nunca tocamos tu plata.
             </p>
             <div
               className="hero-v2-cta hero-anim"
@@ -138,6 +139,13 @@ export default async function Home() {
               <span>
                 <strong>10%</strong> sólo si vendés
               </span>
+              <span className="sep"></span>
+              <span>
+                <i
+                  className="ti ti-brand-whatsapp"
+                  style={{ fontSize: 14, color: "#25D366", verticalAlign: -2, marginRight: 4 }}
+                ></i>
+                Soporte <strong>24 hs</strong></span>
             </div>
           </div>
 
@@ -180,8 +188,8 @@ export default async function Home() {
             </span>
             <h2 className="h-section">De la tarjeta de memoria a tu cuenta.</h2>
             <p className="lede">
-              Vos cubrís el evento. Todo lo demás —indexar, publicar, cobrar,
-              entregar— lo hace la plataforma.
+              Vos cubrís el evento. Indexar, publicar, cobrar y entregar lo
+              hace la plataforma.
             </p>
             <ol className="how-steps">
               <li className="how-step">
@@ -488,13 +496,19 @@ export default async function Home() {
                   <i className="ti ti-check"></i>Tu página con dominio propio
                 </li>
                 <li>
-                  <i className="ti ti-check"></i>Códigos y descuentos por cantidad
+                  <i className="ti ti-check"></i>Códigos de descuento
+                </li>
+                <li>
+                  <i className="ti ti-check"></i>Descuentos por cantidad
                 </li>
                 <li>
                   <i className="ti ti-check"></i>Colaboradores con comisión propia
                 </li>
                 <li>
                   <i className="ti ti-check"></i>Entrega y descarga automáticas
+                </li>
+                <li>
+                  <i className="ti ti-check"></i>Soporte por WhatsApp las 24 horas
                 </li>
               </ul>
               <p className="price-foot">
@@ -542,15 +556,23 @@ export default async function Home() {
               <h2 className="h-section">Publicá tu primer evento hoy.</h2>
               <p>
                 Creás la cuenta, conectás Mercado Pago y subís las fotos. El
-                mismo día podés estar vendiendo.
+                mismo día podés estar vendiendo. Si te trabás, te contestamos
+                por WhatsApp a cualquier hora.
               </p>
               <div className="btn-row">
                 <Link href="/signup" className="btn btn-primary btn-lg">
                   <i className="ti ti-arrow-right"></i>Crear mi cuenta gratis
                 </Link>
-                <Link href="/eventos" className="btn btn-outline btn-lg">
-                  <i className="ti ti-search"></i>Buscar mis fotos
-                </Link>
+                <a
+                  href={whatsappUrl(
+                    "Hola, quiero empezar a vender mis fotos con Cuervito.",
+                  )}
+                  className="btn btn-outline btn-lg"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <i className="ti ti-brand-whatsapp"></i>Hablar por WhatsApp
+                </a>
               </div>
             </div>
           </div>
@@ -584,6 +606,15 @@ export default async function Home() {
                 </li>
                 <li>
                   <a href="#precio">Precio</a>
+                </li>
+                <li>
+                  <a
+                    href={whatsappUrl("Hola, tengo una consulta sobre Cuervito.")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Soporte 24 hs por WhatsApp
+                  </a>
                 </li>
               </ul>
             </div>
