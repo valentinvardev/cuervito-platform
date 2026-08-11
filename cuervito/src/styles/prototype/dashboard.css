@@ -776,11 +776,14 @@
   padding: 22px;
   margin-bottom: 14px;
 }
+/* Vive dentro de .sales-card: mismo full-bleed que .sale-row para que el
+   divisor no se corra cuando el skeleton da lugar a las filas reales. */
 .skel-row {
   display: grid;
   grid-template-columns: 44px 1fr auto;
   gap: 12px;
-  padding: 14px 0;
+  padding: 14px 18px;
+  margin-inline: -18px;
   border-bottom: 1px solid var(--border-subtle);
   align-items: center;
 }
@@ -1232,24 +1235,32 @@
   background: var(--bg-surface); border: 1px solid var(--border-subtle);
   border-radius: 14px; padding: 0 18px;
 }
+/* La fila se sale del padding de la card (18px a cada lado) y se lo come
+   como padding propio: así el hover y el divisor llegan hasta el borde y
+   no cortan a 18px de cada extremo. El contenido queda en el mismo lugar. */
 .sale-row {
   display: grid;
   grid-template-columns: 44px 1fr auto;
   gap: 12px;
-  padding: 14px 0;
+  padding: 14px 18px;
+  margin-inline: -18px;
+  width: calc(100% + 36px);
   border-bottom: 1px solid var(--border-subtle);
   align-items: center;
   background: transparent;
   border-top: none; border-left: none; border-right: none;
   border-radius: 0;
   cursor: pointer;
-  width: 100%;
   text-align: left;
   font: inherit; color: inherit;
   transition: background 120ms;
 }
 .sale-row:hover { background: rgba(245,130,10,0.04); }
-.sale-row:last-child { border-bottom: none; }
+/* Primera y última fila siguen el radio de la card para que el hover no
+   pinte esquinas cuadradas sobre el borde redondeado. */
+.sale-row:first-child { border-radius: 13px 13px 0 0; }
+.sale-row:last-child { border-bottom: none; border-radius: 0 0 13px 13px; }
+.sale-row:first-child:last-child { border-radius: 13px; }
 .sale-thumb {
   width: 44px; height: 34px; border-radius: 6px; overflow: hidden;
   flex-shrink: 0;

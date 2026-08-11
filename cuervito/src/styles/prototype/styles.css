@@ -140,11 +140,15 @@
 :root[data-theme="light"] .le-card:hover,
 :root[data-theme="light"] .tpl-card:hover,
 :root[data-theme="light"] .disc-item:hover,
-:root[data-theme="light"] .sale-row:hover,
 :root[data-theme="light"] .preview-card:hover {
   border-color: var(--border-subtle) !important;
   box-shadow: var(--hover-shadow);
 }
+/* .sale-row queda afuera del grupo: va a sangre dentro de .sales-card, así
+   que una sombra se derramaría fuera de la card en vez de elevar la fila.
+   El hover lo marca el tinte, subido acá porque 4% de naranja sobre blanco
+   es casi invisible. */
+:root[data-theme="light"] .sale-row:hover { background: rgba(245, 130, 10, 0.09); }
 :root[data-theme="light"] .action-card.primary:hover,
 :root[data-theme="light"] .action-card:focus-visible {
   box-shadow: var(--hover-shadow-strong);
