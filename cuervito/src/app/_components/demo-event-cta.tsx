@@ -30,14 +30,25 @@ export async function DemoEventCta() {
       _count: {
         select: { photos: { where: { fileSize: { not: null }, deletedAt: null } } },
       },
+      // Fallback de portada: la mayoría de los eventos no tienen coverUrl
+      // cargada y el bloque quedaba con un rectángulo gris.
+      photos: {
+        where: { previewKey: { not: null }, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { previewKey: true },
+      },
     },
   });
 
   if (!event?.owner.slug) return null;
 
   const href = `/${event.owner.slug}/${event.slug}?src=demo`;
-  const cover = event.coverUrl
-    ? await resolveMediaUrl(event.coverUrl).catch(() => null)
+  const coverKey = event.coverUrl ?? event.photos[0]?.previewKey ?? null;
+  const cover = coverKey
+    ? coverKey.startsWith("http")
+      ? coverKey
+      : await resolveMediaUrl(coverKey).catch(() => null)
     : null;
 
   return (
