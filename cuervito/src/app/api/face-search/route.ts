@@ -3,11 +3,29 @@ import { SearchFacesByImageCommand } from "@aws-sdk/client-rekognition";
 
 import { db } from "~/server/db";
 import { VISITOR_COOKIE } from "~/lib/visitor";
+import { hasRecognitionQuota } from "~/server/quotas";
+import { clientIp, hitRateLimit } from "~/server/rate-limit";
 import {
-  bumpRecognitionUsage,
+  billedCall,
   rekCollectionForEvent,
   rekognition,
 } from "~/server/rekognition";
+
+/**
+ * Este endpoint es público a propósito: el comprador no tiene cuenta, así lo
+ * define la arquitectura. Pero cada POST es una llamada facturable a
+ * Rekognition, y el eventId viaja en el HTML de la galería, así que sin
+ * límites cualquiera puede decidir cuánto gastamos.
+ *
+ * Los topes están calibrados muy por encima del uso real (el mes pico fueron
+ * 410 búsquedas entre TODOS los eventos): frenan un script, no a una persona
+ * que prueba cuatro selfies hasta que sale bien.
+ */
+const PER_IP = [
+  { limit: 20, windowMs: 10 * 60_000 },
+  { limit: 60, windowMs: 60 * 60_000 },
+];
+const PER_EVENT = [{ limit: 1_000, windowMs: 24 * 60 * 60_000 }];
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,6 +41,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const ip = clientIp(req.headers);
+    const perIp = hitRateLimit(`face-search:ip:${ip}`, PER_IP);
+    if (!perIp.ok) {
+      console.warn(`[face-search] rate limit ip=${ip} event=${eventId}`);
+      return NextResponse.json(
+        { error: "Demasiadas búsquedas seguidas. Probá de nuevo en un rato." },
+        { status: 429, headers: { "retry-after": String(perIp.retryAfterSec) } },
+      );
+    }
+
     const event = await db.event.findFirst({
       where: { id: eventId, isPublished: true },
       select: { id: true, ownerId: true },
@@ -31,18 +59,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
     }
 
+    // Techo por evento: si un solo evento se dispara, no se lleva puesta la
+    // factura del resto.
+    const perEvent = hitRateLimit(`face-search:event:${eventId}`, PER_EVENT);
+    if (!perEvent.ok) {
+      console.warn(`[face-search] tope diario del evento ${eventId}`);
+      return NextResponse.json(
+        { error: "La búsqueda por selfie no está disponible en este momento." },
+        { status: 429, headers: { "retry-after": String(perEvent.retryAfterSec) } },
+      );
+    }
+
+    if (!(await hasRecognitionQuota(event.ownerId, 1))) {
+      console.warn(`[face-search] cuota mensual agotada owner=${event.ownerId}`);
+      return NextResponse.json(
+        { error: "La búsqueda por selfie no está disponible en este momento." },
+        { status: 503 },
+      );
+    }
+
     const imageBytes = Buffer.from(imageBase64, "base64");
     const rekCollectionId = rekCollectionForEvent(eventId);
 
     let matchedPhotoIds: string[] = [];
     try {
-      const result = await rekognition.send(
-        new SearchFacesByImageCommand({
-          CollectionId: rekCollectionId,
-          Image: { Bytes: new Uint8Array(imageBytes) },
-          MaxFaces: 50,
-          FaceMatchThreshold: 80,
-        }),
+      const result = await billedCall(
+        "SearchFacesByImage",
+        { ownerId: event.ownerId, eventId },
+        "search",
+        () =>
+          rekognition.send(
+            new SearchFacesByImageCommand({
+              CollectionId: rekCollectionId,
+              Image: { Bytes: new Uint8Array(imageBytes) },
+              MaxFaces: 50,
+              FaceMatchThreshold: 80,
+            }),
+          ),
       );
 
       matchedPhotoIds = [
@@ -68,9 +121,8 @@ export async function POST(req: NextRequest) {
       throw err;
     }
 
-    // Track quota (the event owner pays for the search)
-    void bumpRecognitionUsage(event.ownerId, "search", 1).catch(() => undefined);
-
+    // El consumo ya lo contó billedCall, antes de la llamada: las búsquedas
+    // que fallan también se facturan y antes no quedaban registradas.
     const visitorId = req.cookies.get(VISITOR_COOKIE)?.value ?? null;
 
     if (matchedPhotoIds.length === 0) {

@@ -15,9 +15,27 @@ datasource db {
     directUrl = env("DIRECT_URL")
 }
 
-enum UserRole { PHOTOGRAPHER ADMIN }
-enum UserStatus { ACTIVE SUSPENDED DELETED }
-enum EventStatus { DRAFT ACTIVE PROCESSING FINISHED ARCHIVED }
+// Un valor por línea: Prisma no acepta enums en una sola línea y con esto
+// `prisma generate` fallaba, así que la Lambda no se podía compilar desde el
+// repo (`npm run build` arranca justamente por ahí).
+enum UserRole {
+    PHOTOGRAPHER
+    ADMIN
+}
+
+enum UserStatus {
+    ACTIVE
+    SUSPENDED
+    DELETED
+}
+
+enum EventStatus {
+    DRAFT
+    ACTIVE
+    PROCESSING
+    FINISHED
+    ARCHIVED
+}
 
 model User {
     id   String     @id @default(cuid())
@@ -80,7 +98,10 @@ model RecognitionUsage {
     user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
     year          Int
     month         Int
+    // Espejo de cuervito/prisma/schema.prisma. indexedFaces son CARAS
+    // encontradas; indexRequests son LLAMADAS, que es lo que factura AWS.
     indexedFaces  Int      @default(0)
+    indexRequests Int      @default(0)
     searchedFaces Int      @default(0)
     ocrCalls      Int      @default(0)
     updatedAt     DateTime @updatedAt

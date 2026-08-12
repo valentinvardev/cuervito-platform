@@ -12,9 +12,50 @@ import sharp from "sharp";
 
 import { env } from "~/env";
 import { db } from "~/server/db";
+import { hasRecognitionQuota, incrementRecognitionUsage } from "~/server/quotas";
 import { getS3ObjectBytes } from "~/server/s3";
 
 const REKOGNITION_MAX_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Envoltorio de toda llamada facturable a Rekognition.
+ *
+ * Hace tres cosas que antes no hacía nadie:
+ *
+ *  1. Cuenta la llamada ANTES de hacerla. Si la imagen se procesó, se pagó,
+ *     aunque después falle la respuesta o no encuentre ninguna cara. Los
+ *     contadores viejos sólo sumaban cuando había resultado, así que
+ *     subestimaban la factura justo en los casos raros.
+ *  2. Deja una línea de log estructurada por llamada, con la plataforma
+ *     adelante. La cuenta de AWS es compartida y CloudTrail no puede atribuir
+ *     DetectText (sus requestParameters son `{"image":{}}`), así que este log
+ *     es el único lugar donde queda registrado qué foto generó qué llamada.
+ *  3. Mide cuánto tardó, para poder cruzar contra los timeouts de la Lambda.
+ */
+async function billedCall<T>(
+  op: "DetectText" | "IndexFaces" | "SearchFacesByImage",
+  meta: { ownerId: string; photoId?: string; eventId?: string },
+  kind: "ocr" | "indexRequest" | "search",
+  run: () => Promise<T>,
+): Promise<T> {
+  const tag = `[rek] platform=cuervito op=${op} owner=${meta.ownerId}${
+    meta.photoId ? ` photo=${meta.photoId}` : ""
+  }${meta.eventId ? ` event=${meta.eventId}` : ""}`;
+
+  await incrementRecognitionUsage(meta.ownerId, kind, 1).catch(() => undefined);
+  console.log(`${tag} state=start`);
+
+  const started = Date.now();
+  try {
+    const out = await run();
+    console.log(`${tag} state=ok ms=${Date.now() - started}`);
+    return out;
+  } catch (err) {
+    const name = (err as { name?: string }).name ?? "Error";
+    console.log(`${tag} state=error err=${name} ms=${Date.now() - started}`);
+    throw err;
+  }
+}
 
 export const rekognition = new RekognitionClient({
   region: env.AWS_REGION,
@@ -139,18 +180,67 @@ export async function runOcr(
 ): Promise<{ bibs: string | null }> {
   const photo = await db.photo.findUnique({
     where: { id: photoId },
-    select: { id: true, storageKey: true, bibNumbers: true, ownerId: true },
+    select: {
+      id: true,
+      storageKey: true,
+      bibNumbers: true,
+      ocrProcessedAt: true,
+      ownerId: true,
+    },
   });
   if (!photo) return { bibs: null };
-  if (photo.bibNumbers !== null) return { bibs: photo.bibNumbers };
+
+  // El corte va contra `ocrProcessedAt`, no contra `bibNumbers`. Antes miraba
+  // los dorsales, y cuando el OCR no encontraba ninguno esa columna quedaba en
+  // null: el guard no cortaba nunca y esas fotos se volvían a procesar (y a
+  // pagar) en cada reintento. Eran ~6.000 fotos, el 27% de las llamadas.
+  if (photo.ocrProcessedAt) return { bibs: photo.bibNumbers };
+
+  if (!(await hasRecognitionQuota(photo.ownerId, 1))) {
+    console.warn(`[OCR] cuota mensual agotada owner=${photo.ownerId} photo=${photoId}`);
+    return { bibs: null };
+  }
+
+  // Reserva atómica. El endpoint de commit y la Lambda de S3 corren sobre la
+  // misma foto casi al mismo tiempo: sin esto los dos leen null y los dos
+  // pagan. Sólo el UPDATE que encuentra la fila todavía en null se queda con
+  // el trabajo.
+  const claimedAt = new Date();
+  const claim = await db.photo.updateMany({
+    where: { id: photoId, ocrProcessedAt: null },
+    data: { ocrProcessedAt: claimedAt },
+  });
+  if (claim.count === 0) {
+    const fresh = await db.photo.findUnique({
+      where: { id: photoId },
+      select: { bibNumbers: true },
+    });
+    return { bibs: fresh?.bibNumbers ?? null };
+  }
+
+  // Devuelve la foto a la cola si no llegamos a procesarla. El `where` incluye
+  // la marca propia para no pisar una reserva ajena.
+  const release = () =>
+    db.photo
+      .updateMany({
+        where: { id: photoId, ocrProcessedAt: claimedAt },
+        data: { ocrProcessedAt: null },
+      })
+      .catch(() => undefined);
 
   const imageBytes =
     preparedBytes ?? (await loadForRekognition(photo.storageKey));
-  if (!imageBytes) return { bibs: null };
+  if (!imageBytes) {
+    await release();
+    return { bibs: null };
+  }
 
   try {
-    const response = await rekognition.send(
-      new DetectTextCommand({ Image: { Bytes: imageBytes } }),
+    const response = await billedCall(
+      "DetectText",
+      { ownerId: photo.ownerId, photoId },
+      "ocr",
+      () => rekognition.send(new DetectTextCommand({ Image: { Bytes: imageBytes } })),
     );
     const bibs = extractAllBibs(response.TextDetections ?? []);
 
@@ -159,15 +249,13 @@ export async function runOcr(
     const bibString = bibs.length > 0 ? bibs.join(",") : null;
     await db.photo.update({
       where: { id: photoId },
-      data: { bibNumbers: bibString, ocrProcessedAt: new Date() },
+      data: { bibNumbers: bibString },
     });
-
-    // Track quota usage
-    await bumpRecognitionUsage(photo.ownerId, "ocr", 1).catch(() => undefined);
 
     return { bibs: bibString };
   } catch (err) {
     console.error(`[OCR] Rekognition error for photoId=${photoId}:`, err);
+    await release();
     return { bibs: null };
   }
 }
@@ -191,23 +279,56 @@ export async function runFaceIndex(
   // invocations re-index the photo and charge for IndexFaces again.
   if (photo.faceProcessedAt) return;
 
+  if (!(await hasRecognitionQuota(photo.ownerId, 1))) {
+    console.warn(`[FaceIndex] cuota mensual agotada owner=${photo.ownerId} photo=${photoId}`);
+    return;
+  }
+
+  // Misma reserva atómica que en runOcr: el guard de arriba resuelve el caso
+  // secuencial, esto resuelve la carrera con la Lambda. Indexar dos veces la
+  // misma imagen no sólo se paga dos veces — AWS devuelve FaceIds distintos y
+  // las caras duplicadas quedan guardadas para siempre.
+  const claimedAt = new Date();
+  const claim = await db.photo.updateMany({
+    where: { id: photoId, faceProcessedAt: null },
+    data: { faceProcessedAt: claimedAt },
+  });
+  if (claim.count === 0) return;
+
+  const release = () =>
+    db.photo
+      .updateMany({
+        where: { id: photoId, faceProcessedAt: claimedAt },
+        data: { faceProcessedAt: null },
+      })
+      .catch(() => undefined);
+
   const imageBytes =
     preparedBytes ?? (await loadForRekognition(photo.storageKey));
-  if (!imageBytes) return;
+  if (!imageBytes) {
+    await release();
+    return;
+  }
 
   const rekCollectionId = rekCollectionForEvent(eventId);
 
   try {
     await ensureCollection(rekCollectionId);
 
-    const result = await rekognition.send(
-      new IndexFacesCommand({
-        CollectionId: rekCollectionId,
-        Image: { Bytes: imageBytes },
-        ExternalImageId: photoId,
-        DetectionAttributes: [],
-        MaxFaces: 10,
-      }),
+    const result = await billedCall(
+      "IndexFaces",
+      { ownerId: photo.ownerId, photoId, eventId },
+      "indexRequest",
+      () =>
+        rekognition.send(
+          new IndexFacesCommand({
+            CollectionId: rekCollectionId,
+            Image: { Bytes: imageBytes },
+            ExternalImageId: photoId,
+            DetectionAttributes: [],
+            MaxFaces: 10,
+          }),
+        ),
     );
 
     const indexed = result.FaceRecords ?? [];
@@ -247,11 +368,9 @@ export async function runFaceIndex(
       });
     }
 
-    await db.photo.update({
-      where: { id: photoId },
-      data: { faceProcessedAt: new Date() },
-    });
-
+    // `faceProcessedAt` ya quedó puesto por la reserva de arriba; acá sólo se
+    // registra cuántas caras salieron, que es un resultado y no una unidad
+    // facturable (la llamada la contó billedCall).
     if (indexed.length > 0) {
       await bumpRecognitionUsage(photo.ownerId, "index", indexed.length).catch(
         () => undefined,
@@ -259,6 +378,7 @@ export async function runFaceIndex(
     }
   } catch (err) {
     console.error(`[FaceIndex] Rekognition error for photoId=${photoId}:`, err);
+    await release();
   }
 }
 
@@ -266,31 +386,18 @@ export async function runFaceIndex(
  * Usage tracking
  * ===========================================================================*/
 
+/**
+ * Se mantiene el nombre porque lo importa la ruta de face-search, pero la
+ * implementación es una sola y vive en quotas.ts. Antes había dos copias del
+ * mismo upsert y no coincidían: ésta usaba UTC y la de quotas.ts hora local,
+ * así que cerca del cambio de mes escribían en filas distintas.
+ */
 async function bumpRecognitionUsage(
   userId: string,
-  kind: "ocr" | "index" | "search",
+  kind: "ocr" | "index" | "indexRequest" | "search",
   amount: number,
 ): Promise<void> {
-  const now = new Date();
-  const year = now.getUTCFullYear();
-  const month = now.getUTCMonth() + 1;
-  await db.recognitionUsage.upsert({
-    where: { userId_year_month: { userId, year, month } },
-    create: {
-      userId,
-      year,
-      month,
-      ocrCalls: kind === "ocr" ? amount : 0,
-      indexedFaces: kind === "index" ? amount : 0,
-      searchedFaces: kind === "search" ? amount : 0,
-    },
-    update:
-      kind === "ocr"
-        ? { ocrCalls: { increment: amount } }
-        : kind === "index"
-          ? { indexedFaces: { increment: amount } }
-          : { searchedFaces: { increment: amount } },
-  });
+  await incrementRecognitionUsage(userId, kind, amount);
 }
 
-export { bumpRecognitionUsage };
+export { billedCall, bumpRecognitionUsage };

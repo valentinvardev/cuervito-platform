@@ -348,9 +348,17 @@ model RecognitionUsage {
     user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
     year      Int
     month     Int      // 1–12
-    indexedFaces  Int @default(0) // IndexFaces ops
-    searchedFaces Int @default(0) // SearchFacesByImage ops
-    ocrCalls      Int @default(0) // DetectText ops
+    // OJO con la semántica, que no es uniforme y AWS factura por imagen:
+    //   indexedFaces  = CARAS encontradas (resultado, no unidad facturable)
+    //   indexRequests = LLAMADAS a IndexFaces (esto es lo que cobra AWS)
+    //   searchedFaces = llamadas a SearchFacesByImage
+    //   ocrCalls      = llamadas a DetectText
+    // Las tres de llamadas se incrementan ANTES de pegarle a Rekognition, así
+    // que también cuentan las que fallan: si la imagen se procesó, se pagó.
+    indexedFaces  Int @default(0)
+    indexRequests Int @default(0)
+    searchedFaces Int @default(0)
+    ocrCalls      Int @default(0)
     updatedAt DateTime @updatedAt
 
     @@unique([userId, year, month])

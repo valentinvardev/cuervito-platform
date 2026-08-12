@@ -76,6 +76,12 @@ export const env = createEnv({
     QUOTA_STORAGE_BYTES_DEFAULT: z.coerce.number().default(107374182400), // 100 GB
     QUOTA_MAX_PHOTO_BYTES: z.coerce.number().default(31457280), // 30 MB
     QUOTA_RECOGNITION_MONTHLY_DEFAULT: z.coerce.number().default(10000),
+    // Cortacircuitos de gasto en Rekognition, por fotógrafo y por mes. NO es
+    // la cuota de arriba: esa se muestra en el panel y el fotógrafo principal
+    // la pasa todos los meses. Este tope sólo existe para que un bucle no se
+    // lleve puesta la factura, así que arranca en ~5× el pico real (agosto
+    // proyectaba 29.500 llamadas). A USD 0,001 por llamada, son USD 50/mes.
+    RECOGNITION_HARD_CAP_MONTHLY: z.coerce.number().default(50000),
 
     // Commission
     PLATFORM_FEE_PERCENT: z.coerce.number().min(0).max(50).default(10),
@@ -134,6 +140,7 @@ export const env = createEnv({
     QUOTA_STORAGE_BYTES_DEFAULT: process.env.QUOTA_STORAGE_BYTES_DEFAULT,
     QUOTA_MAX_PHOTO_BYTES: process.env.QUOTA_MAX_PHOTO_BYTES,
     QUOTA_RECOGNITION_MONTHLY_DEFAULT: process.env.QUOTA_RECOGNITION_MONTHLY_DEFAULT,
+    RECOGNITION_HARD_CAP_MONTHLY: process.env.RECOGNITION_HARD_CAP_MONTHLY,
 
     PLATFORM_FEE_PERCENT: process.env.PLATFORM_FEE_PERCENT,
 

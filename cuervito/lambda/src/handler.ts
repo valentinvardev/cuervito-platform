@@ -70,12 +70,46 @@ function rekCollectionForEvent(eventId: string): string {
   return `cuervito-event-${eventId.replace(/[^a-zA-Z0-9_.\-]/g, "-")}`;
 }
 
+// Los contenedores de Lambda se reusan entre invocaciones, así que este Set
+// evita repetir CreateCollection en cada foto del mismo evento. No cambia la
+// factura —CreateCollection no se cobra por imagen— pero saca una llamada de
+// red del camino y evita chocar contra el rate limit de la API.
+const ensuredCollections = new Set<string>();
+
 async function ensureCollection(id: string): Promise<void> {
+  if (ensuredCollections.has(id)) return;
   try {
     await rekognition.send(new CreateCollectionCommand({ CollectionId: id }));
   } catch (err: unknown) {
     if ((err as { name?: string }).name !== "ResourceAlreadyExistsException") throw err;
   }
+  ensuredCollections.add(id);
+}
+
+/**
+ * Cortacircuitos de gasto, en espejo con `hasRecognitionQuota` del server.
+ * Si un fotógrafo pasó el tope del mes, la Lambda deja de procesar: la foto
+ * igual queda subida y vendible, sólo se pierde el dorsal y las caras.
+ */
+const HARD_CAP = Number(process.env.RECOGNITION_HARD_CAP_MONTHLY ?? 50000);
+
+async function withinHardCap(userId: string): Promise<boolean> {
+  const now = new Date();
+  const usage = await prisma.recognitionUsage.findUnique({
+    where: {
+      userId_year_month: {
+        userId,
+        year: now.getUTCFullYear(),
+        month: now.getUTCMonth() + 1,
+      },
+    },
+    select: { indexRequests: true, searchedFaces: true, ocrCalls: true },
+  });
+  const used =
+    (usage?.indexRequests ?? 0) +
+    (usage?.searchedFaces ?? 0) +
+    (usage?.ocrCalls ?? 0);
+  return used + 1 <= HARD_CAP;
 }
 
 async function downloadFromS3(bucket: string, key: string): Promise<Uint8Array> {
@@ -131,26 +165,24 @@ function extractBibs(detections: TextDetection[]): string | null {
 
 async function bumpRecognitionUsage(
   userId: string,
-  kind: "ocr" | "index",
+  kind: "ocr" | "index" | "indexRequest",
   amount = 1,
 ): Promise<void> {
   const now = new Date();
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth() + 1;
+  // indexedFaces son CARAS encontradas; indexRequests son LLAMADAS, que es lo
+  // que factura AWS. Ver el comentario del modelo en schema.prisma.
+  const column =
+    kind === "ocr"
+      ? "ocrCalls"
+      : kind === "index"
+        ? "indexedFaces"
+        : "indexRequests";
   await prisma.recognitionUsage.upsert({
     where: { userId_year_month: { userId, year, month } },
-    create: {
-      userId,
-      year,
-      month,
-      ocrCalls: kind === "ocr" ? amount : 0,
-      indexedFaces: kind === "index" ? amount : 0,
-      searchedFaces: 0,
-    },
-    update:
-      kind === "ocr"
-        ? { ocrCalls: { increment: amount } }
-        : { indexedFaces: { increment: amount } },
+    create: { userId, year, month, [column]: amount },
+    update: { [column]: { increment: amount } },
   });
 }
 
@@ -188,31 +220,83 @@ async function processRecord(bucket: string, key: string, sizeFromEvent: number)
       .catch(() => undefined);
   }
 
+  if (photo.ocrProcessedAt && photo.faceProcessedAt) {
+    console.log(`[lambda] ya procesada, no se baja de S3: ${photo.id}`);
+    return;
+  }
+
+  if (!(await withinHardCap(photo.ownerId))) {
+    console.warn(`[lambda] tope mensual alcanzado owner=${photo.ownerId} photo=${photo.id}`);
+    return;
+  }
+
   const bytes = await downloadFromS3(bucket, key);
 
   // ── OCR ────────────────────────────────────────────────────────────────
-  if (!photo.ocrProcessedAt) {
+  // La reserva es un UPDATE condicional, no un if: el endpoint de commit del
+  // server corre sobre esta misma foto casi al mismo tiempo, y si los dos leen
+  // `ocrProcessedAt` en null los dos pagan el DetectText. Sólo el que logra
+  // pasar la columna de null a una fecha se queda con el trabajo.
+  const ocrClaimedAt = new Date();
+  const ocrClaim = await prisma.photo.updateMany({
+    where: { id: photo.id, ocrProcessedAt: null },
+    data: { ocrProcessedAt: ocrClaimedAt },
+  });
+  if (ocrClaim.count > 0) {
     try {
+      // Se cuenta antes de llamar: si la imagen se procesó, se pagó, aunque
+      // después falle la respuesta.
+      await bumpRecognitionUsage(photo.ownerId, "ocr", 1);
+      console.log(
+        `[rek] platform=cuervito-lambda op=DetectText owner=${photo.ownerId} photo=${photo.id} state=start`,
+      );
       const ocr = await rekognition.send(
         new DetectTextCommand({ Image: { Bytes: bytes } }),
       );
       const bibs = extractBibs(ocr.TextDetections ?? []);
       await prisma.photo.update({
         where: { id: photo.id },
-        data: { bibNumbers: bibs, ocrProcessedAt: new Date() },
+        data: { bibNumbers: bibs },
       });
-      await bumpRecognitionUsage(photo.ownerId, "ocr", 1);
       console.log(`[lambda] OCR photoId=${photo.id} bibs=${bibs ?? "none"}`);
     } catch (err) {
       console.error(`[lambda] OCR failed for ${photo.id}:`, err);
+      // Se libera para que el reintento la vuelva a tomar.
+      await prisma.photo
+        .updateMany({
+          where: { id: photo.id, ocrProcessedAt: ocrClaimedAt },
+          data: { ocrProcessedAt: null },
+        })
+        .catch(() => undefined);
     }
   }
 
   // ── Face index ─────────────────────────────────────────────────────────
-  if (!photo.faceProcessedAt) {
+  // Misma reserva atómica. Acá importa todavía más: indexar dos veces la misma
+  // imagen devuelve FaceIds distintos, así que además de pagar dos veces
+  // quedan caras duplicadas guardadas para siempre.
+  const faceClaimedAt = new Date();
+  const faceClaim = await prisma.photo.updateMany({
+    where: { id: photo.id, faceProcessedAt: null },
+    data: { faceProcessedAt: faceClaimedAt },
+  });
+  const releaseFace = () =>
+    prisma.photo
+      .updateMany({
+        where: { id: photo.id, faceProcessedAt: faceClaimedAt },
+        data: { faceProcessedAt: null },
+      })
+      .catch(() => undefined);
+
+  if (faceClaim.count > 0) {
     const collectionId = rekCollectionForEvent(photo.eventId);
     try {
       await ensureCollection(collectionId);
+
+      await bumpRecognitionUsage(photo.ownerId, "indexRequest", 1);
+      console.log(
+        `[rek] platform=cuervito-lambda op=IndexFaces owner=${photo.ownerId} photo=${photo.id} state=start`,
+      );
 
       const result = await rekognition.send(
         new IndexFacesCommand({
@@ -260,17 +344,15 @@ async function processRecord(bucket: string, key: string, sizeFromEvent: number)
         });
       }
 
-      await prisma.photo.update({
-        where: { id: photo.id },
-        data: { faceProcessedAt: new Date() },
-      });
-
+      // `faceProcessedAt` ya lo dejó puesto la reserva; acá sólo se registra
+      // cuántas caras salieron, que es resultado y no unidad facturable.
       if (faceRecords.length > 0) {
         await bumpRecognitionUsage(photo.ownerId, "index", faceRecords.length);
       }
       console.log(`[lambda] FaceIndex photoId=${photo.id} faces=${faceRecords.length}`);
     } catch (err) {
       console.error(`[lambda] FaceIndex failed for ${photo.id}:`, err);
+      await releaseFace();
     }
   }
 }
