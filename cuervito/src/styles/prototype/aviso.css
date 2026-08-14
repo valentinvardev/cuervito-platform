@@ -1,0 +1,131 @@
+/* =============================================================================
+   Aviso general — barra descartable
+   -----------------------------------------------------------------------------
+   Se usa igual en la landing y en el panel, así que todo sale de tokens
+   semánticos: no hay un solo color literal y el tema claro no necesita
+   overrides.
+
+   Va con acento tenue y no con --warning: no es una alerta, no hay nada roto
+   ni nada que el usuario tenga que hacer. Un aviso que grita como un error
+   entrena a la gente a cerrar sin leer.
+   ========================================================================== */
+
+.aviso {
+  border-bottom: 1px solid var(--border-accent);
+  background: var(--accent-deep);
+  animation: aviso-bajar 420ms cubic-bezier(.2, .8, .3, 1);
+}
+@keyframes aviso-bajar {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.aviso-in {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 13px 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  font-family: var(--font-ui);
+}
+
+.aviso-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+.aviso-icon svg { width: 17px; height: 17px; }
+
+.aviso-txt { flex: 1; min-width: 0; }
+
+.aviso-head {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.aviso-head b { color: var(--text-primary); font-weight: 600; }
+
+/* El desplegable. 0fr → 1fr anima la altura sin medir nada con JS y sirve
+   para cualquier largo de texto. El hijo necesita overflow:hidden, si no el
+   contenido se desborda de la celda mientras se cierra. */
+.aviso-mas {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 340ms cubic-bezier(.2, .8, .3, 1);
+}
+.aviso-mas[data-abierto="1"] { grid-template-rows: 1fr; }
+.aviso-mas-in {
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.aviso-mas[data-abierto="1"] .aviso-mas-in {
+  opacity: 1;
+  transition: opacity 260ms ease 120ms;   /* entra después de que abrió el alto */
+}
+.aviso-mas-in p {
+  margin: 11px 0 0;
+  font-size: 13.5px;
+  line-height: 1.62;
+  color: var(--text-secondary);
+  max-width: 68ch;
+}
+.aviso-mas-in p:first-child { color: var(--text-primary); }
+
+.aviso-toggle {
+  margin-top: 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  transition: color 140ms ease;
+}
+.aviso-toggle:hover { color: var(--accent-bright); }
+.aviso-toggle svg {
+  width: 14px; height: 14px;
+  transition: transform 300ms cubic-bezier(.2, .8, .3, 1);
+}
+.aviso-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+.aviso-x {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 30px; height: 30px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  transition: color 140ms ease, background 140ms ease;
+}
+.aviso-x:hover {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+.aviso-x svg { width: 16px; height: 16px; }
+
+@media (max-width: 720px) {
+  .aviso-in { padding: 12px 16px; gap: 10px; }
+  .aviso-icon { display: none; }   /* el ancho vale más que el ícono */
+  .aviso-head { font-size: 13.5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aviso { animation: none; }
+  .aviso-mas, .aviso-mas-in, .aviso-toggle svg { transition: none; }
+}

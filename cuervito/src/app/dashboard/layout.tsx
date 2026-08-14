@@ -3,7 +3,9 @@ import "~/styles/prototype/panel-anim.css";
 import "~/styles/prototype/admin-nav.css";
 import "~/styles/prototype/dashboard.css";
 import "~/styles/prototype/metrics.css";
+import "~/styles/prototype/aviso.css";
 
+import { AvisoRebrand } from "~/app/_components/aviso-rebrand";
 import { TooltipProvider } from "~/app/_components/tooltip-provider";
 
 import { AdminTop } from "./_components/admin-top";
@@ -22,6 +24,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css"
       />
 
+      <AvisoRebrand />
       <AdminTop />
       {children}
       <TooltipProvider />

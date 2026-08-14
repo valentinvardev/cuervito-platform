@@ -1,6 +1,7 @@
 import "~/styles/prototype/styles.css";
 import "~/styles/prototype/panel-anim.css";
 import "~/styles/prototype/landing.css";
+import "~/styles/prototype/aviso.css";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -11,6 +12,7 @@ import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 
 import { AthleteSearchBar } from "./_components/athlete-search-bar";
+import { AvisoRebrand } from "./_components/aviso-rebrand";
 import { DemoEventCta } from "./_components/demo-event-cta";
 import { ExternalStylesheets } from "./_components/external-stylesheets";
 import { LandingFaq } from "./_components/landing-faq";
@@ -53,6 +55,8 @@ export default async function Home() {
     <div className="lp">
       <RevealOnScroll />
       <ExternalStylesheets />
+
+      <AvisoRebrand />
 
       {/* CARRIL DEL ATLETA — arriba de todo, sin scroll */}
       <AthleteSearchBar />
