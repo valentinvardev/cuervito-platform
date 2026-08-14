@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · laboratorio de landing</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css?v=1786665660">
+<link rel="stylesheet" href="../base.css?v=1786665660">
+<link rel="stylesheet" href="landing.css?v=1786665660">
+
+<script>
+  /* Se resuelve el tema ANTES de pintar: si se corriera al final del body,
+     la página aparecería en claro y saltaría a oscuro a la vista. Prioridad:
+     lo que el usuario eligió manda sobre la hora, siempre. */
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/lucide.min.js?v=1786665660" defer></script>
+</head>
+
+<body>
+
+<!-- ═══════════════════════════ NAV ═══════════════════════════ -->
+<nav class="nav">
+  <div class="wrap nav-in">
+    <a href="./" class="mark">encontrate<i></i>app</a>
+    <div class="nav-links">
+      <a href="#como">Cómo funciona</a>
+      <a href="#precio">Precio</a>
+      <a href="#preguntas">Preguntas</a>
+    </div>
+    <div class="nav-cta">
+      <button class="btn btn-ghost btn-icon js-tema solo-ancho" aria-label="Cambiar tema">
+        <span class="ico ico-moon"><i data-lucide="moon"></i></span>
+        <span class="ico ico-sun"><i data-lucide="sun"></i></span>
+      </button>
+      <a href="../login/" class="btn btn-ghost solo-ancho"><i data-lucide="log-in"></i> Iniciar sesión</a>
+      <a href="#" class="btn btn-pri">Empezar <i data-lucide="arrow-right" class="go"></i></a>
+      <button class="btn btn-ghost btn-icon burger" id="burger"
+              aria-label="Abrir menú" aria-expanded="false" aria-controls="menu">
+        <span class="ico ico-menu"><i data-lucide="menu"></i></span>
+        <span class="ico ico-close"><i data-lucide="x"></i></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Cajón lateral de mobile. El velo va aparte del cajón para poder
+     desenfocar el fondo sin desenfocar también el contenido del menú. -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="menu" aria-label="Menú">
+  <nav class="drawer-links">
+    <a href="#como">Cómo funciona <i data-lucide="arrow-right"></i></a>
+    <a href="#precio">Precio <i data-lucide="arrow-right"></i></a>
+    <a href="#preguntas">Preguntas <i data-lucide="arrow-right"></i></a>
+    <a href="#demo">Ver un evento real <i data-lucide="arrow-right"></i></a>
+  </nav>
+  <div class="drawer-foot">
+    <a href="../login/" class="btn btn-ghost"><i data-lucide="log-in"></i> Iniciar sesión</a>
+    <button class="btn btn-ghost btn-icon js-tema" aria-label="Cambiar tema">
+      <span class="ico ico-moon"><i data-lucide="moon"></i></span>
+      <span class="ico ico-sun"><i data-lucide="sun"></i></span>
+    </button>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+<header class="hero">
+  <div class="wrap hero-grid">
+
+    <div>
+      <span class="label eyebrow">Para fotógrafos de eventos deportivos</span>
+      <h1>Vendé las fotos<br>del partido.<br><em>Cobrás en tu<br>Mercado Pago.</em></h1>
+      <p class="lede">
+        Subís las fotos y listo: reconocemos cara y número, armamos tu página de
+        venta con tu marca, y cada compra entra directo a tu cuenta, menos el 10%.
+        Nosotros nunca tocamos tu plata.
+      </p>
+      <div class="hero-cta">
+        <a href="#" class="btn btn-pri">Crear mi cuenta gratis <i data-lucide="arrow-right" class="go"></i></a>
+        <a href="#demo" class="btn btn-ghost"><i data-lucide="eye"></i> Ver un evento real</a>
+      </div>
+      <div class="trust">
+        <span>Sin cuota mensual</span>
+        <span>Sin tarjeta</span>
+        <span><b>10%</b> sólo si vendés</span>
+        <span>Soporte <b>24 hs</b></span>
+      </div>
+    </div>
+
+    <!-- Hoja de contactos siendo reconocida. Muestra el producto, no una
+         metáfora: entran las fotos, pasa el escaneo, aparecen los dorsales,
+         una cara queda enganchada, y cae la venta.
+         PENDIENTE: las baldosas son marcadores; van fotos reales del Duatlón. -->
+    <div class="scene" aria-hidden="true">
+      <div class="rig par par-slow">
+
+        <div class="sheet">
+          <div class="tile t1"><span class="bib d1">4218</span></div>
+          <div class="tile t2"></div>
+          <div class="tile t3"><span class="bib d1">1842</span></div>
+          <div class="tile t4"><span class="bib d2">892</span></div>
+          <div class="tile t5">
+            <span class="face"><i></i><i></i><i></i><i></i></span>
+          </div>
+          <div class="tile t6"><span class="bib d2">3201</span></div>
+          <div class="tile t7"><span class="bib d3">764</span></div>
+          <div class="tile t8"></div>
+          <div class="tile t9"><span class="bib d3">1155</span></div>
+
+          <div class="scan"></div>
+        </div>
+
+        <div class="sheet-foot">
+          <span class="label">Indexando</span>
+          <span class="prog"><i></i></span>
+          <span class="label pct">2.162</span>
+        </div>
+
+        <div class="frag sale par par-fast" style="--dy:26px">
+          <span class="label">Venta acreditada</span>
+          <div class="frag-amount">$9.600<small> ARS</small></div>
+          <div class="label">En tu Mercado Pago</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════ TIRA DE PRUEBA ═══════════════════ -->
+<section class="strip">
+  <div class="strip-track">
+    <!-- PENDIENTE: portadas reales de eventos publicados -->
+    <div class="strip-tile"><span>DUATLÓN CHIVILCOY</span></div>
+    <div class="strip-tile"><span>COLÓN VS GIMNASIA</span></div>
+    <div class="strip-tile"><span>HOCKEY RACING</span></div>
+    <div class="strip-tile"><span>HURACÁN VS ALSINA</span></div>
+    <div class="strip-tile"><span>MARATÓN CICLÓN</span></div>
+    <div class="strip-tile"><span>21K JUNÍN</span></div>
+    <div class="strip-tile"><span>DUATLÓN CHIVILCOY</span></div>
+    <div class="strip-tile"><span>COLÓN VS GIMNASIA</span></div>
+    <div class="strip-tile"><span>HOCKEY RACING</span></div>
+    <div class="strip-tile"><span>HURACÁN VS ALSINA</span></div>
+    <div class="strip-tile"><span>MARATÓN CICLÓN</span></div>
+    <div class="strip-tile"><span>21K JUNÍN</span></div>
+  </div>
+  <p class="strip-cap label">21 eventos publicados · 16.337 fotos</p>
+</section>
+
+<!-- ═══════════════════ CÓMO FUNCIONA ═══════════════════ -->
+<section class="pad" id="como">
+  <div class="wrap">
+    <span class="label eyebrow">Cómo funciona</span>
+    <h2>De la tarjeta de memoria<br>a tu cuenta.</h2>
+    <p class="lede" style="margin-top:var(--s-5)">
+      Vos cubrís el evento. Indexar, publicar, cobrar y entregar lo hace la plataforma.
+    </p>
+
+    <div class="steps">
+      <article class="step">
+        <span class="step-n">01</span>
+        <h3>Subís las fotos</h3>
+        <p>Arrastrás la carpeta entera. La marca de agua va sólo en las previews:
+           el original queda intacto para el que compra.</p>
+        <i data-lucide="cloud-upload" class="step-i"></i>
+      </article>
+      <article class="step">
+        <span class="step-n">02</span>
+        <h3>Indexamos y publicamos</h3>
+        <p>Reconocimiento de cara y de número en cada foto, y tu galería online
+           con tu plantilla, tu color y tu dominio.</p>
+        <i data-lucide="scan-search" class="step-i"></i>
+      </article>
+      <article class="step">
+        <span class="step-n">03</span>
+        <h3>El atleta compra</h3>
+        <p>Se encuentra en segundos y paga sin crear cuenta. La plata entra a tu
+           Mercado Pago en el momento, con el 10% ya descontado.</p>
+        <i data-lucide="shopping-bag" class="step-i"></i>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ TRES RAZONES ═══════════════════ -->
+<section class="pad rule">
+  <div class="wrap reasons">
+    <div>
+      <span class="label eyebrow">Por qué encontrate</span>
+      <h2>Tus fotos,<br>tu página,<br>tu plata.</h2>
+      <ul class="rlist">
+        <li>
+          <i data-lucide="banknote" class="r-i"></i>
+          <div><strong>Cobrás vos, no nosotros.</strong>
+          <p>La compra entra a tu cuenta de Mercado Pago en el momento, con el
+             10% ya descontado. Sin retiros, sin mínimos y sin esperar treinta días.</p>
+          </div>
+        </li>
+        <li>
+          <i data-lucide="globe" class="r-i"></i>
+          <div><strong>Tu marca, tu dominio.</strong>
+          <p>Cuatro plantillas editables, tu color, tu logo y tu dominio propio.
+             El atleta te compra a vos, no a una galería con el logo de otro arriba.</p>
+          </div>
+        </li>
+        <li>
+          <i data-lucide="zap" class="r-i"></i>
+          <div><strong>Se encuentra en 30 segundos.</strong>
+          <p>Busca por número o sube una selfie, compra sin crear cuenta y
+             descarga al acreditarse el pago. Menos fricción, más fotos vendidas.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <aside class="panel">
+      <header class="panel-head">
+        <div>
+          <span class="label">Ventas</span>
+          <div class="panel-when">Hoy · 12 ago</div>
+        </div>
+        <span class="tag">Ejemplo</span>
+      </header>
+
+      <div class="panel-figure">
+        <div class="panel-amount"><span class="cur">$</span>48.200</div>
+        <div class="panel-cmp">
+          <span class="delta up"><i data-lucide="trending-up"></i>18%</span>
+          <span>ayer $40.800</span>
+        </div>
+      </div>
+
+      <!-- Sparkline de 7 días. Segmentos rectos, no curva suavizada: la curva
+           inventa valores entre puntos y esto es un dato, no una decoración.
+           El último punto va marcado porque es el que dice el número de arriba. -->
+      <figure class="spark">
+        <svg viewBox="0 0 280 64" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+              <stop class="s0" offset="0%"/>
+              <stop class="s1" offset="100%"/>
+            </linearGradient>
+          </defs>
+          <path class="area" d="M8 49.8L52 40.2L96 54L140 32.3L184 43.4L228 21L272 10L272 64L8 64Z"/>
+          <path class="line" d="M8 49.8L52 40.2L96 54L140 32.3L184 43.4L228 21L272 10"/>
+        </svg>
+        <span class="spark-dot"></span>
+        <figcaption>
+          <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
+        </figcaption>
+      </figure>
+
+      <div class="panel-sec"><span class="label">Últimas ventas</span></div>
+
+      <div class="tx">
+        <span class="tx-thumb"></span>
+        <div class="info">
+          <div class="t">Duatlón Chivilcoy</div>
+          <div class="s">Dorsal 4218 · 4 fotos · ahora</div>
+        </div>
+        <div class="a">+$9.600</div>
+      </div>
+      <div class="tx">
+        <span class="tx-thumb"></span>
+        <div class="info">
+          <div class="t">Colón vs Gimnasia</div>
+          <div class="s">Dorsal 1842 · pack · hace 2 min</div>
+        </div>
+        <div class="a">+$12.600</div>
+      </div>
+      <div class="tx">
+        <span class="tx-thumb"></span>
+        <div class="info">
+          <div class="t">Hockey Racing</div>
+          <div class="s">Dorsal 892 · 3 fotos · hace 14 min</div>
+        </div>
+        <div class="a">+$7.200</div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ═══════════════════ DEMO ═══════════════════ -->
+<section class="pad rule" id="demo">
+  <div class="wrap demo-card">
+    <div>
+      <span class="label eyebrow">Probalo vos</span>
+      <h2>Mirá exactamente<br>lo que ve tu cliente.</h2>
+      <p class="lede" style="margin-top:var(--s-5)">
+        Este es un evento real publicado. Buscá por número, probá la búsqueda por
+        selfie, meté fotos al carrito. Es el mismo flujo que van a usar los
+        atletas de tu próxima fecha.
+      </p>
+      <div class="demo-chips">
+        <span><i data-lucide="hash"></i>Buscar por número</span>
+        <span><i data-lucide="scan-face"></i>Buscar por selfie</span>
+        <span><i data-lucide="download"></i>Comprar y descargar</span>
+      </div>
+    </div>
+
+    <div class="ev">
+      <div class="ev-cover"><span>PORTADA DEL EVENTO</span></div>
+      <div class="ev-body">
+        <span class="label" style="color:var(--accent)">Evento real</span>
+        <div class="t" style="margin-top:6px">Duatlón Club Ciclista Chivilcoy</div>
+        <div class="m">Chivilcoy · 2.162 fotos</div>
+        <a href="#" class="btn btn-ghost">Abrir el evento <i data-lucide="arrow-up-right" class="go"></i></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PRECIO ═══════════════════ -->
+<section class="pad rule" id="precio">
+  <div class="wrap">
+    <div style="text-align:center">
+      <span class="label eyebrow">Precio</span>
+      <h2>Gratis. Te cobramos sólo<br>cuando <span class="u">cobrás vos</span>.</h2>
+    </div>
+
+    <div class="price-card">
+      <div class="price-left">
+        <div class="price-big">10%</div>
+        <div class="price-sub">por venta</div>
+        <p class="price-note">
+          Sin cuota mensual, sin alta y sin permanencia. Si un mes no vendés,
+          pagás cero.
+        </p>
+        <div class="founder">
+          <span class="label" style="color:var(--accent)">Tarifa fundador</span>
+          <p style="font-size:14.5px;color:var(--ink-2);margin-top:10px">
+            Si te sumás antes del 31 de diciembre, tu primer año es al
+            <b>5%</b>. La mitad de lo que cobra el resto del mercado.
+          </p>
+        </div>
+      </div>
+
+      <div class="price-right">
+        <span class="label">Todo incluido</span>
+        <ul class="incl">
+          <li><i data-lucide="check"></i>100 GB de almacenamiento</li>
+          <li><i data-lucide="check"></i>Eventos y fotos ilimitados</li>
+          <li><i data-lucide="check"></i>Reconocimiento de cara y número</li>
+          <li><i data-lucide="check"></i>Marca de agua automática</li>
+          <li><i data-lucide="check"></i>Tu página con dominio propio</li>
+          <li><i data-lucide="check"></i>Códigos de descuento</li>
+          <li><i data-lucide="check"></i>Descuentos por cantidad</li>
+          <li><i data-lucide="check"></i>Colaboradores con comisión propia</li>
+          <li><i data-lucide="check"></i>Entrega y descarga automáticas</li>
+          <li><i data-lucide="check"></i>Soporte por WhatsApp las 24 horas</li>
+        </ul>
+        <a href="#" class="btn btn-pri" style="margin-top:var(--s-6)">Empezar gratis <i data-lucide="arrow-right" class="go"></i></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PREGUNTAS ═══════════════════ -->
+<section class="pad" style="padding-top:0" id="preguntas">
+  <div class="wrap">
+    <div style="text-align:center">
+      <span class="label eyebrow">Preguntas</span>
+      <h2>Lo que preguntan<br>antes de mudarse.</h2>
+    </div>
+
+    <div class="faq">
+      <details class="qa" open>
+        <summary><span>¿Cuándo cobro?</span></summary>
+        <div class="qa-body"><div><p>En el momento de la venta. El pago del atleta entra directo a tu cuenta
+           de Mercado Pago y nosotros retenemos el 10% en la misma operación. No hay
+           retiros ni plazos: nunca tenemos tu plata.</p></div></div>
+      </details>
+      <details class="qa">
+        <summary><span>¿El atleta tiene que crearse una cuenta?</span></summary>
+        <div class="qa-body"><div><p>No. Compra con su email y descarga con un link, sin registrarse. Cada
+           paso que le sacás al comprador es plata que no perdés.</p></div></div>
+      </details>
+      <details class="qa">
+        <summary><span>¿Sirve si en mi deporte no hay dorsal?</span></summary>
+        <div class="qa-body"><div><p>Sí. El reconocimiento facial funciona igual, y el atleta también puede
+           recorrer la galería completa y filtrar a mano.</p></div></div>
+      </details>
+      <details class="qa">
+        <summary><span>¿Qué pasa con la selfie que sube el atleta?</span></summary>
+        <div class="qa-body"><div><p>Se usa para buscar y se descarta. No la guardamos: no va a nuestro
+           storage ni a la base de datos.</p></div></div>
+      </details>
+      <details class="qa">
+        <summary><span>¿A quién le escribo si algo falla?</span></summary>
+        <div class="qa-body"><div><p>A nosotros, por WhatsApp, a la hora que sea. Las carreras arrancan a las
+           7 de la mañana y terminan de noche, así que el soporte atiende las 24 horas.</p></div></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ CTA FINAL ═══════════════════ -->
+<section class="pad rule final">
+  <div class="wrap">
+    <h2>Publicá tu primer evento hoy.</h2>
+    <p class="lede">
+      Creás la cuenta, conectás Mercado Pago y subís las fotos. El mismo día
+      podés estar vendiendo.
+    </p>
+    <div class="final-cta">
+      <a href="#" class="btn btn-pri">Crear mi cuenta gratis <i data-lucide="arrow-right" class="go"></i></a>
+      <a href="#" class="btn btn-ghost"><i data-lucide="message-circle"></i> Hablar por WhatsApp</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <span>© 2026 encontrate.app · Hecho en Argentina</span>
+    <span>Laboratorio · no es producción</span>
+  </div>
+</footer>
+
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    // Cada bloque va aislado: si Lucide no cargara, antes se caía todo el
+    // script y quedaban sin funcionar el tema, el menú y las FAQ.
+    try { lucide.createIcons(); } catch (e) { console.warn("lucide:", e); }
+
+    // <details> no anima solo: al cerrar, el navegador saca el contenido del
+    // flujo antes de que corra la transición. Se intercepta el click, se anima
+    // la altura a mano y recién ahí se toca el atributo open.
+    // ── Tema ────────────────────────────────────────────────────────────
+    var raiz = document.documentElement;
+    var auto = function () { var h = new Date().getHours(); return h >= 7 && h < 19 ? "" : "dark"; };
+
+    document.querySelectorAll(".js-tema").forEach(function (b) { b.addEventListener("click", function () {
+      var nuevo = raiz.dataset.theme === "dark" ? "" : "dark";
+      raiz.dataset.theme = nuevo;
+      try { localStorage.setItem("tema", nuevo || "light"); } catch (e) {}
+      // "light" se guarda como palabra porque "" no distingue elegir claro de
+      // no haber elegido nunca.
+      if (nuevo === "") { try { localStorage.setItem("tema", "light"); } catch (e) {} }
+    }); });
+
+    // ── Menú lateral ────────────────────────────────────────────────────
+    try {
+    var burger = document.getElementById("burger");
+    var scrim  = document.getElementById("scrim");
+
+    function menu(abrir) {
+      raiz.dataset.menu = abrir ? "open" : "";
+      burger.setAttribute("aria-expanded", abrir ? "true" : "false");
+      burger.setAttribute("aria-label", abrir ? "Cerrar menú" : "Abrir menú");
+      // hidden se saca antes de animar y se repone después, para que el velo
+      // no quede capturando clicks cuando está invisible.
+      if (abrir) scrim.hidden = false;
+      else setTimeout(function () { if (raiz.dataset.menu !== "open") scrim.hidden = true; }, 300);
+    }
+
+    burger.addEventListener("click", function () { menu(raiz.dataset.menu !== "open"); });
+    scrim.addEventListener("click", function () { menu(false); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") menu(false); });
+    // Al tocar un link el menú se cierra solo: si no, el scroll ocurre detrás
+    // del velo y parece que no pasó nada.
+    document.querySelectorAll(".drawer-links a").forEach(function (a) {
+      a.addEventListener("click", function () { menu(false); });
+    });
+    // Si se agranda la ventana con el menú abierto, se limpia el estado.
+    // addEventListener sobre un MediaQueryList no existe en Safari viejo:
+    // se usa la API antigua como respaldo.
+    var mq = matchMedia("(min-width: 701px)");
+    var alCambiar = function (e) { if (e.matches) menu(false); };
+    if (mq.addEventListener) mq.addEventListener("change", alCambiar);
+    else if (mq.addListener) mq.addListener(alCambiar);
+    } catch (e) { console.warn("menu:", e); }
+
+    // Si nadie eligió a mano, la página sigue a la hora aunque quede abierta:
+    // a las 19:00 se pone sola en oscuro.
+    setInterval(function () {
+      var elegido = null;
+      try { elegido = localStorage.getItem("tema"); } catch (e) {}
+      if (!elegido) raiz.dataset.theme = auto();
+    }, 60000);
+
+    // El que arranca abierto necesita la clase desde el vamos.
+    document.querySelectorAll(".qa[open]").forEach(d => d.classList.add("is-open"));
+
+    document.querySelectorAll(".qa").forEach(d => {
+      const body = d.querySelector(".qa-body");
+
+      // transitionend BURBUJEA: el hijo que hace el fundido del texto termina
+      // a los 170ms y disparaba el handler antes de tiempo, cortando el cierre
+      // por la mitad. Sólo interesa la altura del propio contenedor.
+      const alFinal = (fn) => {
+        const h = (e) => {
+          if (e.target !== body || e.propertyName !== "height") return;
+          body.removeEventListener("transitionend", h);
+          fn();
+        };
+        body.addEventListener("transitionend", h);
+        // Red de seguridad: si por lo que sea la transición no dispara, no
+        // queremos que el acordeón quede trabado para siempre.
+        setTimeout(() => { body.removeEventListener("transitionend", h); fn(); }, 520);
+      };
+
+      d.querySelector("summary").addEventListener("click", e => {
+        e.preventDefault();
+        if (d.dataset.busy) return;
+        d.dataset.busy = "1";
+        const done = () => { body.style.height = ""; delete d.dataset.busy; };
+
+        if (d.open) {
+          d.classList.remove("is-open");
+          body.style.height = body.scrollHeight + "px";
+          // Reflow forzado. Sin esto el navegador nunca llega a computar la
+          // altura en píxeles: pasa de `auto` (que trae la clase is-open) a 0,
+          // y `auto` no es interpolable, así que el cierre era instantáneo.
+          void body.offsetHeight;
+          requestAnimationFrame(() => { body.style.height = "0px"; });
+          alFinal(() => { d.open = false; done(); });
+        } else {
+          d.open = true;
+          d.classList.add("is-open");
+          const h = body.scrollHeight;
+          body.style.height = "0px";
+          void body.offsetHeight;
+          requestAnimationFrame(() => { body.style.height = h + "px"; });
+          alFinal(done);
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,601 @@
+/* =============================================================================
+   encontrate · landing (laboratorio) · versión papel
+   La foto es la única masa oscura de la pantalla. Todo lo demás es aire.
+   ========================================================================== */
+
+
+/* ── NAV ─────────────────────────────────────────────────────────────────── */
+.nav {
+  position: sticky; top: 0; z-index: 40;
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line-soft);
+}
+.nav-in { display: flex; align-items: center; justify-content: space-between; height: 74px; }
+.nav-links { display: flex; gap: var(--s-6); font-size: var(--t-small); color: var(--ink-2); }
+.nav-links a:hover { color: var(--ink); }
+.nav-cta { display: flex; gap: var(--s-3); align-items: center; }
+.burger { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE · barra reducida y cajón lateral
+   En la barra quedan sólo tres cosas: logo, Empezar y la hamburguesa. Todo lo
+   demás se muda al cajón, incluido el conmutador de tema (hay dos botones,
+   uno por contexto, escuchando el mismo handler).
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* Escalera de tres tramos. Sin el tramo del medio, entre 700 y 900 la barra
+   quedaría sin links de sección y sin hamburguesa: los links serían
+   inalcanzables.
+
+   > 920px   todo
+   700-920   se va "Iniciar sesión", que es lo menos urgente, y con eso entran
+             los links de sección
+   < 700px   teléfono: sólo logo, Empezar y hamburguesa */
+@media (max-width: 920px) {
+  .solo-ancho:not(.js-tema) { display: none; }
+  .nav-links { gap: var(--s-5); }
+}
+@media (max-width: 700px) {
+  .nav-links, .solo-ancho { display: none; }
+  .burger { display: grid; }
+  .nav-in { height: 62px; }
+  .mark { font-size: 13px; }
+  .nav-cta { gap: var(--s-2); }
+}
+
+/* Velo. El desenfoque va acá y no en el cajón, porque backdrop-filter afecta
+   a todo lo que queda detrás del elemento: si lo pusiera en el cajón, el menú
+   se desenfocaría a sí mismo contra la página. */
+.scrim {
+  position: fixed; inset: 0; z-index: 60;
+  background: color-mix(in srgb, var(--paper) 45%, transparent);
+  backdrop-filter: blur(14px) saturate(.9);
+  -webkit-backdrop-filter: blur(14px) saturate(.9);
+  opacity: 0; pointer-events: none;
+  transition: opacity 280ms ease;
+}
+:root[data-menu="open"] .scrim { opacity: 1; pointer-events: auto; }
+
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 70;
+  width: min(320px, 84vw);
+  background: var(--paper);
+  border-left: 1px solid var(--line);
+  padding: 84px var(--s-5) var(--s-5);
+  display: flex; flex-direction: column;
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform 380ms cubic-bezier(.3, .9, .25, 1), visibility 380ms;
+}
+:root[data-menu="open"] .drawer { transform: none; visibility: visible; }
+/* Con el menú abierto no se scrollea la página de atrás. */
+:root[data-menu="open"] body { overflow: hidden; }
+
+.drawer-links { display: flex; flex-direction: column; }
+.drawer-links a {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-family: var(--display);
+  font-weight: var(--display-weight); font-size: 17px;
+  text-transform: uppercase; letter-spacing: var(--display-track);
+  transition: color 160ms ease;
+}
+.drawer-links a:hover, .drawer-links a:active { color: var(--accent); }
+.drawer-links svg { width: 15px; height: 15px; stroke-width: 2; color: var(--ink-3); }
+
+.drawer-foot {
+  margin-top: auto; padding-top: var(--s-5);
+  display: flex; gap: var(--s-2); align-items: center;
+}
+.drawer-foot .btn:first-child { flex: 1; }
+
+/* La hamburguesa cambia a cruz con el mismo mecanismo que el sol y la luna:
+   apilados en una celda, animando transform y opacity. */
+.burger .ico-close { opacity: 0; transform: rotate(-90deg) scale(.4); }
+:root[data-menu="open"] .burger .ico-menu  { opacity: 0; transform: rotate(90deg) scale(.4); }
+:root[data-menu="open"] .burger .ico-close { opacity: 1; transform: none; }
+
+
+.eyebrow { display: inline-block; margin-bottom: var(--s-5); }
+
+section { position: relative; }
+.pad { padding: var(--s-10) 0; }
+@media (max-width: 760px) { .pad { padding: var(--s-8) 0; } }
+
+/* Filete de sección: una hairline en vez de un bloque de color. */
+.rule { border-top: 1px solid var(--line-soft); }
+
+/* ── HERO ────────────────────────────────────────────────────────────────── */
+.hero { padding: var(--s-9) 0 var(--s-8); overflow: hidden; }
+.hero-grid {
+  display: grid; grid-template-columns: 1.24fr 0.76fr;
+  gap: var(--s-7); align-items: center;
+}
+@media (max-width: 980px) { .hero-grid { grid-template-columns: 1fr; gap: var(--s-7); } }
+
+/* El titular es el protagonista. En caja alta el tracking va POSITIVO —al
+   revés que en caja baja— porque las mayúsculas sin descendentes se empastan;
+   y la altura de línea baja a 0.92 porque no hay colas que choquen. */
+.hero h1 {
+  font-size: calc(var(--t-hero) * var(--display-scale));
+  font-weight: var(--display-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--display-track);
+  line-height: 1.06;
+  margin-bottom: var(--s-5);
+}
+/* ═══════════════════════════════════════════════════════════════════════════
+   SUBRAYADO DE PINCEL
+   El trazo va como MÁSCARA, no como imagen de fondo: así el color lo pone el
+   token y cambia solo entre papel y oscuro. Con background-image habría que
+   hornear el color adentro del SVG y mantener dos copias.
+
+   Va en ::after y posicionado en absoluto, así que no empuja el texto ni
+   afecta la altura de línea. Tres trazos: .u (pincel), .u-marker (marcador
+   ancho) y .u-doble (dos pasadas, como cuando repasás a mano).
+   ═══════════════════════════════════════════════════════════════════════════ */
+.u { position: relative; }
+.u::after {
+  content: "";
+  position: absolute;
+  left: -0.05em; right: -0.05em;
+  bottom: -0.16em;
+  height: 0.26em;
+  background: var(--accent);
+  -webkit-mask: var(--stroke) center / 100% 100% no-repeat;
+          mask: var(--stroke) center / 100% 100% no-repeat;
+  /* El trazo se dibuja al entrar en pantalla, de izquierda a derecha. */
+  animation: paint 620ms cubic-bezier(.22,.7,.3,1) both;
+  animation-timeline: view();
+  animation-range: entry 10% cover 34%;
+}
+@keyframes paint { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@supports not (animation-timeline: view()) { .u::after { animation: none; } }
+
+/* Trazo 1 · pincel: arranca fino a la izquierda y engrosa hacia la derecha,
+   como un movimiento que gana presión. */
+.u {
+  --stroke: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 20' preserveAspectRatio='none'><path d='M2 16 C90 6 210 5 298 11 L298 15.4 C210 9.6 90 10.6 2 18.4 Z' fill='black'/></svg>");
+}
+/* Trazo 2 · marcador: parejo y grueso, más resaltador que pincel. */
+.u-marker {
+  --stroke: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 20' preserveAspectRatio='none'><path d='M3 11 C100 7 200 6 297 9 L297 17 C200 14 100 15 3 19 Z' fill='black'/></svg>");
+  height: 0.3em;
+}
+/* Trazo 3 · doble: una pasada principal y una segunda más corta abajo. */
+.u-doble {
+  --stroke: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 24' preserveAspectRatio='none'><path d='M4 13 C90 8 200 7 296 11 L296 14.4 C200 10.4 90 11.4 4 16.4 Z' fill='black'/><path d='M28 19 C110 15.4 205 14.6 278 17 L278 19.4 C205 17.2 110 18 28 21.6 Z' fill='black' opacity='.65'/></svg>");
+  height: 0.34em;
+}
+
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero .lede { margin-bottom: var(--s-6); }
+.hero-cta { display: flex; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-6); }
+
+.trust {
+  display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4); align-items: center;
+  font-family: var(--meta); font-weight: 500; font-size: 10.5px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.trust b { color: var(--ink-2); font-weight: 400; }
+.trust span::after { content: "/"; margin-left: var(--s-4); color: var(--line-strong); }
+.trust span:last-child::after { content: ""; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ESCENA DEL HERO · hoja de contactos siendo reconocida
+   Un solo ciclo de 9s compartido por todo: el escaneo baja, los dorsales
+   aparecen fila por fila a medida que pasa, una cara queda enganchada y al
+   final entra la venta. Cada elemento usa el MISMO keyframe con distinto
+   retraso, así la coreografía no se desincroniza nunca.
+   Sólo se animan transform y opacity: todo corre en el compositor.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.scene { position: relative; aspect-ratio: 1 / 1; }
+.rig { position: absolute; inset: 6% 4% 8% 4%; display: flex; flex-direction: column; }
+
+.sheet {
+  position: relative; flex: 1;
+  display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr;
+  gap: 10px; padding: 14px;
+  background: var(--paper-2);
+  border-radius: var(--r-4);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.tile {
+  position: relative; border-radius: 6px; overflow: hidden;
+  background: var(--paper-3);
+}
+/* Marcadores: cada baldosa con una inclinación distinta para que no se lea
+   como un patrón. Van fotos reales. */
+.t1 { background: linear-gradient(150deg, #DFDCD4, #EFEDE8); }
+.t2 { background: linear-gradient(200deg, #E6E3DB, #F3F2EE); }
+.t3 { background: linear-gradient(120deg, #D9D6CD, #ECEAE4); }
+.t4 { background: linear-gradient(165deg, #E9E6DE, #F5F4F0); }
+.t5 { background: linear-gradient(140deg, #D3CFC5, #E7E4DC); }
+.t6 { background: linear-gradient(185deg, #E2DFD7, #F0EEE9); }
+.t7 { background: linear-gradient(155deg, #DBD8CF, #EDEBE5); }
+.t8 { background: linear-gradient(210deg, #E7E4DC, #F4F3EF); }
+.t9 { background: linear-gradient(130deg, #D6D2C9, #E9E7E0); }
+
+/* Barrido. Una banda de luz con un filo marcado abajo, que es lo que da la
+   sensación de lectura y no de degradé decorativo. */
+.scan {
+  position: absolute; left: 0; right: 0; top: 0; height: 34%;
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--accent) 8%, transparent) 62%,
+    color-mix(in srgb, var(--accent) 20%, transparent) 97%,
+    var(--accent) 100%);
+  animation: sweep 9s cubic-bezier(.45,.05,.55,.95) infinite;
+  pointer-events: none;
+}
+@keyframes sweep {
+  0%          { transform: translateY(-105%); opacity: 0; }
+  5%          { opacity: 1; }
+  38%         { transform: translateY(295%); opacity: 1; }
+  44%, 100%   { transform: translateY(295%); opacity: 0; }
+}
+
+/* Dorsal detectado. Aparece cuando el barrido pasa por su fila. */
+.bib {
+  position: absolute; left: 6px; bottom: 6px;
+  font-family: var(--meta); font-weight: 500; font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--paper-2); background: var(--accent);
+  padding: 2px 6px; border-radius: 3px;
+  opacity: 0;
+  animation: chip 9s ease infinite;
+}
+.d1 { animation-delay: .55s; }
+.d2 { animation-delay: 1.5s; }
+.d3 { animation-delay: 2.45s; }
+@keyframes chip {
+  0%, 4%     { opacity: 0; transform: scale(.8) translateY(3px); }
+  9%, 72%    { opacity: 1; transform: none; }
+  80%, 100%  { opacity: 0; transform: scale(.96); }
+}
+
+/* Enganche de cara: cuatro esquinas que se cierran sobre el rostro. */
+.face { position: absolute; inset: 22%; opacity: 0; animation: lock 9s ease infinite; animation-delay: 2.1s; }
+.face i { position: absolute; width: 9px; height: 9px; border: 1.5px solid var(--accent); }
+.face i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.face i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.face i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.face i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+@keyframes lock {
+  0%, 3%     { opacity: 0; transform: scale(1.4); }
+  10%, 70%   { opacity: 1; transform: scale(1); }
+  78%, 100%  { opacity: 0; transform: scale(1.06); }
+}
+
+/* Pie: la barra de indexado avanza al ritmo del barrido. */
+.sheet-foot { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4) 4px 0; }
+.prog { flex: 1; height: 2px; background: var(--paper-3); border-radius: 2px; overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: var(--accent); animation: fill 9s cubic-bezier(.45,.05,.55,.95) infinite; }
+@keyframes fill { 0%,2% { width: 0; } 40%,86% { width: 100%; } 94%,100% { width: 0; opacity: 0; } }
+.pct { font-variant-numeric: tabular-nums; }
+
+/* La venta entra cuando el barrido terminó. */
+.frag.sale {
+  left: -6%; bottom: 4%; width: 214px;
+  opacity: 0;
+  animation: cash 9s cubic-bezier(.2,.8,.3,1) infinite;
+  animation-delay: .2s;
+}
+@keyframes cash {
+  0%, 44%    { opacity: 0; transform: translateY(16px) scale(.97); }
+  52%, 84%   { opacity: 1; transform: none; }
+  92%, 100%  { opacity: 0; transform: translateY(-6px); }
+}
+
+/* Sin movimiento: se muestra el estado final, que es el que cuenta la historia. */
+@media (prefers-reduced-motion: reduce) {
+  .scan { display: none; }
+  .bib, .face, .frag.sale { opacity: 1; animation: none; transform: none; }
+  .prog i { width: 100%; animation: none; }
+}
+
+.frag {
+  position: absolute;
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-card);
+  padding: var(--s-4);
+}
+@media (max-width: 540px) { .frag.sale { width: 172px; padding: var(--s-3); left: 0; } }
+.frag-amount {
+  font-family: var(--sans); font-weight: 200; font-size: 38px;
+  letter-spacing: -0.04em; font-variant-numeric: tabular-nums;
+  line-height: 1; margin: 8px 0;
+}
+.frag-amount small { font-size: 15px; color: var(--ink-3); letter-spacing: 0; }
+
+/* Parallax nativo. Poco, lento, en un eje. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .par { animation: drift linear both; animation-timeline: view(); animation-range: entry 0% exit 100%; }
+    .par-slow { --dy: 24px; }
+    .par-fast { --dy: -44px; }
+    @keyframes drift {
+      from { transform: translateY(calc(var(--dy) * -1)); }
+      to   { transform: translateY(var(--dy)); }
+    }
+  }
+}
+
+/* ── Tira de prueba ──────────────────────────────────────────────────────── */
+.strip { border-block: 1px solid var(--line-soft); padding: var(--s-5) 0; overflow: hidden; }
+.strip-track { display: flex; gap: var(--s-3); width: max-content; animation: slide 52s linear infinite; }
+.strip-tile {
+  width: 200px; aspect-ratio: 3/2; border-radius: var(--r-2);
+  background: var(--paper-3); border: 1px solid var(--line-soft);
+  flex-shrink: 0; display: grid; place-items: center;
+}
+.strip-tile span { font-family: var(--meta); font-weight: 500; font-size: 9px; letter-spacing: 0.14em; color: var(--ink-3); }
+@keyframes slide { to { transform: translateX(-50%); } }
+.strip:hover .strip-track { animation-play-state: paused; }
+.strip-cap { text-align: center; margin-top: var(--s-4); }
+
+/* ── Pasos. Sin caja: sólo un filete arriba y aire. ──────────────────────── */
+/* ── Pasos ───────────────────────────────────────────────────────────────
+   Bloques de color plano: sin trazo, sin sombra y sin degradé. El agrupamiento
+   lo hace el campo de color, no una línea. Es la única masa tonal de toda la
+   página, así que se lee como un momento y no como un patrón.
+
+   stretch + flex column es lo que los unifica de verdad: las tres cajas miden
+   igual y los íconos quedan alineados en una misma fila al pie, sin importar
+   cuánto texto tenga cada una. Con margin-top automático el ícono se empuja
+   solo hasta abajo. ───────────────────────────────────────────────────────── */
+.steps {
+  display: grid; gap: var(--s-4);
+  grid-template-columns: repeat(3, 1fr);
+  align-items: stretch;
+  margin-top: var(--s-8);
+}
+@media (max-width: 880px) { .steps { grid-template-columns: 1fr; } }
+
+.step {
+  display: flex; flex-direction: column;
+  background: var(--paper-3);
+  border-radius: var(--r-4);
+  padding: var(--s-6) var(--s-5) var(--s-5);
+  transition: background 260ms ease, transform 300ms cubic-bezier(.2,.8,.2,1);
+}
+.step:hover { background: color-mix(in srgb, var(--paper-3) 88%, var(--ink)); transform: translateY(-3px); }
+
+.step-n {
+  font-family: var(--sans); font-weight: 200; font-size: 42px;
+  line-height: 1; letter-spacing: -0.05em;
+  color: var(--accent); font-variant-numeric: tabular-nums;
+  display: block; margin-bottom: var(--s-5);
+}
+.step h3 { margin-bottom: var(--s-2); }
+.step p { color: var(--ink-2); font-size: var(--t-small); }
+
+.step-i {
+  display: block;
+  margin-top: auto;      /* pega el ícono al piso de la caja */
+  padding-top: var(--s-6);
+  width: 30px; height: 30px; stroke-width: 1.1;
+  color: var(--ink-3);
+  transition: color 220ms ease, transform 300ms cubic-bezier(.2,.8,.2,1);
+}
+.step:hover .step-i { color: var(--accent); transform: translateY(-2px); }
+
+/* ── Tres razones ────────────────────────────────────────────────────────── */
+.reasons { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: var(--s-8); align-items: start; }
+@media (max-width: 980px) { .reasons { grid-template-columns: 1fr; } }
+.rlist { display: flex; flex-direction: column; gap: var(--s-6); margin: var(--s-7) 0 0; padding: 0; }
+.rlist li {
+  list-style: none; border-top: 1px solid var(--line-soft); padding-top: var(--s-4);
+  display: grid; grid-template-columns: 34px 1fr; gap: var(--s-4); align-items: start;
+}
+.r-i {
+  width: 26px; height: 26px; stroke-width: 1.1;
+  color: var(--accent); margin-top: 2px;
+}
+@media (max-width: 520px) { .rlist li { grid-template-columns: 1fr; gap: var(--s-3); } }
+.rlist strong {
+  display: block; font-family: var(--sans); font-size: 21px;
+  font-weight: 500; letter-spacing: -0.03em; margin-bottom: var(--s-2);
+}
+.rlist p { color: var(--ink-2); font-size: var(--t-small); max-width: 46ch; }
+
+.panel {
+  background: var(--paper-2); border: 1px solid var(--line-soft);
+  border-radius: var(--r-4); padding: var(--s-5);
+  box-shadow: var(--shadow-card); position: sticky; top: 100px;
+}
+@media (max-width: 980px) { .panel { position: static; } }
+.panel-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding-bottom: var(--s-4); border-bottom: 1px solid var(--line-soft);
+}
+.panel-when { font-size: 13.5px; color: var(--ink-2); margin-top: 3px; }
+.tag {
+  font-family: var(--meta); font-weight: 500; font-size: 9px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--ink-3);
+  border: 1px solid var(--line); border-radius: var(--r-1); padding: 3px 7px;
+}
+
+.panel-figure { padding-top: var(--s-4); }
+.panel-amount {
+  font-family: var(--sans); font-weight: 200; font-size: 58px;
+  letter-spacing: -0.05em; line-height: 1; font-variant-numeric: tabular-nums;
+}
+.panel-amount .cur { font-size: 24px; color: var(--ink-3); vertical-align: 0.42em; margin-right: 3px; }
+.panel-cmp {
+  display: flex; align-items: center; gap: var(--s-3);
+  margin-top: var(--s-3); font-size: 13px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.delta { display: inline-flex; align-items: center; gap: 5px; font-weight: 500; }
+.delta.up { color: var(--ok); }
+.delta svg { width: 14px; height: 14px; stroke-width: 2; }
+
+/* Sparkline. El relleno de área da la masa, la línea da la lectura y el punto
+   final marca el dato que está escrito arriba: sin eso el gráfico es adorno. */
+.spark { position: relative; margin: var(--s-5) 0 0; }
+.spark svg { display: block; width: 100%; height: 64px; overflow: visible; }
+.spark .area { fill: url(#sg); }
+/* Los stops se estilan por CSS y no por atributo: var() dentro de un atributo
+   de presentación SVG no está soportado de forma pareja. */
+.spark .s0 { stop-color: var(--accent); stop-opacity: 0.20; }
+.spark .s1 { stop-color: var(--accent); stop-opacity: 0; }
+.spark .line {
+  fill: none; stroke: var(--accent); stroke-width: 1.6;
+  stroke-linejoin: round; stroke-linecap: round;
+  /* El SVG se estira en X; sin esto el trazo se deforma con el ancho. */
+  vector-effect: non-scaling-stroke;
+}
+.spark-dot {
+  position: absolute; left: 97.1%; top: 10px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--paper-2);
+  transform: translate(-50%, -50%);
+}
+.spark figcaption {
+  display: flex; justify-content: space-between; margin-top: 8px;
+  font-family: var(--meta); font-weight: 500; font-size: 9.5px;
+  letter-spacing: 0.14em; color: var(--ink-3);
+}
+
+.panel-sec { margin-top: var(--s-5); }
+.tx {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-3) 0; border-top: 1px solid var(--line-soft);
+}
+.panel-sec + .tx { margin-top: var(--s-2); }
+.tx-thumb {
+  width: 36px; height: 27px; border-radius: 4px; flex-shrink: 0;
+  background: var(--paper-3); border: 1px solid var(--line-soft);
+}
+.tx .info { flex: 1; min-width: 0; }
+.tx .t { font-size: 14px; font-weight: 500; letter-spacing: -0.01em; }
+.tx .s { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.tx .a { font-size: 13.5px; color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 500; }
+
+/* ── Demo ────────────────────────────────────────────────────────────────── */
+.demo-card { display: grid; grid-template-columns: 1fr 0.8fr; gap: var(--s-8); align-items: center; }
+@media (max-width: 880px) { .demo-card { grid-template-columns: 1fr; } }
+.demo-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-6); }
+.demo-chips span {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--meta); font-weight: 500; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px;
+}
+.demo-chips svg { width: 13px; height: 13px; stroke-width: 2; color: var(--accent); }
+
+/* La tarjeta ya no es un link: la acción es el botón. Un bloque entero
+   clickeable esconde la acción y no se puede tabular bien. */
+.ev {
+  border: 1px solid var(--line-soft); border-radius: var(--r-3); overflow: hidden;
+  background: var(--paper-2); transition: box-shadow 220ms ease;
+}
+.ev:hover { box-shadow: var(--shadow-card); }
+.ev-cover { aspect-ratio: 16/9; background: var(--paper-3); display: grid; place-items: center; }
+.ev-cover span { font-family: var(--meta); font-weight: 500; font-size: 9px; letter-spacing: 0.14em; color: var(--ink-3); }
+.ev-body { padding: var(--s-4); }
+.ev-body .t { font-family: var(--sans); font-size: 18px; font-weight: 500; letter-spacing: -0.03em; }
+.ev-body .m { font-family: var(--meta); font-weight: 500; font-size: 10.5px; color: var(--ink-3); margin-top: 4px; letter-spacing: 0.06em; }
+.ev-body .btn { margin-top: var(--s-4); }
+
+/* ── Precio ──────────────────────────────────────────────────────────────── */
+.price-card {
+  display: grid; grid-template-columns: 0.85fr 1.15fr;
+  border: 1px solid var(--line); border-radius: var(--r-4);
+  overflow: hidden; background: var(--paper-2); margin-top: var(--s-7);
+}
+@media (max-width: 880px) { .price-card { grid-template-columns: 1fr; } }
+.price-left { padding: var(--s-7); border-right: 1px solid var(--line-soft); }
+.price-big {
+  font-family: var(--sans); font-weight: 200; font-size: 104px; letter-spacing: -0.06em; font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.9; letter-spacing: -0.07em;
+}
+.price-sub { font-family: var(--meta); font-weight: 500; font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-3); margin-top: var(--s-3); }
+.price-note { font-size: 14.5px; color: var(--ink-2); margin-top: var(--s-4); max-width: 30ch; }
+.founder { margin-top: var(--s-5); padding-top: var(--s-5); border-top: 1px solid var(--line-soft); }
+.founder b { color: var(--accent); font-weight: 500; }
+.price-right { padding: var(--s-7); }
+.incl { list-style: none; padding: 0; margin: var(--s-4) 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3) var(--s-5); }
+@media (max-width: 640px) { .incl { grid-template-columns: 1fr; } }
+.incl li { font-size: 14.5px; color: var(--ink-2); display: flex; gap: 10px; align-items: flex-start; }
+.incl svg { width: 15px; height: 15px; stroke-width: 2.2; color: var(--accent); flex-shrink: 0; margin-top: 4px; }
+
+/* ── Preguntas ───────────────────────────────────────────────────────────── */
+.faq { max-width: 800px; margin: var(--s-7) auto 0; }
+.qa { border-bottom: 1px solid var(--line-soft); }
+.qa summary {
+  display: flex; justify-content: space-between; align-items: center; gap: var(--s-4);
+  padding: var(--s-4) 0; cursor: pointer; list-style: none;
+  font-family: var(--sans); font-size: 19px; font-weight: 500; letter-spacing: -0.03em;
+}
+.qa summary::-webkit-details-marker { display: none; }
+.qa summary { user-select: none; }
+.qa summary::after {
+  content: "+"; font-family: var(--meta); font-weight: 300; font-size: 22px;
+  color: var(--ink-3); line-height: 1;
+  transition: transform 360ms cubic-bezier(.2, .8, .2, 1), color 240ms ease;
+}
+.qa.is-open summary::after { transform: rotate(135deg); color: var(--accent); }
+/* La altura la maneja el script; acá va sólo la curva. overflow hidden es lo
+   que recorta el contenido mientras el alto crece. */
+.qa-body {
+  height: 0;
+  overflow: hidden;
+  transition: height 360ms cubic-bezier(.2, .8, .2, 1);
+}
+.qa.is-open .qa-body { height: auto; }
+/* El texto entra un pelo después y desde abajo: sin esto la apertura se ve
+   como una persiana y no como algo que se despliega. */
+/* Salida rápida y sin demora; entrada más lenta y con 80ms de retraso, para
+   que el texto no aparezca antes de que haya lugar donde ponerlo. */
+.qa-body > div {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 170ms ease, transform 190ms ease;
+}
+.qa.is-open .qa-body > div {
+  opacity: 1; transform: none;
+  transition: opacity 260ms ease 80ms, transform 300ms cubic-bezier(.2,.8,.2,1) 80ms;
+}
+.qa p { padding: 0 0 var(--s-5); font-size: 15.5px; color: var(--ink-2); max-width: 62ch; }
+
+/* ── CTA final y pie ─────────────────────────────────────────────────────── */
+.final { text-align: center; }
+.final h2 { margin-bottom: var(--s-4); }
+.final .lede { margin: 0 auto var(--s-6); }
+.final-cta { display: inline-flex; gap: var(--s-3); flex-wrap: wrap; justify-content: center; }
+.foot {
+  border-top: 1px solid var(--line-soft); padding: var(--s-6) 0;
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--s-4);
+  font-family: var(--meta); font-weight: 500; font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE · aire
+   Los paddings generosos que hacen respirar en escritorio se comen la pantalla
+   en un teléfono: la tarjeta de precio tenía 60px de cada lado más 28 del
+   contenedor, o sea 176px de los 375 de un iPhone chico. Se achican todos los
+   contenedores grandes de una sola vez.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .wrap { padding: 0 var(--s-4); }
+
+  .price-left, .price-right { padding: var(--s-5) var(--s-4); }
+  .price-big { font-size: 68px; }
+  .price-left { border-right: none; border-bottom: 1px solid var(--line-soft); }
+
+  .panel { padding: var(--s-4); }
+  .panel-amount { font-size: 46px; }
+  .step { padding: var(--s-5) var(--s-4) var(--s-4); }
+  .frag.sale { width: 168px; padding: var(--s-3); }
+
+  .pad { padding: var(--s-7) 0; }
+  .faq { margin-top: var(--s-5); }
+}

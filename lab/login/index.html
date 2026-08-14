@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · ingresar</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css?v=1786665660">
+<link rel="stylesheet" href="../base.css?v=1786665660">
+<link rel="stylesheet" href="login.css?v=1786665660">
+
+<script>
+  /* Mismo resolutor de tema que la landing, y antes de pintar. Si dos páginas
+     del mismo sitio resuelven distinto, al navegar de una a otra se ve el
+     salto de claro a oscuro. */
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/lucide.min.js?v=1786665660" defer></script>
+</head>
+
+<body>
+
+<main class="auth">
+
+  <!-- ═════════════════════════ FORMULARIO ═════════════════════════ -->
+  <div class="auth-col">
+
+    <div class="auth-top">
+      <a href="../landing/" class="mark">encontrate<i></i>app</a>
+      <div style="display:flex;gap:var(--s-3);align-items:center">
+        <a href="../landing/" class="volver"><i data-lucide="arrow-left"></i> Volver</a>
+        <button class="btn btn-ghost btn-icon js-tema" aria-label="Cambiar tema">
+          <span class="ico ico-moon"><i data-lucide="moon"></i></span>
+          <span class="ico ico-sun"><i data-lucide="sun"></i></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="auth-mid">
+      <div class="auth-box">
+
+        <h1>Entrá a<br>tu panel</h1>
+        <p class="auth-sub">Ahí subís las fotos, seguís las ventas y cobrás en tu cuenta de Mercado Pago.</p>
+
+        <div style="height:var(--s-6)"></div>
+
+        <!-- Google primero: es por donde entra la mayoría. -->
+        <button class="btn btn-ghost btn-lg btn-block" type="button">
+          <svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#4285F4" d="M45.1 24.5c0-1.6-.1-2.8-.4-4H24v7.3h12.1c-.2 2-1.6 5-4.5 7l6.9 5.3c4.1-3.8 6.6-9.4 6.6-15.6z"/>
+            <path fill="#34A853" d="M24 46c5.9 0 10.9-2 14.5-5.3l-6.9-5.3c-1.9 1.3-4.4 2.2-7.6 2.2-5.8 0-10.7-3.8-12.5-9.1l-7.1 5.5C8.1 41.1 15.4 46 24 46z"/>
+            <path fill="#FBBC05" d="M11.5 28.5c-.5-1.4-.7-2.9-.7-4.5s.3-3.1.7-4.5l-7.1-5.5C2.9 17 2 20.4 2 24s.9 7 2.4 10z"/>
+            <path fill="#EA4335" d="M24 10.6c4.1 0 6.9 1.8 8.5 3.3l6.2-6C34.9 4.4 29.9 2 24 2 15.4 2 8.1 6.9 4.4 14l7.1 5.5c1.8-5.3 6.7-8.9 12.5-8.9z"/>
+          </svg>
+          Continuar con Google
+        </button>
+
+        <div class="sep">o con tu email</div>
+
+        <div class="alert" id="alerta" role="alert">
+          <i data-lucide="alert-circle"></i>
+          <span>Email o contraseña incorrectos. Fijate que no tengas activado el bloqueo de mayúsculas.</span>
+        </div>
+
+        <form class="form" id="form" novalidate>
+
+          <div class="field" id="f-mail">
+            <div class="field-top"><label for="mail">Email</label></div>
+            <input class="inp" id="mail" name="email" type="email" inputmode="email"
+                   autocomplete="email" placeholder="vos@estudio.com"
+                   aria-describedby="e-mail">
+            <div class="err" id="e-mail"></div>
+          </div>
+
+          <div class="field" id="f-pass">
+            <div class="field-top">
+              <label for="pass">Contraseña</label>
+              <a href="#">Me la olvidé</a>
+            </div>
+            <div class="pw" id="pw">
+              <input class="inp" id="pass" name="password" type="password"
+                     autocomplete="current-password" placeholder="••••••••"
+                     aria-describedby="e-pass">
+              <button class="pw-eye" type="button" id="ojo" aria-label="Mostrar contraseña">
+                <span class="ico ico-on"><i data-lucide="eye"></i></span>
+                <span class="ico ico-off"><i data-lucide="eye-off"></i></span>
+              </button>
+            </div>
+            <div class="err" id="e-pass"></div>
+          </div>
+
+          <button class="btn btn-pri btn-lg btn-block" type="submit" id="enviar">
+            <span id="enviar-txt">Entrar</span>
+            <i data-lucide="arrow-right" class="go"></i>
+          </button>
+
+        </form>
+
+        <p class="auth-alt">¿Todavía no tenés cuenta? <a href="#">Creala gratis</a></p>
+        <p class="fundador">
+          <i data-lucide="sparkles"></i>
+          Las que abren ahora quedan con <b>5% de comisión el primer año</b>
+        </p>
+
+      </div>
+    </div>
+
+    <!-- El que compró fotos no tiene cuenta. Decírselo acá evita la cuenta
+         fantasma y el mensaje al WhatsApp. -->
+    <div class="auth-bot">
+      <div class="auth-box">
+        <div class="atleta">
+          <p>¿Compraste fotos y las querés bajar de nuevo?</p>
+          <a href="../landing/#demo">No hace falta cuenta, buscá tu evento <i data-lucide="arrow-right" class="go"></i></a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═════════════════════════ FOTO ═════════════════════════ -->
+  <aside class="auth-side" aria-hidden="true">
+    <!-- MARCADOR: acá va una foto real de evento, a contraluz. -->
+    <div class="shot">
+      <i class="sil"></i>
+      <div class="sweep"></div>
+      <div class="lock"><span></span><span></span><span></span><span></span></div>
+      <div class="chip">DORSAL 1247</div>
+    </div>
+    <div class="side-txt">
+      <p>Cada foto que subís queda buscable por cara y por dorsal en menos de un minuto.</p>
+      <div class="side-num">
+        <span><b>21</b> eventos</span>
+        <span><b>16.337</b> fotos</span>
+      </div>
+    </div>
+  </aside>
+
+</main>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+
+    try { lucide.createIcons(); } catch (e) { console.warn("lucide:", e); }
+
+    /* ── Tema ─────────────────────────────────────────────────────────── */
+    try {
+      var raiz = document.documentElement;
+      document.querySelectorAll(".js-tema").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var osc = raiz.dataset.theme === "dark";
+          raiz.dataset.theme = osc ? "" : "dark";
+          try { localStorage.setItem("tema", osc ? "light" : "dark"); } catch (e) {}
+        });
+      });
+    } catch (e) { console.warn("tema:", e); }
+
+    /* ── Ver contraseña ───────────────────────────────────────────────── */
+    try {
+      var pw = document.getElementById("pw");
+      var pass = document.getElementById("pass");
+      var ojo = document.getElementById("ojo");
+      ojo.addEventListener("click", function () {
+        var ver = pw.dataset.ver === "1";
+        pw.dataset.ver = ver ? "" : "1";
+        pass.type = ver ? "password" : "text";
+        ojo.setAttribute("aria-label", ver ? "Mostrar contraseña" : "Ocultar contraseña");
+        pass.focus();
+      });
+    } catch (e) { console.warn("ojo:", e); }
+
+    /* ── Validación y estados ─────────────────────────────────────────────
+       LABORATORIO: no hay backend. El primer envío válido muestra el error
+       de credenciales y el segundo entra. Es para poder ver los dos estados
+       sin tocar código, porque el estado de error es justamente el que no se
+       puede revisar de otra manera. ─────────────────────────────────────── */
+    try {
+      var form = document.getElementById("form");
+      var mail = document.getElementById("mail");
+      var alerta = document.getElementById("alerta");
+      var enviar = document.getElementById("enviar");
+      var txt = document.getElementById("enviar-txt");
+      var intentos = 0;
+
+      function marcar(input, campo, salida, mensaje) {
+        var mal = !!mensaje;
+        document.getElementById(campo).dataset.err = mal ? "1" : "";
+        document.getElementById(salida).textContent = mensaje || "";
+        input.setAttribute("aria-invalid", mal ? "true" : "false");
+        return !mal;
+      }
+
+      function revisarMail() {
+        var v = mail.value.trim();
+        if (!v) { return marcar(mail, "f-mail", "e-mail", "Escribí tu email."); }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) {
+          return marcar(mail, "f-mail", "e-mail", "Ese email está incompleto.");
+        }
+        return marcar(mail, "f-mail", "e-mail", null);
+      }
+
+      function revisarPass() {
+        if (!pass.value) { return marcar(pass, "f-pass", "e-pass", "Escribí tu contraseña."); }
+        return marcar(pass, "f-pass", "e-pass", null);
+      }
+
+      /* Se valida al salir del campo, no mientras se escribe: marcar en rojo
+         un email a medio tipear es hostil. Pero una vez marcado, sí se
+         corrige en vivo, para que el error se apague apenas se arregla. */
+      mail.addEventListener("blur", revisarMail);
+      pass.addEventListener("blur", revisarPass);
+      mail.addEventListener("input", function () {
+        if (document.getElementById("f-mail").dataset.err === "1") { revisarMail(); }
+      });
+      pass.addEventListener("input", function () {
+        if (document.getElementById("f-pass").dataset.err === "1") { revisarPass(); }
+      });
+
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        alerta.dataset.on = "";
+
+        var okMail = revisarMail();
+        var okPass = revisarPass();
+        if (!okMail) { mail.focus(); return; }
+        if (!okPass) { pass.focus(); return; }
+
+        enviar.dataset.cargando = "1";
+        txt.textContent = "Entrando";
+        var giro = document.createElement("span");
+        giro.className = "spin";
+        enviar.appendChild(giro);
+
+        setTimeout(function () {
+          giro.remove();
+          enviar.dataset.cargando = "";
+          intentos++;
+          if (intentos === 1) {
+            txt.textContent = "Entrar";
+            alerta.dataset.on = "1";
+            pass.value = "";
+            pass.focus();
+          } else {
+            txt.textContent = "Listo";
+          }
+        }, 1100);
+      });
+    } catch (e) { console.warn("form:", e); }
+
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,170 @@
+/* =============================================================================
+   encontrate · capa de componentes
+   -----------------------------------------------------------------------------
+   Lo que comparten TODAS las páginas: base del documento, logotipo, botones y
+   tipografía de sección. Vivía dentro de landing.css, y con la segunda página
+   eso ya no daba: dos copias de un sistema de botones divergen en la primera
+   corrección que se hace en una sola de las dos.
+
+   Orden de carga obligatorio:  tokens.css → base.css → <pagina>.css
+   ========================================================================== */
+
+/* ── Base del documento ──────────────────────────────────────────────────── */
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--t-body);
+  font-weight: 400;
+  line-height: 1.66;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  transition: background 400ms ease, color 400ms ease;
+}
+
+/* ── Logotipo ────────────────────────────────────────────────────────────── */
+.mark {
+  font-family: var(--display);
+  font-weight: 700; font-size: 15px; letter-spacing: -0.03em; text-transform: uppercase;
+}
+.mark i {
+  display: inline-block; width: 5px; height: 5px;
+  background: var(--accent); border-radius: 50%; margin: 0 1px 3px 1px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOTONES
+   Referencia Vercel: bajos, esquinas de 8px, ícono siempre, transiciones de
+   150ms y un estado :active real. Tres alturas y nada más.
+
+   La animación de hover es POR VARIANTE, no una sola global:
+     primario  → la flecha avanza
+     fantasma  → el trazo se llena y aparece un fondo tenue
+     quiet     → sólo el ícono se mueve
+   Y todos comparten el mismo feedback de click: se hunden un pelo.
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* Una sola altura en toda la página. Antes convivían 34, 40 y 46 según la
+   sección y eso se leía como descuido, no como jerarquía: la jerarquía la
+   hace la variante (tinta contra trazo), no el tamaño.
+   Y el radio baja a 6px: más cuadrado, más serio, y es el --r-2 del sistema. */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: 38px; padding: 0 15px;
+  border-radius: var(--r-2);
+  font-family: var(--sans);
+  font-size: 14px; font-weight: 500; line-height: 1;
+  letter-spacing: -0.005em;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    transform 90ms cubic-bezier(.2,.8,.3,1),
+    box-shadow 150ms ease;
+}
+/* Única excepción, para contextos densos (el panel, tablas del dashboard).
+   No se usa en la landing. */
+.btn-sm { height: 30px; padding: 0 11px; font-size: 13px; }
+
+/* Feedback de click: se hunde. Es lo que hace que un botón se sienta físico. */
+.btn:active { transform: scale(0.972); }
+
+/* Los íconos de Lucide entran como <svg>. Tamaño y grosor unificados acá para
+   que no dependan de cada llamada. */
+.btn svg { width: 15px; height: 15px; stroke-width: 2; flex-shrink: 0; }
+.btn-sm svg { width: 13px; height: 13px; }
+
+/* La flecha avanza en el hover. Un solo eje, 3px, 180ms: se siente y no molesta. */
+.btn .go { transition: transform 180ms cubic-bezier(.2,.8,.3,1); }
+.btn:hover .go { transform: translateX(3px); }
+
+/* Primario ─────────────────────────────────────────────────────────────── */
+.btn-pri { background: var(--cta-bg); color: var(--cta-fg); }
+.btn-pri:hover { background: var(--cta-bg-hov); }
+
+/* Fantasma. El trazo en reposo va al 16% y no al 10%: un bloque relleno se
+   lee ópticamente más grande que uno contorneado del mismo tamaño, y con el
+   borde demasiado tenue el botón pierde el filo y parece más bajo que el
+   primario aunque midan igual. */
+.btn-ghost {
+  border-color: color-mix(in srgb, var(--ink) 16%, transparent);
+  color: var(--ink); background: transparent;
+}
+.btn-ghost:hover { border-color: var(--line-strong); background: var(--ghost-hov); }
+
+/* Botón de sólo ícono: cuadrado, misma altura que el resto.
+
+   Los íconos van envueltos en un <span> propio y la animación se cuelga del
+   span, no del <svg>: Lucide reemplaza el <i> por un SVG nuevo y en el camino
+   se pierden las clases que uno le puso, así que cualquier regla que apunte
+   directo al svg por clase no engancha. El span es mío y Lucide no lo toca.
+
+   Los dos viven en la MISMA celda de grilla, apilados. Antes se
+   intercambiaban con display:none, que no es animable: por eso el cambio era
+   seco. Ahora el que sale gira y se achica mientras el que entra hace lo
+   inverso. */
+.btn-icon {
+  display: grid; place-items: center;
+  width: 38px; padding: 0; gap: 0;
+  overflow: hidden;
+}
+.btn-icon .ico {
+  grid-area: 1 / 1;
+  display: grid; place-items: center;
+  transition:
+    opacity 200ms ease,
+    transform 420ms cubic-bezier(.34, 1.2, .4, 1);
+}
+/* Claro: se ve la luna, que es lo que vas a activar. */
+.btn-icon .ico-moon { opacity: 1; transform: rotate(0) scale(1); }
+.btn-icon .ico-sun  { opacity: 0; transform: rotate(-110deg) scale(.3); }
+/* Oscuro: al revés. */
+:root[data-theme="dark"] .btn-icon .ico-moon { opacity: 0; transform: rotate(110deg) scale(.3); }
+:root[data-theme="dark"] .btn-icon .ico-sun  { opacity: 1; transform: rotate(0) scale(1); }
+
+/* Quiet: sin caja hasta que lo tocás. Para acciones dentro de una tarjeta. */
+.btn-quiet { color: var(--ink); background: transparent; padding: 0 10px; }
+.btn-quiet:hover { background: var(--ghost-hov); }
+
+/* Acento: se usa una sola vez por pantalla, o ninguna. */
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-accent:hover { background: var(--accent-2); }
+
+/* Alta, sólo para formularios. Un botón de 38px debajo de campos de 44 se lee
+   endeble: cuando el botón cierra una columna de inputs tiene que medir lo
+   mismo que ellos, si no la columna termina en punta. */
+.btn-lg { height: 44px; padding: 0 18px; font-size: 15px; }
+.btn-lg svg { width: 16px; height: 16px; }
+
+/* Ancho completo, para columnas de formulario. */
+.btn-block { width: 100%; }
+
+/* Ocupado: el texto se queda quieto y aparece el giro. Nada de cambiar el
+   ancho del botón a mitad del click. */
+.btn[data-cargando="1"] { pointer-events: none; opacity: .72; }
+.btn[data-cargando="1"] .go { display: none; }
+.spin {
+  width: 15px; height: 15px; flex-shrink: 0;
+  border: 2px solid color-mix(in srgb, currentColor 28%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: girar 620ms linear infinite;
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+
+/* ── Tipografía de sección ───────────────────────────────────────────────── */
+/* ── Tipografía de sección ───────────────────────────────────────────────── */
+h1, h2, h3 { margin: 0; text-wrap: balance; font-family: var(--display); }
+h2 {
+  font-size: calc(var(--t-h2) * var(--display-scale));
+  font-weight: var(--display-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--display-track);
+  line-height: 1.08;
+}
+h3 { font-family: var(--sans); font-size: var(--t-h3); font-weight: 600; letter-spacing: -0.025em; }
+.lede { font-size: var(--t-lede); color: var(--ink-2); max-width: 52ch; font-weight: 300; letter-spacing: -0.005em; }
+p { margin: 0; }

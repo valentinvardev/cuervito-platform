@@ -1,0 +1,155 @@
+/* =============================================================================
+   encontrate · tokens
+   -----------------------------------------------------------------------------
+   Rebrand, no refinación. Se va el negro cálido con naranja de cuervito.
+
+   Dirección: galería. Papel casi blanco, tinta casi negra, muchísimo aire, y
+   la foto como única masa oscura y única fuente de color de la pantalla. Los
+   CTA son tinta, no color: la personalidad la carga la tipografía, no la
+   paleta. El bermellón aparece en dosis mínimas y por eso se ve.
+
+   El tema oscuro queda definido como variante, pero la base es el papel.
+   ========================================================================== */
+
+:root {
+  /* ── Papel. No es blanco puro: el blanco puro sobre pantalla es duro y
+     hace que las fotos deportivas a contraluz se vean lavadas. ─────────── */
+  --paper:       #FAFAF8;
+  --paper-2:     #FFFFFF;
+  --paper-3:     #F1F0EC;
+
+  --ink:         #12110F;
+  --ink-2:       #55524C;
+  --ink-3:       #8C887F;
+
+  /* Filetes finísimos. En un diseño liviano el borde casi no existe. */
+  --line:        rgba(18, 17, 15, 0.10);
+  --line-soft:   rgba(18, 17, 15, 0.06);
+  --line-strong: rgba(18, 17, 15, 0.22);
+
+  /* ── Acento. Bermellón, no el ámbar de cuervito. Sigue estando en la
+     familia naranja, que es la única que no reclama ningún club del fútbol
+     argentino, pero es notoriamente otro color. Se usa poquísimo. ──────── */
+  --accent:      #F0410F;
+  --accent-2:    #C7330B;
+  --accent-wash: rgba(240, 65, 15, 0.08);
+
+  --ok:          #1E7A4D;
+  --bad:         #C4342F;
+
+  /* Sobre papel, el botón primario es TINTA. El color se reserva para
+     señales chicas: ahí es donde rinde. */
+  --cta-bg:      #12110F;
+  --cta-bg-hov:  #34302A;
+  --cta-fg:      #FAFAF8;
+  --ghost-hov:   rgba(18, 17, 15, 0.05);
+
+  --shadow-obj:  0 30px 60px rgba(18, 17, 15, 0.13);
+  --shadow-card: 0 2px 4px rgba(18,17,15,.03), 0 12px 32px rgba(18, 17, 15, 0.07);
+
+  /* ── Tipografía. Dos familias y nada más. ──────────────────────────────
+     Unbounded para titulares: geométrica, muy ancha y sin parecido con nada
+     del rubro. Va sólo en h1, h2 y el logotipo — en textos medianos pesa
+     demasiado.
+     Outfit para todo lo demás: párrafos, subtítulos, etiquetas y sobre todo
+     los números, que en peso 200 y tamaño grande son lo mejor que dio el
+     sistema. El cuerpo va en 400 igual: 300 a 16px sobre papel se afina de
+     más y en Windows se rompe; el thin se reserva de 20px para arriba.
+
+     El contraste del sistema es de PESO y de ANCHO: display 800 contra
+     cuerpo 200-400. Por eso no hay ninguna serif y no hace falta una tercera
+     familia. ──────────────────────────────────────────────────────────────
+     Unbounded es MUY ancha: el tracking va bien negativo para compactarla y
+     la escala baja, porque a igual cuerpo ocupa casi un 40% más de ancho que
+     una grotesca normal. */
+  --display:       "Unbounded", system-ui, sans-serif;
+  --display-track: -0.045em;
+  --display-scale: 0.74;
+  --display-weight: 800;
+
+  /* Outfit para TODO el contenido: párrafos, subtítulos, etiquetas y sobre
+     todo los números, que en peso 200-300 y tamaño grande son lo mejor que
+     dio el sistema hasta ahora. El cuerpo va en 400 igual: 300 a 16px sobre
+     papel se afina demasiado y en Windows se rompe. El thin se reserva para
+     donde luce, que es de 20px para arriba. */
+  --sans:    "Outfit", system-ui, sans-serif;
+  --meta:    var(--sans);
+
+  --t-hero:  clamp(34px, 5.6vw, 68px);   /* en caja alta el tamaño óptico crece */
+  --t-h2:    clamp(26px, 3.4vw, 42px);
+  --t-h3:    19px;
+  --t-lede:  clamp(17px, 1.6vw, 20px);
+  --t-body:  16.5px;
+  --t-small: 14.5px;
+  --t-label: 10.5px;
+
+  /* Aire. Todo el sistema respira más que el anterior: eso es "liviano". */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 14px; --s-4: 20px;
+  --s-5: 28px; --s-6: 40px; --s-7: 60px; --s-8: 88px;
+  --s-9: 120px; --s-10: 168px;
+
+  /* Radios chicos: lo muy redondeado se lee amigable, y acá se está pidiendo
+     que te confíen los ingresos del mes. */
+  --r-1: 3px; --r-2: 6px; --r-3: 10px; --r-4: 16px;
+
+  --wrap: 1220px;
+}
+
+/* ── Variante oscura, para comparar. No es la base. ──────────────────────── */
+:root[data-theme="dark"] {
+  --paper:       #0D0D0C;
+  --paper-2:     #151513;
+  --paper-3:     #1D1D1A;
+  --ink:         #F4F3EF;
+  --ink-2:       #A5A199;
+  --ink-3:       #6E6A62;
+  --line:        rgba(244, 243, 239, 0.11);
+  --line-soft:   rgba(244, 243, 239, 0.06);
+  --line-strong: rgba(244, 243, 239, 0.22);
+  --accent:      #FF5A28;
+  --accent-2:    #FF7A4F;
+  --accent-wash: rgba(255, 90, 40, 0.10);
+  --cta-bg:      #F4F3EF;
+  --cta-bg-hov:  #FFFFFF;
+  --cta-fg:      #0D0D0C;
+  --ghost-hov:   rgba(244, 243, 239, 0.07);
+  --shadow-obj:  0 40px 80px rgba(0, 0, 0, 0.6);
+  --shadow-card: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+/* Reset mínimo */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; }
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; }
+
+.wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 var(--s-5); }
+
+/* Etiqueta micro: mismo cuerpo que el párrafo, otro tratamiento. El carácter
+   sale del tracking y la mayúscula, no de una tercera familia. */
+.label {
+  font-family: var(--meta);
+  font-size: var(--t-label);
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Todo lo que sea cifra que pueda quedar en columna. */
+.tnum { font-variant-numeric: tabular-nums; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
