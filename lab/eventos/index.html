@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · eventos</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css?v=1786703126">
+<link rel="stylesheet" href="../base.css?v=1786703126">
+<link rel="stylesheet" href="../panel.css?v=1786703126">
+<link rel="stylesheet" href="eventos.css?v=1786703126">
+
+<script>
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/iconos.js?v=1786703126" defer></script>
+</head>
+
+<body>
+
+<div class="app">
+  <div class="col">
+    <main class="canvas">
+      <div class="canvas-in">
+
+        <div class="head">
+          <div>
+            <h1>Eventos</h1>
+            <p>6 eventos, 16.337 fotos publicadas.</p>
+          </div>
+        </div>
+
+        <div class="barra">
+          <!-- Mismo desplegable que en la pantalla del evento. Los recuentos
+               van adentro de cada opción: filtrar a ciegas y caer en una lista
+               vacía es la peor devolución posible. -->
+          <div class="dd" id="dd-filtro">
+            <button type="button" class="dd-t">
+              <i data-lucide="list-filter"></i>
+              <span class="dd-v">Todos</span>
+              <i data-lucide="chevron-down"></i>
+            </button>
+            <div class="dd-m" role="listbox">
+              <button type="button" class="dd-o" data-k="todos" data-v="Todos" aria-selected="true">Todos <b class="dd-n"></b></button>
+              <div class="dd-sep"></div>
+              <button type="button" class="dd-o" data-k="vivo" data-v="En vivo">En vivo <b class="dd-n"></b></button>
+              <button type="button" class="dd-o" data-k="pub" data-v="Publicados">Publicados <b class="dd-n"></b></button>
+              <button type="button" class="dd-o" data-k="bor" data-v="Borradores">Borradores <b class="dd-n"></b></button>
+            </div>
+          </div>
+
+          <div class="vista" id="vista">
+            <button type="button" data-v="grilla" aria-pressed="true" aria-label="Ver en grilla"><i data-lucide="layout-grid"></i></button>
+            <button type="button" data-v="lista" aria-label="Ver en lista"><i data-lucide="list"></i></button>
+          </div>
+        </div>
+
+        <section class="evs" id="evs" data-vista="grilla">
+
+          <!-- Encabezado. Sólo se dibuja en la vista lista: en grilla cada
+               tarjeta trae sus propias etiquetas. -->
+          <div class="ec-h" id="ec-h">
+            <span></span>
+            <button type="button" class="et" data-c="nombre">Evento <i data-lucide="chevron-down"></i></button>
+            <button type="button" class="et num c-fotos" data-c="fotos">Fotos <i data-lucide="chevron-down"></i></button>
+            <button type="button" class="et num" data-c="vendido" data-ord="desc">Vendido <i data-lucide="chevron-down"></i></button>
+            <button type="button" class="et num c-conv" data-c="conv">Convierte <i data-lucide="chevron-down"></i></button>
+            <span class="c-estado"></span>
+          </div>
+
+          <a href="../evento/" class="ec" data-e="vivo" data-nombre="Duatlón Club Ciclista Chivilcoy" data-fotos="2162" data-vendido="48200" data-conv="7.1">
+            <div class="ec-cv" data-cv="1"></div>
+            <div class="ec-b">
+              <h3>Duatlón Club Ciclista Chivilcoy</h3>
+              <div class="ec-meta">Hoy <i></i> Chivilcoy</div>
+            </div>
+            <div class="ec-st">
+              <div class="c-fotos"><span>Fotos</span><b class="tnum">2.162</b></div>
+              <div><span>Vendido</span><b class="tnum">$48.200</b></div>
+              <div class="c-conv"><span>Convierte</span><b class="tnum">7,1%</b></div>
+            </div>
+            <span class="pill live"><i></i> En vivo</span>
+          </a>
+
+          <a href="../evento/" class="ec" data-e="pub" data-nombre="Media Maratón de Chivilcoy" data-fotos="3104" data-vendido="164900" data-conv="9.4">
+            <div class="ec-cv" data-cv="2"></div>
+            <div class="ec-b">
+              <h3>Media Maratón de Chivilcoy</h3>
+              <div class="ec-meta">3 de agosto <i></i> Chivilcoy</div>
+            </div>
+            <div class="ec-st">
+              <div class="c-fotos"><span>Fotos</span><b class="tnum">3.104</b></div>
+              <div><span>Vendido</span><b class="tnum">$164.900</b></div>
+              <div class="c-conv"><span>Convierte</span><b class="tnum">9,4%</b></div>
+            </div>
+            <span class="pill"><i></i> Publicado</span>
+          </a>
+
+          <!-- Sin portada: se dice, no se disimula con un gris. -->
+          <a href="../evento/" class="ec" data-e="pub" data-nombre="Torneo Apertura · Fecha 8" data-fotos="1488" data-vendido="91300" data-conv="4.2">
+            <div class="ec-cv">
+              <div class="ec-none">
+                <i data-lucide="image-off"></i>
+                <span>Sin portada</span>
+              </div>
+            </div>
+            <div class="ec-b">
+              <h3>Torneo Apertura · Fecha 8</h3>
+              <div class="ec-meta">27 de julio <i></i> Chivilcoy</div>
+            </div>
+            <div class="ec-st">
+              <div class="c-fotos"><span>Fotos</span><b class="tnum">1.488</b></div>
+              <div><span>Vendido</span><b class="tnum">$91.300</b></div>
+              <div class="c-conv"><span>Convierte</span><b class="tnum">4,2%</b></div>
+            </div>
+            <span class="pill"><i></i> Publicado</span>
+          </a>
+
+          <a href="../evento/" class="ec" data-e="pub" data-nombre="Copa Ciudad · Hockey" data-fotos="2740" data-vendido="127600" data-conv="8.0">
+            <div class="ec-cv" data-cv="3"></div>
+            <div class="ec-b">
+              <h3>Copa Ciudad · Hockey</h3>
+              <div class="ec-meta">19 de julio <i></i> Bragado</div>
+            </div>
+            <div class="ec-st">
+              <div class="c-fotos"><span>Fotos</span><b class="tnum">2.740</b></div>
+              <div><span>Vendido</span><b class="tnum">$127.600</b></div>
+              <div class="c-conv"><span>Convierte</span><b class="tnum">8,0%</b></div>
+            </div>
+            <span class="pill"><i></i> Publicado</span>
+          </a>
+
+          <a href="../evento/" class="ec" data-e="bor" data-nombre="Maratón Río Cuarto" data-fotos="946" data-vendido="0" data-conv="0">
+            <div class="ec-cv" data-cv="4"></div>
+            <div class="ec-b">
+              <h3>Maratón Río Cuarto</h3>
+              <div class="ec-meta">Sin publicar <i></i> Río Cuarto</div>
+            </div>
+            <div class="ec-st">
+              <div class="c-fotos"><span>Fotos</span><b class="tnum">946</b></div>
+              <div><span>Vendido</span><b class="pale">—</b></div>
+              <div class="c-conv"><span>Convierte</span><b class="pale">—</b></div>
+            </div>
+            <span class="pill draft"><i></i> Borrador</span>
+          </a>
+
+          <a href="../evento/" class="ec" data-e="bor" data-nombre="Triatlón de Necochea" data-fotos="1204" data-vendido="0" data-conv="0">
+            <div class="ec-cv" data-cv="5"></div>
+            <div class="ec-b">
+              <h3>Triatlón de Necochea</h3>
+              <div class="ec-meta">Sin publicar <i></i> Necochea</div>
+            </div>
+            <div class="ec-st">
+              <div class="c-fotos"><span>Fotos</span><b class="tnum">1.204</b></div>
+              <div><span>Vendido</span><b class="pale">—</b></div>
+              <div class="c-conv"><span>Convierte</span><b class="pale">—</b></div>
+            </div>
+            <span class="pill draft"><i></i> Borrador</span>
+          </a>
+
+        </section>
+
+        <!-- Estado vacío del filtro. Distinto del "todavía no tenés eventos":
+             acá el usuario sí tiene, lo que no hay es coincidencias, y la
+             salida es limpiar el filtro y no crear nada. -->
+        <div class="empty" id="vacio" hidden>
+          <div class="empty-i"><i data-lucide="calendar-search"></i></div>
+          <h3>Ningún evento con ese estado</h3>
+          <p>Probá con otro filtro o mirá todos tus eventos.</p>
+          <button type="button" class="btn btn-ghost" id="limpiar">Ver todos</button>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../panel.js?v=1786703126" defer></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    Panel.init({ activo: "eventos", buscar: "Buscar evento por nombre o lugar" });
+
+    try {
+      var evs = document.getElementById("evs");
+      var vacio = document.getElementById("vacio");
+      var tarjetas = Array.prototype.slice.call(evs.querySelectorAll(".ec"));
+
+      // Los recuentos se cuentan, no se escriben. Un filtro que dice 3 y
+      // muestra 2 hace dudar de todos los demás números de la pantalla.
+      (function () {
+        var c = { todos: tarjetas.length, vivo: 0, pub: 0, bor: 0 };
+        tarjetas.forEach(function (t) { if (c[t.dataset.e] !== undefined) c[t.dataset.e]++; });
+        document.querySelectorAll("#dd-filtro .dd-o").forEach(function (o) {
+          o.querySelector(".dd-n").textContent = c[o.dataset.k];
+        });
+      })();
+
+      function filtrar(f) {
+        var n = 0;
+        tarjetas.forEach(function (c) {
+          var ok = f === "todos" || c.dataset.e === f;
+          c.hidden = !ok;
+          if (ok) n++;
+        });
+        evs.hidden = n === 0;
+        vacio.hidden = n !== 0;
+      }
+
+      document.getElementById("dd-filtro").addEventListener("elegir", function () {
+        filtrar(this.querySelector('.dd-o[aria-selected="true"]').dataset.k);
+      });
+
+      document.getElementById("limpiar").addEventListener("click", function () {
+        document.querySelector('#dd-filtro .dd-o[data-k="todos"]').click();
+      });
+
+      document.getElementById("vista").addEventListener("click", function (ev) {
+        var b = ev.target.closest("button");
+        if (!b) return;
+        this.querySelectorAll("button").forEach(function (x) { x.removeAttribute("aria-pressed"); });
+        b.setAttribute("aria-pressed", "true");
+        evs.dataset.vista = b.dataset.v;
+      });
+
+      /* ── Orden ──────────────────────────────────────────────────────────────
+         Reordena moviendo los nodos, no reconstruyéndolos: las tarjetas ya
+         están en el HTML y volver a generarlas obligaría a tener los datos
+         duplicados en JS, listos para desincronizarse del marcado. */
+      document.getElementById("ec-h").addEventListener("click", function (ev) {
+        var th = ev.target.closest(".et");
+        if (!th) return;
+        var asc = th.dataset.ord !== "asc";
+        this.querySelectorAll(".et").forEach(function (o) { delete o.dataset.ord; });
+        th.dataset.ord = asc ? "asc" : "desc";
+
+        var k = th.dataset.c;
+        tarjetas.slice().sort(function (a, b) {
+          if (k === "nombre") {
+            return asc
+              ? a.dataset.nombre.localeCompare(b.dataset.nombre, "es")
+              : b.dataset.nombre.localeCompare(a.dataset.nombre, "es");
+          }
+          var x = parseFloat(a.dataset[k]), y = parseFloat(b.dataset[k]);
+          return asc ? x - y : y - x;
+        }).forEach(function (c) { evs.appendChild(c); });
+      });
+    } catch (e) { console.warn("eventos:", e); }
+  });
+</script>
+
+</body>
+</html>

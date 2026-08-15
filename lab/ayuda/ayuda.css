@@ -1,0 +1,132 @@
+/* =============================================================================
+   encontrate · panel · ayuda
+   -----------------------------------------------------------------------------
+   El centro de ayuda viejo prometía respuesta en 12 horas hábiles. Eso, para
+   un fotógrafo que está subiendo fotos un domingo a las 8 de la noche con el
+   evento todavía caliente, equivale a no tener soporte: cuando le contesten,
+   la venta ya no está.
+
+   Por eso el contacto directo va arriba y no al final, y dice la verdad de lo
+   que ofrecemos, que es WhatsApp las 24 horas. Las preguntas frecuentes van
+   abajo: sirven, pero el que entra acá con un problema en vivo no viene a
+   leer.
+   ========================================================================== */
+
+/* ── Contacto ────────────────────────────────────────────────────────────── */
+/* Verde WhatsApp, pero NO el #25D366 de la marca: blanco sobre ese verde da
+   1,98:1 de contraste, o sea ilegible. Este es el mismo verde bajado en
+   luminancia hasta 5,28:1, que pasa AA con holgura.
+
+   Color plano, sin degradé. En una superficie de este tamaño el degradé no
+   agrega información y sí agrega una dirección de luz que ninguna otra
+   tarjeta del panel tiene: se leía como un elemento de otro sistema. */
+.contacto {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center; gap: var(--s-5);
+  padding: var(--s-5);
+  border-radius: var(--r-3);
+  background: #0A7C42; color: #FFFFFF;
+  box-shadow: var(--shadow-card);
+}
+/* El ícono al lado del título hace de marca de sección: dice "soporte" sin
+   necesidad de un rótulo arriba, que es justo lo que se sacó. */
+.contacto h2 {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--sans); font-size: 18px; font-weight: 600;
+  letter-spacing: -0.02em; text-transform: none;
+}
+.ct-i {
+  width: 32px; height: 32px; border-radius: 50%;
+  flex-shrink: 0;
+  display: grid; place-items: center;
+  background: rgba(255, 255, 255, .16);
+}
+.ct-i svg { width: 17px; height: 17px; }
+.contacto p {
+  margin-top: 7px; font-size: 13.5px; line-height: 1.55;
+  color: rgba(255, 255, 255, .82);
+  max-width: 48ch;
+}
+
+/* Botón de trazo blanco y no relleno: sobre una superficie de color, un botón
+   blanco sólido es una segunda mancha que pelea con la tarjeta. El trazo deja
+   que la tarjeta siga siendo el bloque y el botón siga siendo el borde. */
+.contacto .btn-wa {
+  background: rgba(255, 255, 255, .12);
+  border-color: rgba(255, 255, 255, .55);
+  color: #FFFFFF;
+  backdrop-filter: blur(6px);
+}
+.contacto .btn-wa:hover { background: rgba(255, 255, 255, .22); border-color: #FFFFFF; }
+.contacto .btn-wa .wa { width: 17px; height: 17px; fill: currentColor; }
+
+/* ── Guías ───────────────────────────────────────────────────────────────── */
+.guias { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
+.gu {
+  display: grid; gap: 9px; align-content: start;
+  padding: var(--s-4);
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  transition: border-color 160ms ease, transform 160ms cubic-bezier(.2, .8, .3, 1), box-shadow 160ms ease;
+}
+.gu:hover { border-color: var(--line); transform: translateY(-2px); box-shadow: var(--shadow-card); }
+.gu-i {
+  width: 32px; height: 32px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.gu-i svg { width: 16px; height: 16px; }
+.gu b { font-size: 14px; font-weight: 600; letter-spacing: -0.015em; }
+.gu p { font-size: 12.5px; color: var(--ink-3); line-height: 1.55; }
+.gu .mas {
+  margin-top: 3px; display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12.5px; font-weight: 500; color: var(--ink);
+}
+.gu .mas svg { width: 13px; height: 13px; transition: transform 180ms cubic-bezier(.2, .8, .3, 1); }
+.gu:hover .mas svg { transform: translateX(3px); }
+
+/* ── Preguntas ───────────────────────────────────────────────────────────────
+   Misma mecánica de altura que en la landing: grid-template-rows de 0fr a 1fr
+   anima sin medir con JS y sirve para cualquier largo de respuesta. */
+.qa { border-top: 1px solid var(--line-soft); }
+.qa:last-child { border-bottom: 1px solid var(--line-soft); }
+.qa-t {
+  display: flex; align-items: center; gap: var(--s-4);
+  width: 100%; padding: 15px 4px;
+  border: 0; background: none; cursor: pointer; text-align: left;
+  font-family: var(--sans); font-size: 14.5px; font-weight: 500; color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.qa-t .mas-i {
+  margin-left: auto; flex-shrink: 0;
+  width: 18px; height: 18px;
+  display: grid; place-items: center;
+  color: var(--ink-3);
+  transition: transform 300ms cubic-bezier(.2, .8, .3, 1), color 160ms ease;
+}
+.qa-t:hover .mas-i { color: var(--ink); }
+.qa-t[aria-expanded="true"] .mas-i { transform: rotate(45deg); }
+.qa-t .mas-i svg { width: 16px; height: 16px; }
+
+.qa-b {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows 320ms cubic-bezier(.2, .8, .3, 1);
+}
+.qa[data-abierta="1"] .qa-b { grid-template-rows: 1fr; }
+.qa-b > div {
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.qa[data-abierta="1"] .qa-b > div { opacity: 1; transition: opacity 240ms ease 110ms; }
+.qa-b p {
+  padding: 0 4px 17px;
+  font-size: 13.5px; line-height: 1.65; color: var(--ink-2);
+  max-width: 74ch;
+}
+
+@media (max-width: 900px) {
+  .contacto { grid-template-columns: minmax(0, 1fr); }
+  .guias { grid-template-columns: minmax(0, 1fr); }
+}

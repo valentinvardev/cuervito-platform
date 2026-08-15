@@ -1,0 +1,1093 @@
+/* =============================================================================
+   encontrate · armazón del panel
+   -----------------------------------------------------------------------------
+   Riel, barra superior, lienzo y las piezas que repiten todas las pantallas
+   del panel: tarjeta, cabecera de tarjeta, segmentado, píldora de estado,
+   tabla, estado vacío. El HTML del riel y la barra no está en cada página, lo
+   inyecta panel.js: son cinco pantallas y mantener cinco copias del menú
+   sincronizadas a mano no termina bien.
+
+   Orden de carga:  tokens.css → base.css → panel.css → <pagina>.css
+   ========================================================================== */
+
+body { overflow-x: hidden; }
+
+.app {
+  display: grid;
+  grid-template-columns: 246px minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+/* ═══════════════════════ ESQUELETO DEL ARMAZÓN ═══════════════════════════
+   El riel y la barra los inyecta panel.js, que va con defer y por lo tanto
+   corre DESPUÉS de que el navegador ya pintó. Sin lo de abajo pasaban dos
+   cosas feas en ese intervalo:
+
+   1. La grilla tiene dos columnas y el único hijo presente al parsear es
+      .col, así que el contenido caía en la columna de 246px y se pintaba
+      apretado contra el margen izquierdo antes de saltar a su lugar. Eso se
+      arregla fijando .col a la columna 2, no con un esqueleto: ningún
+      esqueleto tapa un salto de layout.
+
+   2. Quedaba un hueco blanco donde va el riel. Eso sí lo tapa el esqueleto:
+      se dibuja la superficie y unas barras, y cuando panel.js termina marca
+      data-listo en el <html> y el esqueleto desaparece.
+   ══════════════════════════════════════════════════════════════════════ */
+.rail { grid-column: 1; grid-row: 1; }
+.col  { grid-column: 2; grid-row: 1; min-width: 0; }
+
+.app::before {
+  content: "";
+  grid-column: 1; grid-row: 1;
+  background-color: var(--paper-2);
+  border-right: 1px solid var(--line-soft);
+  background-image:
+    linear-gradient(var(--paper-3), var(--paper-3)),
+    repeating-linear-gradient(to bottom, var(--paper-3) 0 13px, transparent 13px 37px);
+  background-repeat: no-repeat;
+  background-position: 25px 30px, 25px 86px;
+  /* El alto de la tira de barras tiene que seguir a la cantidad de ítems del
+     riel: 4 x 37px. Con 182px quedaba una barra fantasma de más, que al sacar
+     Fotos del menú se habría visto en cada carga. */
+  background-size: 116px 13px, 148px 145px;
+  animation: latido 1.5s ease-in-out infinite;
+}
+.col::before {
+  content: "";
+  display: block; height: 62px;
+  border-bottom: 1px solid var(--line-soft);
+  background-image: linear-gradient(var(--paper-3), var(--paper-3));
+  background-repeat: no-repeat;
+  background-position: 20px 14px;
+  background-size: 300px 34px;
+  animation: latido 1.5s ease-in-out infinite;
+}
+:root[data-listo="1"] .app::before,
+:root[data-listo="1"] .col::before { display: none; }
+
+/* Latido, no barrido. Un brillo que cruza de izquierda a derecha compite con
+   el contenido que está a punto de aparecer; el latido se nota lo justo. */
+@keyframes latido {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .55; }
+}
+
+/* Bloque de relleno para el contenido que dibuja el JS. */
+.sk {
+  background: var(--paper-3);
+  border-radius: var(--r-1);
+  animation: latido 1.5s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════ RIEL ════════════════════════════════════ */
+.rail {
+  position: sticky; top: 0;
+  height: 100dvh;
+  display: flex; flex-direction: column;
+  gap: var(--s-5);
+  padding: var(--s-4) var(--s-3) var(--s-3);
+  border-right: 1px solid var(--line-soft);
+  background: var(--paper-2);
+}
+.rail-top { padding: var(--s-2) var(--s-3) 0; }
+
+.rail-nav { display: grid; gap: 1px; }
+.rail-sep { margin: var(--s-3); border-top: 1px solid var(--line-soft); }
+.rail-cap {
+  padding: 0 var(--s-3) 6px;
+  font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.rl {
+  display: flex; align-items: center; gap: 10px;
+  height: 36px; padding: 0 11px;
+  border-radius: var(--r-2);
+  font-size: 14px; font-weight: 400;
+  color: var(--ink-2);
+  transition: background 140ms ease, color 140ms ease;
+}
+.rl:hover { background: var(--ghost-hov); color: var(--ink); }
+.rl svg { width: 17px; height: 17px; stroke-width: 1.9; flex-shrink: 0; }
+
+/* Activo: tinta llena. Con sólo poner el texto en negrita no alcanza; en un
+   riel de ocho ítems hay que poder encontrar dónde estás sin leer. */
+.rl[aria-current="page"] {
+  background: var(--cta-bg); color: var(--cta-fg); font-weight: 500;
+}
+.rl[aria-current="page"] svg { stroke-width: 2.1; }
+
+/* Contador al final del ítem. Números y no puntos: "3" dice más que un punto. */
+.rl-n {
+  margin-left: auto;
+  font-size: 11.5px; font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+.rl[aria-current="page"] .rl-n { color: color-mix(in srgb, var(--cta-fg) 62%, transparent); }
+.rl-n.hot { color: var(--accent); font-weight: 600; }
+
+.rail-bot { margin-top: auto; }
+.me {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 9px;
+  border-radius: var(--r-2);
+  transition: background 140ms ease;
+}
+.me:hover { background: var(--ghost-hov); }
+.me-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--cta-bg); color: var(--cta-fg);
+  font-size: 11.5px; font-weight: 600;
+  flex-shrink: 0;
+}
+.me-txt { min-width: 0; line-height: 1.25; }
+.me-txt b { display: block; font-size: 13px; font-weight: 500; }
+.me-txt span {
+  display: block; font-size: 11.5px; color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ═══════════════════════════════ BARRA ═══════════════════════════════════ */
+.top {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: var(--s-3);
+  height: 62px; padding: 0 var(--s-5);
+  border-bottom: 1px solid var(--line-soft);
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  backdrop-filter: blur(12px);
+}
+.burger-d { display: none; }
+
+.search { position: relative; flex: 1; max-width: 380px; }
+.search svg {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  width: 15px; height: 15px; color: var(--ink-3); pointer-events: none;
+}
+.search input {
+  width: 100%; height: 34px;
+  padding: 0 11px 0 33px;
+  background: var(--paper-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-2);
+  font-family: var(--sans); font-size: 13.5px; color: var(--ink);
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.search input::placeholder { color: var(--ink-3); }
+.search input:focus {
+  outline: none; background: var(--paper-2); border-color: var(--line-strong);
+}
+.top-r { margin-left: auto; display: flex; align-items: center; gap: var(--s-2); }
+
+/* Velo del riel en pantalla chica. */
+.rail-scrim {
+  position: fixed; inset: 0; z-index: 60;
+  background: color-mix(in srgb, var(--paper) 40%, transparent);
+  backdrop-filter: blur(10px);
+  opacity: 0; pointer-events: none;
+  transition: opacity 260ms ease;
+}
+:root[data-rail="open"] .rail-scrim { opacity: 1; pointer-events: auto; }
+
+/* ═══════════════════════════════ LIENZO ══════════════════════════════════ */
+.canvas { padding: var(--s-6) var(--s-5) var(--s-8); }
+.canvas-in { max-width: 1180px; margin: 0 auto; display: grid; gap: var(--s-5); }
+
+.head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-4); }
+.head h1 {
+  font-size: clamp(24px, 2.6vw, 32px);
+  font-weight: var(--display-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--display-track);
+  line-height: 1.06;
+}
+.head p { margin-top: 7px; color: var(--ink-2); font-size: var(--t-small); font-weight: 300; }
+.head-r { display: flex; gap: var(--s-2); flex-shrink: 0; }
+
+/* ── Piezas repetidas ────────────────────────────────────────────────────── */
+.card {
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  padding: var(--s-4);
+}
+.card-h {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-3); margin-bottom: var(--s-4);
+}
+.card-h h2 {
+  font-family: var(--sans);
+  font-size: 14.5px; font-weight: 600; letter-spacing: -0.015em;
+  text-transform: none;
+}
+.card-h .sub { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+.duo { display: grid; grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr); gap: var(--s-3); }
+
+/* Segmentado. Reemplaza al desplegable donde hay pocas opciones: un
+   desplegable de cuatro opciones esconde tres. */
+.seg {
+  display: flex; gap: 1px; padding: 2px;
+  background: var(--paper-3); border-radius: var(--r-2);
+}
+.seg button {
+  padding: 4px 9px; border: 0; background: none;
+  border-radius: 4px; cursor: pointer;
+  font-family: var(--sans); font-size: 12px; font-weight: 500;
+  color: var(--ink-3);
+  transition: background 140ms ease, color 140ms ease;
+}
+.seg button:hover { color: var(--ink); }
+.seg button[aria-pressed="true"] {
+  background: var(--paper-2); color: var(--ink);
+  box-shadow: 0 1px 2px rgba(18, 17, 15, .07);
+}
+
+/* Chips de filtro. A diferencia del segmentado, acá se ve el recuento de cada
+   opción: filtrar a ciegas y caer en cero es la peor experiencia posible. */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip-f {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 30px; padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--sans); font-size: 13px; font-weight: 400;
+  color: var(--ink-2);
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.chip-f:hover { border-color: var(--line-strong); color: var(--ink); }
+.chip-f b { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--ink-3); }
+.chip-f[aria-pressed="true"] {
+  background: var(--cta-bg); border-color: var(--cta-bg); color: var(--cta-fg);
+}
+.chip-f[aria-pressed="true"] b { color: color-mix(in srgb, var(--cta-fg) 62%, transparent); }
+
+/* ── Desplegable ─────────────────────────────────────────────────────────────
+   Componente propio y no <select>. Al nativo se le puede estilar la caja
+   cerrada y nada más: la lista la dibuja el sistema operativo, así que en
+   Windows aparece una lista gris de Windows en el medio de un panel que no se
+   parece en nada. Con lista propia el desplegable tiene el mismo radio, la
+   misma tipografía y el mismo tema que el resto.
+
+   Lo que hay que devolver a mano es lo que el nativo daba gratis: teclado,
+   cierre al hacer click afuera, Escape, y roles ARIA. Está en panel.js. */
+.dd { position: relative; }
+
+.dd-t {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 30px; padding: 0 9px 0 11px;
+  border: 1px solid var(--line); border-radius: 100px;
+  background: transparent; cursor: pointer;
+  font-family: var(--sans); font-size: 13px; color: var(--ink-2);
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.dd-t:hover { border-color: var(--line-strong); color: var(--ink); }
+.dd-t svg { width: 13px; height: 13px; color: var(--ink-3); transition: transform 240ms cubic-bezier(.2, .8, .3, 1); }
+.dd-t[aria-expanded="true"] { border-color: var(--ink); color: var(--ink); }
+.dd-t[aria-expanded="true"] svg { transform: rotate(180deg); }
+.dd-v { white-space: nowrap; }
+
+.dd-m {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 40;
+  min-width: 100%;
+  padding: 5px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-card);
+  display: grid; gap: 1px;
+  /* visibility además de opacity: sin eso el menú cerrado sigue capturando
+     clicks encima del contenido que tiene debajo. */
+  opacity: 0; visibility: hidden;
+  transform: translateY(-4px) scale(.985);
+  transform-origin: top left;
+  transition: opacity 160ms ease, transform 200ms cubic-bezier(.2, .8, .3, 1), visibility 0s 160ms;
+}
+.dd[data-abierto="1"] .dd-m {
+  opacity: 1; visibility: visible;
+  transform: none;
+  transition: opacity 160ms ease, transform 220ms cubic-bezier(.2, .8, .3, 1), visibility 0s;
+}
+/* Pegado a la derecha cuando el desplegable vive al final de una fila y la
+   lista se saldría de la pantalla. */
+.dd.der .dd-m { left: auto; right: 0; transform-origin: top right; }
+
+.dd-o {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 7px 10px;
+  border: 0; border-radius: var(--r-2);
+  background: none; cursor: pointer; text-align: left;
+  font-family: var(--sans); font-size: 13.5px; color: var(--ink-2);
+  white-space: nowrap;
+  transition: background 120ms ease, color 120ms ease;
+}
+.dd-o:hover, .dd-o.marcado { background: var(--paper-3); color: var(--ink); }
+.dd-o::after {
+  content: ""; margin-left: auto;
+  width: 14px; height: 14px; flex-shrink: 0;
+  background: currentColor;
+  opacity: 0;
+  -webkit-mask: var(--tic) center / contain no-repeat;
+  mask: var(--tic) center / contain no-repeat;
+}
+.dd-o[aria-selected="true"] { color: var(--ink); font-weight: 500; }
+.dd-o[aria-selected="true"]::after { opacity: 1; }
+.dd-sep { margin: 4px 6px; border-top: 1px solid var(--line-soft); }
+
+:root {
+  --tic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+}
+
+/* Píldoras de estado. Fondo OPACO y filete apenas más saturado que el fondo.
+
+   Opaco y no translúcido por una razón concreta: estas píldoras también se
+   apoyan sobre la portada de un evento, y un tinte transparente ahí toma el
+   color de la foto que tenga debajo. El mismo "Publicado" salía verdoso sobre
+   un pasto y anaranjado sobre un atardecer. Mezclando contra la superficie en
+   vez de contra transparente, el color es siempre el mismo.
+
+   El texto usa una variante más profunda que el color de estado: sobre papel
+   blanco el acento se lee bien, pero sobre su propio tinte cae a 3,17:1. Con
+   el tono profundo queda en 4,84:1. */
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px; border-radius: 100px;
+  border: 1px solid var(--line);
+  font-size: 11px; font-weight: 500;
+  background: var(--paper-3); color: var(--ink-2);
+  white-space: nowrap;
+}
+.pill i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+.pill.live {
+  background: color-mix(in srgb, var(--ok) 10%, var(--paper-2));
+  border-color: color-mix(in srgb, var(--ok) 32%, var(--paper-2));
+  color: var(--ok-txt);
+}
+.pill.draft {
+  background: color-mix(in srgb, var(--accent) 10%, var(--paper-2));
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--paper-2));
+  color: var(--acento-txt);
+}
+.pill.bad {
+  background: color-mix(in srgb, var(--bad) 10%, var(--paper-2));
+  border-color: color-mix(in srgb, var(--bad) 32%, var(--paper-2));
+  color: var(--bad-txt);
+}
+
+.num { font-variant-numeric: tabular-nums; text-align: right; }
+.num.soft { color: var(--ink-3); }
+
+/* ── Campos ──────────────────────────────────────────────────────────────────
+   Tres pantallas del panel son formularios. Los campos viven acá para que no
+   haya tres definiciones de "cómo se ve un input" listas para divergir. */
+.campo { display: grid; gap: 7px; }
+.campo > label { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.campo .pista { font-size: 12px; color: var(--ink-3); line-height: 1.45; }
+
+.inp, .ta {
+  width: 100%;
+  padding: 0 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  font-family: var(--sans); font-size: 14.5px; font-weight: 400;
+  color: var(--ink);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.inp { height: 40px; }
+.ta { padding: 10px 12px; min-height: 92px; resize: vertical; line-height: 1.55; }
+.inp::placeholder, .ta::placeholder { color: var(--ink-3); }
+
+/* El foco no usa el outline global de tokens: en un campo de texto el anillo
+   pegado al borde se lee mejor, y el borde se oscurece a tinta en vez de
+   teñirse de acento, que a esta escala grita. */
+.inp:focus, .ta:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 9%, transparent);
+}
+
+/* Campo con prefijo pegado, tipo "$" o "encontrate.app/". El borde lo dibuja
+   el envoltorio y no el input, para que el foco encierre a los dos. */
+.pegado {
+  display: flex; align-items: center;
+  height: 40px;
+  border: 1px solid var(--line); border-radius: var(--r-2);
+  background: var(--paper);
+  overflow: hidden;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.pegado:focus-within { border-color: var(--ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 9%, transparent); }
+.pegado .fijo { padding-left: 12px; font-size: 14.5px; color: var(--ink-3); white-space: nowrap; }
+.pegado .inp { border: 0; box-shadow: none; background: none; padding-left: 4px; }
+.pegado .inp:focus { box-shadow: none; }
+
+/* Variante compacta del campo con prefijo, a la altura de los chips y del
+   desplegable para que la fila de filtros quede pareja. */
+.pegado.chico { height: 30px; border-radius: 100px; }
+.pegado.chico .fijo { padding-left: 12px; font-size: 13px; }
+.pegado.chico .inp { height: 28px; font-size: 13px; padding-left: 2px; }
+
+/* Interruptor. Se anima el pomo y el fondo, nada más: un interruptor que
+   rebota o se estira parece un juguete, y acá se prenden cosas que cobran. */
+.sw {
+  position: relative;
+  width: 40px; height: 23px;
+  flex-shrink: 0;
+  border: 0; border-radius: 100px; padding: 0;
+  background: var(--line-strong);
+  cursor: pointer;
+  transition: background 200ms ease;
+}
+.sw::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 17px; height: 17px; border-radius: 50%;
+  background: var(--paper-2);
+  box-shadow: 0 1px 3px rgba(18, 17, 15, .25);
+  transition: transform 240ms cubic-bezier(.2, .8, .3, 1);
+}
+.sw[aria-checked="true"] { background: var(--ok); }
+.sw[aria-checked="true"]::after { transform: translateX(17px); }
+
+/* Fila de ajuste: texto a la izquierda, control a la derecha. */
+.aj {
+  display: flex; align-items: center; gap: var(--s-4);
+  padding: var(--s-3) 0;
+}
+.aj + .aj { border-top: 1px solid var(--line-soft); }
+.aj-t { flex: 1; min-width: 0; line-height: 1.4; }
+.aj-t b { display: block; font-size: 13.5px; font-weight: 500; }
+.aj-t span { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+
+.empty { text-align: center; padding: var(--s-8) var(--s-4); }
+.empty-i {
+  width: 44px; height: 44px; margin: 0 auto var(--s-4);
+  border-radius: var(--r-3);
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-3);
+}
+.empty-i svg { width: 20px; height: 20px; }
+.empty h3 { font-family: var(--sans); font-size: 16px; font-weight: 600; }
+.empty p { margin: 8px auto var(--s-5); max-width: 42ch; color: var(--ink-3); font-size: var(--t-small); }
+
+/* Fila genérica de tabla: se sangra al revés para que el hover llegue a los
+   bordes de la tarjeta en vez de cortarse contra el padding. */
+.row {
+  display: grid; align-items: center; gap: var(--s-3);
+  padding: 11px 10px;
+  margin-inline: -10px;
+  border-radius: var(--r-2);
+  transition: background 140ms ease;
+}
+.row:hover { background: var(--paper-3); }
+.row + .row { box-shadow: 0 -1px 0 var(--line-soft); }
+.row-h {
+  font-size: 11px; color: var(--ink-3);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding-bottom: 8px;
+}
+.row-h:hover { background: none; }
+.row .go { transition: transform 180ms cubic-bezier(.2, .8, .3, 1); }
+.row:hover .go { transform: translateX(3px); }
+
+/* ═══════════════════════════════ CHICO ═══════════════════════════════════ */
+@media (max-width: 1080px) {
+  .duo { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  /* En teléfono el riel es un cajón fuera de flujo: no hay columna que
+     reservar y el esqueleto del riel sobra. */
+  .app::before { display: none; }
+  .col { grid-column: 1; }
+  .burger-d { display: grid; }
+  .rail {
+    position: fixed; top: 0; left: 0; z-index: 70;
+    width: 246px;
+    transform: translateX(-100%);
+    transition: transform 320ms cubic-bezier(.2, .8, .3, 1);
+  }
+  :root[data-rail="open"] .rail { transform: none; }
+  .canvas { padding: var(--s-5) var(--s-4) var(--s-7); }
+  .top { padding: 0 var(--s-4); }
+  .head { flex-direction: column; }
+}
+
+@media (max-width: 560px) {
+  .search { display: none; }
+}
+
+/* Barra de carga. Corre hasta el 82% y se queda: no sabemos cuánto falta, y
+   una barra que llega al 100% y no pasa nada miente. Se va sola con la
+   navegación, porque el documento entero se reemplaza. */
+.cargando {
+  position: fixed; top: 0; left: 0; z-index: 100;
+  height: 2px; width: 0;
+  background: var(--accent);
+  transition: width 900ms cubic-bezier(.05, .7, .3, 1);
+}
+.cargando[data-on="1"] { width: 82%; }
+@media (prefers-reduced-motion: reduce) { .cargando { transition: none; } }
+
+/* ═════════════════════ GRILLA DE FOTOS Y SELECCIÓN ═══════════════════════
+   Compartida entre la biblioteca y la pantalla del evento. Vivía dentro de
+   fotos.css hasta que la segunda pantalla la necesitó, que es exactamente el
+   momento de sacarla: una copia más y empiezan a divergir.
+   ══════════════════════════════════════════════════════════════════════ */
+.barra { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); flex-wrap: wrap; }
+
+/* ── Grilla ──────────────────────────────────────────────────────────────────
+   auto-fill y no auto-fit: con pocas fotos, auto-fit las estira hasta
+   deformarlas, y una foto estirada en una herramienta de fotografía es un
+   error de oficio. */
+.fg { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 8px; }
+
+.ft {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--r-2);
+  overflow: hidden;
+  background: var(--paper-3);
+  cursor: pointer;
+  transition: transform 180ms cubic-bezier(.2, .8, .3, 1);
+}
+.ft:hover { transform: translateY(-2px); }
+
+/* Marcadores. Cinco luces distintas para que la grilla no parezca una foto
+   repetida. Van fotos reales. */
+.ft-i { position: absolute; inset: 0; }
+.ft-i[data-l="1"] { background: radial-gradient(112% 84% at 66% 24%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E); }
+.ft-i[data-l="2"] { background: radial-gradient(104% 78% at 28% 32%, #7FA8D8, transparent 58%), linear-gradient(158deg, #1E2836, #0E1116); }
+.ft-i[data-l="3"] { background: radial-gradient(110% 80% at 72% 66%, #8FD08A, transparent 56%), linear-gradient(160deg, #1D2A1C, #0E120D); }
+.ft-i[data-l="4"] { background: radial-gradient(106% 78% at 42% 26%, #E08C7A, transparent 56%), linear-gradient(162deg, #33201D, #14100F); }
+.ft-i[data-l="5"] { background: radial-gradient(110% 82% at 58% 36%, #C9A7E8, transparent 56%), linear-gradient(160deg, #261E33, #100E14); }
+
+/* Velo de hover: el degradé sale del borde inferior, que es donde se apoyan
+   los datos. Un velo parejo sobre toda la foto la apaga entera. */
+.ft-v {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(8, 7, 6, .82), rgba(8, 7, 6, .16) 46%, transparent 72%);
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.ft:hover .ft-v, .ft.sel .ft-v { opacity: 1; }
+
+/* La fila de datos está SIEMPRE presente. Lo que aparece en hover es sólo la
+   metadata secundaria; el dorsal no, porque es el dato por el que se busca:
+   tener que pasar el mouse por cada miniatura para leer los números convierte
+   una revisión de treinta segundos en un rastreo a ciegas. */
+.ft-d {
+  position: absolute; left: 8px; right: 8px; bottom: 7px;
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+}
+
+/* Dorsal: blanco fijo en los dos temas. Se apoya sobre la foto, no sobre el
+   papel, así que no puede seguir al tema. Este es el bug exacto que tenía el
+   panel viejo, donde en tema claro el texto salía negro sobre vidrio oscuro.
+
+   Como ahora se ve sin hover, va con sombra propia: sin el velo debajo tiene
+   que despegarse de la foto por sí solo, y una foto a contraluz con cielo
+   claro se lo come. */
+.bib {
+  padding: 2px 8px; border-radius: 100px;
+  background: rgba(250, 250, 248, .96);
+  color: #12110F;
+  font-size: 11px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 6px rgba(8, 7, 6, .35);
+}
+/* El numeral en tono medio: es un prefijo, no parte del número. Al mismo peso
+   que los dígitos compite con ellos y el dorsal se lee peor. */
+.bib i { font-style: normal; color: #8C887F; margin-right: 1px; }
+
+/* Las caras y las ventas SÍ en hover. Son contexto: sirven cuando ya te
+   detuviste en una foto, no mientras barrés la grilla. */
+.ft-meta {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 4px;
+  color: #FFF; font-size: 11px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .5);
+  opacity: 0; transform: translateY(3px);
+  transition: opacity 180ms ease, transform 220ms cubic-bezier(.2, .8, .3, 1);
+}
+.ft:hover .ft-meta { opacity: 1; transform: none; }
+.ft-meta svg { width: 12px; height: 12px; }
+
+/* Marca de estado, arriba a la derecha y siempre visible: si sólo apareciera
+   en hover, para encontrar las fotos rotas habría que pasar el mouse por
+   16.337 miniaturas. */
+.ft-f {
+  position: absolute; top: 7px; right: 7px;
+  width: 21px; height: 21px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: rgba(8, 7, 6, .58);
+  backdrop-filter: blur(6px);
+  color: #FFF;
+}
+.ft-f svg { width: 12px; height: 12px; }
+.ft-f.warn { background: var(--accent); }
+.ft-f.sold { background: var(--ok); }
+
+/* Casilla de selección. Aparece en hover, o siempre si el modo está activo. */
+.ft-c {
+  position: absolute; top: 7px; left: 7px;
+  width: 19px; height: 19px; border-radius: 5px;
+  border: 1.5px solid rgba(255, 255, 255, .85);
+  background: rgba(8, 7, 6, .35);
+  backdrop-filter: blur(6px);
+  display: grid; place-items: center;
+  opacity: 0;
+  transition: opacity 150ms ease, background 150ms ease, border-color 150ms ease;
+}
+.ft:hover .ft-c, :root[data-sel="on"] .ft-c { opacity: 1; }
+.ft-c svg { width: 12px; height: 12px; color: #12110F; opacity: 0; transition: opacity 120ms ease; }
+.ft.sel .ft-c { background: #FAFAF8; border-color: #FAFAF8; opacity: 1; }
+.ft.sel .ft-c svg { opacity: 1; }
+.ft.sel { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* ── Barra de acciones en lote ───────────────────────────────────────────────
+   Flotante y centrada abajo, no arriba de la grilla: la selección se hace
+   mirando las fotos, y una barra pegada al encabezado obliga a subir la
+   vista para actuar. Aparece sólo cuando hay algo elegido. */
+.lote {
+  position: fixed; left: 50%; bottom: var(--s-5); z-index: 50;
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: 9px 10px 9px var(--s-4);
+  border-radius: 100px;
+  background: var(--ink); color: var(--paper);
+  box-shadow: 0 18px 44px rgba(18, 17, 15, .3);
+  transform: translate(-50%, 130%);
+  transition: transform 320ms cubic-bezier(.2, .8, .3, 1);
+}
+:root[data-sel="on"] .lote { transform: translate(-50%, 0); }
+.lote-n { font-size: 13.5px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lote .btn {
+  height: 32px;
+  border-color: color-mix(in srgb, var(--paper) 24%, transparent);
+  color: var(--paper);
+}
+.lote .btn:hover { background: color-mix(in srgb, var(--paper) 12%, transparent); border-color: color-mix(in srgb, var(--paper) 40%, transparent); }
+.lote .btn.peligro { color: #FF8E8E; border-color: rgba(255, 142, 142, .32); }
+.lote .btn.peligro:hover { background: rgba(255, 142, 142, .14); border-color: rgba(255, 142, 142, .5); }
+.lote-x { color: color-mix(in srgb, var(--paper) 60%, transparent); }
+
+
+@media (max-width: 560px) {
+  .fg { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 6px; }
+  .lote { left: var(--s-4); right: var(--s-4); bottom: var(--s-4); transform: translateY(130%); }
+  :root[data-sel="on"] .lote { transform: none; }
+  .lote-n { margin-right: auto; }
+}
+
+/* ═══════════════════════════════ PAGINADO ════════════════════════════════
+   Con 2.162 fotos, volcarlas todas de una hace que el navegador arme miles de
+   nodos y el scroll se vuelva pesado justo en la pantalla donde el fotógrafo
+   está trabajando. Y aunque no pesara: una tira infinita no deja volver a
+   "donde estaba", que es lo que uno hace revisando fotos.
+   ══════════════════════════════════════════════════════════════════════ */
+.pag {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-4); flex-wrap: wrap;
+  padding-top: var(--s-2);
+}
+.pag-info { font-size: 12.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.pag-btns { display: flex; align-items: center; gap: 3px; }
+
+.pag-b, .pag-n {
+  min-width: 30px; height: 30px; padding: 0 8px;
+  display: grid; place-items: center;
+  border: 1px solid transparent; border-radius: var(--r-2);
+  background: none; cursor: pointer;
+  font-family: var(--sans); font-size: 13px; font-weight: 400;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+.pag-b:hover, .pag-n:hover { background: var(--ghost-hov); color: var(--ink); }
+.pag-b svg { width: 15px; height: 15px; }
+.pag-n[aria-current="page"] {
+  background: var(--cta-bg); color: var(--cta-fg); font-weight: 500;
+}
+/* Deshabilitado en los extremos, no escondido: si el botón desaparece, los
+   demás se corren y el que venía haciendo click cambia de posición. */
+.pag-b:disabled { color: var(--ink-3); opacity: .4; cursor: default; background: none; }
+.pag-gap { padding: 0 3px; color: var(--ink-3); font-size: 13px; user-select: none; }
+
+@media (max-width: 560px) {
+  .pag { justify-content: center; }
+  .pag-n.lejos { display: none; }   /* en el teléfono, sólo el vecindario */
+}
+
+/* ═════════════════════════════ MERCADO PAGO ══════════════════════════════
+   El logotipo monocromático viene de cuervito (public/assets/mp/), en blanco.
+   En vez de meterlo con <img> y teñirlo con filter: brightness(0) como hace el
+   producto, se usa como MÁSCARA y el color lo pone currentColor. Dos ventajas:
+   toma el color del contexto en los dos temas sin reglas por tema, y sobre la
+   tarjeta de tinta sale claro sin ninguna excepción.
+
+   Es la misma técnica del tilde del desplegable y de los subrayados a pincel
+   de la landing.
+   ══════════════════════════════════════════════════════════════════════ */
+.mp-marca {
+  display: block;
+  background: currentColor;
+  -webkit-mask: url("assets/mp-vertical.svg") center / contain no-repeat;
+  mask: url("assets/mp-vertical.svg") center / contain no-repeat;
+}
+.mp-marca.ancha {
+  -webkit-mask-image: url("assets/mp-horizontal.svg");
+  mask-image: url("assets/mp-horizontal.svg");
+}
+
+/* ═════════════════════════════ CALENDARIO ════════════════════════════════
+   <input type="date"> lo dibuja el sistema operativo: en Windows sale un
+   calendario de Windows, en Mac otro, y ninguno se parece al panel. Encima el
+   formato lo decide el navegador, así que el mismo campo puede mostrar
+   14/08/2026 o 08/14/2026 según la configuración de quien lo abra, y en un
+   producto argentino eso es una fuente real de errores de carga.
+
+   Este arranca la semana en LUNES, que es como se lee un calendario acá.
+   ══════════════════════════════════════════════════════════════════════ */
+.fx { position: relative; }
+
+.fx-t {
+  display: flex; align-items: center; gap: 9px;
+  width: 100%; height: 40px; padding: 0 12px;
+  background: var(--paper);
+  border: 1px solid var(--line); border-radius: var(--r-2);
+  cursor: pointer; text-align: left;
+  font-family: var(--sans); font-size: 14.5px; color: var(--ink);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.fx-t:hover { border-color: var(--line-strong); }
+.fx-t[aria-expanded="true"] {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 9%, transparent);
+}
+.fx-t svg { width: 15px; height: 15px; color: var(--ink-3); flex-shrink: 0; }
+.fx-t .fx-v.vacio { color: var(--ink-3); }
+.fx-t .fx-borrar { margin-left: auto; color: var(--ink-3); display: none; }
+.fx[data-hay="1"] .fx-borrar { display: block; }
+
+.fx-m {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 45;
+  width: 268px; padding: var(--s-3);
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-card);
+  opacity: 0; visibility: hidden;
+  transform: translateY(-4px) scale(.985); transform-origin: top left;
+  transition: opacity 160ms ease, transform 200ms cubic-bezier(.2,.8,.3,1), visibility 0s 160ms;
+}
+.fx[data-abierto="1"] .fx-m {
+  opacity: 1; visibility: visible; transform: none;
+  transition: opacity 160ms ease, transform 220ms cubic-bezier(.2,.8,.3,1), visibility 0s;
+}
+
+.fx-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-3); }
+.fx-nav b { font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; text-transform: capitalize; }
+.fx-nav button {
+  width: 26px; height: 26px; display: grid; place-items: center;
+  border: 0; background: none; border-radius: var(--r-2); cursor: pointer;
+  color: var(--ink-3);
+  transition: background 140ms ease, color 140ms ease;
+}
+.fx-nav button:hover { background: var(--ghost-hov); color: var(--ink); }
+.fx-nav svg { width: 15px; height: 15px; }
+
+.fx-sem, .fx-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.fx-sem span {
+  text-align: center; padding: 4px 0 6px;
+  font-size: 10.5px; font-weight: 500; letter-spacing: 0.06em;
+  color: var(--ink-3); text-transform: uppercase;
+}
+.fx-d {
+  aspect-ratio: 1; display: grid; place-items: center;
+  border: 0; background: none; border-radius: var(--r-2); cursor: pointer;
+  font-family: var(--sans); font-size: 13px; color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  transition: background 120ms ease, color 120ms ease;
+}
+.fx-d:hover { background: var(--ghost-hov); color: var(--ink); }
+.fx-d.fuera { color: var(--ink-3); opacity: .45; }
+/* Hoy se marca con un punto, no con un fondo: si se rellenara, competiría con
+   el día elegido y a simple vista no se sabría cuál es cuál. */
+.fx-d.hoy { position: relative; font-weight: 600; color: var(--ink); }
+.fx-d.hoy::after {
+  content: ""; position: absolute; bottom: 4px;
+  width: 3px; height: 3px; border-radius: 50%; background: var(--accent);
+}
+.fx-d[aria-selected="true"] { background: var(--cta-bg); color: var(--cta-fg); font-weight: 500; }
+.fx-d[aria-selected="true"]::after { background: var(--cta-fg); }
+
+.fx-pie {
+  display: flex; justify-content: space-between; gap: var(--s-2);
+  margin-top: var(--s-3); padding-top: var(--s-3);
+  border-top: 1px solid var(--line-soft);
+}
+.fx-pie button {
+  border: 0; background: none; cursor: pointer; padding: 4px 6px;
+  border-radius: var(--r-1);
+  font-family: var(--sans); font-size: 12.5px; font-weight: 500; color: var(--ink-2);
+}
+.fx-pie button:hover { background: var(--ghost-hov); color: var(--ink); }
+
+/* Recuento dentro de la opción del desplegable. Va antes del tilde, con el
+   margen automático, para que los números queden en columna y se puedan
+   comparar de un vistazo. */
+.dd-o .dd-n {
+  margin-left: auto; padding-left: var(--s-4);
+  font-weight: 400; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.dd-o[aria-selected="true"] .dd-n { color: var(--ink-2); }
+
+/* ═══════════════════════════════ DIÁLOGO ═════════════════════════════════
+   Para decisiones que necesitan leerse antes de confirmarse. No es un panel
+   lateral: el cajón sirve para inspeccionar mientras la lista sigue ahí, y
+   acá al contrario, hace falta que lo de atrás deje de existir un momento.
+   ══════════════════════════════════════════════════════════════════════ */
+.modal {
+  position: fixed; inset: 0; z-index: 90;
+  display: grid; place-items: center;
+  padding: var(--s-4);
+  opacity: 0; visibility: hidden;
+  transition: opacity 220ms ease, visibility 0s 220ms;
+}
+.modal::before {
+  content: ""; position: absolute; inset: 0;
+  background: color-mix(in srgb, var(--ink) 34%, transparent);
+  backdrop-filter: blur(3px);
+}
+:root[data-modal="open"] .modal {
+  opacity: 1; visibility: visible;
+  transition: opacity 220ms ease, visibility 0s;
+}
+
+.modal-caja {
+  position: relative;
+  width: 100%; max-width: 500px;
+  max-height: calc(100dvh - var(--s-6));
+  display: flex; flex-direction: column;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  box-shadow: 0 40px 90px rgba(18, 17, 15, .28);
+  transform: translateY(10px) scale(.98);
+  transition: transform 280ms cubic-bezier(.2, .8, .3, 1);
+}
+:root[data-modal="open"] .modal-caja { transform: none; }
+
+.modal-h {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--s-5) var(--s-4);
+}
+.modal-h h2 {
+  font-family: var(--sans); font-size: 18px; font-weight: 600;
+  letter-spacing: -0.02em; text-transform: none;
+}
+.modal-h .sub { margin-top: 4px; font-size: 13px; color: var(--ink-3); line-height: 1.5; }
+.modal-b { flex: 1; overflow-y: auto; padding: 0 var(--s-5) var(--s-5); display: grid; gap: var(--s-4); }
+.modal-f {
+  display: flex; gap: var(--s-2); justify-content: flex-end;
+  padding: var(--s-4) var(--s-5);
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Listas de "va a poder" y "no va a poder". Van juntas y no sólo la primera:
+   una invitación que enumera permisos sin enumerar límites deja al que invita
+   suponiendo, y al invitado descubriendo. */
+.permisos { display: grid; gap: 9px; }
+.permisos li {
+  display: flex; align-items: flex-start; gap: 9px;
+  font-size: 13.5px; line-height: 1.45; color: var(--ink-2);
+  list-style: none;
+}
+.permisos svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
+.permisos li.si svg { color: var(--ok); }
+.permisos li.no { color: var(--ink-3); }
+.permisos li.no svg { color: var(--ink-3); }
+
+/* Aclaración al pie de una decisión. Vivía dentro de nuevo.css hasta que el
+   diálogo de invitación la necesitó: sin el estilo, el bloque salía con el
+   cuerpo de texto normal y pesaba más que la decisión que venía a aclarar. */
+.porque {
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 11px 13px;
+  background: var(--paper-3); border-radius: var(--r-2);
+  font-size: 12.5px; color: var(--ink-3); line-height: 1.55;
+}
+.porque svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; }
+.porque b { color: var(--ink); font-weight: 500; }
+
+/* ═══════════════════════════════ BÚSQUEDA ════════════════════════════════
+   La barra del encabezado, funcionando. Tres decisiones que la hacen usable:
+
+   · Se ensancha al enfocarse. No es adorno: en reposo comparte fila con el
+     logo y los botones, y al escribir necesita lugar para que los resultados
+     no salgan más anchos que el campo que los generó.
+
+   · Los resultados se agrupan por tipo y cada grupo dice qué es. Una lista
+     plana donde conviven un evento, una venta y un dorsal obliga a leer cada
+     renglón para entender qué es cada cosa.
+
+   · En teléfono no se encoge: se convierte en una capa a pantalla completa.
+     Un campo de 120px con un panel de resultados encima es peor que nada.
+   ══════════════════════════════════════════════════════════════════════ */
+.search {
+  position: relative; flex: 1; max-width: 380px;
+  transition: max-width 260ms cubic-bezier(.2, .8, .3, 1);
+}
+.search:focus-within { max-width: 520px; }
+
+/* Centrada con translate y no con un top calculado a mano. El top fijo estaba
+   6px arriba del centro, y encima obligaba a recalcularlo en cada tamaño de
+   campo: el de teléfono mide 44px y necesitaba su propia excepción. Así se
+   centra sola en cualquier alto. */
+.search .lupa {
+  position: absolute; left: 11px; top: 50%;
+  transform: translateY(-50%);
+  width: 15px; height: 15px; color: var(--ink-3); pointer-events: none;
+  transition: color 160ms ease;
+}
+.search:focus-within .lupa { color: var(--ink); }
+
+.search input {
+  width: 100%; height: 34px;
+  padding: 0 46px 0 33px;
+  background: var(--paper-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-2);
+  font-family: var(--sans); font-size: 13.5px; color: var(--ink);
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.search input::placeholder { color: var(--ink-3); }
+.search input::-webkit-search-cancel-button { display: none; }
+.search input:focus {
+  outline: none; background: var(--paper-2); border-color: var(--line-strong);
+}
+
+/* El atajo se muestra en reposo y se va al escribir: sirve para descubrirlo,
+   estorba cuando ya estás adentro. */
+.search kbd {
+  position: absolute; right: 8px; top: 50%;
+  transform: translateY(-50%);
+  display: flex; align-items: center; gap: 1px;
+  height: 18px; padding: 0 5px;
+  border: 1px solid var(--line); border-radius: 4px;
+  background: var(--paper-2);
+  font-family: var(--sans); font-size: 10.5px; font-weight: 500;
+  color: var(--ink-3);
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+.search:focus-within kbd { opacity: 0; }
+
+/* ── Panel de resultados ─────────────────────────────────────────────────── */
+.sr {
+  position: absolute; top: calc(100% + 7px); left: 0; right: 0; z-index: 60;
+  max-height: min(60vh, 440px); overflow-y: auto;
+  padding: 6px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  box-shadow: 0 24px 60px rgba(18, 17, 15, .18);
+  opacity: 0; visibility: hidden;
+  transform: translateY(-6px) scale(.99); transform-origin: top center;
+  transition: opacity 180ms ease, transform 220ms cubic-bezier(.2, .8, .3, 1), visibility 0s 180ms;
+}
+.search[data-abierto="1"] .sr {
+  opacity: 1; visibility: visible; transform: none;
+  transition: opacity 180ms ease, transform 240ms cubic-bezier(.2, .8, .3, 1), visibility 0s;
+}
+
+.sr-tit {
+  padding: 9px 10px 5px;
+  font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Grilla y no flex: la primera columna mide siempre lo mismo, lleve portada
+   de evento o ícono de categoría. Con flex, la portada media 40px y el ícono
+   30, así que el texto de un evento arrancaba 10px más a la derecha que el de
+   una venta y las tres columnas de la lista no formaban una vertical. */
+.sr-item {
+  display: grid; grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center; gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-2);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.sr-item.marcado { background: var(--paper-3); }
+.sr-i {
+  width: 34px; height: 30px; border-radius: 8px;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.sr-item.marcado .sr-i { background: var(--cta-bg); color: var(--cta-fg); }
+.sr-i svg { width: 15px; height: 15px; }
+.sr-cv {
+  width: 34px; height: 22px; border-radius: 5px;
+  background: radial-gradient(112% 80% at 66% 24%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
+}
+.sr-t { min-width: 0; line-height: 1.35; }
+.sr-t b { display: block; font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-t span { display: block; font-size: 12px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* La coincidencia va resaltada con fondo y no con negrita: en un renglón donde
+   el nombre ya está en 500, otra negrita adentro no se distingue. */
+.sr-t mark {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: inherit; border-radius: 2px; padding: 0 1px;
+}
+.sr-tec {
+  font-size: 11px; color: var(--ink-3);
+  opacity: 0; transition: opacity 120ms ease;
+}
+.sr-item.marcado .sr-tec { opacity: 1; }
+
+.sr-nada { padding: var(--s-5) var(--s-4); text-align: center; }
+.sr-nada b { display: block; font-size: 13.5px; font-weight: 500; }
+.sr-nada span { display: block; margin-top: 4px; font-size: 12.5px; color: var(--ink-3); }
+
+/* ── Teléfono ────────────────────────────────────────────────────────────── */
+.buscar-movil { display: none; }
+
+@media (max-width: 720px) {
+  .search { display: none; }
+  .buscar-movil { display: grid; }
+
+  /* Capa completa: el campo pasa a ocupar la barra entera y los resultados
+     el resto de la pantalla. Encoger la barra a 120px y colgarle un panel
+     debajo es peor que no tener búsqueda. */
+  :root[data-buscar="open"] .search {
+    display: block;
+    position: fixed; inset: 0; z-index: 80;
+    max-width: none;
+    padding: var(--s-3) var(--s-4);
+    background: var(--paper);
+    animation: subir 220ms cubic-bezier(.2, .8, .3, 1);
+  }
+  :root[data-buscar="open"] .search input { height: 44px; font-size: 16px; }
+  :root[data-buscar="open"] .search .lupa { left: 26px; }
+  :root[data-buscar="open"] .search kbd { display: none; }
+  :root[data-buscar="open"] .sr {
+    position: absolute; top: 64px; left: var(--s-4); right: var(--s-4);
+    max-height: calc(100dvh - 80px);
+    box-shadow: none; border: 0; padding: 0;
+  }
+  @keyframes subir {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: none; }
+  }
+}

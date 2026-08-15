@@ -1,0 +1,207 @@
+/* =============================================================================
+   encontrate · panel · nuevo evento
+   -----------------------------------------------------------------------------
+   Tres pasos. La versión anterior era una página sola con todas las secciones
+   apiladas, y el problema no era el largo sino que ponía al mismo nivel cosas
+   de peso muy distinto: el nombre del evento y la decisión de usar o no
+   reconocimiento, que cambia lo que te cobramos, estaban una debajo de la otra
+   como si fueran lo mismo.
+
+   Separado en pasos, cada decisión ocupa la pantalla entera el rato que dura.
+   Y como el paso 2 define la comisión, el paso 3 puede mostrar directamente
+   cuánto te queda de cada foto, sin explicar de nuevo de dónde sale.
+
+   Para que no castigue al que ya sabe: sólo el nombre y la fecha son
+   obligatorios, Enter avanza, y los pasos 2 y 3 vienen con valores puestos que
+   sirven tal cual.
+   ========================================================================== */
+
+.wiz { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--s-6); align-items: start; }
+
+/* ── Barra de pasos ──────────────────────────────────────────────────────── */
+.wpasos { display: flex; align-items: center; gap: 10px; margin-bottom: var(--s-6); }
+.wp { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-3); }
+.wp i.bola {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 1.5px solid var(--line-strong);
+  font-size: 11.5px; font-weight: 600; font-style: normal;
+  transition: background 240ms ease, border-color 240ms ease, color 240ms ease;
+}
+.wp[data-e="aqui"] { color: var(--ink); font-weight: 500; }
+.wp[data-e="aqui"] i.bola { background: var(--cta-bg); border-color: var(--cta-bg); color: var(--cta-fg); }
+.wp[data-e="hecho"] i.bola { background: var(--ok); border-color: var(--ok); color: #FFF; }
+.wp[data-e="hecho"] i.bola::after {
+  content: ""; width: 12px; height: 12px; background: currentColor;
+  -webkit-mask: var(--tic) center / contain no-repeat;
+  mask: var(--tic) center / contain no-repeat;
+}
+.wp[data-e="hecho"] i.bola span { display: none; }
+.wp-linea { flex: 1; max-width: 40px; height: 1px; background: var(--line); }
+
+.wpaso { display: none; }
+.wpaso[data-activo="1"] { display: grid; gap: var(--s-3); animation: aparecer 300ms cubic-bezier(.2, .8, .3, 1); }
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.wtit { margin-bottom: var(--s-2); }
+.wtit h2 {
+  font-family: var(--sans); font-size: 19px; font-weight: 600;
+  letter-spacing: -0.025em; text-transform: none;
+}
+.wtit p { margin-top: 5px; font-size: 13.5px; color: var(--ink-3); line-height: 1.55; }
+
+.blq-b { display: grid; gap: var(--s-4); }
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+
+/* ── Portada ─────────────────────────────────────────────────────────────── */
+.cover {
+  position: relative;
+  aspect-ratio: 16 / 7;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-2);
+  display: grid; place-content: center; justify-items: center; gap: 8px;
+  color: var(--ink-3); cursor: pointer; overflow: hidden;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.cover:hover { border-color: var(--ink-3); background: var(--paper-3); }
+.cover svg { width: 20px; height: 20px; }
+.cover b { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+.cover span { font-size: 12px; }
+.cover.puesta {
+  border-style: solid; border-color: transparent;
+  background: radial-gradient(112% 80% at 66% 24%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
+}
+.cover.puesta > *:not(.quitar) { display: none; }
+.cover.puesta .quitar { display: inline-flex; }
+.quitar {
+  display: none;
+  position: absolute; top: 8px; right: 8px;
+  align-items: center; gap: 5px;
+  padding: 4px 9px; border: 0; border-radius: 100px;
+  background: rgba(8, 7, 6, .6); backdrop-filter: blur(6px);
+  color: #FFF; font-family: var(--sans); font-size: 11.5px; cursor: pointer;
+}
+.quitar svg { width: 12px; height: 12px; }
+
+/* ── Elección de reconocimiento ──────────────────────────────────────────────
+   Dos tarjetas y no un interruptor. Un interruptor sugiere que hay una opción
+   normal y otra rara, y acá son dos productos distintos con dos precios
+   distintos: quien no usa reconocimiento no está desactivando una función,
+   está eligiendo un plan más barato porque no le hacemos el trabajo caro. Con
+   las dos cartas al lado, la comparación es la interfaz. */
+.opciones { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+.op { position: relative; cursor: pointer; }
+.op input { position: absolute; opacity: 0; pointer-events: none; }
+.op-caja {
+  height: 100%;
+  display: grid; gap: 10px; align-content: start;
+  padding: var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  background: var(--paper-2);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms cubic-bezier(.2,.8,.3,1);
+}
+.op:hover .op-caja { border-color: var(--line-strong); }
+.op input:checked + .op-caja {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.op-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.op-i {
+  width: 32px; height: 32px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  transition: background 160ms ease, color 160ms ease;
+}
+.op input:checked + .op-caja .op-i { background: var(--cta-bg); color: var(--cta-fg); }
+.op-i svg { width: 16px; height: 16px; }
+
+/* La comisión es el dato que decide, así que va grande y en la tarjeta, no en
+   una nota al pie. */
+.op-com { text-align: right; line-height: 1; }
+.op-com b {
+  display: block;
+  font-size: 26px; font-weight: 200; letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.op-com span { display: block; margin-top: 4px; font-size: 10.5px; color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase; }
+
+.op-caja h3 { font-family: var(--sans); font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+.op-caja p { font-size: 12.5px; color: var(--ink-3); line-height: 1.55; }
+.op-lista { display: grid; gap: 6px; margin-top: 2px; }
+.op-lista li { display: flex; gap: 7px; font-size: 12.5px; color: var(--ink-2); list-style: none; line-height: 1.4; }
+.op-lista svg { width: 13px; height: 13px; flex-shrink: 0; margin-top: 2px; color: var(--ink-3); }
+.op-lista li.no { color: var(--ink-3); }
+
+/* ── Cuentas del precio ─────────────────────────────────────────────────── */
+.precios { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+
+/* Lo que te queda de cada foto, con el número grande. Es la traducción de la
+   comisión a la unidad en la que el fotógrafo piensa. */
+.queda {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  border-radius: var(--r-3);
+  background: var(--acento-lleno); color: #FFFFFF;
+}
+/* Blanco casi pleno, no translúcido: ver la nota del token --acento-lleno. */
+.queda-t span { display: block; font-size: 11.5px; color: rgba(255, 255, 255, .9); }
+.queda-t b {
+  display: block; margin-top: 6px;
+  font-size: 32px; font-weight: 200; letter-spacing: -0.035em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.queda-d { text-align: right; font-size: 12px; color: rgba(255, 255, 255, .9); line-height: 1.6; }
+.queda-d b { color: #FFFFFF; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.cuenta {
+  padding: 11px 13px;
+  background: var(--paper-3); border-radius: var(--r-2);
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.5;
+}
+.cuenta b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* ── Columna derecha ─────────────────────────────────────────────────────── */
+.lado { position: sticky; top: calc(62px + var(--s-5)); display: grid; gap: var(--s-3); }
+
+.previa-ev { border-radius: var(--r-2); overflow: hidden; border: 1px solid var(--line-soft); }
+.previa-cv {
+  aspect-ratio: 16 / 10; background: var(--paper-3);
+  display: grid; place-items: center; color: var(--ink-3);
+}
+.previa-cv svg { width: 18px; height: 18px; }
+.previa-cv.puesta {
+  background: radial-gradient(112% 80% at 66% 24%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
+}
+.previa-cv.puesta svg { display: none; }
+.previa-b { padding: var(--s-3); }
+.previa-b b { display: block; font-size: 14px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.3; }
+.previa-b span { display: block; margin-top: 3px; font-size: 12px; color: var(--ink-3); }
+
+/* Resumen que se va llenando. Reemplaza a la lista de "lo que falta": con
+   pasos, lo que falta ya lo marca la barra de arriba; lo que no se ve es lo
+   que quedó decidido dos pantallas atrás. */
+.resumen { display: grid; gap: 1px; }
+.rs {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s-3); padding: 8px 0;
+  font-size: 13px;
+}
+.rs + .rs { border-top: 1px solid var(--line-soft); }
+.rs dt { color: var(--ink-3); }
+.rs dd { text-align: right; font-variant-numeric: tabular-nums; }
+.rs dd.pendiente { color: var(--ink-3); }
+
+@media (max-width: 1080px) {
+  .wiz { grid-template-columns: minmax(0, 1fr); }
+  .lado { position: static; }
+}
+@media (max-width: 700px) {
+  .opciones, .precios, .par { grid-template-columns: minmax(0, 1fr); }
+  .wp span.txt { display: none; }
+  .queda { grid-template-columns: minmax(0, 1fr); }
+  .queda-d { text-align: left; }
+}

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · fotos</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css?v=1786703126">
+<link rel="stylesheet" href="../base.css?v=1786703126">
+<link rel="stylesheet" href="../panel.css?v=1786703126">
+<link rel="stylesheet" href="fotos.css?v=1786703126">
+
+<script>
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/iconos.js?v=1786703126" defer></script>
+</head>
+
+<body>
+
+<div class="app">
+  <div class="col">
+    <main class="canvas">
+      <div class="canvas-in">
+
+        <div class="head">
+          <div>
+            <a href="../eventos/" class="btn btn-ghost btn-sm" style="margin-bottom:var(--s-3)">
+              <i data-lucide="arrow-left"></i> Eventos
+            </a>
+            <h1>Todas tus fotos</h1>
+            <p>16.337 fotos cruzando los 6 eventos.</p>
+          </div>
+          <div class="head-r">
+            <button class="btn btn-ghost"><i data-lucide="upload"></i> Subir fotos</button>
+          </div>
+        </div>
+
+        <!-- El hallazgo de la auditoría, convertido en algo que se puede
+             apretar. Antes esto no se veía desde ninguna pantalla. -->
+        <div class="nota" id="nota">
+          <i data-lucide="scan-face"></i>
+          <span><b>2.064 fotos nunca se procesaron.</b> Nadie las va a encontrar buscándose por cara ni por dorsal.</span>
+          <button class="btn btn-pri btn-sm" id="reprocesar">Reconocer todas</button>
+        </div>
+
+        <div class="barra">
+          <div class="chips" id="chips">
+            <button type="button" class="chip-f" data-f="todas" aria-pressed="true">Todas <b>16.337</b></button>
+            <button type="button" class="chip-f" data-f="sinrec">Sin reconocer <b>2.064</b></button>
+            <button type="button" class="chip-f" data-f="sindor">Sin dorsal <b>1.190</b></button>
+            <button type="button" class="chip-f" data-f="vend">Vendidas <b>1.062</b></button>
+          </div>
+
+          <div style="display:flex;gap:var(--s-2);align-items:center">
+            <div class="dd der">
+              <button type="button" class="dd-t"><span class="dd-v">Todos los eventos</span><i data-lucide="chevron-down"></i></button>
+              <div class="dd-m" role="listbox">
+                <button type="button" class="dd-o" aria-selected="true">Todos los eventos</button>
+                <div class="dd-sep"></div>
+                <button type="button" class="dd-o">Duatlón Club Ciclista Chivilcoy</button>
+                <button type="button" class="dd-o">Media Maratón de Chivilcoy</button>
+                <button type="button" class="dd-o">Torneo Apertura · Fecha 8</button>
+                <button type="button" class="dd-o">Copa Ciudad · Hockey</button>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="todas">Seleccionar todas</button>
+          </div>
+        </div>
+
+        <section class="fg" id="fg">
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+          <div class="ft sk"></div>
+        </section>
+
+        <div class="empty" id="vacio" hidden>
+          <div class="empty-i"><i data-lucide="image-off"></i></div>
+          <h3>No hay fotos con ese filtro</h3>
+          <p>Probá con otro, o mirá toda tu biblioteca.</p>
+          <button type="button" class="btn btn-ghost" id="limpiar">Ver todas</button>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Barra de lote: flotante y abajo, porque la selección se hace mirando las
+     fotos y no el encabezado. -->
+<div class="lote" id="lote">
+  <span class="lote-n" id="lote-n">0 seleccionadas</span>
+  <button class="btn btn-ghost btn-sm"><i data-lucide="scan-face"></i> Reconocer</button>
+  <button class="btn btn-ghost btn-sm"><i data-lucide="download"></i> Descargar</button>
+  <button class="btn btn-ghost btn-sm peligro"><i data-lucide="trash-2"></i> Eliminar</button>
+  <button class="btn btn-ghost btn-icon lote-x" id="lote-x" aria-label="Cancelar selección"><i data-lucide="x"></i></button>
+</div>
+
+<script src="../panel.js?v=1786703126" defer></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    Panel.init({ activo: "eventos", buscar: "Buscar por dorsal, evento o fecha" });
+
+    try {
+      var fg = document.getElementById("fg");
+      var vacio = document.getElementById("vacio");
+      var raiz = document.documentElement;
+
+      /* Serie reproducible, misma razón que en el gráfico del inicio: con
+         valores al azar cada recarga cambia la grilla y no se puede comparar
+         un ajuste contra el anterior. */
+      var s = 12;
+      function az() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
+
+      var FOTOS = [];
+      for (var i = 0; i < 48; i++) {
+        var r = az();
+        var estado = r < 0.26 ? "sinrec" : (r < 0.44 ? "sindor" : (r < 0.66 ? "vend" : "ok"));
+        FOTOS.push({
+          luz: 1 + Math.floor(az() * 5),
+          estado: estado,
+          bib: estado === "sindor" || estado === "sinrec" ? null : 1000 + Math.floor(az() * 900),
+          caras: 1 + Math.floor(az() * 3),
+          ventas: estado === "vend" ? 1 + Math.floor(az() * 4) : 0
+        });
+      }
+
+      function pintar(f) {
+        var vistas = FOTOS.filter(function (x) {
+          if (f === "todas") return true;
+          return x.estado === f;
+        });
+
+        fg.innerHTML = vistas.map(function (x, i) {
+          var marca = "";
+          if (x.estado === "sinrec") marca = '<span class="ft-f warn"><i data-lucide="scan-face"></i></span>';
+          else if (x.estado === "vend") marca = '<span class="ft-f sold"><i data-lucide="check"></i></span>';
+
+          return '<div class="ft" data-i="' + i + '" role="button" tabindex="0">' +
+            '<div class="ft-i" data-l="' + x.luz + '"></div>' +
+            '<div class="ft-v"></div>' +
+            '<span class="ft-c"><i data-lucide="check"></i></span>' +
+            marca +
+            '<div class="ft-d">' +
+              (x.bib ? '<span class="bib"><i>#</i>' + x.bib + "</span>" : "") +
+              '<span class="ft-meta"><i data-lucide="scan-face"></i> ' + x.caras +
+              (x.ventas ? ' &nbsp;<i data-lucide="shopping-bag"></i> ' + x.ventas : "") +
+              "</span>" +
+            "</div>" +
+          "</div>";
+        }).join("");
+
+        fg.hidden = vistas.length === 0;
+        vacio.hidden = vistas.length !== 0;
+        try { lucide.createIcons(); } catch (e) {}
+      }
+
+      pintar("todas");
+
+      /* ── Selección ── */
+      function contar() {
+        var n = fg.querySelectorAll(".ft.sel").length;
+        document.getElementById("lote-n").textContent =
+          n + (n === 1 ? " seleccionada" : " seleccionadas");
+        raiz.dataset.sel = n > 0 ? "on" : "";
+      }
+
+      fg.addEventListener("click", function (ev) {
+        var t = ev.target.closest(".ft");
+        if (!t) return;
+        t.classList.toggle("sel");
+        contar();
+      });
+      fg.addEventListener("keydown", function (ev) {
+        if (ev.key !== "Enter" && ev.key !== " ") return;
+        var t = ev.target.closest(".ft");
+        if (!t) return;
+        ev.preventDefault();
+        t.classList.toggle("sel");
+        contar();
+      });
+
+      document.getElementById("lote-x").addEventListener("click", function () {
+        fg.querySelectorAll(".ft.sel").forEach(function (t) { t.classList.remove("sel"); });
+        contar();
+      });
+      document.getElementById("todas").addEventListener("click", function () {
+        var todas = fg.querySelectorAll(".ft");
+        var faltan = fg.querySelectorAll(".ft:not(.sel)").length > 0;
+        todas.forEach(function (t) { t.classList.toggle("sel", faltan); });
+        contar();
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") document.getElementById("lote-x").click();
+      });
+
+      /* ── Filtros ── */
+      document.getElementById("chips").addEventListener("click", function (ev) {
+        var b = ev.target.closest("button");
+        if (!b) return;
+        this.querySelectorAll("button").forEach(function (x) { x.removeAttribute("aria-pressed"); });
+        b.setAttribute("aria-pressed", "true");
+        pintar(b.dataset.f);
+        contar();
+      });
+      document.getElementById("limpiar").addEventListener("click", function () {
+        document.querySelector('[data-f="todas"]').click();
+      });
+
+      /* El aviso lleva al filtro, no a una acción a ciegas: antes de mandar
+         2.064 llamadas conviene ver de qué fotos se trata. */
+      document.getElementById("reprocesar").addEventListener("click", function () {
+        document.querySelector('[data-f="sinrec"]').click();
+      });
+    } catch (e) { console.warn("fotos:", e); }
+  });
+</script>
+
+</body>
+</html>

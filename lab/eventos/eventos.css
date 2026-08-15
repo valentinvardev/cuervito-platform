@@ -1,0 +1,209 @@
+/* =============================================================================
+   encontrate · panel · eventos
+   -----------------------------------------------------------------------------
+   La lista vieja era una fila de texto con una miniatura de 44px al costado.
+   Para un producto que vende fotografía eso es raro: el fotógrafo reconoce sus
+   eventos por la imagen mucho antes que por el nombre, sobre todo cuando tiene
+   cuatro fechas del mismo torneo con títulos casi idénticos.
+
+   Hay dos vistas y sirven para cosas distintas. La grilla es para RECONOCER:
+   manda la portada y las cifras van al pie de cada tarjeta. La lista es para
+   COMPARAR: columnas alineadas, encabezado que ordena, y el mismo dato de
+   todos los eventos leyéndose en vertical.
+
+   El marcado es uno solo para las dos. Lo que cambia es la caja: en grilla la
+   tarjeta es una columna flex, en lista es una grilla de seis columnas y
+   .ec-st pasa a display:contents para que sus tres cifras se repartan como
+   celdas propias en vez de quedar apiladas adentro de un cajón.
+   ========================================================================== */
+
+/* Alternador de vista. */
+.vista { display: flex; gap: 1px; padding: 2px; background: var(--paper-3); border-radius: var(--r-2); }
+.vista button {
+  display: grid; place-items: center;
+  width: 28px; height: 26px; padding: 0;
+  border: 0; background: none; border-radius: 4px; cursor: pointer;
+  color: var(--ink-3);
+  transition: background 140ms ease, color 140ms ease;
+}
+.vista button:hover { color: var(--ink); }
+.vista button[aria-pressed="true"] {
+  background: var(--paper-2); color: var(--ink);
+  box-shadow: 0 1px 2px rgba(18, 17, 15, .07);
+}
+.vista svg { width: 15px; height: 15px; }
+
+/* ═══════════════════════════════ GRILLA ══════════════════════════════════ */
+.evs { display: grid; grid-template-columns: repeat(auto-fill, minmax(286px, 1fr)); gap: var(--s-3); }
+.evs .ec-h { display: none; }   /* el encabezado es sólo de la lista */
+
+.ec {
+  position: relative;
+  display: flex; flex-direction: column;
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  overflow: hidden;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms cubic-bezier(.2, .8, .3, 1);
+}
+.ec:hover { border-color: var(--line); box-shadow: var(--shadow-card); transform: translateY(-2px); }
+
+.ec-cv { position: relative; aspect-ratio: 16 / 10; background: var(--paper-3); overflow: hidden; }
+/* Marcadores: cada evento con su propia luz, para que la grilla no parezca
+   cuatro veces la misma foto. Van fotos reales. */
+.ec-cv[data-cv="1"] { background: radial-gradient(112% 80% at 68% 22%, #FFB25E, transparent 58%), linear-gradient(162deg, #35281C, #12100E); }
+.ec-cv[data-cv="2"] { background: radial-gradient(100% 74% at 26% 30%, #7FA8D8, transparent 60%), linear-gradient(160deg, #1E2836, #0E1116); }
+.ec-cv[data-cv="3"] { background: radial-gradient(108% 78% at 74% 68%, #8FD08A, transparent 58%), linear-gradient(158deg, #1D2A1C, #0E120D); }
+.ec-cv[data-cv="4"] { background: radial-gradient(104% 76% at 40% 24%, #E08C7A, transparent 58%), linear-gradient(164deg, #33201D, #14100F); }
+.ec-cv[data-cv="5"] { background: radial-gradient(110% 80% at 60% 34%, #C9A7E8, transparent 58%), linear-gradient(160deg, #261E33, #100E14); }
+
+/* La píldora es hija directa de la tarjeta, no de la portada. Cuando vivía
+   adentro de la portada había que esconderla en la vista lista, porque ahí la
+   portada es una miniatura de 64px: el resultado era que en lista no se podía
+   distinguir un borrador de uno publicado. Ahora en grilla se posiciona sobre
+   la portada y en lista es una columna más. */
+.ec > .pill { position: absolute; top: 9px; left: 9px; z-index: 1; }
+
+/* Sin portada: no se disimula con un gris, se dice y se ofrece el arreglo.
+   Un evento sin portada vende bastante menos, así que callarlo no ayuda. */
+.ec-none {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; justify-items: center; gap: 9px;
+  background: var(--paper-3); color: var(--ink-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+.ec-none svg { width: 20px; height: 20px; }
+.ec-none span { font-size: 12px; }
+
+.ec-b { padding: var(--s-4) var(--s-4) 0; display: grid; gap: 3px; align-content: start; }
+.ec-b h3 {
+  font-family: var(--sans); font-size: 15px; font-weight: 600;
+  letter-spacing: -0.02em; line-height: 1.28;
+}
+.ec-meta { font-size: 12.5px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.ec-meta i { width: 3px; height: 3px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+/* margin-top:auto pega el pie abajo aunque los títulos midan distinto: sin
+   esto las cifras quedan a alturas diferentes en cada tarjeta. */
+.ec-st {
+  margin-top: auto; padding: var(--s-4);
+  display: grid; grid-template-columns: repeat(3, 1fr);
+}
+.ec-st > div + div { border-left: 1px solid var(--line-soft); padding-left: var(--s-3); }
+.ec-st span {
+  display: block; font-size: 10.5px; color: var(--ink-3);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.ec-st b {
+  display: block; margin-top: 3px;
+  font-size: 17px; font-weight: 300; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.ec-st b.pale { color: var(--ink-3); }
+
+/* ═══════════════════════════════ LISTA ═══════════════════════════════════
+   Las columnas se definen UNA vez en la variable y las usan el encabezado y
+   las filas. Con dos plantillas separadas, cualquier retoque desalinea los
+   títulos de los números y el error se ve recién al mirar.
+   ══════════════════════════════════════════════════════════════════════ */
+.evs[data-vista="lista"] {
+  --cols: 64px minmax(0, 1fr) 88px 104px 88px 104px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  overflow: hidden;
+}
+
+.evs[data-vista="lista"] .ec-h,
+.evs[data-vista="lista"] .ec {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+  gap: var(--s-4);
+  padding: 10px var(--s-4);
+}
+
+.evs[data-vista="lista"] .ec-h {
+  padding-top: 12px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--paper-3);
+}
+
+.evs[data-vista="lista"] .ec {
+  position: static;
+  background: none;
+  border: 0; border-bottom: 1px solid var(--line-soft);
+  border-radius: 0;
+  transform: none; box-shadow: none;
+}
+.evs[data-vista="lista"] .ec:last-child { border-bottom: 0; }
+.evs[data-vista="lista"] .ec:hover { background: var(--paper-3); }
+
+.evs[data-vista="lista"] .ec-cv {
+  width: 64px; aspect-ratio: 16 / 10; border-radius: 5px;
+  border: 1px solid var(--line-soft);
+}
+.evs[data-vista="lista"] .ec-none { border: 0; }
+.evs[data-vista="lista"] .ec-none span { display: none; }
+.evs[data-vista="lista"] .ec-none svg { width: 15px; height: 15px; }
+
+.evs[data-vista="lista"] .ec-b { padding: 0; gap: 1px; }
+.evs[data-vista="lista"] .ec-b h3 {
+  font-size: 14px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.evs[data-vista="lista"] .ec-meta { font-size: 12px; }
+
+/* display:contents disuelve el cajón de las cifras y deja que sus tres hijos
+   se coloquen como celdas de la fila. Sin esto habría que duplicar el marcado
+   para tener columnas de verdad. */
+.evs[data-vista="lista"] .ec-st { display: contents; }
+.evs[data-vista="lista"] .ec-st > div {
+  border-left: 0; padding-left: 0;
+  text-align: right;
+}
+.evs[data-vista="lista"] .ec-st span { display: none; }   /* la etiqueta vive en el encabezado */
+.evs[data-vista="lista"] .ec-st b { margin-top: 0; font-size: 14px; font-weight: 400; }
+
+/* Sin grid-column forzada: la píldora es el último hijo del marcado, así que
+   la autocolocación la manda sola a la última columna. Cuando SÍ tenía columna
+   fija, adelantaba el cursor de autocolocación y empujaba a .ec-b a una
+   segunda fila: la fila entera se partía en dos renglones. */
+.evs[data-vista="lista"] .ec > .pill {
+  position: static; justify-self: end;
+  backdrop-filter: none;
+}
+
+/* Encabezado ordenable. La flecha aparece sólo en la columna activa: tres
+   flechas simultáneas no dicen por cuál está ordenado. */
+.ec-h .et {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font-family: var(--sans); font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-3);
+  transition: color 140ms ease;
+}
+.ec-h .et:hover { color: var(--ink); }
+.ec-h .et svg { width: 12px; height: 12px; opacity: 0; transition: opacity 140ms ease, transform 220ms ease; }
+.ec-h .et[data-ord] { color: var(--ink); }
+.ec-h .et[data-ord] svg { opacity: 1; }
+.ec-h .et[data-ord="asc"] svg { transform: rotate(180deg); }
+.ec-h .et.num { justify-content: flex-end; width: 100%; }
+
+@media (max-width: 900px) {
+  .evs[data-vista="lista"] { --cols: 56px minmax(0, 1fr) 96px 96px; }
+  .evs[data-vista="lista"] .ec-cv { width: 56px; }
+  /* Se caen fotos y conversión, se quedan el dinero y el estado: con poco
+     ancho, lo que hay que poder comparar es cuánto entró y si está publicado. */
+  .evs[data-vista="lista"] .c-fotos,
+  .evs[data-vista="lista"] .c-conv { display: none; }
+}
+@media (max-width: 560px) {
+  .evs[data-vista="lista"] { --cols: 44px minmax(0, 1fr) 92px; }
+  .evs[data-vista="lista"] .ec-cv { width: 44px; }
+  .evs[data-vista="lista"] .c-estado { display: none; }
+  .evs[data-vista="lista"] .ec > .pill { display: none; }
+}

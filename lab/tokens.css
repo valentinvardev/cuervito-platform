@@ -34,8 +34,26 @@
   --accent-2:    #C7330B;
   --accent-wash: rgba(240, 65, 15, 0.08);
 
+  /* Acento LLENO: para tarjetas donde el acento es el fondo y el texto va en
+     blanco. No es --accent: blanco sobre #F0410F da 3,84:1 y no pasa AA para
+     texto chico. Este da 5,38:1.
+
+     Vale lo mismo en los dos temas, y no es un descuido: una tarjeta llena es
+     su propio mundo de contraste, el blanco de adentro se mide contra este
+     fondo y no contra el papel de la página. */
+  --acento-lleno: #C7330B;
+
+  /* Semánticos. OJO: estos dos TIENEN que redefinirse en el bloque oscuro.
+     Cuando faltaban, el verde #1E7A4D quedaba sobre fondo casi negro y la
+     píldora "En vivo" era ilegible. Mismo error que ya habíamos arreglado al
+     revés en el producto, con los dorsales negros sobre vidrio oscuro. */
   --ok:          #1E7A4D;
   --bad:         #C4342F;
+  /* Versión para texto sobre su propio tinte: ahí el fondo ya no es papel
+     blanco y el color de siempre pierde contraste. */
+  --ok-txt:      #1E7A4D;
+  --acento-txt:  #C7330B;
+  --bad-txt:     #A82A26;
 
   /* Sobre papel, el botón primario es TINTA. El color se reserva para
      señales chicas: ahí es donde rinde. */
@@ -109,12 +127,21 @@
   --accent:      #FF5A28;
   --accent-2:    #FF7A4F;
   --accent-wash: rgba(255, 90, 40, 0.10);
+  --acento-lleno: #C7330B;   /* mismo valor: ver la nota de arriba */
   --cta-bg:      #F4F3EF;
   --cta-bg-hov:  #FFFFFF;
   --cta-fg:      #0D0D0C;
   --ghost-hov:   rgba(244, 243, 239, 0.07);
   --shadow-obj:  0 40px 80px rgba(0, 0, 0, 0.6);
   --shadow-card: 0 20px 50px rgba(0, 0, 0, 0.45);
+  /* Los semánticos suben de luminancia: sobre papel se leen los oscuros,
+     sobre tinta hay que aclararlos o desaparecen. */
+  --ok:          #46D68A;
+  --bad:         #FF8E8E;
+  /* Sobre tinte oscuro el color de siempre ya contrasta de sobra. */
+  --ok-txt:      #46D68A;
+  --acento-txt:  #FF5A28;
+  --bad-txt:     #FF8E8E;
 }
 
 /* Reset mínimo */

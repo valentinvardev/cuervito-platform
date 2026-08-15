@@ -1,0 +1,116 @@
+/* =============================================================================
+   encontrate · panel · métodos de pago
+   -----------------------------------------------------------------------------
+   Antes esta pantalla se llamaba Cobros y abría con "te va a entrar $186.400,
+   se acredita el lunes 18". Estaba mal de raíz: con el reparto de Mercado Pago
+   la plata cae en la cuenta del fotógrafo en el momento de la venta, así que
+   no existe ningún saldo pendiente de nuestro lado. Esa tarjeta prometía un
+   depósito que nunca íbamos a hacer, y una fecha que no era nuestra.
+
+   Lo que sí hace falta acá es la cuenta conectada: es lo único que el
+   fotógrafo puede cambiar y lo único sin lo cual no cobra. Por eso va primera
+   y grande, y le da el nombre a la pantalla.
+
+   El desglose de la comisión se queda: en Ventas el fotógrafo mira cómo le va
+   y meterle ahí la resta convierte una buena noticia en una mala. Acá viene a
+   entender cómo cobra, así que es lo que vino a buscar.
+   ========================================================================== */
+
+/* ── La cuenta conectada ─────────────────────────────────────────────────────
+   Es lo que la pantalla viene a resolver, así que ocupa el lugar que antes
+   tenía la falsa próxima acreditación. */
+.metodo {
+  padding: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  background: var(--paper-2);
+}
+.metodo-h {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-4); flex-wrap: wrap;
+}
+
+/* Datos en columnas y no en renglones sueltos: son tres hechos del mismo
+   rango, y apilados parecerían una jerarquía que no existe. */
+.metodo-d {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-4);
+  margin-top: var(--s-5); padding-top: var(--s-5);
+  border-top: 1px solid var(--line-soft);
+}
+.metodo-d dt { font-size: 11.5px; color: var(--ink-3); }
+.metodo-d dd {
+  margin-top: 5px; font-size: 14.5px; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.metodo-f {
+  display: flex; gap: var(--s-2);
+  margin-top: var(--s-5); padding-top: var(--s-4);
+  border-top: 1px solid var(--line-soft);
+}
+
+.mp { display: flex; align-items: center; gap: var(--s-4); }
+/* El logotipo va monocromático y en tinta, no en el celeste corporativo dentro
+   de un cuadradito. Sobre papel, un bloque de color saturado es la cosa más
+   ruidosa de la pantalla, y acá Mercado Pago es un dato de la cuenta, no una
+   marca que tengamos que promocionar. La proporción sale del viewBox del SVG
+   original, 1048.82 x 425.2. */
+.metodo .mp-marca, .mp .mp-marca {
+  width: 128px; height: 52px;
+  flex-shrink: 0;
+  color: var(--ink);
+}
+.mp-t { flex: 1; min-width: 0; line-height: 1.4; }
+.mp-t b { display: block; font-size: 14.5px; font-weight: 600; }
+.mp-t span { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+.mp-ok { display: inline-flex; align-items: center; gap: 5px; color: var(--ok); font-size: 12.5px; }
+.mp-ok svg { width: 14px; height: 14px; }
+
+/* ── Desglose ────────────────────────────────────────────────────────────── */
+.desglose { display: grid; gap: 10px; }
+.desglose > div {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s-4); font-size: 14px;
+}
+.desglose dt { color: var(--ink-2); }
+.desglose dd { font-variant-numeric: tabular-nums; }
+.desglose .fee dd { color: var(--accent); }
+.desglose .tot {
+  margin-top: 5px; padding-top: 13px;
+  border-top: 1px solid var(--line);
+  font-size: 16px; font-weight: 500;
+}
+.desglose .tot dd { font-size: 22px; font-weight: 300; }
+
+/* El desglose por tipo de evento. Es el único lugar donde el fotógrafo puede
+   verificar de dónde sale el total que le descontamos. */
+.fund {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin-top: var(--s-4); padding: 11px 13px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  background: var(--accent-wash);
+  border-radius: var(--r-2);
+  font-size: 12.5px; line-height: 1.5; color: var(--ink-2);
+}
+.fund svg { width: 15px; height: 15px; color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+.fund { border-color: var(--line); background: var(--paper-3); }
+.fund b { color: var(--ink); font-weight: 500; }
+
+/* ── Cómo funciona ───────────────────────────────────────────────────────── */
+.pasos { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-4); }
+.paso { display: grid; gap: 7px; align-content: start; }
+.paso-n {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  font-size: 11.5px; font-weight: 600;
+}
+.paso b { font-size: 13.5px; font-weight: 500; }
+.paso p { font-size: 12.5px; color: var(--ink-3); line-height: 1.55; }
+
+@media (max-width: 900px) {
+  .pasos { grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+}
+@media (max-width: 560px) {
+  .metodo-d { grid-template-columns: minmax(0, 1fr); gap: var(--s-3); }
+}

@@ -1,0 +1,270 @@
+/* =============================================================================
+   encontrate · panel · mi página
+   -----------------------------------------------------------------------------
+   La pantalla vieja tenía las opciones correctas (dominio, plantilla, color,
+   logo, marca de agua) y ningún lugar donde ver el resultado. Para saber cómo
+   quedaba un color había que guardar, abrir la página pública en otra pestaña
+   y volver. Eso convierte cada ajuste en un viaje de ida y vuelta, y termina
+   en que nadie personaliza nada.
+
+   Acá los controles quedan a la izquierda y la página se dibuja al lado,
+   reaccionando en el momento. La previa es el producto de esta pantalla; los
+   controles son el medio.
+   ========================================================================== */
+
+.tienda { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr); gap: var(--s-5); align-items: start; }
+.ctrl { display: grid; gap: var(--s-3); }
+
+.blq h2 {
+  font-family: var(--sans); font-size: 14.5px; font-weight: 600;
+  letter-spacing: -0.015em; text-transform: none;
+}
+.blq .ayuda { margin-top: 3px; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+.blq-b { margin-top: var(--s-4); }
+
+/* ── Dominio ─────────────────────────────────────────────────────────────── */
+.dom {
+  display: flex; align-items: center;
+  height: 40px;
+  border: 1px solid var(--line); border-radius: var(--r-2);
+  overflow: hidden;
+  background: var(--paper);
+}
+.dom .fijo {
+  padding: 0 2px 0 12px;
+  font-size: 14px; color: var(--ink-3);
+  white-space: nowrap;
+}
+.dom input {
+  flex: 1; min-width: 0; height: 100%;
+  border: 0; background: none; padding: 0 12px 0 0;
+  font-family: var(--sans); font-size: 14px; font-weight: 500; color: var(--ink);
+}
+.dom input:focus { outline: none; }
+.dom:focus-within { border-color: var(--ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 9%, transparent); }
+
+.dom-est {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 10px; font-size: 12.5px; color: var(--ok);
+}
+.dom-est svg { width: 14px; height: 14px; }
+
+.propio {
+  display: flex; align-items: center; gap: var(--s-3);
+  margin-top: var(--s-3); padding-top: var(--s-3);
+  border-top: 1px solid var(--line-soft);
+  font-size: 13px; color: var(--ink-3);
+}
+.propio .btn { margin-left: auto; }
+
+/* ── Plantillas ──────────────────────────────────────────────────────────────
+   Miniaturas reales y no nombres en una lista: "Editorial" no le dice nada a
+   nadie hasta que lo ve. */
+.plt { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
+.pl { cursor: pointer; }
+.pl input { position: absolute; opacity: 0; pointer-events: none; }
+.pl-v {
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  overflow: hidden;
+  padding: 7px;
+  display: grid; gap: 4px; grid-template-rows: 8px 1fr;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.pl:hover .pl-v { border-color: var(--line-strong); }
+.pl input:checked + .pl-v {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.pl-n { margin-top: 7px; font-size: 12.5px; text-align: center; color: var(--ink-2); }
+.pl input:checked ~ .pl-n { color: var(--ink); font-weight: 500; }
+
+.pl-v i { display: block; border-radius: 2px; }
+.pl-v .barra-m { height: 8px; }
+.pl-v .rejilla { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.pl-v .rejilla i { border-radius: 2px; }
+
+.pl-v[data-t="claro"] { background: #FFF; }
+.pl-v[data-t="claro"] .barra-m { background: #E6E4DF; }
+.pl-v[data-t="claro"] .rejilla i { background: #D9D6D0; }
+
+.pl-v[data-t="oscuro"] { background: #131211; }
+.pl-v[data-t="oscuro"] .barra-m { background: #34302A; }
+.pl-v[data-t="oscuro"] .rejilla i { background: #2A2620; }
+
+.pl-v[data-t="editorial"] { background: #F4F2ED; padding: 10px; }
+.pl-v[data-t="editorial"] .barra-m { height: 5px; width: 60%; background: #1A1815; }
+.pl-v[data-t="editorial"] .rejilla { grid-template-columns: repeat(2, 1fr); gap: 4px; }
+.pl-v[data-t="editorial"] .rejilla i { background: #CFCAC1; }
+
+/* ── Color ───────────────────────────────────────────────────────────────── */
+.cols { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.co {
+  position: relative;
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 0; padding: 0; cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(18, 17, 15, .12);
+  transition: transform 160ms cubic-bezier(.2, .8, .3, 1);
+}
+.co:hover { transform: scale(1.12); }
+.co[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--paper-2), 0 0 0 4px var(--ink); }
+
+.co-libre {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px dashed var(--line-strong);
+  padding: 0; cursor: pointer; background: none;
+  display: grid; place-items: center; color: var(--ink-3);
+  overflow: hidden;
+}
+.co-libre svg { width: 14px; height: 14px; }
+.co-libre input { position: absolute; opacity: 0; width: 30px; height: 30px; cursor: pointer; }
+
+/* ── Subidas ─────────────────────────────────────────────────────────────── */
+.subir {
+  display: flex; align-items: center; gap: var(--s-4);
+  padding: var(--s-4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-2);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.subir:hover { border-color: var(--ink-3); background: var(--paper-3); }
+.subir-v {
+  width: 62px; height: 62px; border-radius: var(--r-2);
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-3);
+  flex-shrink: 0;
+}
+.subir-v svg { width: 20px; height: 20px; }
+.subir-t { flex: 1; min-width: 0; font-size: 13px; color: var(--ink-3); line-height: 1.5; }
+.subir-t b { display: block; color: var(--ink); font-size: 13.5px; font-weight: 500; margin-bottom: 2px; }
+
+/* ═══════════════════════════════ PREVIA ══════════════════════════════════
+   Pegajosa: los controles son más largos que la previa, y sin sticky se
+   ajusta el color con la previa ya fuera de pantalla, que es exactamente el
+   problema que esta pantalla venía a resolver. */
+.previa { position: sticky; top: calc(62px + var(--s-5)); }
+.previa-h {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-3); margin-bottom: var(--s-3);
+}
+.previa-h .label { color: var(--ink-3); }
+
+.marco {
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  background: var(--paper-2);
+}
+/* Barra del navegador. Encuadra la previa como página web y no como imagen
+   suelta: sin el marco, el usuario no sabe si está viendo su página o una
+   ilustración de su página. */
+.crome {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 11px;
+  background: var(--paper-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+.crome i { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
+.crome .url {
+  flex: 1; margin-left: 5px;
+  padding: 3px 9px; border-radius: 100px;
+  background: var(--paper-2);
+  font-size: 11px; color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* La previa vive en su propio universo de color: define sus variables y no
+   hereda las del panel. Si heredara, el tema oscuro del panel le cambiaría
+   la página al fotógrafo sin que él haya tocado nada. */
+.sf {
+  --sf-bg: #FFFFFF;
+  --sf-fg: #14120F;
+  --sf-fg2: #6E6A63;
+  --sf-line: rgba(20, 18, 15, .10);
+  --sf-acc: #F0410F;
+  background: var(--sf-bg); color: var(--sf-fg);
+  transition: background 260ms ease, color 260ms ease;
+}
+.sf[data-t="oscuro"] {
+  --sf-bg: #0E0D0C; --sf-fg: #F2F0EC; --sf-fg2: #9B968D;
+  --sf-line: rgba(242, 240, 236, .12);
+}
+.sf[data-t="editorial"] { --sf-bg: #F4F2ED; --sf-fg: #1A1815; --sf-fg2: #6B665E; }
+
+.sf-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--sf-line);
+}
+.sf-marca { display: flex; align-items: center; gap: 8px; }
+.sf-logo {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: var(--sf-acc);
+  display: grid; place-items: center;
+  color: #FFF; font-size: 11px; font-weight: 700;
+  transition: background 260ms ease;
+}
+.sf-marca b { font-size: 13.5px; font-weight: 600; letter-spacing: -0.02em; }
+.sf-buscar {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 100px;
+  border: 1px solid var(--sf-line);
+  font-size: 11px; color: var(--sf-fg2);
+}
+.sf-buscar svg { width: 11px; height: 11px; }
+
+.sf-hero { padding: 20px 16px; }
+.sf[data-t="editorial"] .sf-hero { padding: 26px 16px 20px; }
+.sf-hero h3 {
+  font-family: var(--display);
+  font-size: 19px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: -0.045em; line-height: 1.05;
+}
+.sf[data-t="editorial"] .sf-hero h3 { font-size: 23px; }
+.sf-hero p { margin-top: 6px; font-size: 12px; color: var(--sf-fg2); }
+.sf-cta {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 12px; padding: 7px 13px;
+  border-radius: 5px;
+  background: var(--sf-acc); color: #FFF;
+  font-size: 12px; font-weight: 500;
+  transition: background 260ms ease;
+}
+.sf-cta svg { width: 12px; height: 12px; }
+
+.sf-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;
+  padding: 0 16px 18px;
+}
+.sf[data-t="editorial"] .sf-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.sf-ph {
+  aspect-ratio: 3 / 2; border-radius: 4px;
+  background: radial-gradient(110% 82% at 64% 26%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
+}
+.sf-ph:nth-child(2) { background: radial-gradient(104% 78% at 30% 34%, #7FA8D8, transparent 58%), linear-gradient(158deg, #1E2836, #0E1116); }
+.sf-ph:nth-child(3) { background: radial-gradient(110% 80% at 70% 64%, #8FD08A, transparent 56%), linear-gradient(160deg, #1D2A1C, #0E120D); }
+.sf-ph:nth-child(4) { background: radial-gradient(106% 78% at 44% 28%, #E08C7A, transparent 56%), linear-gradient(162deg, #33201D, #14100F); }
+.sf-ph:nth-child(5) { background: radial-gradient(110% 82% at 56% 38%, #C9A7E8, transparent 56%), linear-gradient(160deg, #261E33, #100E14); }
+.sf-ph:nth-child(6) { background: radial-gradient(112% 84% at 66% 24%, #FFCF7A, transparent 56%), linear-gradient(160deg, #33291B, #12100E); }
+
+/* Marca de agua sobre la previa: es la única forma de ver si tapa la foto o
+   si queda tan tenue que no protege nada. */
+.sf-ph { position: relative; overflow: hidden; }
+.sf[data-agua="1"] .sf-ph::after {
+  content: "GERMÁN SOSA";
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: rgba(255, 255, 255, .5);
+  font-size: 7px; font-weight: 600; letter-spacing: 0.1em;
+  transform: rotate(-18deg);
+}
+
+@media (max-width: 1080px) {
+  .tienda { grid-template-columns: minmax(0, 1fr); }
+  .previa { position: static; }
+}
+@media (max-width: 560px) {
+  .plt { grid-template-columns: repeat(2, 1fr); }
+}

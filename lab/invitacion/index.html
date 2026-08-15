@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · te invitaron a cubrir un evento</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css?v=1786703126">
+<link rel="stylesheet" href="../base.css?v=1786703126">
+<link rel="stylesheet" href="../panel.css?v=1786703126">
+<link rel="stylesheet" href="invitacion.css?v=1786703126">
+
+<script>
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/iconos.js?v=1786703126" defer></script>
+</head>
+
+<body>
+
+<div class="inv-pag">
+
+  <header class="inv-top">
+    <a href="../landing/" class="mark">encontrate<i></i>app</a>
+    <button class="btn btn-ghost btn-icon js-tema" aria-label="Cambiar tema">
+      <span class="ico ico-moon"><i data-lucide="moon"></i></span>
+      <span class="ico ico-sun"><i data-lucide="sun"></i></span>
+    </button>
+  </header>
+
+  <main class="inv-mid">
+    <div class="inv-caja">
+
+      <!-- ═══════════ POR DECIDIR ═══════════ -->
+      <div class="por-decidir">
+
+        <!-- Arranca por la persona y no por las condiciones: una invitación
+             que abre con la letra chica parece un contrato y no se lee. -->
+        <div class="quien">
+          <span class="quien-av">GS</span>
+          <span class="quien-t">
+            <b>Germán Sosa</b>
+            <span>te invitó a cubrir un evento con él</span>
+          </span>
+        </div>
+
+        <h1>Sumate al<br>Duatlón de Chivilcoy</h1>
+        <p class="bajada">
+          Vas a poder subir tus fotos a este evento. Cada uno cobra las ventas
+          de las suyas, directo a su Mercado Pago.
+        </p>
+
+        <div class="ev-inv">
+          <span class="ev-inv-cv"></span>
+          <span class="ev-inv-t">
+            <b>Duatlón Club Ciclista Chivilcoy</b>
+            <span>14 de agosto · Chivilcoy · 2.162 fotos ya subidas</span>
+          </span>
+        </div>
+
+        <!-- Los tres números, arriba del botón. Es lo único que hace falta
+             para decidir, y ponerlo debajo sería esconderlo con buenos
+             modales. -->
+        <dl class="plata">
+          <div class="plata-fila">
+            <dt>
+              Precio de cada foto
+              <span class="chico">Lo puso Germán. Vos no lo podés cambiar.</span>
+            </dt>
+            <dd class="tnum">$1.800</dd>
+          </div>
+          <div class="plata-fila">
+            <dt>
+              Comisión de encontrate
+              <span class="chico">Este evento usa reconocimiento por cara y dorsal.</span>
+            </dt>
+            <dd class="tnum">10%</dd>
+          </div>
+          <div class="plata-fila total">
+            <dt>
+              De cada foto te queda
+              <span class="chico">Va directo a tu Mercado Pago</span>
+            </dt>
+            <dd class="tnum">$1.620</dd>
+          </div>
+        </dl>
+
+        <div class="porque" style="margin-top:var(--s-3)">
+          <i data-lucide="info"></i>
+          <span>
+            <b>La comisión la define el evento, no vos.</b> Si Germán lo pasa a
+            galería simple, baja al 5% para todos. Si lo deja con
+            reconocimiento, se mantiene en 10%. Te avisamos si cambia.
+          </span>
+        </div>
+
+        <div class="inv-permisos">
+          <h2>Qué vas a poder hacer</h2>
+          <ul class="permisos">
+            <li class="si"><i data-lucide="check"></i> Subir tus fotos y verlas en la grilla del evento</li>
+            <li class="si"><i data-lucide="check"></i> Ver y cobrar las ventas de tus fotos</li>
+            <li class="si"><i data-lucide="check"></i> Irte cuando quieras, llevándote tus fotos</li>
+            <li class="no"><i data-lucide="x"></i> No vas a ver las ventas de Germán ni las de los demás</li>
+            <li class="no"><i data-lucide="x"></i> No vas a poder cambiar el precio ni tocar fotos ajenas</li>
+          </ul>
+        </div>
+
+        <div class="decide">
+          <button class="btn btn-pri btn-lg" id="aceptar">
+            <span id="aceptar-t">Aceptar y sumarme</span> <i data-lucide="arrow-right" class="go"></i>
+          </button>
+          <button class="btn btn-quiet rechazar" id="rechazar">No, gracias</button>
+        </div>
+      </div>
+
+      <!-- ═══════════ ACEPTADA ═══════════ -->
+      <div class="hecho">
+        <div class="hecho-i"><i data-lucide="check"></i></div>
+        <h1>Ya sos<br>parte</h1>
+        <p class="bajada">
+          Podés empezar a subir tus fotos al Duatlón de Chivilcoy. Van a quedar
+          buscables por cara y dorsal junto con las de Germán.
+        </p>
+
+        <!-- Lo que faltaba y es lo que decide si cobra o no. No va como aviso
+             suelto: va como el paso siguiente, con su botón. -->
+        <div class="mp-falta">
+          <i data-lucide="wallet"></i>
+          <span>
+            <b>Te falta conectar Mercado Pago.</b>
+            Hasta que lo hagas, tus fotos van a aparecer en las búsquedas pero
+            nadie va a poder comprarlas: no hay dónde depositarte.
+          </span>
+        </div>
+
+        <div class="hecho-acc">
+          <a href="../alta/" class="btn btn-pri btn-lg">Conectar Mercado Pago <i data-lucide="arrow-right" class="go"></i></a>
+          <a href="../evento/" class="btn btn-quiet">Ir al evento igual</a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    try { lucide.createIcons(); } catch (e) { console.warn("lucide:", e); }
+
+    try {
+      var raiz = document.documentElement;
+      document.querySelectorAll(".js-tema").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var osc = raiz.dataset.theme === "dark";
+          raiz.dataset.theme = osc ? "" : "dark";
+          try { localStorage.setItem("tema", osc ? "light" : "dark"); } catch (e) {}
+        });
+      });
+    } catch (e) { console.warn("tema:", e); }
+
+    try {
+      var b = document.getElementById("aceptar");
+      b.addEventListener("click", function () {
+        if (b.dataset.cargando === "1") return;
+        b.dataset.cargando = "1";
+        document.getElementById("aceptar-t").textContent = "Sumándote";
+        var giro = document.createElement("span");
+        giro.className = "spin";
+        b.appendChild(giro);
+        setTimeout(function () {
+          giro.remove();
+          b.dataset.cargando = "";
+          document.documentElement.dataset.inv = "ok";
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 900);
+      });
+
+      /* Rechazar no pide confirmación: no destruye nada y siempre se puede
+         volver a invitar. Un "¿estás seguro?" acá sería fricción por las
+         dudas, que es de lo que más ensucia un producto. */
+      document.getElementById("rechazar").addEventListener("click", function () {
+        this.textContent = "Le avisamos a Germán";
+        this.disabled = true;
+      });
+    } catch (e) { console.warn("invitacion:", e); }
+  });
+</script>
+
+</body>
+</html>

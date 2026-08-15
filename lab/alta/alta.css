@@ -1,0 +1,216 @@
+/* =============================================================================
+   encontrate · alta (onboarding)
+   -----------------------------------------------------------------------------
+   Tres pantallas, igual que en cuervito: perfil, Mercado Pago y bienvenida.
+   Sin riel: acá el fotógrafo todavía no tiene nada que administrar, y un menú
+   lateral lleno de destinos vacíos en el primer minuto de uso desanima.
+
+   El cambio de fondo respecto del flujo actual: el paso de Mercado Pago dejaba
+   "Lo hago después" abajo, chiquito, como salida de emergencia. Pero saltearlo
+   tiene una consecuencia concreta, que es que no podés cobrar, y eso no se
+   decía. Ahora se dice, y por eso el botón de saltear puede quedarse:
+   informado, saltear es una decisión legítima; a ciegas, es una trampa.
+
+   Acá no se promete ninguna comisión concreta a propósito: depende de si el
+   evento usa reconocimiento o no, y eso se elige al crear cada evento. Poner
+   un número suelto en el alta sería prometer algo que después no se cumple
+   para la mitad de los casos.
+   ========================================================================== */
+
+.alta {
+  min-height: 100dvh;
+  display: grid; grid-template-rows: auto 1fr auto;
+}
+
+/* ── Barra de progreso ───────────────────────────────────────────────────── */
+.alta-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--line-soft);
+}
+.pasos-n { display: flex; align-items: center; gap: 10px; }
+.pn {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12.5px; color: var(--ink-3);
+}
+.pn i.bolita {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 1.5px solid var(--line-strong);
+  font-size: 11px; font-weight: 600; font-style: normal;
+  color: var(--ink-3);
+  transition: background 240ms ease, border-color 240ms ease, color 240ms ease;
+}
+.pn[data-e="aqui"] { color: var(--ink); font-weight: 500; }
+.pn[data-e="aqui"] i.bolita { background: var(--cta-bg); border-color: var(--cta-bg); color: var(--cta-fg); }
+.pn[data-e="hecho"] i.bolita { background: var(--ok); border-color: var(--ok); color: #FFF; }
+.pn[data-e="hecho"] i.bolita::after {
+  content: ""; width: 11px; height: 11px;
+  background: currentColor;
+  -webkit-mask: var(--tic) center / contain no-repeat;
+  mask: var(--tic) center / contain no-repeat;
+}
+.pn[data-e="hecho"] i.bolita span { display: none; }
+.pn-linea { width: 26px; height: 1px; background: var(--line); }
+
+/* ── Cuerpo ──────────────────────────────────────────────────────────────── */
+.alta-mid { display: grid; align-content: center; padding: var(--s-7) var(--s-5); }
+.alta-caja { width: 100%; max-width: 470px; margin: 0 auto; }
+.alta-caja.ancha { max-width: 540px; }
+
+.alta h1 {
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: var(--display-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--display-track);
+  line-height: 1.05;
+}
+.alta .bajada {
+  margin-top: var(--s-3);
+  color: var(--ink-2); font-size: var(--t-small); font-weight: 300;
+  max-width: 46ch; line-height: 1.6;
+}
+.campos { margin-top: var(--s-6); display: grid; gap: var(--s-4); }
+
+.paso { display: none; }
+.paso[data-activo="1"] { display: block; animation: entrar 320ms cubic-bezier(.2, .8, .3, 1); }
+@keyframes entrar {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.alta-bot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  border-top: 1px solid var(--line-soft);
+}
+
+/* ── Tarjeta de Mercado Pago ─────────────────────────────────────────────── */
+.mp-caja {
+  margin-top: var(--s-6);
+  padding: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  background: var(--paper-2);
+}
+.mp-caja .mp-marca { width: 150px; height: 61px; color: var(--ink); }
+
+/* Un ícono por punto, no tres tildes iguales. Tres tildes verdes seguidos son
+   un patrón decorativo: confirman que hay una lista y no dicen nada más. Con
+   un ícono distinto por renglón, el ojo distingue los tres beneficios antes
+   de leerlos. Y el verde se reserva para lo que de verdad es confirmación,
+   que en esta pantalla es el paso ya completado del encabezado. */
+.mp-lista {
+  margin-top: var(--s-5);
+  display: grid;
+  border-top: 1px solid var(--line-soft);
+}
+.mp-lista li {
+  display: flex; align-items: center; gap: 11px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 13.5px; color: var(--ink-3); line-height: 1.45;
+  list-style: none;
+}
+.mp-lista li b { color: var(--ink); font-weight: 500; }
+.mp-i {
+  flex-shrink: 0;
+  width: 30px; height: 30px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.mp-i svg { width: 15px; height: 15px; }
+
+/* ── Sello de seguridad ─────────────────────────────────────────────────────
+   Pegado al botón, que es donde aparece la duda.
+
+   Va con filete y fondo apenas teñido, NO en bloque lleno. Se probó relleno y
+   quedaba una masa clara justo debajo del CTA, que también es claro: dos
+   bloques del mismo valor apilados compiten y el botón dejaba de ser lo único
+   que resalta. Un sello de confianza tiene que tranquilizar, no pelearle la
+   atención a la acción que viene a habilitar.
+
+   El verde queda sólo en el escudo. Teñir el texto de verde lo convertiría en
+   un mensaje de éxito, y esto no es un estado conseguido sino una promesa
+   sobre lo que va a pasar al apretar. */
+.seguro {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin-top: var(--s-4);
+  padding: 12px 13px;
+  border-radius: var(--r-2);
+  border: 1px solid color-mix(in srgb, var(--ok) 26%, transparent);
+  background: color-mix(in srgb, var(--ok) 6%, transparent);
+  color: var(--ink-3);
+  font-size: 12.5px; line-height: 1.5;
+}
+.seguro b { display: block; color: var(--ink); font-weight: 500; margin-bottom: 2px; }
+.seguro-i {
+  flex-shrink: 0; margin-top: 1px;
+  width: 20px; height: 20px;
+  display: grid; place-items: center;
+  color: var(--ok);
+}
+.seguro-i svg { width: 17px; height: 17px; }
+.mp-caja .btn { margin-top: var(--s-5); }
+.mp-pie { margin-top: var(--s-4); font-size: 12.5px; color: var(--ink-3); }
+.mp-pie a { color: var(--ink); border-bottom: 1px solid var(--line-strong); }
+.mp-pie a:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Consecuencia de saltear, dicha con todas las letras. El flujo viejo ponía
+   "Lo hago después" abajo y chiquito sin explicar qué se pierde: informado,
+   saltear es una decisión; a ciegas, es una trampa. */
+.consec {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin-top: var(--s-4); padding: 11px 13px;
+  border-radius: var(--r-2);
+  background: var(--paper-3);
+  font-size: 12.5px; color: var(--ink-3); line-height: 1.5;
+}
+.consec svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; }
+
+/* ── Bienvenida ──────────────────────────────────────────────────────────── */
+.fin { text-align: center; }
+.fin-i {
+  width: 58px; height: 58px; margin: 0 auto var(--s-5);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  color: var(--ok);
+  animation: brotar 520ms cubic-bezier(.34, 1.3, .5, 1);
+}
+.fin-i svg { width: 26px; height: 26px; }
+@keyframes brotar {
+  from { transform: scale(.5); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+.fin .bajada { margin-left: auto; margin-right: auto; }
+.fin-acc { margin-top: var(--s-6); display: grid; gap: var(--s-2); justify-items: center; }
+
+/* Lo que sigue, en concreto. Una bienvenida que sólo felicita deja al usuario
+   parado en un panel vacío sin saber qué hacer. */
+.sigue {
+  margin-top: var(--s-7);
+  text-align: left;
+  border-top: 1px solid var(--line-soft);
+  padding-top: var(--s-5);
+  display: grid; gap: var(--s-3);
+}
+.sg { display: flex; align-items: center; gap: var(--s-3); }
+.sg-i {
+  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.sg-i svg { width: 15px; height: 15px; }
+.sg-t { line-height: 1.35; }
+.sg-t b { display: block; font-size: 13.5px; font-weight: 500; }
+.sg-t span { display: block; font-size: 12.5px; color: var(--ink-3); }
+
+@media (max-width: 620px) {
+  .alta-top, .alta-bot { padding: var(--s-3) var(--s-4); }
+  .alta-mid { padding: var(--s-5) var(--s-4); }
+  .pn span.txt { display: none; }   /* en el teléfono, sólo las bolitas */
+  .pn-linea { width: 16px; }
+}

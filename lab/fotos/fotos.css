@@ -1,0 +1,32 @@
+/* =============================================================================
+   encontrate · panel · fotos
+   -----------------------------------------------------------------------------
+   Pantalla nueva. Hoy las fotos sólo existen dentro de cada evento, y por eso
+   las 2.064 de agosto que nunca se procesaron no aparecen en ningún lado: para
+   encontrarlas hay que entrar evento por evento y darse cuenta solo. Un
+   problema que no se puede ver es un problema que no se arregla.
+
+   La biblioteca cruza todos los eventos y se ordena por lo que está mal: sin
+   reconocer, sin dorsal, sin vender. La grilla es la vista, pero el filtro es
+   la función.
+   ========================================================================== */
+
+
+/* Aviso del filtro roto. No es una alerta de sistema: es el hallazgo de la
+   auditoría convertido en algo accionable. */
+.nota {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  background: var(--accent-wash);
+  border-radius: var(--r-2);
+  font-size: 13.5px;
+}
+.nota svg { width: 17px; height: 17px; color: var(--accent); flex-shrink: 0; }
+.nota b { font-weight: 500; }
+.nota .btn { margin-left: auto; flex-shrink: 0; }
+
+@media (max-width: 560px) {
+  .nota { flex-wrap: wrap; }
+  .nota .btn { margin-left: 0; }
+}

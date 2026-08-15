@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · métodos de pago</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css?v=1786703126">
+<link rel="stylesheet" href="../base.css?v=1786703126">
+<link rel="stylesheet" href="../panel.css?v=1786703126">
+<link rel="stylesheet" href="pagos.css?v=1786703126">
+
+<script>
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/iconos.js?v=1786703126" defer></script>
+</head>
+
+<body>
+
+<div class="app">
+  <div class="col">
+    <main class="canvas">
+      <div class="canvas-in">
+
+        <div class="head">
+          <div>
+            <h1>Métodos de pago</h1>
+            <p>Dónde recibís la plata de tus ventas.</p>
+          </div>
+        </div>
+
+        <!-- La cuenta conectada es lo que la pantalla viene a resolver, así
+             que va primera y grande. Antes acá había un "te va a entrar el
+             lunes 18", que era describir un saldo pendiente nuestro que no
+             existe: la plata entra en el momento de la venta. -->
+        <section class="metodo">
+          <div class="metodo-h">
+            <span class="mp-marca ancha" role="img" aria-label="Mercado Pago"></span>
+            <span class="pill live"><i></i> Conectada</span>
+          </div>
+
+          <dl class="metodo-d">
+            <div><dt>Cuenta</dt><dd>german.sosa@gmail.com</dd></div>
+            <div><dt>Conectada</dt><dd>4 de marzo de 2026</dd></div>
+            <div><dt>Recibiste este mes</dt><dd class="tnum">$377.900</dd></div>
+          </dl>
+
+          <div class="metodo-f">
+            <button class="btn btn-ghost btn-sm">Cambiar cuenta</button>
+            <button class="btn btn-ghost btn-sm">Desconectar</button>
+          </div>
+        </section>
+
+        <!-- Es el único método hoy. Decirlo, en vez de dejar una pantalla que
+             parece esperar que agregues algo más, evita que el fotógrafo
+             busque una opción que no está. -->
+        <div class="porque">
+          <i data-lucide="info"></i>
+          <span>
+            Hoy Mercado Pago es el único método. Es el que usa el atleta para pagar
+            y el que te deposita a vos, así que no hay una segunda cuenta que conectar.
+          </span>
+        </div>
+
+        <div class="duo">
+          <section class="card">
+            <div class="card-h">
+              <div><h2>Cómo se reparte cada venta</h2><div class="sub">Agosto, hasta hoy</div></div>
+            </div>
+
+            <dl class="desglose">
+              <div><dt>Precio de lista</dt><dd class="tnum">$412.800</dd></div>
+              <div class="fee"><dt>Comisión encontrate</dt><dd class="tnum">− $34.900</dd></div>
+              <div class="tot"><dt>Recibiste</dt><dd class="tnum">$377.900</dd></div>
+            </dl>
+
+            <!-- La comisión no es una sola: depende de si cada evento usa
+                 reconocimiento. Mostrar un porcentaje único sería mentira en
+                 cuanto haya un evento de cada tipo. -->
+            <div class="fund">
+              <i data-lucide="info"></i>
+              <span>
+                La comisión depende de cada evento: <b>10% con reconocimiento</b>
+                y <b>5% si es galería simple</b>. Este mes: $328.400 con
+                reconocimiento y $84.400 sin.
+              </span>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-h">
+              <div><h2>Cómo funciona</h2></div>
+            </div>
+            <div class="pasos" style="grid-template-columns:minmax(0,1fr);gap:var(--s-4)">
+              <div class="paso">
+                <span class="paso-n">1</span>
+                <b>El atleta paga en tu página</b>
+                <p>Con tarjeta, débito o dinero en cuenta, todo por Mercado Pago.</p>
+              </div>
+              <div class="paso">
+                <span class="paso-n">2</span>
+                <b>La plata entra en tu cuenta, en el momento</b>
+                <p>Directo a tu Mercado Pago, con la comisión ya descontada. No pasa por nosotros ni queda retenida acá.</p>
+              </div>
+              <div class="paso">
+                <span class="paso-n">3</span>
+                <b>La usás como cualquier otra venta tuya</b>
+                <p>Los plazos para retirarla a tu banco son los de tu cuenta de Mercado Pago, y los manejás desde ahí.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../panel.js?v=1786703126" defer></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    Panel.init({ activo: "pagos" });
+  });
+</script>
+
+</body>
+</html>

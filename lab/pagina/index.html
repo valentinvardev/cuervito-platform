@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · mi página</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css?v=1786703126">
+<link rel="stylesheet" href="../base.css?v=1786703126">
+<link rel="stylesheet" href="../panel.css?v=1786703126">
+<link rel="stylesheet" href="pagina.css?v=1786703126">
+
+<script>
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/iconos.js?v=1786703126" defer></script>
+</head>
+
+<body>
+
+<div class="app">
+  <div class="col">
+    <main class="canvas">
+      <div class="canvas-in">
+
+        <div class="head">
+          <div>
+            <h1>Mi página</h1>
+            <p>Tu página pública, con tu marca adelante y la nuestra atrás.</p>
+          </div>
+          <div class="head-r">
+            <a href="#" class="btn btn-ghost"><i data-lucide="external-link"></i> Abrir</a>
+            <button class="btn btn-pri" id="guardar"><span id="guardar-t">Guardar cambios</span></button>
+          </div>
+        </div>
+
+        <div class="tienda">
+
+          <!-- ═══════════════ CONTROLES ═══════════════ -->
+          <div class="ctrl">
+
+            <section class="card blq">
+              <h2>Dirección</h2>
+              <p class="ayuda">Es el link que compartís. Cambiarlo rompe los que ya repartiste.</p>
+              <div class="blq-b">
+                <div class="dom">
+                  <span class="fijo">encontrate.app/</span>
+                  <input type="text" value="german" aria-label="Tu dirección" id="slug">
+                </div>
+                <div class="dom-est"><i data-lucide="circle-check"></i> Disponible y en uso</div>
+
+                <div class="propio">
+                  <span>¿Tenés dominio propio?</span>
+                  <button class="btn btn-ghost btn-sm">Conectar</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="card blq">
+              <h2>Plantilla</h2>
+              <p class="ayuda">Cómo se ve tu galería. Se aplica a todos tus eventos.</p>
+              <div class="blq-b plt" id="plt">
+                <label class="pl">
+                  <input type="radio" name="plantilla" value="claro" checked>
+                  <span class="pl-v" data-t="claro"><i class="barra-m"></i><span class="rejilla"><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
+                  <span class="pl-n">Claro</span>
+                </label>
+                <label class="pl">
+                  <input type="radio" name="plantilla" value="oscuro">
+                  <span class="pl-v" data-t="oscuro"><i class="barra-m"></i><span class="rejilla"><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
+                  <span class="pl-n">Oscuro</span>
+                </label>
+                <label class="pl">
+                  <input type="radio" name="plantilla" value="editorial">
+                  <span class="pl-v" data-t="editorial"><i class="barra-m"></i><span class="rejilla"><i></i><i></i><i></i><i></i></span></span>
+                  <span class="pl-n">Editorial</span>
+                </label>
+              </div>
+            </section>
+
+            <section class="card blq">
+              <h2>Color</h2>
+              <p class="ayuda">Se usa en los botones y los enlaces. Nada más: si tiñe toda la página, compite con las fotos.</p>
+              <div class="blq-b cols" id="cols">
+                <button type="button" class="co" data-c="#F0410F" style="background:#F0410F" aria-pressed="true" aria-label="Bermellón"></button>
+                <button type="button" class="co" data-c="#1E7A4D" style="background:#1E7A4D" aria-label="Verde"></button>
+                <button type="button" class="co" data-c="#1F5FBF" style="background:#1F5FBF" aria-label="Azul"></button>
+                <button type="button" class="co" data-c="#8B3FC4" style="background:#8B3FC4" aria-label="Violeta"></button>
+                <button type="button" class="co" data-c="#12110F" style="background:#12110F" aria-label="Tinta"></button>
+                <button type="button" class="co" data-c="#C2185B" style="background:#C2185B" aria-label="Frambuesa"></button>
+                <span class="co-libre">
+                  <i data-lucide="pipette"></i>
+                  <input type="color" value="#F0410F" id="libre" aria-label="Color a medida">
+                </span>
+              </div>
+            </section>
+
+            <section class="card blq">
+              <h2>Logo</h2>
+              <p class="ayuda">PNG con fondo transparente. Se muestra arriba a la izquierda.</p>
+              <div class="blq-b">
+                <label class="subir">
+                  <span class="subir-v" id="logo-v"><i data-lucide="image-plus"></i></span>
+                  <span class="subir-t"><b>Subir tu logo</b>PNG o SVG, hasta 2 MB</span>
+                  <span class="btn btn-ghost btn-sm">Elegir</span>
+                </label>
+              </div>
+            </section>
+
+            <section class="card blq">
+              <h2>Marca de agua</h2>
+              <p class="ayuda">Va sobre las fotos de muestra. Las que se compran salen limpias.</p>
+              <div class="blq-b">
+                <label class="subir">
+                  <span class="subir-v"><i data-lucide="droplet"></i></span>
+                  <span class="subir-t"><b>Marca de agua activa</b>Texto: Germán Sosa</span>
+                  <button type="button" class="btn btn-ghost btn-sm" id="agua">Desactivar</button>
+                </label>
+              </div>
+            </section>
+
+          </div>
+
+          <!-- ═══════════════ PREVIA ═══════════════
+               Lo que faltaba. Antes había que guardar, abrir la página en otra
+               pestaña y volver para saber cómo quedaba un color. -->
+          <div class="previa">
+            <div class="previa-h">
+              <span class="label">Así se ve</span>
+              <div class="seg" id="disp">
+                <button type="button" data-d="escritorio" aria-pressed="true">Escritorio</button>
+                <button type="button" data-d="telefono">Teléfono</button>
+              </div>
+            </div>
+
+            <div class="marco" id="marco">
+              <div class="crome">
+                <i></i><i></i><i></i>
+                <span class="url" id="url">encontrate.app/german</span>
+              </div>
+
+              <div class="sf" id="sf" data-t="claro" data-agua="1">
+                <div class="sf-top">
+                  <div class="sf-marca">
+                    <span class="sf-logo">GS</span>
+                    <b>Germán Sosa</b>
+                  </div>
+                  <span class="sf-buscar"><i data-lucide="search"></i> Buscar mi cara</span>
+                </div>
+
+                <div class="sf-hero">
+                  <h3>Duatlón Club<br>Ciclista Chivilcoy</h3>
+                  <p>2.162 fotos · 13 de agosto</p>
+                  <span class="sf-cta">Buscarme <i data-lucide="arrow-right"></i></span>
+                </div>
+
+                <div class="sf-grid">
+                  <div class="sf-ph"></div><div class="sf-ph"></div><div class="sf-ph"></div>
+                  <div class="sf-ph"></div><div class="sf-ph"></div><div class="sf-ph"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../panel.js?v=1786703126" defer></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    Panel.init({ activo: "pagina", buscar: "Buscar evento, dorsal o venta" });
+
+    try {
+      var sf = document.getElementById("sf");
+
+      /* ── Plantilla ── */
+      document.getElementById("plt").addEventListener("change", function (ev) {
+        sf.dataset.t = ev.target.value;
+      });
+
+      /* ── Color ──────────────────────────────────────────────────────────
+         Se escribe una sola variable en la previa y el resto se acomoda
+         solo. Si cada elemento tuviera su propio color asignado por JS,
+         agregar un botón a la previa obligaría a tocar este archivo. */
+      function color(c) {
+        sf.style.setProperty("--sf-acc", c);
+        document.getElementById("libre").value = c;
+      }
+      document.getElementById("cols").addEventListener("click", function (ev) {
+        var b = ev.target.closest(".co");
+        if (!b) return;
+        this.querySelectorAll(".co").forEach(function (x) { x.removeAttribute("aria-pressed"); });
+        b.setAttribute("aria-pressed", "true");
+        color(b.dataset.c);
+      });
+      document.getElementById("libre").addEventListener("input", function () {
+        document.querySelectorAll(".co").forEach(function (x) { x.removeAttribute("aria-pressed"); });
+        sf.style.setProperty("--sf-acc", this.value);
+      });
+
+      /* ── Dirección: la previa acompaña mientras se escribe ── */
+      document.getElementById("slug").addEventListener("input", function () {
+        var v = this.value.trim() || "tu-usuario";
+        document.getElementById("url").textContent = "encontrate.app/" + v;
+      });
+
+      /* ── Marca de agua ── */
+      document.getElementById("agua").addEventListener("click", function () {
+        var on = sf.dataset.agua === "1";
+        sf.dataset.agua = on ? "" : "1";
+        this.textContent = on ? "Activar" : "Desactivar";
+      });
+
+      /* ── Ancho de la previa ──────────────────────────────────────────────
+         El teléfono importa más que el escritorio: el atleta se busca en la
+         cancha, con el celular en la mano y todavía transpirando. */
+      document.getElementById("disp").addEventListener("click", function (ev) {
+        var b = ev.target.closest("button");
+        if (!b) return;
+        this.querySelectorAll("button").forEach(function (x) { x.removeAttribute("aria-pressed"); });
+        b.setAttribute("aria-pressed", "true");
+        var marco = document.getElementById("marco");
+        var tel = b.dataset.d === "telefono";
+        marco.style.maxWidth = tel ? "330px" : "";
+        marco.style.margin = tel ? "0 auto" : "";
+      });
+
+      /* ── Guardar ── */
+      document.getElementById("guardar").addEventListener("click", function () {
+        var t = document.getElementById("guardar-t");
+        if (this.dataset.cargando === "1") return;
+        this.dataset.cargando = "1";
+        t.textContent = "Guardando";
+        var giro = document.createElement("span");
+        giro.className = "spin";
+        this.appendChild(giro);
+        var btn = this;
+        setTimeout(function () {
+          giro.remove();
+          btn.dataset.cargando = "";
+          t.textContent = "Guardado";
+          setTimeout(function () { t.textContent = "Guardar cambios"; }, 1800);
+        }, 900);
+      });
+    } catch (e) { console.warn("pagina:", e); }
+  });
+</script>
+
+</body>
+</html>

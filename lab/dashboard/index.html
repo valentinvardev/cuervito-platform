@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · panel</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css?v=1786703126">
+<link rel="stylesheet" href="../base.css?v=1786703126">
+<link rel="stylesheet" href="../panel.css?v=1786703126">
+<link rel="stylesheet" href="dashboard.css?v=1786703126">
+
+<script>
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/iconos.js?v=1786703126" defer></script>
+</head>
+
+<body>
+
+<div class="app">
+  <!-- riel inyectado por panel.js -->
+  <div class="col">
+    <!-- barra inyectada por panel.js -->
+
+    <main class="canvas">
+      <div class="canvas-in">
+
+        <div class="head">
+          <div>
+            <h1>Buen día, Germán</h1>
+            <p>Tres cosas esperándote y el mes viene 18% arriba de julio.</p>
+          </div>
+        </div>
+
+        <section class="kpis">
+          <div class="card kpi">
+            <div class="k-top"><span class="k-lab">Ventas del mes</span><i data-lucide="trending-up"></i></div>
+            <div class="k-n tnum"><span data-num="412800" data-pre="$">$412.800</span></div>
+            <div class="k-sub"><span class="delta up"><i data-lucide="arrow-up-right"></i> 18%</span> vs. julio</div>
+          </div>
+
+          <div class="card kpi">
+            <div class="k-top"><span class="k-lab">Fotos vendidas</span><i data-lucide="image-down"></i></div>
+            <div class="k-n tnum"><span data-num="214">214</span></div>
+            <div class="k-sub"><span class="delta up"><i data-lucide="arrow-up-right"></i> 31</span> esta semana</div>
+          </div>
+
+          <div class="card kpi">
+            <div class="k-top"><span class="k-lab">Visitas que compran</span><i data-lucide="percent"></i></div>
+            <div class="k-n tnum"><span data-num="6.4" data-dec="1">6,4</span><small>%</small></div>
+            <div class="k-sub"><span class="delta down"><i data-lucide="arrow-down-right"></i> 0,8</span> vs. julio</div>
+          </div>
+        </section>
+
+        <section class="duo">
+          <div class="card">
+            <div class="card-h">
+              <div><h2>Ventas</h2><div class="sub">Últimos 30 días</div></div>
+              <div class="seg" id="seg">
+                <button type="button" data-r="7">7 d</button>
+                <button type="button" data-r="30" aria-pressed="true">30 d</button>
+                <button type="button" data-r="90">90 d</button>
+                <button type="button" data-r="365">1 a</button>
+              </div>
+            </div>
+
+            <div class="chart" id="chart">
+              <svg id="svg" viewBox="0 0 300 100" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"   stop-color="var(--ink)" stop-opacity=".13"/>
+                    <stop offset="100%" stop-color="var(--ink)" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <g class="grid" id="grid"></g>
+                <path class="ar" id="area"></path>
+                <path class="ln" id="line"></path>
+              </svg>
+              <div class="cur" id="cur"></div>
+              <div class="pt" id="pt"></div>
+              <div class="tip" id="tip"></div>
+              <div class="chart-sk sk" id="chart-sk"></div>
+            </div>
+            <div class="x-ax" id="xax"></div>
+          </div>
+
+          <!-- Lo que reemplaza a las seis tarjetas de navegación. -->
+          <div class="card">
+            <div class="card-h">
+              <div><h2>Necesita tu atención</h2><div class="sub">3 pendientes</div></div>
+            </div>
+
+            <a href="../fotos/" class="row at">
+              <span class="at-i warn"><i data-lucide="scan-face"></i></span>
+              <span class="at-t">
+                <b>2.064 fotos sin reconocer</b>
+                <span>Nadie las va a encontrar buscándose</span>
+              </span>
+              <i data-lucide="arrow-right" class="go"></i>
+            </a>
+
+            <a href="../eventos/" class="row at">
+              <span class="at-i warn"><i data-lucide="image-off"></i></span>
+              <span class="at-t">
+                <b>Torneo Apertura sin portada</b>
+                <span>Los eventos sin portada venden la mitad</span>
+              </span>
+              <i data-lucide="arrow-right" class="go"></i>
+            </a>
+
+            <a href="../eventos/" class="row at">
+              <span class="at-i"><i data-lucide="tag"></i></span>
+              <span class="at-t">
+                <b>Maratón Río Cuarto sin precio</b>
+                <span>Publicado hace 6 días, 0 ventas</span>
+              </span>
+              <i data-lucide="arrow-right" class="go"></i>
+            </a>
+          </div>
+        </section>
+
+        <section class="duo">
+          <div class="card">
+            <div class="card-h">
+              <div><h2>Tus eventos</h2></div>
+              <a href="../eventos/" class="btn btn-ghost btn-sm">Ver todos <i data-lucide="arrow-right" class="go"></i></a>
+            </div>
+
+            <div class="row row-h ev">
+              <span></span><span>Evento</span>
+              <span class="num soft">Fotos</span><span class="num">Vendido</span><span></span>
+            </div>
+
+            <a href="../evento/" class="row ev">
+              <span class="ev-cv"></span>
+              <span class="ev-n"><b>Duatlón Club Ciclista Chivilcoy</b><span>Hoy</span></span>
+              <span class="num soft">2.162</span>
+              <span class="num tnum">$48.200</span>
+              <span class="pill live"><i></i> En vivo</span>
+            </a>
+
+            <a href="../evento/" class="row ev">
+              <span class="ev-cv"></span>
+              <span class="ev-n"><b>Media Maratón de Chivilcoy</b><span>3 de agosto</span></span>
+              <span class="num soft">3.104</span>
+              <span class="num tnum">$164.900</span>
+              <span class="pill"><i></i> Publicado</span>
+            </a>
+
+            <a href="../evento/" class="row ev">
+              <span class="ev-cv"></span>
+              <span class="ev-n"><b>Torneo Apertura · Fecha 8</b><span>27 de julio</span></span>
+              <span class="num soft">1.488</span>
+              <span class="num tnum">$91.300</span>
+              <span class="pill"><i></i> Publicado</span>
+            </a>
+
+            <a href="../evento/" class="row ev">
+              <span class="ev-cv"></span>
+              <span class="ev-n"><b>Maratón Río Cuarto</b><span>Sin publicar</span></span>
+              <span class="num soft">946</span>
+              <span class="num tnum">—</span>
+              <span class="pill draft"><i></i> Borrador</span>
+            </a>
+          </div>
+
+          <div class="card">
+            <div class="card-h">
+              <div><h2>Últimas ventas</h2></div>
+              <a href="../ventas/" class="btn btn-ghost btn-sm">Ver todas <i data-lucide="arrow-right" class="go"></i></a>
+            </div>
+
+            <div class="row sale">
+              <span class="sale-av">MF</span>
+              <span class="sale-t"><b>Martina Fernández</b><span>Duatlón · 4 fotos · hace 6 min</span></span>
+              <span class="sale-m tnum">$7.200</span>
+            </div>
+            <div class="row sale">
+              <span class="sale-av">JP</span>
+              <span class="sale-t"><b>Juan Pablo Ríos</b><span>Duatlón · 2 fotos · hace 21 min</span></span>
+              <span class="sale-m tnum">$3.600</span>
+            </div>
+            <div class="row sale">
+              <span class="sale-av">LC</span>
+              <span class="sale-t"><b>Lucía Cabrera</b><span>Duatlón · 9 fotos · hace 48 min</span></span>
+              <span class="sale-m tnum">$14.400</span>
+            </div>
+            <div class="row sale">
+              <span class="sale-av">ED</span>
+              <span class="sale-t"><b>Emiliano Duarte</b><span>Media Maratón · 3 fotos · hace 2 h</span></span>
+              <span class="sale-m tnum">$5.400</span>
+            </div>
+            <div class="row sale">
+              <span class="sale-av">SV</span>
+              <span class="sale-t"><b>Sofía Vega</b><span>Duatlón · 5 fotos · hace 3 h</span></span>
+              <span class="sale-m tnum">$9.000</span>
+            </div>
+
+            <div class="payout">
+              <span>Total de hoy</span>
+              <b class="tnum">$48.200</b>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../panel.js?v=1786703126" defer></script>
+<script>
+  /* Panel.js y Lucide van con defer, o sea que corren antes de este evento.
+     Un script suelto al final del body correría ANTES que ellos y Panel no
+     existiría todavía. */
+  document.addEventListener("DOMContentLoaded", function () {
+    Panel.init({ activo: "inicio" });
+
+    /* ── Gráfico ────────────────────────────────────────────────────────────
+       Reemplaza a la sparkline vieja, que además tenía amount: 0 cableado en
+       las cuatro franjas. Un gráfico sin eje y sin poder consultar un día
+       puntual es decoración: dice "sube" y nada más. ────────────────────── */
+    try {
+      var W = 300, H = 100, PAD = 6;
+      var caja = document.getElementById("chart");
+      var elLinea = document.getElementById("line");
+      var elArea = document.getElementById("area");
+      var elGrid = document.getElementById("grid");
+      var cur = document.getElementById("cur");
+      var pt = document.getElementById("pt");
+      var tip = document.getElementById("tip");
+      var xax = document.getElementById("xax");
+
+      var MES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+      var puntos = [];
+
+      /* Serie reproducible: sin semilla, cada recarga dibujaría otra cosa y no
+         se podría comparar un ajuste de diseño contra el anterior. */
+      function serie(n) {
+        var out = [], s = 7;
+        for (var i = 0; i < n; i++) {
+          s = (s * 9301 + 49297) % 233280;
+          var az = s / 233280;
+          var base = 6000 + (i / n) * 9000;
+          var finde = (i % 7 === 5 || i % 7 === 6) ? 1.75 : 1;
+          out.push(Math.round((base * finde + az * 7000) / 100) * 100);
+        }
+        return out;
+      }
+
+      function pesos(n) { return "$" + n.toLocaleString("es-AR"); }
+
+      function dibujar(n) {
+        var datos = serie(n);
+        var max = Math.max.apply(null, datos);
+        var min = Math.min.apply(null, datos);
+        var rango = (max - min) || 1;
+
+        puntos = datos.map(function (v, i) {
+          return {
+            x: PAD + (i / (datos.length - 1)) * (W - PAD * 2),
+            y: H - PAD - ((v - min) / rango) * (H - PAD * 2),
+            v: v
+          };
+        });
+
+        var d = puntos.map(function (p, i) {
+          return (i ? "L" : "M") + p.x.toFixed(2) + " " + p.y.toFixed(2);
+        }).join(" ");
+        elLinea.setAttribute("d", d);
+        elArea.setAttribute("d", d + " L" + (W - PAD) + " " + H + " L" + PAD + " " + H + " Z");
+
+        elGrid.innerHTML = "";
+        for (var g = 0; g < 4; g++) {
+          var y = PAD + (g / 3) * (H - PAD * 2);
+          var ln = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          ln.setAttribute("x1", 0); ln.setAttribute("x2", W);
+          ln.setAttribute("y1", y); ln.setAttribute("y2", y);
+          elGrid.appendChild(ln);
+        }
+
+        var hoy = new Date();
+        xax.innerHTML = "";
+        [0, Math.floor(n / 2), n - 1].forEach(function (i) {
+          var f = new Date(hoy.getTime() - (n - 1 - i) * 86400000);
+          var s = document.createElement("span");
+          s.textContent = f.getDate() + " " + MES[f.getMonth()];
+          xax.appendChild(s);
+        });
+      }
+
+      /* El puntero se convierte a índice con el ancho REAL de la caja, no con
+         el del viewBox: el SVG se estira y los dos sistemas no coinciden. */
+      caja.addEventListener("mousemove", function (ev) {
+        if (!puntos.length) return;
+        var r = caja.getBoundingClientRect();
+        var i = Math.round(((ev.clientX - r.left) / r.width) * (puntos.length - 1));
+        i = Math.max(0, Math.min(puntos.length - 1, i));
+        var p = puntos[i];
+        var px = (p.x / W) * r.width;
+        var py = (p.y / H) * r.height;
+
+        cur.style.left = px + "px";
+        pt.style.left = px + "px";
+        pt.style.top = py + "px";
+        tip.style.left = Math.max(54, Math.min(r.width - 54, px)) + "px";
+        tip.style.top = py + "px";
+
+        var f = new Date(Date.now() - (puntos.length - 1 - i) * 86400000);
+        tip.innerHTML = "<b>" + pesos(p.v) + "</b><span>" + f.getDate() + " de " + MES[f.getMonth()] + "</span>";
+        caja.classList.add("on");
+      });
+      caja.addEventListener("mouseleave", function () { caja.classList.remove("on"); });
+
+      document.getElementById("seg").addEventListener("click", function (ev) {
+        var b = ev.target.closest("button");
+        if (!b) return;
+        this.querySelectorAll("button").forEach(function (x) { x.removeAttribute("aria-pressed"); });
+        b.setAttribute("aria-pressed", "true");
+        dibujar(parseInt(b.dataset.r, 10));
+        document.querySelector(".card-h .sub").textContent =
+          b.dataset.r === "365" ? "Último año" : "Últimos " + b.dataset.r + " días";
+      });
+
+      dibujar(30);
+      document.getElementById("chart-sk").remove();
+    } catch (e) { console.warn("grafico:", e); }
+  });
+</script>
+
+</body>
+</html>

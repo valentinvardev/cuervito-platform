@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · ayuda</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css?v=1786703126">
+<link rel="stylesheet" href="../base.css?v=1786703126">
+<link rel="stylesheet" href="../panel.css?v=1786703126">
+<link rel="stylesheet" href="ayuda.css?v=1786703126">
+
+<script>
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/iconos.js?v=1786703126" defer></script>
+</head>
+
+<body>
+
+<div class="app">
+  <div class="col">
+    <main class="canvas">
+      <div class="canvas-in">
+
+        <div class="head">
+          <div>
+            <h1>Ayuda</h1>
+            <p>Escribinos cuando quieras, o mirá si tu pregunta ya está resuelta.</p>
+          </div>
+        </div>
+
+        <!-- Arriba y no al final. El centro de ayuda viejo prometía respuesta
+             en 12 horas hábiles: para alguien que está subiendo un domingo a
+             la noche con el evento caliente, eso es no tener soporte. -->
+        <section class="contacto">
+          <div>
+            <h2><span class="ct-i"><i data-lucide="life-buoy"></i></span> Escribinos por WhatsApp</h2>
+            <p>
+              Las 24 horas, todos los días, incluidos domingos y feriados. Si estás
+              en medio de un evento y algo no anda, esta es la vía rápida.
+            </p>
+          </div>
+          <!-- El glifo real de WhatsApp. Lucide no trae logos de marcas, y un
+               globo de chat genérico no dice "es WhatsApp": justamente lo que
+               tranquiliza acá es reconocer el ícono de una app que ya usás. -->
+          <a href="https://wa.me/5493541578953" target="_blank" rel="noopener" class="btn btn-wa btn-lg">
+            <svg class="wa" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M17.47 14.38c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.65-2.05-.17-.3-.02-.46.13-.6.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.01-1.04 2.47s1.06 2.87 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.75-.72 2-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35Z"/>
+              <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.86 9.86 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Zm0 18.15h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23a8.19 8.19 0 0 1 8.24 8.24c0 4.54-3.7 8.23-8.24 8.23Z"/>
+            </svg>
+            Abrir WhatsApp
+          </a>
+        </section>
+
+        <section>
+          <div class="card-h"><div><h2>Guías</h2></div></div>
+          <div class="guias">
+            <a href="#" class="gu">
+              <span class="gu-i"><i data-lucide="upload"></i></span>
+              <b>Subir un evento</b>
+              <p>De crear el evento a publicarlo, con los tamaños y formatos que conviene usar.</p>
+              <span class="mas">Leer <i data-lucide="arrow-right"></i></span>
+            </a>
+            <a href="#" class="gu">
+              <span class="gu-i"><i data-lucide="scan-face"></i></span>
+              <b>Cómo funciona el reconocimiento</b>
+              <p>Qué detectamos, por qué a veces falla y cómo mejorar los resultados.</p>
+              <span class="mas">Leer <i data-lucide="arrow-right"></i></span>
+            </a>
+            <a href="#" class="gu">
+              <span class="gu-i"><i data-lucide="wallet"></i></span>
+              <b>Métodos de pago</b>
+              <p>Cómo conectás tu cuenta, cuándo entra la plata y qué comisión se descuenta.</p>
+              <span class="mas">Leer <i data-lucide="arrow-right"></i></span>
+            </a>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-h">
+            <div><h2>Preguntas frecuentes</h2></div>
+          </div>
+
+          <div id="faq">
+            <div class="qa">
+              <button class="qa-t" aria-expanded="false">
+                ¿Qué pasa con mis eventos cuando cambien la marca a encontrate.app?
+                <span class="mas-i"><i data-lucide="plus"></i></span>
+              </button>
+              <div class="qa-b"><div><p>
+                Nada. Los eventos siguen igual, con las mismas fotos y los mismos precios.
+                Los links viejos de cuervito.app redirigen solos a los nuevos, incluidos los
+                links de cada evento que ya hayas repartido.
+              </p></div></div>
+            </div>
+
+            <div class="qa">
+              <button class="qa-t" aria-expanded="false">
+                ¿Por qué algunas fotos no aparecen cuando el atleta se busca?
+                <span class="mas-i"><i data-lucide="plus"></i></span>
+              </button>
+              <div class="qa-b"><div><p>
+                Puede ser que todavía se estén procesando, que la cara esté muy de perfil o
+                tapada, o que la foto haya quedado sin reconocer por un error de subida. En
+                Fotos tenés el filtro "Sin reconocer" para ver exactamente cuáles son y
+                mandarlas a procesar de nuevo.
+              </p></div></div>
+            </div>
+
+            <div class="qa">
+              <button class="qa-t" aria-expanded="false">
+                ¿Cuánto tarda en procesarse un evento?
+                <span class="mas-i"><i data-lucide="plus"></i></span>
+              </button>
+              <div class="qa-b"><div><p>
+                Cerca de un minuto cada 200 fotos. Un evento de 2.000 fotos está listo para
+                buscar en unos diez minutos. No hace falta que te quedes esperando: te
+                avisamos cuando terminó y podés publicarlo antes, las fotos se van sumando
+                a medida que se procesan.
+              </p></div></div>
+            </div>
+
+            <div class="qa">
+              <button class="qa-t" aria-expanded="false">
+                ¿Puedo cambiar el precio con el evento ya publicado?
+                <span class="mas-i"><i data-lucide="plus"></i></span>
+              </button>
+              <div class="qa-b"><div><p>
+                Sí, cuando quieras. El precio nuevo rige para las compras que se hagan de ahí
+                en adelante; las ventas ya hechas no se tocan.
+              </p></div></div>
+            </div>
+
+            <div class="qa">
+              <button class="qa-t" aria-expanded="false">
+                ¿Qué pasa si un atleta pide que le borren una foto?
+                <span class="mas-i"><i data-lucide="plus"></i></span>
+              </button>
+              <div class="qa-b"><div><p>
+                Podés borrarla desde el evento y desaparece de la búsqueda al instante. Si ya
+                la habían comprado, el que la compró conserva su descarga: la venta está
+                hecha y el link sigue funcionando hasta que vence.
+              </p></div></div>
+            </div>
+
+            <div class="qa">
+              <button class="qa-t" aria-expanded="false">
+                ¿Puedo usar mi propio dominio?
+                <span class="mas-i"><i data-lucide="plus"></i></span>
+              </button>
+              <div class="qa-b"><div><p>
+                Sí, sin costo extra. En Mi página, abajo de la dirección, tenés la opción de
+                conectar un dominio propio. Nosotros te damos los datos y vos los cargás en
+                donde compraste el dominio.
+              </p></div></div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../panel.js?v=1786703126" defer></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    Panel.init({ activo: "ayuda", buscar: "Buscar en la ayuda" });
+
+    try {
+      document.getElementById("faq").addEventListener("click", function (ev) {
+        var t = ev.target.closest(".qa-t");
+        if (!t) return;
+        var qa = t.parentElement;
+        var abierta = qa.dataset.abierta === "1";
+
+        /* Una sola abierta por vez: con todas abiertas la lista se vuelve un
+           muro de texto y se pierde el índice de preguntas. */
+        this.querySelectorAll(".qa").forEach(function (o) {
+          o.dataset.abierta = "";
+          o.querySelector(".qa-t").setAttribute("aria-expanded", "false");
+        });
+        if (!abierta) {
+          qa.dataset.abierta = "1";
+          t.setAttribute("aria-expanded", "true");
+        }
+      });
+    } catch (e) { console.warn("ayuda:", e); }
+  });
+</script>
+
+</body>
+</html>

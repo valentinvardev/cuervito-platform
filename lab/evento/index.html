@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · Duatlón Chivilcoy</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css?v=1786703126">
+<link rel="stylesheet" href="../base.css?v=1786703126">
+<link rel="stylesheet" href="../panel.css?v=1786703126">
+<link rel="stylesheet" href="evento.css?v=1786703126">
+
+<script>
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/iconos.js?v=1786703126" defer></script>
+</head>
+
+<body>
+
+<div class="app">
+  <div class="col">
+    <main class="canvas">
+      <div class="canvas-in">
+
+        <a href="../eventos/" class="btn btn-ghost btn-sm" style="justify-self:start">
+          <i data-lucide="arrow-left"></i> Eventos
+        </a>
+
+        <!-- La portada como banda. Es la identidad del evento y lo primero que
+             ve el atleta: tiene que estar presente mientras trabajás, no
+             escondida en un ajuste. -->
+        <section class="banda">
+          <div class="banda-in">
+            <div>
+              <div class="banda-meta">
+                <span class="pill live"><i></i> En vivo</span>
+                <span class="dato">Hoy<i></i>Chivilcoy<i></i>Duatlón</span>
+              </div>
+              <h1>Duatlón Club Ciclista Chivilcoy</h1>
+            </div>
+            <div class="banda-acc">
+              <button class="btn btn-vidrio"><i data-lucide="image-plus"></i> Cambiar portada</button>
+              <button class="btn btn-vidrio btn-icon" aria-label="Editar evento"><i data-lucide="pencil"></i></button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Publicar sin repartir el link no vende nada, así que el paso
+             siguiente a publicar va a la vista y no enterrado. -->
+        <div class="link-pub">
+          <i data-lucide="link"></i>
+          <span class="url">encontrate.app/german/<b>duatlon-chivilcoy</b></span>
+          <button class="btn btn-ghost btn-sm" id="copiar"><i data-lucide="copy"></i> <span id="copiar-t">Copiar</span></button>
+          <a href="#" class="btn btn-ghost btn-sm"><i data-lucide="external-link"></i> Ver</a>
+        </div>
+
+        <section class="cifras">
+          <div class="card cifra">
+            <div class="c-top"><span>Fotos</span><i data-lucide="image"></i></div>
+            <b class="tnum">2.162</b>
+            <div class="nota-c">Subidas hoy</div>
+          </div>
+          <div class="card cifra">
+            <div class="c-top"><span>Buscables</span><i data-lucide="scan-search"></i></div>
+            <b class="tnum">1.847</b>
+            <div class="nota-c alerta">315 todavía procesando</div>
+          </div>
+          <div class="card cifra">
+            <div class="c-top"><span>Ventas</span><i data-lucide="shopping-bag"></i></div>
+            <b class="tnum">12</b>
+            <div class="nota-c">De 168 visitas</div>
+          </div>
+          <div class="card cifra">
+            <div class="c-top"><span>Recaudado</span><i data-lucide="banknote"></i></div>
+            <b class="tnum">$48.200</b>
+            <div class="nota-c">Convierte 7,1%</div>
+          </div>
+        </section>
+
+        <!-- Acá SÍ va el progreso, y en dos etapas. Subir y reconocer tardan
+             muy distinto: con una sola barra, después de subir parecía que el
+             sistema se colgaba, cuando en realidad estaba en la parte lenta. -->
+        <section class="card proc" id="proc">
+          <div class="etapa">
+            <div class="etapa-t">
+              <b><span class="et-i"><i data-lucide="cloud-upload"></i></span> Subiendo</b>
+              <span class="cuenta" id="c-sub">2.162 de 2.162</span>
+            </div>
+            <div class="pista-b"><i id="b-sub" style="width:100%"></i></div>
+            <div class="detalle">Listo. Las fotos ya están guardadas.</div>
+          </div>
+
+          <div class="etapa lenta" id="etapa-rec">
+            <div class="etapa-t">
+              <b><span class="et-i"><i data-lucide="scan-face"></i></span> Reconociendo caras y dorsales</b>
+              <span class="cuenta" id="c-rec">1.847 de 2.162</span>
+            </div>
+            <div class="pista-b"><i id="b-rec" style="width:85%"></i></div>
+            <div class="detalle" id="d-rec">
+              Faltan unos 3 minutos. Podés cerrar esta pantalla, sigue solo.
+            </div>
+          </div>
+        </section>
+
+        <!-- Solapas compactas. En cuervito eran tres tarjetas grandes con
+             ícono y subtítulo que ocupaban una franja entera de alto
+             permanente sólo para elegir pestaña. -->
+        <div class="solapas" role="tablist" id="solapas">
+          <button class="solapa" role="tab" aria-selected="true" data-p="fotos">
+            <i data-lucide="image"></i> Fotos <span class="n">2.162</span>
+          </button>
+          <button class="solapa" role="tab" aria-selected="false" data-p="precio">
+            <i data-lucide="tag"></i> Precio
+          </button>
+          <button class="solapa" role="tab" aria-selected="false" data-p="equipo">
+            <i data-lucide="users"></i> Equipo <span class="n">3</span>
+          </button>
+          <button class="solapa" role="tab" aria-selected="false" data-p="info">
+            <i data-lucide="info"></i> Info
+          </button>
+        </div>
+
+        <!-- ═══════════ FOTOS ═══════════ -->
+        <section class="panel-s" data-activo="1" data-p="fotos">
+          <div class="soltar" id="soltar">
+            <span class="soltar-i"><i data-lucide="cloud-upload"></i></span>
+            <b>Arrastrá tus fotos acá</b>
+            <span>JPG o PNG. Podés soltar la carpeta entera del evento.</span>
+          </div>
+
+          <div class="barra">
+            <div style="display:flex;gap:var(--s-2);align-items:center;flex-wrap:wrap">
+              <!-- Cuatro chips en fila comían todo el ancho y encima crecen
+                   con cada estado nuevo. Plegados en un desplegable, el ancho
+                   queda para lo que de verdad se usa acá, que es buscar. -->
+              <div class="dd" id="dd-filtro">
+                <button type="button" class="dd-t">
+                  <i data-lucide="list-filter"></i>
+                  <span class="dd-v">Todas</span>
+                  <i data-lucide="chevron-down"></i>
+                </button>
+                <div class="dd-m" role="listbox">
+                  <button type="button" class="dd-o" data-k="todas" data-v="Todas" aria-selected="true">Todas <b class="dd-n"></b></button>
+                  <div class="dd-sep"></div>
+                  <button type="button" class="dd-o" data-k="sinrec" data-v="Sin reconocer">Sin reconocer <b class="dd-n"></b></button>
+                  <button type="button" class="dd-o" data-k="sindor" data-v="Sin dorsal">Sin dorsal <b class="dd-n"></b></button>
+                  <button type="button" class="dd-o" data-k="vend" data-v="Vendidas">Vendidas <b class="dd-n"></b></button>
+                </div>
+              </div>
+
+              <!-- El numeral va como prefijo fijo del campo y no como algo que
+                   el usuario tenga que tipear: así el campo dice qué espera sin
+                   necesidad de un rótulo, y nadie escribe el # de más. -->
+              <div class="pegado chico" style="width:150px">
+                <span class="fijo">#</span>
+                <input class="inp tnum" id="q-bib" inputmode="numeric" placeholder="Dorsal" autocomplete="off">
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="todas">Seleccionar todas</button>
+          </div>
+
+          <div class="fg" id="fg"></div>
+          <div class="empty" id="fg-vacio" hidden>
+            <div class="empty-i"><i data-lucide="scan-search"></i></div>
+            <h3>Ninguna foto con ese dorsal</h3>
+            <p>Puede que el dorsal no se haya leído bien, o que esa foto todavía esté procesando.</p>
+          </div>
+
+          <div class="pag">
+            <span class="pag-info" id="pag-info">—</span>
+            <div class="pag-btns" id="pag-btns"></div>
+          </div>
+        </section>
+
+        <!-- ═══════════ PRECIO ═══════════ -->
+        <section class="panel-s" data-p="precio">
+          <div class="card blq">
+            <h2>Cuánto sale</h2>
+            <p class="ayuda">Podés cambiarlo cuando quieras. El precio nuevo rige de acá en adelante; las ventas hechas no se tocan.</p>
+            <div class="blq-b">
+              <div class="precios">
+                <div class="campo">
+                  <label for="p1">Una foto</label>
+                  <div class="pegado"><span class="fijo">$</span><input class="inp tnum" id="p1" data-plata value="1800"></div>
+                </div>
+                <div class="campo">
+                  <label for="p2">Todas sus fotos</label>
+                  <div class="pegado"><span class="fijo">$</span><input class="inp tnum" id="p2" data-plata value="9000"></div>
+                </div>
+              </div>
+              <div class="cuenta-p" id="cuenta">—</div>
+            </div>
+          </div>
+
+          <div class="card blq">
+            <h2>Cómo se busca</h2>
+            <div class="blq-b" style="gap:0">
+              <div class="aj">
+                <div class="aj-t"><b>Por cara</b><span>El atleta se saca una selfie y aparecen sus fotos</span></div>
+                <button type="button" class="sw" role="switch" aria-checked="true" aria-label="Buscar por cara"></button>
+              </div>
+              <div class="aj">
+                <div class="aj-t"><b>Por dorsal</b><span>Leemos el número de la camiseta o el dorsal</span></div>
+                <button type="button" class="sw" role="switch" aria-checked="true" aria-label="Buscar por dorsal"></button>
+              </div>
+              <div class="aj">
+                <div class="aj-t"><b>Marca de agua en las muestras</b><span>Las fotos compradas salen limpias</span></div>
+                <button type="button" class="sw" role="switch" aria-checked="true" aria-label="Marca de agua"></button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════ EQUIPO ═══════════
+             Un evento grande lo cubren varios fotógrafos. Cada uno sube lo
+             suyo y cobra lo suyo: la plata se reparte por autoría y no por
+             porcentaje, que es lo que evita la discusión de "yo saqué más
+             que vos".
+
+             Lo que no es obvio y hay que decir: la comisión NO la elige cada
+             fotógrafo, la define el evento. Si el dueño lo puso con
+             reconocimiento, todos venden al 10%, incluido el que se sumó
+             después. Enterarse de eso al cobrar es la peor manera. -->
+        <section class="panel-s" data-p="equipo">
+
+          <div class="card">
+            <div class="card-h">
+              <div><h2>Quiénes cubren este evento</h2><div class="sub">4 fotógrafos</div></div>
+              <button class="btn btn-pri btn-sm" id="abrir-inv">
+                <i data-lucide="user-plus"></i> Invitar
+              </button>
+            </div>
+
+            <div class="row row-h col-f">
+              <span></span><span>Fotógrafo</span>
+              <span class="num c-fotos">Fotos</span><span class="num">Recaudado</span><span></span>
+            </div>
+
+            <div class="row col-f">
+              <span class="col-av yo">GS</span>
+              <span class="col-t"><b>Germán Sosa</b><span>Vos, dueño del evento</span></span>
+              <span class="num soft c-fotos tnum">1.604</span>
+              <span class="num tnum">$36.400</span>
+              <span class="pill live"><i></i> Dueño</span>
+            </div>
+
+            <div class="row col-f">
+              <span class="col-av">MP</span>
+              <span class="col-t"><b>Matías Peralta</b><span>matias.peralta@gmail.com</span></span>
+              <span class="num soft c-fotos tnum">558</span>
+              <span class="num tnum">$11.800</span>
+              <button class="btn btn-ghost btn-sm" style="justify-self:end">Quitar</button>
+            </div>
+
+            <!-- El estado que faltaba y es el que más duele: aceptó, subió
+                 fotos, la gente las encuentra, y no las puede comprar porque
+                 no hay dónde depositarle. Si esto no se ve en la tabla, el
+                 dueño se entera cuando el atleta escribe preguntando por qué
+                 no puede pagar. -->
+            <div class="row col-f">
+              <span class="col-av">LC</span>
+              <span class="col-t"><b>Lucía Cabrera</b><span>lucia.cabrera@gmail.com</span></span>
+              <span class="num soft c-fotos tnum">412</span>
+              <span class="num tnum">—</span>
+              <span class="pill bad"><i></i> Sin cobrar</span>
+            </div>
+
+            <div class="row col-f espera">
+              <span class="col-av">RL</span>
+              <span class="col-t"><b>Rocío Leiva</b><span>rocio.leiva@gmail.com</span></span>
+              <span class="num soft c-fotos tnum">—</span>
+              <span class="num tnum">—</span>
+              <span class="pill draft"><i></i> Invitada</span>
+            </div>
+
+            <div class="nota" style="margin-top:var(--s-4)">
+              <i data-lucide="alert-circle"></i>
+              <span>
+                <b>Las 412 fotos de Lucía no se pueden comprar.</b>
+                Todavía no conectó Mercado Pago, así que no hay dónde depositarle.
+                Aparecen en las búsquedas y el atleta se queda a mitad de camino.
+              </span>
+              <button class="btn btn-ghost btn-sm">Recordarle</button>
+            </div>
+          </div>
+
+          <div class="card blq">
+            <h2>Cómo se reparte</h2>
+            <div class="blq-b" style="gap:0">
+              <div class="aj">
+                <div class="aj-t">
+                  <b>Cada uno cobra lo suyo</b>
+                  <span>Las ventas de sus fotos van directo a su Mercado Pago. No hay plata que pasarse entre ustedes.</span>
+                </div>
+              </div>
+              <div class="aj">
+                <div class="aj-t">
+                  <b>La comisión la define el evento, no cada fotógrafo</b>
+                  <span>Este evento usa reconocimiento, así que todos venden al 10%. Si lo pasás a galería simple, baja al 5% para todos.</span>
+                </div>
+                <span class="pill"><i></i> 10%</span>
+              </div>
+              <div class="aj">
+                <div class="aj-t">
+                  <b>El precio lo ponés vos</b>
+                  <span>Los colaboradores venden al precio del evento. No pueden cambiarlo ni poner uno propio.</span>
+                </div>
+                <span class="pill"><i></i> $1.800</span>
+              </div>
+              <div class="aj">
+                <div class="aj-t">
+                  <b>Si sacás a alguien, sus fotos se van con él</b>
+                  <span>Dejan de aparecer en las búsquedas. Las ventas ya hechas no se tocan y quien compró conserva su descarga.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════ INFO ═══════════ -->
+        <section class="panel-s" data-p="info">
+          <div class="card blq">
+            <h2>Datos del evento</h2>
+            <div class="blq-b">
+              <div class="campo">
+                <label for="nom">Nombre</label>
+                <input class="inp" id="nom" value="Duatlón Club Ciclista Chivilcoy">
+              </div>
+              <div class="par">
+                <div class="campo">
+                  <label>Fecha</label>
+                  <div class="fx" id="fx-fecha">
+                    <button type="button" class="fx-t" data-vacio="Elegí la fecha">
+                      <i data-lucide="calendar-days"></i>
+                      <span class="fx-v">14 de agosto</span>
+                    </button>
+                    <input type="hidden" id="fecha" value="2026-08-14">
+                    <div class="fx-m"></div>
+                  </div>
+                </div>
+                <div class="campo">
+                  <label for="lugar">Lugar</label>
+                  <input class="inp" id="lugar" value="Chivilcoy, Buenos Aires">
+                </div>
+              </div>
+              <div class="campo">
+                <label for="desc">Descripción</label>
+                <textarea class="ta" id="desc" placeholder="Un par de líneas para el atleta que llega desde el link.">Duatlón de verano organizado por el Club Ciclista Chivilcoy. Circuito de 5 km corriendo, 20 en bici y 2,5 corriendo.</textarea>
+              </div>
+              <button class="btn btn-pri" style="justify-self:start" id="guardar">
+                <span id="guardar-t">Guardar cambios</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card blq riesgo">
+            <h2>Borrar el evento</h2>
+            <p class="ayuda">
+              Se borran las 2.162 fotos y el link público deja de funcionar. Las ventas
+              ya hechas quedan registradas y el que compró conserva su descarga. No se
+              puede deshacer.
+            </p>
+            <div class="blq-b">
+              <button class="btn btn-ghost btn-peligro" style="justify-self:start">Borrar este evento</button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="lote" id="lote">
+  <span class="lote-n" id="lote-n">0 seleccionadas</span>
+  <button class="btn btn-ghost btn-sm"><i data-lucide="scan-face"></i> Reconocer</button>
+  <button class="btn btn-ghost btn-sm"><i data-lucide="download"></i> Descargar</button>
+  <button class="btn btn-ghost btn-sm peligro"><i data-lucide="trash-2"></i> Eliminar</button>
+  <button class="btn btn-ghost btn-icon lote-x" id="lote-x" aria-label="Cancelar selección"><i data-lucide="x"></i></button>
+</div>
+
+<!-- Diálogo de invitación. Dice las condiciones ANTES de mandar el mail, no
+     después: quien invita tiene que poder contestar "¿cuánto me queda?" si el
+     otro se lo pregunta por teléfono, sin tener que ir a averiguarlo. -->
+<div class="modal" id="modal-inv" role="dialog" aria-modal="true" aria-labelledby="mi-t">
+  <div class="modal-caja">
+    <div class="modal-h">
+      <div>
+        <h2 id="mi-t">Invitar a un fotógrafo</h2>
+        <div class="sub">Va a poder subir sus fotos a este evento y cobrar sus propias ventas.</div>
+      </div>
+      <button class="btn btn-ghost btn-icon" id="cerrar-inv" aria-label="Cerrar"><i data-lucide="x"></i></button>
+    </div>
+
+    <div class="modal-b">
+      <div class="campo">
+        <label for="mail-inv">Email</label>
+        <input class="inp" id="mail-inv" type="email" placeholder="companero@gmail.com" autocomplete="off">
+        <div class="pista" id="inv-pista">Si no tiene cuenta en encontrate, se la crea al aceptar.</div>
+      </div>
+
+      <ul class="permisos">
+        <li class="si"><i data-lucide="check"></i> Sube sus fotos y las ve en la grilla</li>
+        <li class="si"><i data-lucide="check"></i> Ve y cobra las ventas de sus fotos</li>
+        <li class="no"><i data-lucide="x"></i> No ve tus ventas ni las de los demás</li>
+        <li class="no"><i data-lucide="x"></i> No puede cambiar el precio ni borrar tus fotos</li>
+      </ul>
+
+      <div class="queda-inv">
+        <div>
+          <span>De cada foto que venda, le quedan</span>
+          <b class="tnum">$1.620</b>
+        </div>
+        <p>
+          Precio del evento $1.800, menos el 10% de comisión.
+          <b>La comisión la define este evento</b>, no cada fotógrafo: como usa
+          reconocimiento, todos venden al 10%.
+        </p>
+      </div>
+
+      <div class="porque">
+        <i data-lucide="wallet"></i>
+        <span>
+          Para cobrar necesita <b>Mercado Pago conectado</b>. Si acepta sin
+          conectarlo, sus fotos van a aparecer en las búsquedas pero nadie va a
+          poder comprarlas.
+        </span>
+      </div>
+    </div>
+
+    <div class="modal-f">
+      <button class="btn btn-ghost" id="cancelar-inv">Cancelar</button>
+      <button class="btn btn-pri" id="mandar-inv"><span id="inv-t">Mandar invitación</span></button>
+    </div>
+  </div>
+</div>
+
+<script src="../panel.js?v=1786703126" defer></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    Panel.init({ activo: "eventos", buscar: "Buscar en este evento por dorsal" });
+
+    /* ── Solapas ── */
+    try {
+      var solapas = document.getElementById("solapas");
+      solapas.addEventListener("click", function (ev) {
+        var b = ev.target.closest(".solapa");
+        if (!b) return;
+        this.querySelectorAll(".solapa").forEach(function (x) { x.setAttribute("aria-selected", "false"); });
+        b.setAttribute("aria-selected", "true");
+        document.querySelectorAll(".panel-s").forEach(function (p) {
+          p.dataset.activo = p.dataset.p === b.dataset.p ? "1" : "";
+        });
+      });
+    } catch (e) { console.warn("solapas:", e); }
+
+    /* ── Grilla paginada ────────────────────────────────────────────────────
+       Se arman los 2.162 registros pero se dibujan 20 por página, que son las
+       cuatro columnas por cinco filas. Volcar 2.162 celdas de una hace que el
+       navegador arme miles de nodos y el scroll se ponga pesado justo en la
+       pantalla donde el fotógrafo está trabajando.
+
+       Los recuentos del filtro salen de los datos, no están escritos a mano:
+       un filtro que promete 315 y muestra otra cosa destruye la confianza en
+       todos los demás números de la pantalla. ──────────────────────────── */
+    try {
+      var POR_PAG = 20;
+      var fg = document.getElementById("fg");
+      var raiz = document.documentElement;
+      var filtro = "todas", pagina = 1;
+
+      var semilla = 31;
+      function az() { semilla = (semilla * 9301 + 49297) % 233280; return semilla / 233280; }
+
+      var FOTOS = [];
+      for (var i = 0; i < 2162; i++) {
+        var r = az();
+        var estado = r < 0.146 ? "sinrec" : (r < 0.231 ? "sindor" : (r < 0.250 ? "vend" : "ok"));
+        FOTOS.push({
+          luz: 1 + Math.floor(az() * 5),
+          estado: estado,
+          bib: (estado === "sindor" || estado === "sinrec") ? null : 1000 + Math.floor(az() * 900),
+          caras: 1 + Math.floor(az() * 3),
+          ventas: estado === "vend" ? 1 + Math.floor(az() * 3) : 0
+        });
+      }
+
+      var buscado = "";
+      function filtrada() {
+        return FOTOS.filter(function (x) {
+          if (filtro !== "todas" && x.estado !== filtro) return false;
+          // Coincidencia por prefijo y no exacta: se tipea "12" y aparecen
+          // 1247 y 1288 mientras se sigue escribiendo.
+          if (buscado && (!x.bib || String(x.bib).indexOf(buscado) !== 0)) return false;
+          return true;
+        });
+      }
+      function mil(n) { return n.toLocaleString("es-AR"); }
+
+      // Los recuentos salen de los datos, no escritos a mano. Un filtro que
+      // promete 315 y muestra otra cosa destruye la confianza en todos los
+      // demás números de la pantalla.
+      (function () {
+        var c = { todas: FOTOS.length, sinrec: 0, sindor: 0, vend: 0 };
+        FOTOS.forEach(function (x) { if (c[x.estado] !== undefined) c[x.estado]++; });
+        document.querySelectorAll("#dd-filtro .dd-o").forEach(function (o) {
+          o.querySelector(".dd-n").textContent = mil(c[o.dataset.k]);
+        });
+        document.querySelector('.solapa[data-p="fotos"] .n').textContent = mil(FOTOS.length);
+      })();
+
+      function pintar() {
+        var lista = filtrada();
+        var paginas = Math.max(1, Math.ceil(lista.length / POR_PAG));
+        if (pagina > paginas) pagina = paginas;
+        var desde = (pagina - 1) * POR_PAG;
+        var trozo = lista.slice(desde, desde + POR_PAG);
+
+        fg.innerHTML = trozo.map(function (x, k) {
+          var marca = "";
+          if (x.estado === "sinrec") marca = '<span class="ft-f warn"><i data-lucide="scan-face"></i></span>';
+          else if (x.estado === "vend") marca = '<span class="ft-f sold"><i data-lucide="check"></i></span>';
+          return '<div class="ft" data-i="' + (desde + k) + '" role="button" tabindex="0">' +
+            '<div class="ft-i" data-l="' + x.luz + '"></div><div class="ft-v"></div>' +
+            '<span class="ft-c"><i data-lucide="check"></i></span>' + marca +
+            '<div class="ft-d">' +
+              (x.bib ? '<span class="bib"><i>#</i>' + x.bib + '</span>' : '') +
+              '<span class="ft-meta"><i data-lucide="scan-face"></i> ' + x.caras +
+              (x.ventas ? ' &nbsp;<i data-lucide="shopping-bag"></i> ' + x.ventas : '') +
+            '</span></div></div>';
+        }).join("");
+
+        document.getElementById("pag-info").textContent = lista.length
+          ? mil(desde + 1) + "–" + mil(desde + trozo.length) + " de " + mil(lista.length)
+          : "Ninguna foto con ese filtro";
+
+        document.getElementById("fg-vacio").hidden = lista.length > 0;
+        document.querySelector(".pag").hidden = lista.length === 0;
+        botones(paginas);
+        try { lucide.createIcons(); } catch (e) {}
+      }
+
+      /* Botonera con elipsis. Con 109 páginas no entran todas, así que van la
+         primera, la última y el vecindario de la actual. Las flechas de los
+         extremos se deshabilitan en vez de esconderse: si desaparecen, los
+         demás botones se corren y el que venía haciendo click cambia de sitio. */
+      function botones(paginas) {
+        var caja = document.getElementById("pag-btns");
+        var v = [];
+        var d = Math.max(2, pagina - 1), h = Math.min(paginas - 1, pagina + 1);
+        v.push(1);
+        if (d > 2) v.push("gap");
+        for (var n = d; n <= h; n++) v.push(n);
+        if (h < paginas - 1) v.push("gap");
+        if (paginas > 1) v.push(paginas);
+
+        caja.innerHTML =
+          '<button class="pag-b" data-ir="' + (pagina - 1) + '" ' + (pagina === 1 ? "disabled" : "") +
+            ' aria-label="Anterior"><i data-lucide="chevron-left"></i></button>' +
+          v.map(function (n) {
+            if (n === "gap") return '<span class="pag-gap">…</span>';
+            var lejos = (n !== 1 && n !== paginas && Math.abs(n - pagina) > 1) ? " lejos" : "";
+            return '<button class="pag-n' + lejos + '" data-ir="' + n + '"' +
+              (n === pagina ? ' aria-current="page"' : "") + ">" + n + "</button>";
+          }).join("") +
+          '<button class="pag-b" data-ir="' + (pagina + 1) + '" ' + (pagina === paginas ? "disabled" : "") +
+            ' aria-label="Siguiente"><i data-lucide="chevron-right"></i></button>';
+      }
+
+      document.getElementById("pag-btns").addEventListener("click", function (ev) {
+        var b = ev.target.closest("[data-ir]");
+        if (!b || b.disabled) return;
+        pagina = parseInt(b.dataset.ir, 10);
+        pintar();
+        // Al cambiar de página el ojo vuelve arriba de la grilla: si no, uno
+        // queda a media altura mirando fotos nuevas desde el medio.
+        fg.scrollIntoView({ block: "start", behavior: "smooth" });
+      });
+
+      function contar() {
+        var n = fg.querySelectorAll(".ft.sel").length;
+        document.getElementById("lote-n").textContent = n + (n === 1 ? " seleccionada" : " seleccionadas");
+        raiz.dataset.sel = n > 0 ? "on" : "";
+      }
+      fg.addEventListener("click", function (ev) {
+        var t = ev.target.closest(".ft");
+        if (t) { t.classList.toggle("sel"); contar(); }
+      });
+      document.getElementById("lote-x").addEventListener("click", function () {
+        fg.querySelectorAll(".ft.sel").forEach(function (t) { t.classList.remove("sel"); });
+        contar();
+      });
+      // "Todas" es la página, no las 2.162. Decir que seleccionaste dos mil
+      // fotos que no estás viendo, con un botón de Eliminar al lado, es una
+      // forma muy rápida de que alguien pierda un evento entero.
+      document.getElementById("todas").addEventListener("click", function () {
+        var faltan = fg.querySelectorAll(".ft:not(.sel)").length > 0;
+        fg.querySelectorAll(".ft").forEach(function (t) { t.classList.toggle("sel", faltan); });
+        contar();
+      });
+      document.getElementById("dd-filtro").addEventListener("elegir", function () {
+        filtro = this.querySelector('.dd-o[aria-selected="true"]').dataset.k;
+        pagina = 1;
+        pintar();
+        contar();
+      });
+
+      document.getElementById("q-bib").addEventListener("input", function () {
+        this.value = this.value.replace(/[^0-9]/g, "").slice(0, 5);
+        buscado = this.value;
+        pagina = 1;
+        pintar();
+        contar();
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") document.getElementById("lote-x").click();
+      });
+
+      pintar();
+    } catch (e) { console.warn("grilla:", e); }
+
+    /* ── Reconocimiento avanzando ────────────────────────────────────────────
+       Avanza solo para poder mirar la transición. En el producto esto sale de
+       un sondeo al servidor. Cuando llega al final, el bloque entero se va:
+       una barra al 100% que se queda para siempre es basura visual. */
+    try {
+      var total = 2162, hechas = 1847;
+      var tic = setInterval(function () {
+        hechas = Math.min(total, hechas + 37);
+        document.getElementById("c-rec").textContent =
+          hechas.toLocaleString("es-AR") + " de " + total.toLocaleString("es-AR");
+        document.getElementById("b-rec").style.width = (hechas / total * 100) + "%";
+        if (hechas >= total) {
+          clearInterval(tic);
+          document.getElementById("d-rec").textContent = "Listo. Las 2.162 fotos ya son buscables.";
+          document.getElementById("etapa-rec").classList.remove("lenta");
+          setTimeout(function () {
+            var p = document.getElementById("proc");
+            p.style.transition = "opacity 400ms ease";
+            p.style.opacity = "0";
+            setTimeout(function () { p.remove(); }, 420);
+          }, 1600);
+        }
+      }, 900);
+    } catch (e) { console.warn("proc:", e); }
+
+    /* ── Precio ── */
+    try {
+      var p1 = document.getElementById("p1"), p2 = document.getElementById("p2");
+      function cuenta() {
+        var a = parseInt(p1.value.replace(/\D/g, ""), 10) || 0;
+        var b = parseInt(p2.value.replace(/\D/g, ""), 10) || 0;
+        var caja = document.getElementById("cuenta");
+        if (!a || !b) { caja.textContent = "Poné los dos precios para ver la comparación."; return; }
+        if (b <= a) { caja.textContent = "El pack sale igual o menos que una foto suelta: nadie va a comprar de a una."; return; }
+        var corte = Math.ceil(b / a);
+        caja.innerHTML = "El pack conviene a partir de <b>" + corte + " fotos</b>. " +
+          "Hoy el promedio de este evento es de <b>4 fotos</b> por compra.";
+      }
+      p1.addEventListener("input", cuenta);
+      p2.addEventListener("input", cuenta);
+      cuenta();
+    } catch (e) { console.warn("precio:", e); }
+
+    /* ── Copiar link e interruptores ── */
+    try {
+      document.getElementById("copiar").addEventListener("click", function () {
+        var t = document.getElementById("copiar-t");
+        try { navigator.clipboard.writeText("https://encontrate.app/german/duatlon-chivilcoy"); } catch (e) {}
+        t.textContent = "Copiado";
+        setTimeout(function () { t.textContent = "Copiar"; }, 1800);
+      });
+      document.querySelectorAll(".sw").forEach(function (sw) {
+        sw.addEventListener("click", function () {
+          sw.setAttribute("aria-checked", sw.getAttribute("aria-checked") === "true" ? "false" : "true");
+        });
+      });
+      var sol = document.getElementById("soltar");
+      ["dragenter", "dragover"].forEach(function (n) {
+        sol.addEventListener(n, function (e) { e.preventDefault(); sol.classList.add("encima"); });
+      });
+      ["dragleave", "drop"].forEach(function (n) {
+        sol.addEventListener(n, function (e) { e.preventDefault(); sol.classList.remove("encima"); });
+      });
+      var raizM = document.documentElement;
+      function modal(abrir) {
+        raizM.dataset.modal = abrir ? "open" : "";
+        if (abrir) setTimeout(function () { document.getElementById("mail-inv").focus(); }, 240);
+      }
+      document.getElementById("abrir-inv").addEventListener("click", function () { modal(true); });
+      document.getElementById("cerrar-inv").addEventListener("click", function () { modal(false); });
+      document.getElementById("cancelar-inv").addEventListener("click", function () { modal(false); });
+      document.getElementById("modal-inv").addEventListener("click", function (e) {
+        if (e.target === this) modal(false);   // click en el velo, no en la caja
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && raizM.dataset.modal === "open") modal(false);
+      });
+
+      document.getElementById("mandar-inv").addEventListener("click", function () {
+        var campo = document.getElementById("mail-inv");
+        var t = document.getElementById("inv-t");
+        var pista = document.getElementById("inv-pista");
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(campo.value.trim())) {
+          campo.setAttribute("aria-invalid", "true");
+          pista.textContent = "Ese email está incompleto.";
+          campo.focus();
+          return;
+        }
+        campo.setAttribute("aria-invalid", "false");
+        pista.textContent = "Si no tiene cuenta en encontrate, se la crea al aceptar.";
+        t.textContent = "Invitación enviada";
+        setTimeout(function () {
+          modal(false);
+          campo.value = "";
+          t.textContent = "Mandar invitación";
+        }, 900);
+      });
+
+      document.getElementById("guardar").addEventListener("click", function () {
+        var t = document.getElementById("guardar-t");
+        t.textContent = "Guardado";
+        setTimeout(function () { t.textContent = "Guardar cambios"; }, 1800);
+      });
+    } catch (e) { console.warn("varios:", e); }
+  });
+</script>
+
+</body>
+</html>

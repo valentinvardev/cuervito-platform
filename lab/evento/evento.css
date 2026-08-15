@@ -1,0 +1,393 @@
+/* =============================================================================
+   encontrate · panel · evento
+   -----------------------------------------------------------------------------
+   La versión de cuervito abría con tres tarjetas-solapa enormes (Galería,
+   Monetización, Info), con ícono, título y subtítulo cada una. Ocupaban una
+   franja entera de alto permanente, arriba del contenido, sólo para elegir
+   pestaña. En una pantalla donde el fotógrafo viene a mirar sus fotos, ese
+   espacio es de las fotos.
+
+   Acá las solapas son una barra compacta, y el alto liberado se usa para dos
+   cosas que antes no estaban:
+
+   · La portada como banda. Es la identidad del evento y lo primero que ve el
+     atleta, así que tiene que estar presente mientras trabajás, no escondida
+     en un ajuste.
+
+   · El progreso REAL del procesamiento, en dos etapas: subidas y reconocidas.
+     Son cosas distintas y tardan distinto. cuervito sólo mostraba la subida,
+     que es la rápida, y después había un rato largo en el que parecía que no
+     pasaba nada mientras corría el reconocimiento.
+   ========================================================================== */
+
+/* ── Portada ─────────────────────────────────────────────────────────────── */
+.banda {
+  position: relative;
+  border-radius: var(--r-3);
+  overflow: hidden;
+  aspect-ratio: 21 / 6;
+  min-height: 190px;
+  background: radial-gradient(112% 80% at 66% 24%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
+  display: flex; align-items: flex-end;
+}
+/* Velo desde abajo: el texto se apoya en el borde inferior, así que oscurecer
+   la foto entera la apagaría sin necesidad. */
+.banda::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(8, 7, 6, .88), rgba(8, 7, 6, .3) 46%, rgba(8, 7, 6, .05) 78%);
+}
+.banda-in {
+  position: relative; z-index: 1;
+  width: 100%;
+  padding: var(--s-5);
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--s-4); flex-wrap: wrap;
+}
+.banda h1 {
+  color: #FFF;
+  font-size: clamp(22px, 2.6vw, 34px);
+  font-weight: var(--display-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--display-track);
+  line-height: 1.04;
+  max-width: 20ch;
+}
+.banda-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 11px;
+}
+.banda-meta .dato { color: rgba(255, 255, 255, .78); font-size: 12.5px; }
+.banda-meta .dato i { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: currentColor; margin: 0 5px 3px; }
+.banda-acc { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+
+
+/* Botón sobre foto: vidrio, no relleno. Un botón sólido sobre una fotografía
+   la tapa; el vidrio deja ver qué hay debajo y sigue siendo legible. */
+.btn-vidrio {
+  background: rgba(255, 255, 255, .14);
+  border-color: rgba(255, 255, 255, .26);
+  color: #FFF;
+  backdrop-filter: blur(10px);
+}
+.btn-vidrio:hover { background: rgba(255, 255, 255, .24); border-color: rgba(255, 255, 255, .42); }
+
+/* ── Enlace público ──────────────────────────────────────────────────────────
+   Va arriba y no enterrado: publicar sin repartir el link no vende nada, así
+   que el paso siguiente a publicar tiene que estar a la vista. */
+.link-pub {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: 11px var(--s-4);
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-2);
+}
+.link-pub .url {
+  flex: 1; min-width: 0;
+  font-size: 13.5px; color: var(--ink-2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.link-pub .url b { color: var(--ink); font-weight: 500; }
+.link-pub svg { width: 15px; height: 15px; color: var(--ink-3); flex-shrink: 0; }
+
+/* ── Cifras ──────────────────────────────────────────────────────────────── */
+.cifras { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-3); }
+/* Mismo patrón que los indicadores del inicio: rótulo a la izquierda, ícono
+   a la derecha y tenue. Que las dos pantallas usen la misma tarjeta importa
+   más que el ícono en sí: el fotógrafo entra al evento desde el inicio y no
+   tiene que volver a aprender dónde mirar. */
+.cifra .c-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-3);
+  color: var(--ink-3);
+}
+.cifra .c-top svg { width: 15px; height: 15px; }
+.cifra span {
+  display: block; font-size: 11.5px; color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+.cifra b {
+  display: block; margin-top: 7px;
+  font-size: 28px; font-weight: 200; letter-spacing: -0.035em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.cifra .nota-c { margin-top: 8px; font-size: 12px; color: var(--ink-3); }
+.cifra .nota-c.alerta { color: var(--accent); }
+/* Si la tarjeta tiene algo que avisar, el ícono se tiñe igual que el aviso.
+   Un ícono neutro arriba de una cifra que reclama atención resta en vez de
+   sumar: hay que leer la línea de abajo para enterarse. */
+.cifra:has(.nota-c.alerta) .c-top svg { color: var(--accent); }
+
+/* ── Procesamiento en dos etapas ─────────────────────────────────────────────
+   Subir y reconocer son cosas distintas y tardan muy distinto. Mostrar una
+   sola barra hace que después de subir parezca que el sistema se colgó,
+   cuando en realidad está en la parte lenta. Dos barras y dos números. */
+.proc { display: grid; gap: var(--s-4); }
+.etapa { display: grid; gap: 8px; }
+.etapa-t { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.etapa-t b { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 500; }
+
+/* El ícono no es adorno: toma el color del estado de su etapa, el mismo que
+   la barra. Verde cuando terminó, acento mientras corre. Así el estado se lee
+   de un vistazo sin recorrer la barra hasta el final. */
+.et-i {
+  width: 26px; height: 26px; border-radius: 8px;
+  flex-shrink: 0;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  color: var(--ok);
+  transition: background 400ms ease, color 400ms ease;
+}
+.et-i svg { width: 14px; height: 14px; }
+.etapa.lenta .et-i { background: var(--accent-wash); color: var(--accent); }
+.etapa-t .cuenta {
+  font-size: 12.5px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.pista-b {
+  height: 5px; border-radius: 100px;
+  background: var(--paper-3);
+  overflow: hidden;
+}
+.pista-b i {
+  display: block; height: 100%; border-radius: 100px;
+  background: var(--ok);
+  transition: width 600ms cubic-bezier(.3, .8, .4, 1);
+}
+.etapa.lenta .pista-b i { background: var(--accent); }
+.etapa .detalle { font-size: 12px; color: var(--ink-3); }
+
+/* ── Solapas ─────────────────────────────────────────────────────────────── */
+.solapas {
+  display: flex; gap: var(--s-5);
+  border-bottom: 1px solid var(--line-soft);
+}
+.solapa {
+  position: relative;
+  display: flex; align-items: center; gap: 7px;
+  padding: 0 2px 12px;
+  border: 0; background: none; cursor: pointer;
+  font-family: var(--sans); font-size: 14px; font-weight: 500;
+  color: var(--ink-3);
+  transition: color 150ms ease;
+}
+.solapa:hover { color: var(--ink); }
+.solapa svg { width: 15px; height: 15px; }
+.solapa .n {
+  font-size: 11.5px; font-weight: 500;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+/* Subrayado con transform en vez de border: se puede animar y no mueve el
+   texto un pixel al activarse, que es lo que pasa cuando se agrega borde. */
+.solapa::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px;
+  height: 2px; background: var(--ink);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 260ms cubic-bezier(.2, .8, .3, 1);
+}
+.solapa[aria-selected="true"] { color: var(--ink); }
+.solapa[aria-selected="true"]::after { transform: scaleX(1); }
+
+.panel-s { display: none; }
+.panel-s[data-activo="1"] { display: grid; gap: var(--s-4); }
+
+/* ── Zona de subida ──────────────────────────────────────────────────────── */
+.soltar {
+  display: grid; place-content: center; justify-items: center; gap: 9px;
+  padding: var(--s-7) var(--s-4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-3);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.soltar:hover, .soltar.encima { border-color: var(--ink-3); background: var(--paper-3); }
+.soltar-i {
+  width: 40px; height: 40px; border-radius: var(--r-3);
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.soltar-i svg { width: 19px; height: 19px; }
+.soltar b { font-size: 14.5px; font-weight: 500; }
+.soltar span { font-size: 12.5px; color: var(--ink-3); }
+
+/* ── Precio ──────────────────────────────────────────────────────────────── */
+.precios { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+.cuenta-p {
+  padding: 11px 13px;
+  background: var(--paper-3);
+  border-radius: var(--r-2);
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.5;
+}
+.cuenta-p b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.blq h2 {
+  font-family: var(--sans); font-size: 14.5px; font-weight: 600;
+  letter-spacing: -0.015em; text-transform: none;
+}
+.blq .ayuda { margin-top: 3px; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+.blq-b { margin-top: var(--s-4); display: grid; gap: var(--s-4); }
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+
+/* Zona de riesgo, igual que en Perfil: abajo, con borde propio y sin botón
+   rojo grande. El rojo grande invita a apretar. */
+.riesgo { border-color: color-mix(in srgb, var(--bad) 26%, transparent); }
+.riesgo h2 { color: var(--bad); }
+.riesgo .btn-peligro {
+  border-color: color-mix(in srgb, var(--bad) 40%, transparent);
+  color: var(--bad); background: transparent;
+}
+.riesgo .btn-peligro:hover {
+  background: color-mix(in srgb, var(--bad) 8%, transparent);
+  border-color: var(--bad);
+}
+
+@media (max-width: 900px) {
+  .cifras { grid-template-columns: repeat(2, 1fr); }
+  .banda { aspect-ratio: auto; }
+  .banda-in { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 560px) {
+  .precios, .par { grid-template-columns: minmax(0, 1fr); }
+  .solapas { gap: var(--s-4); overflow-x: auto; }
+  .solapa .n { display: none; }
+}
+
+/* ── Grilla del evento: cuatro columnas fijas ────────────────────────────────
+   La biblioteca usa auto-fill porque ahí se barre buscando algo puntual y
+   conviene la densidad. Acá es al revés: el fotógrafo está revisando SU
+   material, mirando encuadre y foco, y para eso la miniatura tiene que ser
+   grande. Cuatro columnas es lo que da un tamaño en el que se puede juzgar
+   una foto sin abrirla. */
+.panel-s .fg { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 900px) { .panel-s .fg { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 620px) { .panel-s .fg { grid-template-columns: repeat(2, 1fr); } }
+
+/* ── Equipo ──────────────────────────────────────────────────────────────────
+   Un evento grande lo cubren varios fotógrafos. Cada uno sube lo suyo y cobra
+   lo suyo: la plata no se reparte por porcentaje sino por autoría, que es lo
+   que evita la discusión de "yo saqué más que vos". La tabla lo muestra así,
+   con fotos y recaudado por persona. */
+.inv { display: flex; gap: var(--s-2); align-items: flex-start; flex-wrap: wrap; }
+.inv .campo { flex: 1; min-width: 240px; }
+
+.col-f { grid-template-columns: 34px minmax(0, 1fr) 96px 104px auto; }
+.col-av {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  font-size: 12px; font-weight: 600;
+}
+.col-av.yo { background: var(--cta-bg); color: var(--cta-fg); }
+.col-t { min-width: 0; line-height: 1.35; }
+.col-t b { display: block; font-size: 13.5px; font-weight: 500; }
+.col-t span { display: block; font-size: 12px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-f .num { font-size: 13px; }
+
+/* La fila pendiente se apaga entera, no sólo la píldora: alguien que todavía
+   no aceptó no aportó nada, y sus columnas en cero al mismo peso que las de
+   los demás se leen como que trabajó y no vendió. */
+.col-f.espera .col-av, .col-f.espera .col-t b { opacity: .6; }
+
+.reparto {
+  margin-top: var(--s-4); padding: 11px 13px;
+  background: var(--paper-3); border-radius: var(--r-2);
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.55;
+}
+.reparto b { color: var(--ink); font-weight: 500; }
+
+@media (max-width: 760px) {
+  .col-f { grid-template-columns: 34px minmax(0, 1fr) auto; }
+  .col-f .c-fotos { display: none; }
+}
+
+/* Lo que le queda al colaborador, dentro del diálogo. El número va resuelto y
+   no explicado: quien invita tiene que poder contestar "¿cuánto me queda?" si
+   se lo preguntan por teléfono, sin ir a buscarlo. */
+.queda-inv {
+  padding: var(--s-4);
+  border-radius: var(--r-2);
+  background: var(--acento-lleno); color: #FFFFFF;
+}
+.queda-inv > div { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); }
+.queda-inv span { font-size: 12.5px; color: rgba(255, 255, 255, .9); }
+.queda-inv b {
+  font-size: 26px; font-weight: 200; letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+.queda-inv p {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, .25);
+  font-size: 12px; line-height: 1.55; color: rgba(255, 255, 255, .9);
+}
+.queda-inv p b { font-size: inherit; font-weight: 500; color: #FFFFFF; }
+
+.aj .pill { flex-shrink: 0; }
+
+/* ═══════════════════════════════ TELÉFONO ════════════════════════════════
+   A 375px la pantalla se iba a 524 de ancho. No eran veinte ajustes: eran dos
+   causas que arrastraban a todo lo demás.
+
+   1. El título de la portada tenía max-width en ch y su contenedor no llevaba
+      min-width:0. Un hijo de flex no baja de su ancho de contenido salvo que
+      se lo permitas, así que "DUATLÓN CLUB CICLISTA CHIVILCOY" en Unbounded,
+      que es una tipografía muy ancha, empujaba la banda entera.
+
+   2. La fila del enlace público no envolvía: URL más dos botones en una sola
+      línea que no se podía partir.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 620px) {
+
+  /* ── Portada ── */
+  .banda { min-height: 0; }
+  .banda-in { padding: var(--s-4); gap: var(--s-3); }
+  .banda-in > div:first-child { min-width: 0; width: 100%; }
+  .banda h1 { max-width: none; font-size: 23px; }
+  .banda-acc { width: 100%; }
+  /* El botón de portada se lleva el ancho y el de editar queda cuadrado al
+     lado: en el teléfono cambiar la portada es lo que se hace, editar el
+     nombre no. */
+  .banda-acc .btn:first-child { flex: 1; }
+
+  /* ── Enlace público ── */
+  .link-pub { flex-wrap: wrap; row-gap: var(--s-3); }
+  .link-pub .url { flex: 1 1 auto; min-width: 0; }
+  .link-pub .btn { flex: 1 1 0; }
+  .link-pub > svg { flex-shrink: 0; }
+
+  /* ── Cifras ── */
+  .cifras { gap: var(--s-2); }
+  .cifra { padding: var(--s-3); }
+  .cifra b { font-size: 23px; }
+  .cifra .nota-c { font-size: 11.5px; }
+
+  /* ── Procesamiento ── */
+  .etapa-t { flex-wrap: wrap; row-gap: 4px; }
+  .etapa-t b { font-size: 13px; }
+  .etapa-t .cuenta { margin-left: 34px; }   /* alineado con el texto, no con el ícono */
+
+  /* ── Solapas ──
+     Se desbordan a propósito con scroll horizontal propio. Apilarlas en dos
+     filas rompe la lectura de "dónde estoy" que da una barra de pestañas. */
+  .solapas {
+    gap: var(--s-4);
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: calc(var(--s-4) * -1);
+    padding-inline: var(--s-4);
+  }
+  .solapas::-webkit-scrollbar { display: none; }
+  .solapa { flex-shrink: 0; }
+
+  /* ── Equipo ── */
+  .col-f { grid-template-columns: 34px minmax(0, 1fr) auto; row-gap: 4px; }
+  .col-f .num { font-size: 12.5px; }
+  .inv .campo { min-width: 0; }
+
+  /* ── Precio e info ── */
+  .aj { flex-wrap: wrap; row-gap: var(--s-2); }
+  .aj .btn, .aj .sw, .aj .pill { margin-left: auto; }
+
+  /* ── Diálogo ── */
+  .queda-inv > div { flex-wrap: wrap; row-gap: 2px; }
+}

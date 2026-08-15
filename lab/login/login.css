@@ -162,15 +162,6 @@
 .auth-alt a { font-weight: 500; color: var(--ink); border-bottom: 1px solid var(--line-strong); }
 .auth-alt a:hover { color: var(--accent); border-color: var(--accent); }
 
-/* La tarifa fundadora acá no es adorno: quien duda entre crear cuenta o no,
-   duda por el precio. Es el único lugar de la página donde aparece acento. */
-.fundador {
-  display: inline-flex; align-items: center; gap: 6px;
-  margin-top: var(--s-3);
-  font-size: 12.5px; color: var(--ink-3);
-}
-.fundador b { color: var(--accent); font-weight: 600; }
-.fundador svg { width: 13px; height: 13px; color: var(--accent); }
 
 /* ── Carril del atleta ───────────────────────────────────────────────────────
    El que compró fotos NO tiene cuenta: compra buscándose por cara o dorsal y

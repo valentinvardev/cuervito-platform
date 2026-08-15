@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · configurá tu cuenta</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css?v=1786703126">
+<link rel="stylesheet" href="../base.css?v=1786703126">
+<link rel="stylesheet" href="../panel.css?v=1786703126">
+<link rel="stylesheet" href="alta.css?v=1786703126">
+
+<script>
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/iconos.js?v=1786703126" defer></script>
+</head>
+
+<body>
+
+<div class="alta">
+
+  <header class="alta-top">
+    <a href="../landing/" class="mark">encontrate<i></i>app</a>
+
+    <div class="pasos-n" id="pasos-n">
+      <span class="pn" data-e="aqui" data-n="1"><i class="bolita"><span>1</span></i><span class="txt">Tu perfil</span></span>
+      <span class="pn-linea"></span>
+      <span class="pn" data-n="2"><i class="bolita"><span>2</span></i><span class="txt">Cómo cobrás</span></span>
+      <span class="pn-linea"></span>
+      <span class="pn" data-n="3"><i class="bolita"><span>3</span></i><span class="txt">Listo</span></span>
+    </div>
+
+    <button class="btn btn-ghost btn-icon js-tema" aria-label="Cambiar tema">
+      <span class="ico ico-moon"><i data-lucide="moon"></i></span>
+      <span class="ico ico-sun"><i data-lucide="sun"></i></span>
+    </button>
+  </header>
+
+  <main class="alta-mid">
+
+    <!-- ═══════════════ 1 · PERFIL ═══════════════ -->
+    <section class="paso" data-activo="1" data-n="1">
+      <div class="alta-caja">
+        <h1>Empecemos<br>por vos</h1>
+        <p class="bajada">Esto aparece en tu página y al lado de tus fotos en cada evento. Lo podés cambiar cuando quieras.</p>
+
+        <div class="campos">
+          <div class="campo">
+            <label for="nom">Nombre y apellido</label>
+            <input class="inp" id="nom" placeholder="Germán Sosa" autocomplete="name">
+            <div class="err" id="e-nom"></div>
+          </div>
+
+          <div class="campo">
+            <label for="slug">Tu dirección</label>
+            <div class="pegado">
+              <span class="fijo">encontrate.app/</span>
+              <input class="inp" id="slug" placeholder="german" autocomplete="off">
+            </div>
+            <div class="pista" id="p-slug">Es el link que vas a repartir. Después se puede cambiar, pero rompe los que ya diste.</div>
+          </div>
+
+          <div class="campo">
+            <label for="bio">Bio <span style="color:var(--ink-3);font-weight:400">· opcional</span></label>
+            <textarea class="ta" id="bio" maxlength="180" placeholder="Fotógrafo de running y ciclismo en Chivilcoy. Cubro carreras desde 2018."></textarea>
+          </div>
+
+          <div class="campo">
+            <label for="ig">Instagram <span style="color:var(--ink-3);font-weight:400">· opcional</span></label>
+            <div class="pegado">
+              <span class="fijo">instagram.com/</span>
+              <input class="inp" id="ig" placeholder="tuusuario" autocomplete="off">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ 2 · MERCADO PAGO ═══════════════ -->
+    <section class="paso" data-n="2">
+      <div class="alta-caja ancha">
+        <h1>Cómo<br>cobrás</h1>
+        <p class="bajada">La plata de cada venta cae directo en tu cuenta de Mercado Pago. Nosotros nunca la tenemos.</p>
+
+        <div class="mp-caja">
+          <span class="mp-marca ancha" role="img" aria-label="Mercado Pago"></span>
+
+          <!-- Un ícono distinto por punto, no tres tildes iguales. Cada
+               renglón dice algo diferente y el ícono lo dice también; el tilde
+               repetido sólo confirmaba que hay una lista. -->
+          <ul class="mp-lista">
+            <li>
+              <span class="mp-i"><i data-lucide="user-round-check"></i></span>
+              <span><b>Usás tu cuenta de siempre.</b> No hay formularios ni papeles.</span>
+            </li>
+            <li>
+              <span class="mp-i"><i data-lucide="percent"></i></span>
+              <span><b>Cobramos sólo cuando vendés.</b> Sin cuota mensual, sin alta y sin permanencia.</span>
+            </li>
+            <li>
+              <span class="mp-i"><i data-lucide="clock"></i></span>
+              <span><b>Entra en tu cuenta en el momento</b> de cada venta. No pasa por nosotros.</span>
+            </li>
+          </ul>
+
+          <a href="#" class="btn btn-pri btn-lg btn-block">
+            Conectar mi cuenta <i data-lucide="arrow-right" class="go"></i>
+          </a>
+
+          <!-- La desconfianza de fondo no es la comisión, es "¿le estoy dando
+               acceso a mi plata a estos tipos?". La respuesta es verificable:
+               la autorización pasa por el sitio de Mercado Pago y nosotros
+               nunca vemos la contraseña. Decirlo acá, pegado al botón, es
+               donde sirve. -->
+          <div class="seguro">
+            <span class="seguro-i"><i data-lucide="shield-check"></i></span>
+            <span>
+              <b>Te conectás en el sitio de Mercado Pago.</b>
+              Nunca vemos tu contraseña ni tus datos bancarios, y podés
+              desconectarnos cuando quieras desde tu cuenta.
+            </span>
+          </div>
+
+          <div class="mp-pie">
+            ¿Todavía no tenés cuenta?
+            <a href="https://www.mercadopago.com.ar" target="_blank" rel="noopener">Creá una gratis</a>
+          </div>
+        </div>
+
+        <!-- El flujo viejo ponía "Lo hago después" abajo y chiquito sin decir
+             qué se pierde. Informado, saltear es una decisión legítima. -->
+        <div class="consec">
+          <i data-lucide="info"></i>
+          <span>
+            Podés dejarlo para después y empezar a subir fotos ya. Pero hasta que
+            la conectes, <b>tus eventos no van a poder cobrar</b>: el atleta va a
+            encontrar sus fotos y no va a tener cómo comprarlas.
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ 3 · LISTO ═══════════════ -->
+    <section class="paso" data-n="3">
+      <div class="alta-caja fin">
+        <div class="fin-i"><i data-lucide="check"></i></div>
+        <h1>Listo,<br>Germán</h1>
+        <p class="bajada">Tu página ya está en vivo en <b>encontrate.app/german</b>. Ahora falta lo único que importa: subir fotos.</p>
+
+        <div class="fin-acc">
+          <a href="../nuevo/" class="btn btn-pri btn-lg">Crear mi primer evento <i data-lucide="arrow-right" class="go"></i></a>
+          <a href="../dashboard/" class="btn btn-quiet">Ir al panel</a>
+        </div>
+
+        <!-- Una bienvenida que sólo felicita deja al usuario parado en un panel
+             vacío sin saber por dónde empezar. -->
+        <div class="sigue">
+          <div class="sg">
+            <span class="sg-i"><i data-lucide="calendar-days"></i></span>
+            <span class="sg-t"><b>Creá el evento</b><span>Nombre y fecha, nada más</span></span>
+          </div>
+          <div class="sg">
+            <span class="sg-i"><i data-lucide="cloud-upload"></i></span>
+            <span class="sg-t"><b>Soltá la carpeta entera</b><span>Un minuto cada 200 fotos</span></span>
+          </div>
+          <div class="sg">
+            <span class="sg-i"><i data-lucide="link"></i></span>
+            <span class="sg-t"><b>Pasá el link</b><span>Al grupo del club o al organizador</span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="alta-bot">
+    <button class="btn btn-ghost" id="atras" hidden><i data-lucide="arrow-left"></i> Atrás</button>
+    <div></div>
+    <div style="display:flex;gap:var(--s-2);align-items:center">
+      <button class="btn btn-quiet" id="saltear" hidden>Lo hago después</button>
+      <button class="btn btn-pri" id="seguir">
+        <span id="seguir-t">Seguir</span> <i data-lucide="arrow-right" class="go"></i>
+      </button>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    try { lucide.createIcons(); } catch (e) { console.warn("lucide:", e); }
+
+    /* Tema. Este flujo no usa Panel.init porque no lleva riel ni barra: el
+       fotógrafo todavía no tiene nada que administrar. */
+    try {
+      var raiz = document.documentElement;
+      document.querySelectorAll(".js-tema").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var osc = raiz.dataset.theme === "dark";
+          raiz.dataset.theme = osc ? "" : "dark";
+          try { localStorage.setItem("tema", osc ? "light" : "dark"); } catch (e) {}
+        });
+      });
+    } catch (e) { console.warn("tema:", e); }
+
+    try {
+      var actual = 1;
+      var atras = document.getElementById("atras");
+      var seguir = document.getElementById("seguir");
+      var seguirT = document.getElementById("seguir-t");
+      var saltear = document.getElementById("saltear");
+      var nom = document.getElementById("nom");
+      var slug = document.getElementById("slug");
+
+      function ir(n) {
+        actual = n;
+        document.querySelectorAll(".paso").forEach(function (p) {
+          p.dataset.activo = +p.dataset.n === n ? "1" : "";
+        });
+        document.querySelectorAll(".pn").forEach(function (p) {
+          var i = +p.dataset.n;
+          p.dataset.e = i < n ? "hecho" : (i === n ? "aqui" : "");
+        });
+        atras.hidden = n === 1 || n === 3;
+        saltear.hidden = n !== 2;
+        // En el último paso el pie sobra: las acciones están en la pantalla,
+        // y son dos caminos distintos, no un "siguiente".
+        seguir.hidden = n === 3;
+        seguirT.textContent = n === 2 ? "Ya la conecté" : "Seguir";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      /* El nombre y la dirección son lo único obligatorio: sin ellos no hay
+         página pública que mostrar. Todo lo demás se completa después. */
+      function validaUno() {
+        var ok = true;
+        var e = document.getElementById("e-nom");
+        if (nom.value.trim().length < 2) {
+          document.getElementById("nom").setAttribute("aria-invalid", "true");
+          e.textContent = "Poné tu nombre.";
+          e.parentElement.dataset.err = "1";
+          ok = false;
+        } else {
+          nom.setAttribute("aria-invalid", "false");
+          e.textContent = "";
+          e.parentElement.dataset.err = "";
+        }
+        if (!slug.value.trim()) {
+          slug.setAttribute("aria-invalid", "true");
+          document.getElementById("p-slug").textContent = "Elegí tu dirección, es el link que vas a repartir.";
+          ok = false;
+        } else {
+          slug.setAttribute("aria-invalid", "false");
+        }
+        if (!ok) (nom.value.trim().length < 2 ? nom : slug).focus();
+        return ok;
+      }
+
+      /* La dirección se sugiere sola desde el nombre, pero deja de hacerlo
+         apenas el usuario la toca: pisarle lo que escribió es lo más molesto
+         que puede hacer un formulario. */
+      var slugTocado = false;
+      slug.addEventListener("input", function () { slugTocado = true; });
+      nom.addEventListener("input", function () {
+        if (slugTocado) return;
+        slug.value = nom.value.trim().toLowerCase()
+          .normalize("NFD").replace(/[̀-ͯ]/g, "")
+          .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      });
+
+      seguir.addEventListener("click", function () {
+        if (actual === 1 && !validaUno()) return;
+        ir(Math.min(3, actual + 1));
+      });
+      atras.addEventListener("click", function () { ir(Math.max(1, actual - 1)); });
+      saltear.addEventListener("click", function () { ir(3); });
+
+      // Se puede saltar entre pasos clickeando las bolitas. Es del laboratorio,
+      // para poder revisar las tres pantallas sin completar el formulario.
+      document.getElementById("pasos-n").addEventListener("click", function (ev) {
+        var p = ev.target.closest(".pn");
+        if (p) ir(+p.dataset.n);
+      });
+
+      ir(1);
+    } catch (e) { console.warn("alta:", e); }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,92 @@
+/* =============================================================================
+   encontrate · panel · perfil
+   -----------------------------------------------------------------------------
+   Dos cosas conviven acá y no son lo mismo: lo que el atleta ve de vos (foto,
+   nombre, bio, redes) y lo que es de la cuenta (mail, contraseña, borrar
+   todo). El panel viejo las mezclaba en una lista de campos, y el resultado
+   es que nadie sabe cuál de los datos que está escribiendo se publica.
+
+   Acá van separadas y la parte pública se rotula como tal, con la previa al
+   lado para que no quede duda.
+   ========================================================================== */
+
+.perfil { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--s-5); align-items: start; }
+.pcol { display: grid; gap: var(--s-3); }
+
+.blq h2 {
+  font-family: var(--sans); font-size: 14.5px; font-weight: 600;
+  letter-spacing: -0.015em; text-transform: none;
+}
+.blq .ayuda { margin-top: 3px; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+.blq-b { margin-top: var(--s-4); display: grid; gap: var(--s-4); }
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+
+/* ── Foto ────────────────────────────────────────────────────────────────── */
+.foto { display: flex; align-items: center; gap: var(--s-4); }
+.foto-av {
+  width: 66px; height: 66px; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--cta-bg); color: var(--cta-fg);
+  font-size: 21px; font-weight: 600; letter-spacing: 0.01em;
+}
+.foto-t { flex: 1; min-width: 0; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+.foto-b { display: flex; gap: var(--s-2); margin-top: 8px; }
+
+/* Contador de la bio. Aparece recién cerca del límite: un contador siempre
+   visible convierte escribir dos líneas en un examen. */
+.cuenta-c {
+  font-size: 11.5px; color: var(--ink-3);
+  text-align: right; font-variant-numeric: tabular-nums;
+  opacity: 0; transition: opacity 200ms ease;
+}
+.cuenta-c[data-cerca="1"] { opacity: 1; }
+.cuenta-c[data-pasado="1"] { color: var(--bad); opacity: 1; }
+
+/* ── Redes ───────────────────────────────────────────────────────────────── */
+.redes { display: grid; gap: var(--s-3); }
+.red { display: flex; align-items: center; gap: var(--s-3); }
+.red-i {
+  width: 34px; height: 34px; border-radius: var(--r-2);
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.red-i svg { width: 16px; height: 16px; }
+
+/* ── Zona de riesgo ──────────────────────────────────────────────────────────
+   Abajo de todo, con su propio borde y sin ningún botón rojo grande. El rojo
+   grande invita a apretar; el botón fantasma con borde rojo hay que ir a
+   buscarlo, que es exactamente lo que corresponde para algo irreversible. */
+.riesgo { border-color: color-mix(in srgb, var(--bad) 26%, transparent); }
+.riesgo h2 { color: var(--bad); }
+.riesgo .btn-peligro {
+  border-color: color-mix(in srgb, var(--bad) 40%, transparent);
+  color: var(--bad); background: transparent;
+}
+.riesgo .btn-peligro:hover {
+  background: color-mix(in srgb, var(--bad) 8%, transparent);
+  border-color: var(--bad);
+}
+
+/* ── Previa pública ──────────────────────────────────────────────────────── */
+.lado { position: sticky; top: calc(62px + var(--s-5)); display: grid; gap: var(--s-3); }
+.tarjeta-pub { text-align: center; padding: var(--s-5) var(--s-4); }
+.tarjeta-pub .foto-av { margin: 0 auto var(--s-3); }
+.tarjeta-pub b { display: block; font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+.tarjeta-pub .bio {
+  margin-top: 7px; font-size: 12.5px; color: var(--ink-3);
+  line-height: 1.55; min-height: 2.2em;
+}
+.tarjeta-pub .link {
+  display: inline-block; margin-top: var(--s-3);
+  font-size: 12px; color: var(--ink-2);
+  border-bottom: 1px solid var(--line-strong);
+}
+.tarjeta-pub .iconos { display: flex; justify-content: center; gap: 9px; margin-top: var(--s-4); color: var(--ink-3); }
+.tarjeta-pub .iconos svg { width: 15px; height: 15px; }
+.tarjeta-pub .iconos span[hidden] { display: none; }
+
+@media (max-width: 1080px) {
+  .perfil { grid-template-columns: minmax(0, 1fr); }
+  .lado { position: static; }
+}
+@media (max-width: 560px) { .par { grid-template-columns: minmax(0, 1fr); } }

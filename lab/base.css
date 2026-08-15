@@ -168,3 +168,8 @@ h2 {
 h3 { font-family: var(--sans); font-size: var(--t-h3); font-weight: 600; letter-spacing: -0.025em; }
 .lede { font-size: var(--t-lede); color: var(--ink-2); max-width: 52ch; font-weight: 300; letter-spacing: -0.005em; }
 p { margin: 0; }
+
+/* Claro: para usar sobre una superficie de tinta, donde el primario (que ya es
+   tinta) desaparecería. Es el primario invertido. */
+.btn-claro { background: var(--paper); color: var(--ink); }
+.btn-claro:hover { background: #FFFFFF; }

@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · perfil</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css?v=1786703126">
+<link rel="stylesheet" href="../base.css?v=1786703126">
+<link rel="stylesheet" href="../panel.css?v=1786703126">
+<link rel="stylesheet" href="perfil.css?v=1786703126">
+
+<script>
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/iconos.js?v=1786703126" defer></script>
+</head>
+
+<body>
+
+<div class="app">
+  <div class="col">
+    <main class="canvas">
+      <div class="canvas-in">
+
+        <div class="head">
+          <div>
+            <h1>Perfil</h1>
+            <p>Lo que el atleta ve de vos, y los datos de tu cuenta.</p>
+          </div>
+          <div class="head-r">
+            <button class="btn btn-pri" id="guardar"><span id="guardar-t">Guardar cambios</span></button>
+          </div>
+        </div>
+
+        <div class="perfil">
+          <div class="pcol">
+
+            <!-- Parte pública, rotulada como tal. En el panel viejo esto se
+                 mezclaba con el mail y la contraseña, y nadie sabía cuál de
+                 los datos que estaba escribiendo se publicaba. -->
+            <section class="card blq">
+              <h2>Tu perfil público</h2>
+              <p class="ayuda">Aparece en tu página y en cada evento que publicás.</p>
+
+              <div class="blq-b">
+                <div class="foto">
+                  <span class="foto-av" id="av">GS</span>
+                  <div class="foto-t">
+                    JPG o PNG cuadrada, mínimo 400px.
+                    <div class="foto-b">
+                      <button class="btn btn-ghost btn-sm">Cambiar foto</button>
+                      <button class="btn btn-ghost btn-sm">Quitar</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="par">
+                  <div class="campo">
+                    <label for="nom">Nombre</label>
+                    <input class="inp" id="nom" value="Germán" autocomplete="given-name">
+                  </div>
+                  <div class="campo">
+                    <label for="ape">Apellido</label>
+                    <input class="inp" id="ape" value="Sosa" autocomplete="family-name">
+                  </div>
+                </div>
+
+                <div class="campo">
+                  <label for="slug">Tu dirección</label>
+                  <div class="pegado">
+                    <span class="fijo">encontrate.app/</span>
+                    <input class="inp" id="slug" value="german">
+                  </div>
+                  <div class="pista">Cambiarla rompe los links que ya repartiste.</div>
+                </div>
+
+                <div class="campo">
+                  <label for="bio">Bio</label>
+                  <textarea class="ta" id="bio" maxlength="180" placeholder="Contale al atleta quién sos en dos líneas.">Fotógrafo de running y ciclismo en Chivilcoy. Cubro carreras desde 2018.</textarea>
+                  <div class="cuenta-c" id="cc">0 / 180</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="card blq">
+              <h2>Redes</h2>
+              <p class="ayuda">Se muestran como íconos en tu página. Dejá vacío lo que no uses.</p>
+              <div class="blq-b redes">
+                <div class="red">
+                  <span class="red-i"><i data-lucide="instagram"></i></span>
+                  <div class="pegado" style="flex:1">
+                    <span class="fijo">instagram.com/</span>
+                    <input class="inp" id="ig" value="germansosafoto">
+                  </div>
+                </div>
+                <div class="red">
+                  <span class="red-i"><i data-lucide="facebook"></i></span>
+                  <div class="pegado" style="flex:1">
+                    <span class="fijo">facebook.com/</span>
+                    <input class="inp" id="fb" placeholder="tu-usuario">
+                  </div>
+                </div>
+                <div class="red">
+                  <span class="red-i"><i data-lucide="globe"></i></span>
+                  <input class="inp" id="web" placeholder="https://tusitio.com" style="flex:1">
+                </div>
+              </div>
+            </section>
+
+            <section class="card blq">
+              <h2>Tu cuenta</h2>
+              <p class="ayuda">Esto no lo ve nadie más que vos.</p>
+              <div class="blq-b" style="gap:0">
+                <div class="aj">
+                  <div class="aj-t"><b>Email</b><span>german.sosa@gmail.com</span></div>
+                  <button class="btn btn-ghost btn-sm">Cambiar</button>
+                </div>
+                <div class="aj">
+                  <div class="aj-t"><b>Contraseña</b><span>Cambiada hace 4 meses</span></div>
+                  <button class="btn btn-ghost btn-sm">Cambiar</button>
+                </div>
+                <div class="aj">
+                  <div class="aj-t">
+                    <b>Avisos por mail</b>
+                    <span>Un resumen cada vez que se vende algo</span>
+                  </div>
+                  <button type="button" class="sw" role="switch" aria-checked="true" aria-label="Avisos por mail"></button>
+                </div>
+                <div class="aj">
+                  <div class="aj-t">
+                    <b>Avisos por WhatsApp</b>
+                    <span>Sólo cuando termina de procesar un evento</span>
+                  </div>
+                  <button type="button" class="sw" role="switch" aria-checked="false" aria-label="Avisos por WhatsApp"></button>
+                </div>
+              </div>
+            </section>
+
+            <!-- Abajo de todo y sin botón rojo grande: el rojo grande invita a
+                 apretar, y esto no se puede deshacer. -->
+            <section class="card blq riesgo">
+              <h2>Cerrar la cuenta</h2>
+              <p class="ayuda">
+                Se borran tus eventos, tus fotos y tus links públicos. Las ventas ya
+                hechas quedan registradas por obligación contable. No se puede deshacer.
+              </p>
+              <div class="blq-b">
+                <button class="btn btn-ghost btn-peligro" style="justify-self:start">Cerrar mi cuenta</button>
+              </div>
+            </section>
+
+          </div>
+
+          <aside class="lado">
+            <div class="card">
+              <div class="card-h"><div><h2>Así te ven</h2></div></div>
+              <div class="tarjeta-pub">
+                <span class="foto-av" id="pv-av">GS</span>
+                <b id="pv-nom">Germán Sosa</b>
+                <div class="bio" id="pv-bio">Fotógrafo de running y ciclismo en Chivilcoy. Cubro carreras desde 2018.</div>
+                <span class="link" id="pv-link">encontrate.app/german</span>
+                <div class="iconos">
+                  <span id="pv-ig"><i data-lucide="instagram"></i></span>
+                  <span id="pv-fb" hidden><i data-lucide="facebook"></i></span>
+                  <span id="pv-web" hidden><i data-lucide="globe"></i></span>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../panel.js?v=1786703126" defer></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    Panel.init({ activo: "perfil" });
+
+    try {
+      var nom = document.getElementById("nom");
+      var ape = document.getElementById("ape");
+      var bio = document.getElementById("bio");
+      var slug = document.getElementById("slug");
+
+      function iniciales() {
+        var a = (nom.value.trim()[0] || "").toUpperCase();
+        var b = (ape.value.trim()[0] || "").toUpperCase();
+        return (a + b) || "?";
+      }
+
+      function refrescar() {
+        var ini = iniciales();
+        document.getElementById("av").textContent = ini;
+        document.getElementById("pv-av").textContent = ini;
+        document.getElementById("pv-nom").textContent =
+          (nom.value.trim() + " " + ape.value.trim()).trim() || "Tu nombre";
+        document.getElementById("pv-bio").textContent = bio.value.trim();
+        document.getElementById("pv-link").textContent =
+          "encontrate.app/" + (slug.value.trim() || "tu-usuario");
+
+        /* El contador aparece recién cerca del límite. Siempre visible
+           convierte escribir dos líneas en un examen. */
+        var n = bio.value.length, max = 180;
+        var cc = document.getElementById("cc");
+        cc.textContent = n + " / " + max;
+        cc.dataset.cerca = n > max - 40 ? "1" : "";
+        cc.dataset.pasado = n >= max ? "1" : "";
+      }
+
+      [nom, ape, bio, slug].forEach(function (c) { c.addEventListener("input", refrescar); });
+
+      /* Los íconos de redes aparecen sólo si el campo tiene algo: una fila de
+         íconos que no llevan a ningún lado se ve peor que no tenerlos. */
+      [["ig", "pv-ig"], ["fb", "pv-fb"], ["web", "pv-web"]].forEach(function (par) {
+        var campo = document.getElementById(par[0]);
+        campo.addEventListener("input", function () {
+          document.getElementById(par[1]).hidden = !campo.value.trim();
+        });
+      });
+
+      document.querySelectorAll(".sw").forEach(function (s) {
+        s.addEventListener("click", function () {
+          s.setAttribute("aria-checked", s.getAttribute("aria-checked") === "true" ? "false" : "true");
+        });
+      });
+
+      document.getElementById("guardar").addEventListener("click", function () {
+        var t = document.getElementById("guardar-t");
+        if (this.dataset.cargando === "1") return;
+        this.dataset.cargando = "1";
+        t.textContent = "Guardando";
+        var giro = document.createElement("span");
+        giro.className = "spin";
+        this.appendChild(giro);
+        var btn = this;
+        setTimeout(function () {
+          giro.remove();
+          btn.dataset.cargando = "";
+          t.textContent = "Guardado";
+          setTimeout(function () { t.textContent = "Guardar cambios"; }, 1800);
+        }, 900);
+      });
+
+      refrescar();
+    } catch (e) { console.warn("perfil:", e); }
+  });
+</script>
+
+</body>
+</html>

@@ -9,9 +9,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="../tokens.css?v=1786665660">
-<link rel="stylesheet" href="../base.css?v=1786665660">
-<link rel="stylesheet" href="landing.css?v=1786665660">
+<link rel="stylesheet" href="../tokens.css?v=1786703126">
+<link rel="stylesheet" href="../base.css?v=1786703126">
+<link rel="stylesheet" href="landing.css?v=1786703126">
 
 <script>
   /* Se resuelve el tema ANTES de pintar: si se corriera al final del body,
@@ -25,7 +25,7 @@
       elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
   })();
 </script>
-<script src="../vendor/lucide.min.js?v=1786665660" defer></script>
+<script src="../vendor/iconos.js?v=1786703126" defer></script>
 </head>
 
 <body>
@@ -45,7 +45,7 @@
         <span class="ico ico-sun"><i data-lucide="sun"></i></span>
       </button>
       <a href="../login/" class="btn btn-ghost solo-ancho"><i data-lucide="log-in"></i> Iniciar sesión</a>
-      <a href="#" class="btn btn-pri">Empezar <i data-lucide="arrow-right" class="go"></i></a>
+      <a href="../alta/" class="btn btn-pri">Empezar <i data-lucide="arrow-right" class="go"></i></a>
       <button class="btn btn-ghost btn-icon burger" id="burger"
               aria-label="Abrir menú" aria-expanded="false" aria-controls="menu">
         <span class="ico ico-menu"><i data-lucide="menu"></i></span>
@@ -87,12 +87,10 @@
         Nosotros nunca tocamos tu plata.
       </p>
       <div class="hero-cta">
-        <a href="#" class="btn btn-pri">Crear mi cuenta gratis <i data-lucide="arrow-right" class="go"></i></a>
+        <a href="../alta/" class="btn btn-pri">Crear mi cuenta gratis <i data-lucide="arrow-right" class="go"></i></a>
         <a href="#demo" class="btn btn-ghost"><i data-lucide="eye"></i> Ver un evento real</a>
       </div>
       <div class="trust">
-        <span>Sin cuota mensual</span>
-        <span>Sin tarjeta</span>
         <span><b>10%</b> sólo si vendés</span>
         <span>Soporte <b>24 hs</b></span>
       </div>
@@ -332,16 +330,16 @@
     <div class="price-card">
       <div class="price-left">
         <div class="price-big">10%</div>
-        <div class="price-sub">por venta</div>
+        <div class="price-sub">por venta, con reconocimiento</div>
         <p class="price-note">
           Sin cuota mensual, sin alta y sin permanencia. Si un mes no vendés,
           pagás cero.
         </p>
         <div class="founder">
-          <span class="label" style="color:var(--accent)">Tarifa fundador</span>
+          <span class="label" style="color:var(--accent)">Sin reconocimiento, 5%</span>
           <p style="font-size:14.5px;color:var(--ink-2);margin-top:10px">
-            Si te sumás antes del 31 de diciembre, tu primer año es al
-            <b>5%</b>. La mitad de lo que cobra el resto del mercado.
+            Si sólo querés la galería y no la búsqueda por cara y dorsal, la
+            comisión baja a la mitad. No te cobramos el trabajo que no hacemos.
           </p>
         </div>
       </div>
@@ -360,7 +358,7 @@
           <li><i data-lucide="check"></i>Entrega y descarga automáticas</li>
           <li><i data-lucide="check"></i>Soporte por WhatsApp las 24 horas</li>
         </ul>
-        <a href="#" class="btn btn-pri" style="margin-top:var(--s-6)">Empezar gratis <i data-lucide="arrow-right" class="go"></i></a>
+        <a href="../alta/" class="btn btn-pri" style="margin-top:var(--s-6)">Empezar gratis <i data-lucide="arrow-right" class="go"></i></a>
       </div>
     </div>
   </div>
@@ -414,7 +412,7 @@
       podés estar vendiendo.
     </p>
     <div class="final-cta">
-      <a href="#" class="btn btn-pri">Crear mi cuenta gratis <i data-lucide="arrow-right" class="go"></i></a>
+      <a href="../alta/" class="btn btn-pri">Crear mi cuenta gratis <i data-lucide="arrow-right" class="go"></i></a>
       <a href="#" class="btn btn-ghost"><i data-lucide="message-circle"></i> Hablar por WhatsApp</a>
     </div>
   </div>

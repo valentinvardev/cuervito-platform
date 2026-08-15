@@ -22,7 +22,13 @@ for p in sorted(glob.glob("*/index.html")):
         s = f.read()
     antes = s
     s = re.sub(r'(href="[^"]+?\.css)(\?v=\d+)?"', r"\1?v=" + v + '"', s)
-    s = re.sub(r'(src="[^"]*?vendor/[^"]+?\.js)(\?v=\d+)?"', r"\1?v=" + v + '"', s)
+    # TODO el JS local, no sólo vendor/. Cuando esto sellaba únicamente
+    # vendor/, panel.js quedaba sin versión, y con caché largo el navegador se
+    # lo clavó: le tocó quedarse con una copia que tenía un error de sintaxis,
+    # así que Panel nunca llegaba a definirse y no aparecía ni un ícono.
+    # El (?!https?:) deja afuera los scripts de terceros, que no son nuestros
+    # para versionar.
+    s = re.sub(r'(src="(?!https?:)[^"]+?\.js)(\?v=\d+)?"', r"\1?v=" + v + '"', s)
     if s != antes:
         with open(p, "w", encoding="utf-8") as f:
             f.write(s)

@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · ventas</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css?v=1786703126">
+<link rel="stylesheet" href="../base.css?v=1786703126">
+<link rel="stylesheet" href="../panel.css?v=1786703126">
+<link rel="stylesheet" href="ventas.css?v=1786703126">
+
+<script>
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/iconos.js?v=1786703126" defer></script>
+</head>
+
+<body>
+
+<div class="app">
+  <div class="col">
+    <main class="canvas">
+      <div class="canvas-in">
+
+        <div class="head">
+          <div>
+            <h1>Ventas</h1>
+            <p>214 ventas en los últimos 30 días.</p>
+          </div>
+          <div class="head-r">
+            <button class="btn btn-ghost"><i data-lucide="download"></i> Exportar CSV</button>
+          </div>
+        </div>
+
+        <!-- Una sola tarjeta con lo que ganó. La resta de la comisión no se
+             muestra: recordarle en cada pantalla cuánto se lleva la
+             plataforma no lo ayuda a vender más, y el número que le importa
+             es el que le queda. El desglose vive en Métodos de pago. -->
+        <section class="sum">
+          <div class="card neto">
+            <div class="k-lab">Ganaste en los últimos 30 días</div>
+            <div class="k-n tnum">$392.160</div>
+            <div class="k-sub">214 ventas · 1.062 fotos · ya en tu cuenta de Mercado Pago</div>
+          </div>
+        </section>
+
+        <div class="filtros">
+          <div class="seg" id="rango">
+            <button type="button" data-r="hoy">Hoy</button>
+            <button type="button" data-r="7">7 d</button>
+            <button type="button" data-r="30" aria-pressed="true">30 d</button>
+            <button type="button" data-r="all">Todo</button>
+          </div>
+
+          <div class="dd">
+            <button type="button" class="dd-t"><span class="dd-v">Todos los eventos</span><i data-lucide="chevron-down"></i></button>
+            <div class="dd-m" role="listbox">
+              <button type="button" class="dd-o" aria-selected="true">Todos los eventos</button>
+              <div class="dd-sep"></div>
+              <button type="button" class="dd-o">Duatlón Club Ciclista Chivilcoy</button>
+              <button type="button" class="dd-o">Media Maratón de Chivilcoy</button>
+              <button type="button" class="dd-o">Torneo Apertura · Fecha 8</button>
+              <button type="button" class="dd-o">Copa Ciudad · Hockey</button>
+            </div>
+          </div>
+
+          <div class="dd">
+            <button type="button" class="dd-t"><span class="dd-v">Todos los estados</span><i data-lucide="chevron-down"></i></button>
+            <div class="dd-m" role="listbox">
+              <button type="button" class="dd-o" aria-selected="true">Todos los estados</button>
+              <div class="dd-sep"></div>
+              <button type="button" class="dd-o">Acreditadas</button>
+              <button type="button" class="dd-o">Pendientes</button>
+              <button type="button" class="dd-o">Reembolsadas</button>
+            </div>
+          </div>
+        </div>
+
+        <section class="card">
+          <div class="row row-h vt">
+            <span></span>
+            <button type="button" class="th" data-c="quien">Comprador <i data-lucide="chevron-down"></i></button>
+            <button type="button" class="th c-ev" data-c="evento">Evento <i data-lucide="chevron-down"></i></button>
+            <button type="button" class="th num c-fotos" data-c="fotos">Fotos <i data-lucide="chevron-down"></i></button>
+            <button type="button" class="th num c-fecha" data-c="fecha" data-ord="desc">Fecha <i data-lucide="chevron-down"></i></button>
+            <button type="button" class="th num" data-c="monto">Te queda <i data-lucide="chevron-down"></i></button>
+            <span class="c-estado"></span>
+          </div>
+
+          <div id="filas">
+          <div class="row vt sk-fila"><span class="sk" style="width:30px;height:30px;border-radius:50%"></span><span><span class="sk" style="display:block;width:62%;height:11px"></span><span class="sk" style="display:block;width:80%;height:9px;margin-top:6px"></span></span><span class="sk c-ev" style="height:11px;width:71%"></span><span class="sk c-fotos" style="height:11px"></span><span class="sk c-fecha" style="height:11px"></span><span class="sk" style="height:11px"></span><span class="sk c-estado" style="height:17px;border-radius:100px"></span></div>
+          <div class="row vt sk-fila"><span class="sk" style="width:30px;height:30px;border-radius:50%"></span><span><span class="sk" style="display:block;width:74%;height:11px"></span><span class="sk" style="display:block;width:66%;height:9px;margin-top:6px"></span></span><span class="sk c-ev" style="height:11px;width:70%"></span><span class="sk c-fotos" style="height:11px"></span><span class="sk c-fecha" style="height:11px"></span><span class="sk" style="height:11px"></span><span class="sk c-estado" style="height:17px;border-radius:100px"></span></div>
+          <div class="row vt sk-fila"><span class="sk" style="width:30px;height:30px;border-radius:50%"></span><span><span class="sk" style="display:block;width:55%;height:11px"></span><span class="sk" style="display:block;width:86%;height:9px;margin-top:6px"></span></span><span class="sk c-ev" style="height:11px;width:70%"></span><span class="sk c-fotos" style="height:11px"></span><span class="sk c-fecha" style="height:11px"></span><span class="sk" style="height:11px"></span><span class="sk c-estado" style="height:17px;border-radius:100px"></span></div>
+          <div class="row vt sk-fila"><span class="sk" style="width:30px;height:30px;border-radius:50%"></span><span><span class="sk" style="display:block;width:68%;height:11px"></span><span class="sk" style="display:block;width:72%;height:9px;margin-top:6px"></span></span><span class="sk c-ev" style="height:11px;width:70%"></span><span class="sk c-fotos" style="height:11px"></span><span class="sk c-fecha" style="height:11px"></span><span class="sk" style="height:11px"></span><span class="sk c-estado" style="height:17px;border-radius:100px"></span></div>
+          <div class="row vt sk-fila"><span class="sk" style="width:30px;height:30px;border-radius:50%"></span><span><span class="sk" style="display:block;width:80%;height:11px"></span><span class="sk" style="display:block;width:60%;height:9px;margin-top:6px"></span></span><span class="sk c-ev" style="height:11px;width:70%"></span><span class="sk c-fotos" style="height:11px"></span><span class="sk c-fecha" style="height:11px"></span><span class="sk" style="height:11px"></span><span class="sk c-estado" style="height:17px;border-radius:100px"></span></div>
+          <div class="row vt sk-fila"><span class="sk" style="width:30px;height:30px;border-radius:50%"></span><span><span class="sk" style="display:block;width:58%;height:11px"></span><span class="sk" style="display:block;width:78%;height:9px;margin-top:6px"></span></span><span class="sk c-ev" style="height:11px;width:68%"></span><span class="sk c-fotos" style="height:11px"></span><span class="sk c-fecha" style="height:11px"></span><span class="sk" style="height:11px"></span><span class="sk c-estado" style="height:17px;border-radius:100px"></span></div>
+          <div class="row vt sk-fila"><span class="sk" style="width:30px;height:30px;border-radius:50%"></span><span><span class="sk" style="display:block;width:70%;height:11px"></span><span class="sk" style="display:block;width:84%;height:9px;margin-top:6px"></span></span><span class="sk c-ev" style="height:11px;width:77%"></span><span class="sk c-fotos" style="height:11px"></span><span class="sk c-fecha" style="height:11px"></span><span class="sk" style="height:11px"></span><span class="sk c-estado" style="height:17px;border-radius:100px"></span></div>
+          <div class="row vt sk-fila"><span class="sk" style="width:30px;height:30px;border-radius:50%"></span><span><span class="sk" style="display:block;width:64%;height:11px"></span><span class="sk" style="display:block;width:70%;height:9px;margin-top:6px"></span></span><span class="sk c-ev" style="height:11px;width:67%"></span><span class="sk c-fotos" style="height:11px"></span><span class="sk c-fecha" style="height:11px"></span><span class="sk" style="height:11px"></span><span class="sk c-estado" style="height:17px;border-radius:100px"></span></div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ═════════════════════════ CAJÓN DE DETALLE ═════════════════════════ -->
+<div class="dscrim" id="dscrim"></div>
+<aside class="drw" id="drw" aria-label="Detalle de la venta">
+  <div class="drw-h">
+    <div>
+      <h2 id="d-quien">—</h2>
+      <div class="sub" id="d-mail">—</div>
+    </div>
+    <button class="btn btn-ghost btn-icon" id="d-cerrar" aria-label="Cerrar"><i data-lucide="x"></i></button>
+  </div>
+
+  <div class="drw-b">
+    <div>
+      <div class="card-h"><div><h2>Fotos compradas</h2></div></div>
+      <div class="minis" id="d-minis"></div>
+    </div>
+
+    <div class="desg">
+      <dl class="dl">
+        <div class="tot"><dt>Ganaste</dt><dd id="d-neto">—</dd></div>
+      </dl>
+    </div>
+
+    <dl class="dl">
+      <div><dt>Evento</dt><dd id="d-ev">—</dd></div>
+      <div><dt>Fecha</dt><dd id="d-fecha">—</dd></div>
+      <div><dt>Estado</dt><dd id="d-estado">—</dd></div>
+      <div><dt>Descargas</dt><dd id="d-desc">—</dd></div>
+      <div><dt>Link vence</dt><dd id="d-vence">—</dd></div>
+    </dl>
+  </div>
+
+  <div class="drw-f">
+    <button class="btn btn-ghost btn-block"><i data-lucide="link"></i> Copiar link de descarga</button>
+    <button class="btn btn-ghost btn-icon" aria-label="Reenviar por mail"><i data-lucide="mail"></i></button>
+  </div>
+</aside>
+
+<script src="../panel.js?v=1786703126" defer></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    Panel.init({ activo: "ventas", buscar: "Buscar por comprador, mail o dorsal" });
+
+    try {
+      var VENTAS = [
+        { q: "Martina Fernández", m: "martina.fdez@gmail.com",   ev: "Duatlón Chivilcoy",    f: 4, t: 6, bruto: 7200,  st: "ok",   d: 2 },
+        { q: "Juan Pablo Ríos",   m: "jprios88@gmail.com",       ev: "Duatlón Chivilcoy",    f: 2, t: 21, bruto: 3600, st: "ok",   d: 1 },
+        { q: "Lucía Cabrera",     m: "luciacabrera@hotmail.com", ev: "Duatlón Chivilcoy",    f: 9, t: 48, bruto: 14400, st: "ok",  d: 3 },
+        { q: "Emiliano Duarte",   m: "emi.duarte@gmail.com",     ev: "Media Maratón",        f: 3, t: 122, bruto: 5400, st: "ok",  d: 0 },
+        { q: "Sofía Vega",        m: "sofivega@gmail.com",       ev: "Duatlón Chivilcoy",    f: 5, t: 184, bruto: 9000, st: "ok",  d: 1 },
+        { q: "Nicolás Ferrari",   m: "nferrari@outlook.com",     ev: "Copa Ciudad · Hockey", f: 7, t: 260, bruto: 11200, st: "pend", d: 0 },
+        { q: "Camila Ponce",      m: "cami.ponce@gmail.com",     ev: "Media Maratón",        f: 1, t: 340, bruto: 1800, st: "ok",  d: 1 },
+        { q: "Federico Ledesma",  m: "fledesma@gmail.com",       ev: "Torneo Apertura",      f: 6, t: 420, bruto: 10800, st: "ok", d: 4 },
+        { q: "Ana Paula Sosa",    m: "anapau.sosa@gmail.com",    ev: "Copa Ciudad · Hockey", f: 2, t: 505, bruto: 3600, st: "dev", d: 0 },
+        { q: "Matías Bustos",     m: "matibustos@gmail.com",     ev: "Duatlón Chivilcoy",    f: 12, t: 610, bruto: 19200, st: "ok", d: 5 }
+      ];
+
+      var ESTADO = {
+        ok:   { txt: "Acreditada",  cls: "" },
+        pend: { txt: "Pendiente",   cls: "draft" },
+        dev:  { txt: "Reembolsada", cls: "bad" }
+      };
+
+      function pesos(n) { return "$" + n.toLocaleString("es-AR"); }
+      function iniciales(s) {
+        return s.split(" ").slice(0, 2).map(function (p) { return p[0]; }).join("").toUpperCase();
+      }
+      function hace(min) {
+        if (min < 60) return "hace " + min + " min";
+        if (min < 1440) return "hace " + Math.round(min / 60) + " h";
+        return "hace " + Math.round(min / 1440) + " d";
+      }
+      /* Neto en el listado, no bruto. El fotógrafo compara contra lo que va a
+         cobrar; mostrarle el precio de lista lo obliga a hacer la cuenta. */
+      function neto(v) { return Math.round(v.bruto * 0.95); }
+
+      var filas = document.getElementById("filas");
+
+      function pintar(lista) {
+        filas.innerHTML = lista.map(function (v, i) {
+          var e = ESTADO[v.st];
+          return '<div class="row vt" data-i="' + i + '" role="button" tabindex="0">' +
+            '<span class="v-av">' + iniciales(v.q) + "</span>" +
+            '<span class="v-who"><b>' + v.q + "</b><span>" + v.m + "</span></span>" +
+            '<span class="v-ev c-ev">' + v.ev + "</span>" +
+            '<span class="num soft c-fotos">' + v.f + "</span>" +
+            '<span class="num soft c-fecha">' + hace(v.t) + "</span>" +
+            '<span class="num tnum neto">' + pesos(neto(v)) + "</span>" +
+            '<span class="pill ' + e.cls + ' c-estado"><i></i> ' + e.txt + "</span>" +
+            "</div>";
+        }).join("");
+      }
+
+      pintar(VENTAS);
+
+      /* Orden. Un solo criterio activo por vez y la flecha sólo en la columna
+         que manda: seis flechas a la vez no dicen por cuál está ordenado. */
+      var CAMPO = { quien: "q", evento: "ev", fotos: "f", fecha: "t", monto: "bruto" };
+      document.querySelectorAll(".th").forEach(function (th) {
+        th.addEventListener("click", function () {
+          var asc = th.dataset.ord !== "asc";
+          document.querySelectorAll(".th").forEach(function (o) { delete o.dataset.ord; });
+          th.dataset.ord = asc ? "asc" : "desc";
+          var k = CAMPO[th.dataset.c];
+          var copia = VENTAS.slice().sort(function (a, b) {
+            var x = a[k], y = b[k];
+            if (typeof x === "string") return asc ? x.localeCompare(y, "es") : y.localeCompare(x, "es");
+            return asc ? x - y : y - x;
+          });
+          pintar(copia);
+          VISTA = copia;
+        });
+      });
+
+      /* ── Cajón ── */
+      var VISTA = VENTAS;
+      var raiz = document.documentElement;
+      function abrir(v) {
+        document.getElementById("d-quien").textContent = v.q;
+        document.getElementById("d-mail").textContent = v.m;
+        document.getElementById("d-neto").textContent = pesos(neto(v));
+        document.getElementById("d-ev").textContent = v.ev;
+        document.getElementById("d-fecha").textContent = hace(v.t);
+        document.getElementById("d-estado").textContent = ESTADO[v.st].txt;
+        document.getElementById("d-desc").textContent =
+          v.d === 0 ? "Todavía no descargó" : v.d + (v.d === 1 ? " descarga" : " descargas");
+        document.getElementById("d-vence").textContent = "en 27 días";
+
+        var n = Math.min(v.f, 4);
+        var html = "";
+        for (var i = 0; i < n; i++) html += '<div class="mini"></div>';
+        if (v.f > 4) html += '<div class="mini mas">+' + (v.f - 4) + "</div>";
+        document.getElementById("d-minis").innerHTML = html;
+
+        raiz.dataset.venta = "open";
+      }
+      function cerrar() { raiz.dataset.venta = ""; }
+
+      filas.addEventListener("click", function (ev) {
+        var f = ev.target.closest(".row");
+        if (f) abrir(VISTA[+f.dataset.i]);
+      });
+      filas.addEventListener("keydown", function (ev) {
+        if (ev.key !== "Enter" && ev.key !== " ") return;
+        var f = ev.target.closest(".row");
+        if (f) { ev.preventDefault(); abrir(VISTA[+f.dataset.i]); }
+      });
+      document.getElementById("d-cerrar").addEventListener("click", cerrar);
+      document.getElementById("dscrim").addEventListener("click", cerrar);
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape") cerrar(); });
+
+      document.getElementById("rango").addEventListener("click", function (ev) {
+        var b = ev.target.closest("button");
+        if (!b) return;
+        this.querySelectorAll("button").forEach(function (x) { x.removeAttribute("aria-pressed"); });
+        b.setAttribute("aria-pressed", "true");
+      });
+    } catch (e) { console.warn("ventas:", e); }
+  });
+</script>
+
+</body>
+</html>

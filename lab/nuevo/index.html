@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · nuevo evento</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css?v=1786703126">
+<link rel="stylesheet" href="../base.css?v=1786703126">
+<link rel="stylesheet" href="../panel.css?v=1786703126">
+<link rel="stylesheet" href="nuevo.css?v=1786703126">
+
+<script>
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/iconos.js?v=1786703126" defer></script>
+</head>
+
+<body>
+
+<div class="app">
+  <div class="col">
+    <main class="canvas">
+      <div class="canvas-in">
+
+        <div class="head">
+          <div>
+            <a href="../eventos/" class="btn btn-ghost btn-sm" style="margin-bottom:var(--s-3)">
+              <i data-lucide="arrow-left"></i> Eventos
+            </a>
+            <h1>Nuevo evento</h1>
+          </div>
+        </div>
+
+        <div class="wiz">
+          <div>
+            <div class="wpasos" id="wpasos">
+              <span class="wp" data-e="aqui" data-n="1"><i class="bola"><span>1</span></i><span class="txt">El evento</span></span>
+              <span class="wp-linea"></span>
+              <span class="wp" data-n="2"><i class="bola"><span>2</span></i><span class="txt">Cómo se encuentran</span></span>
+              <span class="wp-linea"></span>
+              <span class="wp" data-n="3"><i class="bola"><span>3</span></i><span class="txt">Precio</span></span>
+            </div>
+
+            <!-- ═══════════ 1 · EL EVENTO ═══════════ -->
+            <section class="wpaso" data-activo="1" data-n="1">
+              <div class="wtit">
+                <h2>El evento</h2>
+                <p>Con el nombre y la fecha alcanza para crearlo. El resto lo completás cuando quieras.</p>
+              </div>
+
+              <div class="card">
+                <div class="blq-b">
+                  <div class="campo">
+                    <label for="nom">Nombre</label>
+                    <input class="inp" id="nom" placeholder="Duatlón Club Ciclista Chivilcoy" autocomplete="off">
+                    <div class="err" id="e-nom"></div>
+                  </div>
+
+                  <div class="par">
+                    <div class="campo">
+                      <label>Fecha</label>
+                      <div class="fx" id="fx-fecha">
+                        <button type="button" class="fx-t" data-vacio="Elegí la fecha">
+                          <i data-lucide="calendar-days"></i>
+                          <span class="fx-v vacio">Elegí la fecha</span>
+                        </button>
+                        <input type="hidden" id="fecha">
+                        <div class="fx-m"></div>
+                      </div>
+                    </div>
+
+                    <div class="campo">
+                      <label for="lugar">Lugar</label>
+                      <input class="inp" id="lugar" placeholder="Chivilcoy, Buenos Aires" autocomplete="off">
+                    </div>
+                  </div>
+
+                  <div class="campo">
+                    <label>Disciplina</label>
+                    <div class="dd" id="dd-disc">
+                      <button type="button" class="dd-t" style="height:40px;border-radius:var(--r-2);width:100%;justify-content:space-between">
+                        <span class="dd-v">Elegí una</span><i data-lucide="chevron-down"></i>
+                      </button>
+                      <div class="dd-m" role="listbox" style="width:100%">
+                        <button type="button" class="dd-o">Running</button>
+                        <button type="button" class="dd-o">Ciclismo</button>
+                        <button type="button" class="dd-o">Duatlón o triatlón</button>
+                        <button type="button" class="dd-o">Fútbol</button>
+                        <button type="button" class="dd-o">Hockey</button>
+                        <button type="button" class="dd-o">Otra</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="campo">
+                    <label>Portada <span style="color:var(--ink-3);font-weight:400">· opcional, pero los eventos sin portada venden la mitad</span></label>
+                    <div class="cover" id="cover" role="button" tabindex="0">
+                      <i data-lucide="image-plus"></i>
+                      <b>Elegí una foto</b>
+                      <span>JPG o PNG, mínimo 1600px de ancho</span>
+                      <button type="button" class="quitar" id="quitar"><i data-lucide="x"></i> Quitar</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ═══════════ 2 · CÓMO SE ENCUENTRAN ═══════════ -->
+            <section class="wpaso" data-n="2">
+              <div class="wtit">
+                <h2>Cómo se encuentran las fotos</h2>
+                <p>Esto define lo que te cobramos. Se puede cambiar después, pero conviene decidirlo antes de subir.</p>
+              </div>
+
+              <div class="opciones" id="opciones">
+                <label class="op">
+                  <input type="radio" name="rec" value="si" checked>
+                  <span class="op-caja">
+                    <span class="op-top">
+                      <span class="op-i"><i data-lucide="scan-face"></i></span>
+                      <span class="op-com"><b>10%</b><span>Comisión</span></span>
+                    </span>
+                    <h3>Con reconocimiento</h3>
+                    <p>El atleta se saca una selfie o pone su dorsal y encuentra sus fotos en segundos.</p>
+                    <ul class="op-lista">
+                      <li><i data-lucide="check"></i> Búsqueda por cara</li>
+                      <li><i data-lucide="check"></i> Búsqueda por dorsal</li>
+                      <li><i data-lucide="check"></i> Marca de agua en las muestras</li>
+                    </ul>
+                  </span>
+                </label>
+
+                <label class="op">
+                  <input type="radio" name="rec" value="no">
+                  <span class="op-caja">
+                    <span class="op-top">
+                      <span class="op-i"><i data-lucide="images"></i></span>
+                      <span class="op-com"><b>5%</b><span>Comisión</span></span>
+                    </span>
+                    <h3>Galería simple</h3>
+                    <p>El atleta busca sus fotos mirando la galería, como en cualquier álbum web.</p>
+                    <ul class="op-lista">
+                      <li class="no"><i data-lucide="x"></i> Sin búsqueda por cara</li>
+                      <li class="no"><i data-lucide="x"></i> Sin búsqueda por dorsal</li>
+                      <li><i data-lucide="check"></i> Marca de agua en las muestras</li>
+                    </ul>
+                  </span>
+                </label>
+              </div>
+
+              <!-- Sin esto, el 10% se lee como castigo y no como lo que es. -->
+              <div class="porque">
+                <i data-lucide="info"></i>
+                <span>
+                  <b>La diferencia es el costo del reconocimiento.</b>
+                  Cada foto que subís se procesa una por una para detectar caras y dorsales, y eso lo pagamos nosotros.
+                  Si no lo usás, no lo pagás.
+                </span>
+              </div>
+            </section>
+
+            <!-- ═══════════ 3 · PRECIO ═══════════ -->
+            <section class="wpaso" data-n="3">
+              <div class="wtit">
+                <h2>Precio</h2>
+                <p>Podés cambiarlo cuando quieras, incluso con el evento publicado.</p>
+              </div>
+
+              <div class="card">
+                <div class="blq-b">
+                  <div class="precios">
+                    <div class="campo">
+                      <label for="p1">Una foto</label>
+                      <div class="pegado">
+                        <span class="fijo">$</span>
+                        <input class="inp tnum" id="p1" data-plata value="1800">
+                      </div>
+                    </div>
+                    <div class="campo">
+                      <label for="p2">Todas sus fotos</label>
+                      <div class="pegado">
+                        <span class="fijo">$</span>
+                        <input class="inp tnum" id="p2" data-plata value="9000">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="cuenta" id="cuenta">—</div>
+                </div>
+              </div>
+
+              <!-- La comisión traducida a la unidad en la que el fotógrafo
+                   piensa: cuánto le queda de cada foto vendida. -->
+              <div class="queda">
+                <div class="queda-t">
+                  <span>De cada foto te quedan</span>
+                  <b class="tnum" id="q-neto">$1.620</b>
+                </div>
+                <div class="queda-d">
+                  Precio <b class="tnum" id="q-bruto">$1.800</b><br>
+                  Comisión <b class="tnum" id="q-com">10%</b> · <b class="tnum" id="q-fee">$180</b>
+                </div>
+              </div>
+            </section>
+
+            <div style="display:flex;gap:var(--s-2);margin-top:var(--s-5)">
+              <button class="btn btn-ghost" id="atras" hidden><i data-lucide="arrow-left"></i> Atrás</button>
+              <div style="flex:1"></div>
+              <button class="btn btn-pri btn-lg" id="seguir">
+                <span id="seguir-t">Seguir</span> <i data-lucide="arrow-right" class="go"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- ═══════════ COLUMNA DERECHA ═══════════ -->
+          <aside class="lado">
+            <div class="card">
+              <div class="card-h"><div><h2>Así se va a ver</h2></div></div>
+              <div class="previa-ev">
+                <div class="previa-cv" id="pv-cv"><i data-lucide="image"></i></div>
+                <div class="previa-b">
+                  <b id="pv-nom">Tu evento</b>
+                  <span id="pv-meta">Sin fecha</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-h"><div><h2>Resumen</h2></div></div>
+              <dl class="resumen">
+                <div class="rs"><dt>Fecha</dt><dd class="pendiente" id="r-fecha">—</dd></div>
+                <div class="rs"><dt>Disciplina</dt><dd class="pendiente" id="r-disc">—</dd></div>
+                <div class="rs"><dt>Búsqueda</dt><dd id="r-rec">Por cara y dorsal</dd></div>
+                <div class="rs"><dt>Comisión</dt><dd id="r-com">10%</dd></div>
+                <div class="rs"><dt>Una foto</dt><dd id="r-p1">$1.800</dd></div>
+              </dl>
+            </div>
+          </aside>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../panel.js?v=1786703126" defer></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    Panel.init({ activo: "eventos" });
+
+    try {
+      var MES = ["enero","febrero","marzo","abril","mayo","junio","julio",
+                 "agosto","septiembre","octubre","noviembre","diciembre"];
+      var paso = 1;
+      var nom = document.getElementById("nom");
+      var lugar = document.getElementById("lugar");
+      var fecha = document.getElementById("fecha");
+      var cover = document.getElementById("cover");
+      var atras = document.getElementById("atras");
+      var seguir = document.getElementById("seguir");
+      var seguirT = document.getElementById("seguir-t");
+
+      function pesos(n) { return "$" + n.toLocaleString("es-AR"); }
+      function leer(id) { return parseInt(document.getElementById(id).value.replace(/\D/g, ""), 10) || 0; }
+      function comision() { return document.querySelector("input[name=rec]:checked").value === "si" ? 10 : 5; }
+
+      function ir(n) {
+        paso = n;
+        document.querySelectorAll(".wpaso").forEach(function (p) {
+          p.dataset.activo = +p.dataset.n === n ? "1" : "";
+        });
+        document.querySelectorAll(".wp").forEach(function (p) {
+          var i = +p.dataset.n;
+          p.dataset.e = i < n ? "hecho" : (i === n ? "aqui" : "");
+        });
+        atras.hidden = n === 1;
+        seguirT.textContent = n === 3 ? "Crear evento" : "Seguir";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      /* Sólo el nombre y la fecha frenan. Los pasos 2 y 3 vienen con valores
+         que sirven tal cual, así que el que ya sabe puede apretar Seguir tres
+         veces y terminar: un asistente no tiene por qué castigar al experto. */
+      function validaUno() {
+        var e = document.getElementById("e-nom");
+        var campo = e.parentElement;
+        if (nom.value.trim().length < 3) {
+          nom.setAttribute("aria-invalid", "true");
+          e.textContent = "Poné el nombre del evento.";
+          campo.dataset.err = "1";
+          nom.focus();
+          return false;
+        }
+        nom.setAttribute("aria-invalid", "false");
+        e.textContent = "";
+        campo.dataset.err = "";
+        if (!fecha.value) {
+          document.querySelector("#fx-fecha .fx-t").click();
+          return false;
+        }
+        return true;
+      }
+
+      seguir.addEventListener("click", function () {
+        if (paso === 1 && !validaUno()) return;
+        if (paso === 3) {
+          if (seguir.dataset.cargando === "1") return;
+          seguir.dataset.cargando = "1";
+          seguirT.textContent = "Creando";
+          var giro = document.createElement("span");
+          giro.className = "spin";
+          seguir.appendChild(giro);
+          setTimeout(function () {
+            giro.remove();
+            seguir.dataset.cargando = "";
+            seguirT.textContent = "Listo, subí las fotos";
+          }, 1000);
+          return;
+        }
+        ir(paso + 1);
+      });
+      atras.addEventListener("click", function () { ir(Math.max(1, paso - 1)); });
+
+      document.getElementById("wpasos").addEventListener("click", function (ev) {
+        var p = ev.target.closest(".wp");
+        if (!p) return;
+        var n = +p.dataset.n;
+        if (n > 1 && !validaUno()) return;
+        ir(n);
+      });
+
+      /* Enter avanza. Un asistente de tres pasos que obliga a ir al botón con
+         el mouse en cada uno se hace eterno para el que carga diez eventos. */
+      document.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter") return;
+        if (e.target.tagName === "TEXTAREA") return;
+        if (e.target.closest(".fx") || e.target.closest(".dd")) return;
+        e.preventDefault();
+        seguir.click();
+      });
+
+      function refrescar() {
+        document.getElementById("pv-nom").textContent = nom.value.trim() || "Tu evento";
+        var partes = [];
+        var rf = document.getElementById("r-fecha");
+        if (fecha.value) {
+          var d = new Date(fecha.value + "T12:00:00");
+          var txt = d.getDate() + " de " + MES[d.getMonth()];
+          partes.push(txt);
+          rf.textContent = txt;
+          rf.classList.remove("pendiente");
+        } else {
+          partes.push("Sin fecha");
+          rf.textContent = "—";
+          rf.classList.add("pendiente");
+        }
+        if (lugar.value.trim()) partes.push(lugar.value.trim());
+        document.getElementById("pv-meta").textContent = partes.join(" · ");
+        document.getElementById("pv-cv").classList.toggle("puesta", cover.classList.contains("puesta"));
+      }
+
+      [nom, lugar].forEach(function (c) { c.addEventListener("input", refrescar); });
+      document.getElementById("fx-fecha").addEventListener("fecha", refrescar);
+      document.getElementById("dd-disc").addEventListener("elegir", function (ev) {
+        var d = document.getElementById("r-disc");
+        d.textContent = ev.detail.valor;
+        d.classList.remove("pendiente");
+      });
+
+      cover.addEventListener("click", function (e) {
+        if (e.target.closest(".quitar")) return;
+        cover.classList.add("puesta");
+        refrescar();
+      });
+      document.getElementById("quitar").addEventListener("click", function (e) {
+        e.stopPropagation();
+        cover.classList.remove("puesta");
+        refrescar();
+      });
+
+      /* ── Comisión y precio ──────────────────────────────────────────────────
+         La tarjeta grande y el resumen del costado se calculan de las mismas
+         dos entradas, así que no hay forma de que digan cosas distintas. */
+      function plata() {
+        var a = leer("p1"), b = leer("p2"), c = comision();
+        var fee = Math.round(a * c / 100);
+
+        document.getElementById("q-bruto").textContent = pesos(a);
+        document.getElementById("q-com").textContent = c + "%";
+        document.getElementById("q-fee").textContent = pesos(fee);
+        document.getElementById("q-neto").textContent = pesos(a - fee);
+        document.getElementById("r-com").textContent = c + "%";
+        document.getElementById("r-p1").textContent = pesos(a);
+        document.getElementById("r-rec").textContent = c === 10 ? "Por cara y dorsal" : "Galería simple";
+
+        var caja = document.getElementById("cuenta");
+        if (!a || !b) { caja.textContent = "Poné los dos precios para ver la comparación."; return; }
+        if (b <= a) {
+          caja.textContent = "El pack sale igual o menos que una foto suelta: nadie va a comprar de a una.";
+          return;
+        }
+        var corte = Math.ceil(b / a);
+        caja.innerHTML = "El pack conviene a partir de <b>" + corte + " fotos</b>. " +
+          "Vendiéndolo te quedan <b>" + pesos(b - Math.round(b * c / 100)) + "</b>.";
+      }
+
+      document.addEventListener("plata", plata);
+      document.getElementById("opciones").addEventListener("change", plata);
+
+      refrescar();
+      plata();
+      ir(1);
+    } catch (e) { console.warn("nuevo:", e); }
+  });
+</script>
+
+</body>
+</html>

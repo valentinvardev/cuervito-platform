@@ -1,0 +1,149 @@
+/* =============================================================================
+   encontrate · invitación a colaborar
+   -----------------------------------------------------------------------------
+   La otra punta del flujo, y la que más importa. El fotógrafo que recibe esta
+   invitación va a trabajar bajo condiciones que NO eligió: el precio lo puso
+   el dueño del evento, y la comisión la define el plan del evento, no él. Eso
+   no está mal por sí mismo, alguien tiene que decidir. Lo que está mal es
+   enterarse después de haber subido 400 fotos.
+
+   Por eso acá no hay un botón "Aceptar" con letra chica debajo. Hay tres
+   números arriba de todo (precio, comisión, lo que te queda) y recién después
+   el botón.
+
+   Sin riel: quien llega acá todavía no es parte de nada.
+   ========================================================================== */
+
+.inv-pag { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr; }
+
+.inv-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.inv-mid { display: grid; align-content: center; padding: var(--s-7) var(--s-5); }
+.inv-caja { width: 100%; max-width: 520px; margin: 0 auto; }
+
+/* Quién invita. La foto y el nombre van antes que nada: una invitación que
+   arranca por las condiciones parece un contrato; ésta arranca por la persona,
+   que es lo que hace que se lea. */
+.quien { display: flex; align-items: center; gap: var(--s-3); margin-bottom: var(--s-5); }
+.quien-av {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--cta-bg); color: var(--cta-fg);
+  font-size: 15px; font-weight: 600;
+}
+.quien-t { line-height: 1.4; }
+.quien-t b { display: block; font-size: 14.5px; font-weight: 500; }
+.quien-t span { display: block; font-size: 12.5px; color: var(--ink-3); }
+
+.inv-pag h1 {
+  font-size: clamp(26px, 3vw, 34px);
+  font-weight: var(--display-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--display-track);
+  line-height: 1.05;
+}
+.inv-pag .bajada {
+  margin-top: var(--s-3);
+  font-size: var(--t-small); font-weight: 300; color: var(--ink-2);
+  line-height: 1.6;
+}
+
+/* Tarjeta del evento al que lo invitan. */
+.ev-inv {
+  display: flex; align-items: center; gap: var(--s-4);
+  margin-top: var(--s-5);
+  padding: var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  background: var(--paper-2);
+}
+.ev-inv-cv {
+  width: 84px; height: 53px; border-radius: var(--r-2); flex-shrink: 0;
+  background: radial-gradient(112% 80% at 66% 24%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
+}
+.ev-inv-t { min-width: 0; line-height: 1.4; }
+.ev-inv-t b { display: block; font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+.ev-inv-t span { display: block; margin-top: 2px; font-size: 12.5px; color: var(--ink-3); }
+
+/* ── Los tres números ────────────────────────────────────────────────────────
+   Arriba del botón y no debajo. Es lo único que el invitado necesita para
+   decidir, y ponerlo después del botón sería esconderlo con buenos modales. */
+.plata { margin-top: var(--s-5); border: 1px solid var(--line); border-radius: var(--r-3); overflow: hidden; }
+.plata-fila {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s-4);
+  padding: 13px var(--s-4);
+  font-size: 13.5px;
+}
+.plata-fila + .plata-fila { border-top: 1px solid var(--line-soft); }
+.plata-fila dt { color: var(--ink-2); }
+.plata-fila dd { font-variant-numeric: tabular-nums; }
+.plata-fila .chico { display: block; font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+.plata-fila.total {
+  background: var(--acento-lleno); color: #FFFFFF;
+  padding: var(--s-4);
+  align-items: center;
+}
+.plata-fila.total dt { color: #FFFFFF; font-weight: 500; }
+.plata-fila.total .chico { color: rgba(255, 255, 255, .9); }
+.plata-fila.total dd {
+  font-size: 30px; font-weight: 200; letter-spacing: -0.035em;
+}
+
+/* Lo que NO puede hacer va con el mismo peso que lo que sí. Enumerar sólo los
+   permisos y dejar los límites para el reglamento es cómo se construye una
+   sorpresa. */
+.inv-permisos { margin-top: var(--s-5); }
+.inv-permisos h2 {
+  font-family: var(--sans); font-size: 14px; font-weight: 600;
+  letter-spacing: -0.015em; text-transform: none;
+  margin-bottom: var(--s-3);
+}
+
+.decide { margin-top: var(--s-6); display: flex; gap: var(--s-2); align-items: center; }
+.decide .btn-pri { flex: 1; }
+.rechazar { font-size: 13px; color: var(--ink-3); }
+.rechazar:hover { color: var(--bad); }
+
+/* Aviso de Mercado Pago: acá no es un dato de color, es la diferencia entre
+   que sus fotos se vendan o no. Va después de aceptar, como paso siguiente. */
+.mp-falta {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin-top: var(--s-5);
+  padding: 12px 13px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  background: var(--accent-wash);
+  border-radius: var(--r-2);
+  font-size: 12.5px; line-height: 1.55; color: var(--ink-2);
+}
+.mp-falta svg { width: 16px; height: 16px; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+.mp-falta b { color: var(--ink); font-weight: 500; }
+
+/* ── Aceptada ────────────────────────────────────────────────────────────── */
+.hecho { display: none; text-align: center; }
+:root[data-inv="ok"] .hecho { display: block; animation: entrar 340ms cubic-bezier(.2, .8, .3, 1); }
+:root[data-inv="ok"] .por-decidir { display: none; }
+@keyframes entrar {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.hecho-i {
+  width: 56px; height: 56px; margin: 0 auto var(--s-5);
+  border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  color: var(--ok);
+}
+.hecho-i svg { width: 25px; height: 25px; }
+.hecho .bajada { max-width: 42ch; margin-left: auto; margin-right: auto; }
+.hecho-acc { margin-top: var(--s-6); display: grid; gap: var(--s-2); justify-items: center; }
+
+@media (max-width: 620px) {
+  .inv-top, .inv-mid { padding-left: var(--s-4); padding-right: var(--s-4); }
+  .ev-inv { flex-direction: column; align-items: flex-start; }
+  .ev-inv-cv { width: 100%; height: 110px; }
+}

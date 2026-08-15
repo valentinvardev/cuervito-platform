@@ -9,13 +9,35 @@ dentro de `cuervito/`.
 lab/
   tokens.css          ← variables: color, tipografía, espaciado. Sin componentes
   base.css            ← componentes compartidos: botones, logotipo, h1/h2/h3
+  panel.css           ← armazón del panel: riel, barra, tarjeta, fila, chips
+  panel.js            ← inyecta riel y barra, engancha tema y cajón
   vendor/lucide.min.js  ← Lucide local, para que los íconos anden sin internet
-  landing/            ← landing del fotógrafo
-  login/              ← ingreso
+  landing/  login/    ← público, sin riel: no cargan panel.css ni panel.js
+  dashboard/  eventos/  nuevo/  ventas/  fotos/  pagina/   ← panel
+  cobros/  perfil/  ayuda/                                 ← panel, cuenta
 ```
 
-**El orden de carga no es opcional:** `tokens.css` → `base.css` → `<pagina>.css`.
-Una página sin `base.css` se queda sin botones.
+Todas las páginas del panel son **hermanas**, un solo nivel de profundidad.
+`nuevo/` no cuelga de `eventos/` justamente por eso: el riel enlaza con `../`,
+y desde dos niveles adentro esos enlaces apuntarían a cualquier lado.
+
+**Dónde se muestra la comisión:** sólo en `cobros/`. En Ventas el fotógrafo
+mira cómo le está yendo, y meterle ahí la resta de la plataforma convierte una
+buena noticia en una mala. A Cobros, en cambio, entra para entender cómo cobra:
+ahí el desglose es lo que vino a buscar.
+
+**El orden de carga no es opcional:** `tokens.css` → `base.css` → `panel.css` →
+`<pagina>.css`. Una página sin `base.css` se queda sin botones; una del panel
+sin `panel.css`, sin riel.
+
+El menú del panel **no está en el HTML de cada pantalla**, lo inyecta
+`panel.js`. Son cinco pantallas: con el marcado copiado en cada una, agregar un
+ítem obliga a tocar cinco archivos y la que te olvidás queda desincronizada sin
+que nadie lo note. Para sumar una entrada se edita el arreglo `NAV`.
+
+Ojo con el orden de los scripts: `lucide.min.js` y `panel.js` van con `defer`,
+así que un `<script>` suelto al final del `<body>` corre **antes** que ellos.
+Por eso cada página llama a `Panel.init()` dentro de `DOMContentLoaded`.
 
 **Después de tocar cualquier `.css`, correr `python sellar.py`.** Le pone
 `?v=<ahora>` a todo el CSS y JS local. El navegador cachea por URL: una página

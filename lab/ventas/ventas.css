@@ -1,0 +1,142 @@
+/* =============================================================================
+   encontrate · panel · ventas
+   -----------------------------------------------------------------------------
+   La pantalla vieja listaba las ventas y nada más. Le faltaba lo primero que
+   uno mira al entrar: cuánto ganó. Ese total estaba sólo en la pantalla de
+   cobros, o sea a un
+   click de distancia de la pantalla donde naturalmente se lo busca.
+
+   La resta de la comisión NO se muestra acá. Recordarle en cada pantalla
+   cuánto se lleva la plataforma no lo ayuda a vender, y el número que le
+   importa es el que le queda. El desglose vive en Métodos de pago, para el
+   que lo busque.
+   ========================================================================== */
+
+.sum { display: grid; gap: var(--s-3); }
+.sum .k-lab { font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.sum .k-n {
+  margin-top: var(--s-3);
+  font-size: 30px; font-weight: 200; letter-spacing: -0.035em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.sum .k-sub { margin-top: 8px; font-size: 12px; color: var(--ink-3); }
+/* Acento lleno: es el único número de la pantalla y tiene que pesar como tal.
+   Blanco casi pleno en los secundarios, no translúcido: sobre color saturado
+   la transparencia acerca el texto al fondo en vez de alejarlo. */
+.sum .neto {
+  background: var(--acento-lleno); color: #FFFFFF;
+  border-color: var(--acento-lleno); padding: var(--s-5);
+}
+.sum .neto .k-lab { color: rgba(255, 255, 255, .9); }
+.sum .neto .k-sub { color: rgba(255, 255, 255, .9); }
+.sum .neto .k-n { font-size: 44px; }
+
+.filtros { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.filtros .sp { margin-left: auto; }
+
+
+/* ── Tabla ───────────────────────────────────────────────────────────────── */
+.vt { grid-template-columns: 30px minmax(0, 1.5fr) minmax(0, 1.2fr) 60px 108px 96px 88px; }
+.vt.row-h { cursor: default; }
+
+/* Encabezado ordenable. La flecha aparece sólo en la columna activa: seis
+   flechas simultáneas no dicen por cuál está ordenado. */
+.th {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.th:hover { color: var(--ink); }
+.th svg { width: 12px; height: 12px; opacity: 0; transition: opacity 140ms ease, transform 220ms ease; }
+.th[data-ord] { color: var(--ink); }
+.th[data-ord] svg { opacity: 1; }
+.th[data-ord="asc"] svg { transform: rotate(180deg); }
+.th.num { justify-content: flex-end; width: 100%; }
+
+.v-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  font-size: 11px; font-weight: 600;
+}
+.v-who { min-width: 0; line-height: 1.3; }
+.v-who b { display: block; font-size: 13.5px; font-weight: 500; }
+.v-who span { display: block; font-size: 11.5px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v-ev { font-size: 13px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vt .num { font-size: 13px; }
+.vt .neto { font-weight: 500; }
+.vt .pill { justify-self: end; }
+
+/* ── Cajón de detalle ────────────────────────────────────────────────────────
+   Cajón y no página aparte: revisar ventas es una tarea de barrido, se miran
+   ocho seguidas. Con navegación completa cada vuelta cuesta dos cargas y se
+   pierde el lugar en la lista. ──────────────────────────────────────────── */
+.dscrim {
+  position: fixed; inset: 0; z-index: 80;
+  background: color-mix(in srgb, var(--ink) 26%, transparent);
+  opacity: 0; pointer-events: none;
+  transition: opacity 240ms ease;
+}
+:root[data-venta="open"] .dscrim { opacity: 1; pointer-events: auto; }
+
+.drw {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 81;
+  width: min(430px, 92vw);
+  display: flex; flex-direction: column;
+  background: var(--paper-2);
+  border-left: 1px solid var(--line);
+  box-shadow: -30px 0 60px rgba(18, 17, 15, .14);
+  transform: translateX(100%);
+  transition: transform 340ms cubic-bezier(.2, .8, .3, 1);
+}
+:root[data-venta="open"] .drw { transform: none; }
+
+.drw-h {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--s-5) var(--s-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+.drw-h h2 { font-family: var(--sans); font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+.drw-h .sub { margin-top: 3px; font-size: 12.5px; color: var(--ink-3); }
+.drw-b { flex: 1; overflow-y: auto; padding: var(--s-5); display: grid; gap: var(--s-5); }
+.drw-f { padding: var(--s-4) var(--s-5); border-top: 1px solid var(--line-soft); display: flex; gap: var(--s-2); }
+
+.dl { display: grid; gap: 9px; }
+.dl > div { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-4); font-size: 13.5px; }
+.dl dt { color: var(--ink-3); }
+.dl dd { font-variant-numeric: tabular-nums; text-align: right; }
+
+/* El monto de la venta, solo y sin cuentas al lado. */
+.desg { padding: var(--s-4); background: var(--paper-3); border-radius: var(--r-2); }
+.desg .tot { font-size: 15px; font-weight: 500; }
+.desg .tot dt { color: var(--ink); }
+.desg .tot dd { font-size: 19px; font-weight: 300; }
+
+.minis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.mini {
+  aspect-ratio: 3 / 2; border-radius: 5px;
+  background: radial-gradient(110% 80% at 62% 26%, #FFB25E, transparent 58%), linear-gradient(160deg, #35281C, #12100E);
+}
+.mini.mas {
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-3);
+  font-size: 12px; font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1080px) {
+  .vt { grid-template-columns: 30px minmax(0, 1.4fr) 100px 96px 88px; }
+  .vt .v-ev, .vt .c-fotos { display: none; }
+}
+@media (max-width: 640px) {
+  .sum .neto .k-n { font-size: 36px; }
+  .vt { grid-template-columns: 30px minmax(0, 1fr) 96px; }
+  .vt .c-fecha, .vt .pill, .vt .c-estado { display: none; }
+}
+
+/* Esqueleto de la tabla. Las filas son JS: hasta que corre, este bloque está
+   vacío de verdad, no es teatro. Se van solas cuando pintar() reemplaza el
+   innerHTML de #filas. */
+.sk-fila { pointer-events: none; }
+.sk-fila:hover { background: none; }
