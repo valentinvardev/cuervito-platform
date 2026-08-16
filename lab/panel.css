@@ -88,6 +88,10 @@ body { overflow-x: hidden; }
   padding: var(--s-4) var(--s-3) var(--s-3);
   border-right: 1px solid var(--line-soft);
   background: var(--paper-2);
+  /* Con tres secciones y el pie, en una ventana baja el botón de escribirnos
+     quedaba abajo del borde y sin manera de llegar. */
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 .rail-top { padding: var(--s-2) var(--s-3) 0; }
 
@@ -129,6 +133,50 @@ body { overflow-x: hidden; }
 .rl-n.hot { color: var(--accent); font-weight: 600; }
 
 .rail-bot { margin-top: auto; }
+
+/* ── Lo que todavía no está ─────────────────────────────────────────────────
+   Portfolio e Instagram Studio se anuncian en el riel antes de existir, para
+   que el fotógrafo sepa hacia dónde va esto. Van como <span> y no como enlace:
+   un ítem que se ve igual que los demás y no lleva a ningún lado se prueba una
+   vez, no pasa nada, y se prueba de nuevo. Apagados y sin cursor de mano, se
+   leen como lo que son.
+
+   El rótulo "Pronto" va en cada uno y no sólo en el encabezado de la
+   sección: en el cajón del teléfono la sección se lee de un vistazo y el
+   encabezado se pierde arriba. */
+.rl.pronto {
+  color: var(--ink-3);
+  cursor: default;
+}
+.rl.pronto:hover { background: none; }
+.rl.pronto svg { opacity: .55; }
+.rl-pronto {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 100px;
+  border: 1px solid var(--line);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ── Contacto por WhatsApp ───────────────────────────────────────────────────
+   Verde WhatsApp, pero NO el #25D366 de la marca: blanco sobre ese verde da
+   1,98:1 de contraste, o sea ilegible. Es el mismo verde bajado en luminancia
+   hasta 5,28:1, el mismo que usa la tarjeta de contacto en Ayuda.
+
+   En el riel y no adentro de Ayuda solamente: cuando algo no funciona, nadie
+   busca la respuesta en una sección llamada Ayuda, busca a quién escribirle. */
+.rail-wa {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 38px; margin-bottom: var(--s-3);
+  border-radius: var(--r-2);
+  background: #0A7C42; color: #FFFFFF;
+  font-size: 13.5px; font-weight: 500;
+  transition: filter 140ms ease;
+}
+.rail-wa:hover { filter: brightness(1.12); }
+.rail-wa .wa { width: 16px; height: 16px; fill: currentColor; }
 .me {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 9px;
