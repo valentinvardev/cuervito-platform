@@ -1,9 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Image as ImagenIcono, Images, Info, ScanFace, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Image as ImagenIcono,
+  Images,
+  Info,
+  ScanFace,
+  X,
+} from "lucide-react";
+import { Fragment, useEffect, useRef, useState } from "react";
 
+import { Desplegable } from "../_components/desplegable";
+import { Fecha } from "../_components/fecha";
 import { crearEventoAction } from "./acciones";
 import { COMISION_CON, COMISION_SIN } from "./tarifas";
 
@@ -143,16 +154,23 @@ export function Asistente() {
           {PASOS.map((t, i) => {
             const n1 = i + 1;
             return (
-              <span
-                className="wp"
-                key={t}
-                data-n={n1}
-                data-e={n1 === paso ? "aqui" : n1 < paso ? "hecho" : undefined}
-              >
-                <i className="bola">{n1 < paso ? <Check /> : <span>{n1}</span>}</i>
-                <span className="txt">{t}</span>
+              <Fragment key={t}>
+                <span
+                  className="wp"
+                  data-n={n1}
+                  data-e={n1 === paso ? "aqui" : n1 < paso ? "hecho" : undefined}
+                >
+                  {/* Sólo el número. Para el paso ya hecho, el CSS esconde este
+                      span y dibuja el tilde con una máscara sobre el círculo
+                      verde; poner acá un ícono de tilde da dos, y como .bola es
+                      una grilla el segundo cae en su propia fila, abajo. */}
+                  <i className="bola">
+                    <span>{n1}</span>
+                  </i>
+                  <span className="txt">{t}</span>
+                </span>
                 {n1 < PASOS.length && <span className="wp-linea" />}
-              </span>
+              </Fragment>
             );
           })}
         </div>
@@ -187,13 +205,7 @@ export function Asistente() {
                 <div className="par">
                   <div className="campo">
                     <label htmlFor="fecha">Fecha</label>
-                    <input
-                      className="inp"
-                      id="fecha"
-                      type="date"
-                      value={fecha}
-                      onChange={(e) => setFecha(e.target.value)}
-                    />
+                    <Fecha id="fecha" valor={fecha || null} alCambiar={(v) => setFecha(v ?? "")} />
                   </div>
                   <div className="campo">
                     <label htmlFor="lugar">Lugar</label>
@@ -209,22 +221,12 @@ export function Asistente() {
 
                 <div className="campo">
                   <label htmlFor="disc">Disciplina</label>
-                  {/* Un <select> nativo y no el desplegable dibujado del
-                      laboratorio: en el teléfono el nativo abre la rueda del
-                      sistema, que se usa con una mano y sin aprender nada. */}
-                  <select
-                    className="inp"
+                  <Desplegable
                     id="disc"
-                    value={disciplina}
-                    onChange={(e) => setDisciplina(e.target.value)}
-                  >
-                    <option value="">Sin especificar</option>
-                    {DISCIPLINAS.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
+                    opciones={DISCIPLINAS.map((d) => ({ valor: d, texto: d }))}
+                    valor={disciplina}
+                    alCambiar={setDisciplina}
+                  />
                 </div>
 
                 <div className="campo">
@@ -392,7 +394,15 @@ export function Asistente() {
               <p>Podés cambiarlo cuando quieras, incluso con el evento publicado.</p>
             </div>
 
-            <div className="card">
+            <div className="card blq">
+              <h2>Cuánto sale cada foto</h2>
+              {/* El precio de UNA foto, que es la unidad que compra el atleta.
+                  Sin decirlo, se confunde con el precio de la galería entera y
+                  el número que se pone termina siendo diez veces el que va. */}
+              <p className="ayuda">
+                Es lo que paga el atleta por cada foto suya que se lleva. La mayoría arranca entre
+                $1.500 y $2.500.
+              </p>
               <div className="blq-b">
                 <div className="campo">
                   <label htmlFor="p1">Una foto</label>

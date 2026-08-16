@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
+import { Desplegable } from "../../_components/desplegable";
+import { Fecha } from "../../_components/fecha";
 import { iniciales as siglas } from "../../_components/formato";
 import {
   borrarEventoAction,
@@ -45,6 +47,10 @@ type Foto = {
 type Colaborador = { nombre: string; email: string; estado: string; fotos: number; cobra: boolean };
 
 const POR_PAG = 20;
+
+// Las mismas que ofrece el alta: con dos listas distintas, el mismo deporte
+// queda escrito distinto según por dónde se cargó.
+const DISCIPLINAS = ["Running", "Ciclismo", "Trail", "Duatlón", "Triatlón", "MTB", "Otra"];
 
 const FILTROS = [
   { k: "todas", txt: "Todas" },
@@ -78,7 +84,7 @@ export function Pantalla({
     fecha: string | null;
     lugar: string | null;
     disciplina: string | null;
-    /** Para el <input type="date">, que quiere aaaa-mm-dd y no "14 de agosto". */
+    /** Para el selector de fecha, que trabaja en aaaa-mm-dd y no en "14 de agosto". */
     fechaISO: string | null;
     portada: string | null;
     publicado: boolean;
@@ -855,7 +861,11 @@ function Datos({
         <div className="par">
           <div className="campo">
             <label htmlFor="fecha">Fecha</label>
-            <input className="inp" id="fecha" type="date" {...campo("eventDate")} />
+            <Fecha
+              id="fecha"
+              valor={d.eventDate || null}
+              alCambiar={(v) => setD({ ...d, eventDate: v ?? "" })}
+            />
           </div>
           <div className="campo">
             <label htmlFor="lugar">Lugar</label>
@@ -865,7 +875,15 @@ function Datos({
 
         <div className="campo">
           <label htmlFor="disc">Disciplina</label>
-          <input className="inp" id="disc" placeholder="Running, ciclismo, duatlón…" {...campo("discipline")} />
+          {/* Las mismas opciones que el alta. Antes era texto libre, así que el
+              mismo deporte terminaba escrito "Running", "running" y "Carrera"
+              según el día, y eso después no se puede agrupar ni filtrar. */}
+          <Desplegable
+            id="disc"
+            opciones={DISCIPLINAS.map((x) => ({ valor: x, texto: x }))}
+            valor={d.discipline}
+            alCambiar={(v) => setD({ ...d, discipline: v })}
+          />
         </div>
 
         <div className="campo">

@@ -367,6 +367,35 @@ body { overflow-x: hidden; }
    lista se saldría de la pantalla. */
 .dd.der .dd-m { left: auto; right: 0; transform-origin: top right; }
 
+/* ── El desplegable como campo de formulario ────────────────────────────────
+   El .dd normal es la píldora de 30px de la barra de filtros: sirve ahí porque
+   convive con la búsqueda y no tiene que competirle. Adentro de un formulario,
+   al lado de un .inp de 40px, se lee como un botón y no como un campo, y la
+   fila queda despareja.
+
+   Esta variante le da la caja del .inp —mismo alto, mismo radio, mismo fondo—
+   así que un formulario con nombre, fecha y disciplina se ve como una sola
+   cosa. El menú se estira a todo el ancho por lo mismo. */
+.dd.campo-dd { display: block; }
+.dd.campo-dd .dd-t {
+  display: flex; width: 100%;
+  height: 40px; padding: 0 12px;
+  border-radius: var(--r-2);
+  background: var(--paper);
+  font-size: 14.5px; color: var(--ink);
+}
+.dd.campo-dd .dd-t svg { margin-left: auto; }
+.dd.campo-dd .dd-t:hover { border-color: var(--line-strong); }
+.dd.campo-dd .dd-t[aria-expanded="true"] {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 9%, transparent);
+}
+/* Sin valor elegido, el texto va apagado: es un marcador de posición, no un
+   dato. Con el mismo peso que un valor real, la fila miente sobre qué está
+   completo. */
+.dd.campo-dd .dd-v.vacio { color: var(--ink-3); }
+.dd.campo-dd .dd-m { width: 100%; max-height: 264px; overflow-y: auto; }
+
 .dd-o {
   display: flex; align-items: center; gap: 8px;
   width: 100%; padding: 7px 10px;

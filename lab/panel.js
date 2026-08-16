@@ -39,7 +39,7 @@
   // y no hace nada se prueba una vez, no pasa nada, y se prueba de nuevo.
   var PRONTO = [
     { id: "portfolio", icono: "images",   texto: "Portfolio" },
-    { id: "studio",    icono: "sparkles", texto: "Instagram Studio" }
+    { id: "studio",    icono: "sparkles", texto: "Historias" }
   ];
 
   function esc(s) {

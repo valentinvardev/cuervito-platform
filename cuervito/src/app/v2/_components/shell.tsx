@@ -51,7 +51,7 @@ const CUENTA = [
 // se prueba una vez, no pasa nada, y se prueba de nuevo.
 const PRONTO = [
   { id: "portfolio", icono: Images, texto: "Portfolio" },
-  { id: "studio", icono: Sparkles, texto: "Instagram Studio" },
+  { id: "studio", icono: Sparkles, texto: "Historias" },
 ];
 
 const BUSCAR: Record<string, string> = {
