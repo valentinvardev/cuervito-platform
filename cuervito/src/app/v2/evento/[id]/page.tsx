@@ -16,7 +16,7 @@ const TOPE = 600;
 
 export default async function V2Evento({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { userId, slug } = await sesionV2();
+  const { userId, slug, nombre } = await sesionV2();
 
   const e = await db.event.findUnique({
     where: { id },
@@ -95,6 +95,12 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
     })),
   );
 
+  // El dueño también sube fotos, y hasta ahora la tabla del equipo decía
+  // "4 fotógrafos" pero listaba tres: el que faltaba era el que estaba mirando.
+  const fotosDelDueno = await db.photo.count({
+    where: { eventId: id, ownerId: userId, deletedAt: null },
+  });
+
   const cover = e.coverUrl
     ? e.coverUrl.startsWith("http")
       ? e.coverUrl
@@ -109,6 +115,10 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
         fecha: e.eventDate
           ? e.eventDate.toLocaleDateString("es-AR", { day: "numeric", month: "long" })
           : null,
+        // En UTC y no con toISOString sobre la fecha local: el evento se guarda
+        // a medianoche UTC, así que en Argentina (-3) la fecha local del día
+        // anterior, y el campo mostraba un día menos cada vez que se abría.
+        fechaISO: e.eventDate ? e.eventDate.toISOString().slice(0, 10) : null,
         lugar: e.location,
         disciplina: e.discipline,
         portada: cover,
@@ -126,6 +136,8 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
       fotos={conUrl}
       colaboradores={colaboradores}
       publico={e.isPublished && e.slug ? `/${slug}/${e.slug}` : null}
+      yo={nombre}
+      fotosDelDueno={fotosDelDueno}
     />
   );
 }

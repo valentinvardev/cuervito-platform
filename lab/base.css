@@ -22,15 +22,36 @@ body {
   transition: background 400ms ease, color 400ms ease;
 }
 
-/* ── Logotipo ────────────────────────────────────────────────────────────── */
+/* ── Logotipo ────────────────────────────────────────────────────────────────
+   El original es un JPG con fondo crema texturado, así que ningún filtro CSS
+   alcanza: brightness(0) lo pinta de negro y invert() lo pasa a oscuro, pero
+   el rectángulo del fondo queda igual. Sobre papel casi se disimula; sobre la
+   tinta del tema oscuro sería una mancha clara con forma de cuadro.
+
+   Se usa la silueta recortada como MÁSCARA y el color lo pone currentColor.
+   Así el logotipo toma el color del texto que lo rodea y no hace falta una
+   sola regla por tema: sobre papel sale tinta, sobre tinta sale papel, y sobre
+   una foto basta con darle color blanco. Misma técnica que el logotipo de
+   Mercado Pago.
+
+   La proporción sale del recorte real, 812 x 178, que ya incluye el aire de
+   la derecha horneado en el PNG. Si se regenera con otro encuadre hay que
+   actualizarla acá:  python vendor/gen-logo.py
+   ────────────────────────────────────────────────────────────────────────── */
 .mark {
-  font-family: var(--display);
-  font-weight: 700; font-size: 15px; letter-spacing: -0.03em; text-transform: uppercase;
+  display: block;
+  height: 38px;
+  aspect-ratio: 812 / 178;
+  background: currentColor;
+  color: var(--ink);
+  -webkit-mask: url("assets/logo.png") left center / contain no-repeat;
+  mask: url("assets/logo.png") left center / contain no-repeat;
+  /* El texto sigue en el marcado para los lectores de pantalla, pero no se
+     dibuja: lo que se ve es la máscara. */
+  font-size: 0;
+  flex-shrink: 0;
 }
-.mark i {
-  display: inline-block; width: 5px; height: 5px;
-  background: var(--accent); border-radius: 50%; margin: 0 1px 3px 1px;
-}
+.mark i { display: none; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    BOTONES

@@ -11,6 +11,11 @@
    COMPARAR: columnas alineadas, encabezado que ordena, y el mismo dato de
    todos los eventos leyéndose en vertical.
 
+   Quedan dos cifras por evento, fotos y vendido. La conversión se fue: en una
+   grilla de seis eventos, un porcentaje sin el par de números que lo origina
+   se lee como una nota del colegio. Vive en la pantalla del evento, donde hay
+   lugar para mostrarlo junto a las visitas de las que sale.
+
    El marcado es uno solo para las dos. Lo que cambia es la caja: en grilla la
    tarjeta es una columna flex, en lista es una grilla de seis columnas y
    .ec-st pasa a display:contents para que sus tres cifras se repartan como
@@ -87,7 +92,7 @@
    esto las cifras quedan a alturas diferentes en cada tarjeta. */
 .ec-st {
   margin-top: auto; padding: var(--s-4);
-  display: grid; grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(2, 1fr);
 }
 .ec-st > div + div { border-left: 1px solid var(--line-soft); padding-left: var(--s-3); }
 .ec-st span {
@@ -107,7 +112,7 @@
    títulos de los números y el error se ve recién al mirar.
    ══════════════════════════════════════════════════════════════════════ */
 .evs[data-vista="lista"] {
-  --cols: 64px minmax(0, 1fr) 88px 104px 88px 104px;
+  --cols: 64px minmax(0, 1fr) 96px 116px 104px;
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
   background: var(--paper-2);
@@ -194,15 +199,14 @@
 .ec-h .et.num { justify-content: flex-end; width: 100%; }
 
 @media (max-width: 900px) {
-  .evs[data-vista="lista"] { --cols: 56px minmax(0, 1fr) 96px 96px; }
+  .evs[data-vista="lista"] { --cols: 56px minmax(0, 1fr) 104px 96px; }
   .evs[data-vista="lista"] .ec-cv { width: 56px; }
   /* Se caen fotos y conversión, se quedan el dinero y el estado: con poco
      ancho, lo que hay que poder comparar es cuánto entró y si está publicado. */
-  .evs[data-vista="lista"] .c-fotos,
-  .evs[data-vista="lista"] .c-conv { display: none; }
+  .evs[data-vista="lista"] .c-fotos { display: none; }
 }
 @media (max-width: 560px) {
-  .evs[data-vista="lista"] { --cols: 44px minmax(0, 1fr) 92px; }
+  .evs[data-vista="lista"] { --cols: 44px minmax(0, 1fr) 104px; }
   .evs[data-vista="lista"] .ec-cv { width: 44px; }
   .evs[data-vista="lista"] .c-estado { display: none; }
   .evs[data-vista="lista"] .ec > .pill { display: none; }

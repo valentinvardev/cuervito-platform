@@ -5,14 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>encontrate · panel</title>
 
+<link rel="icon" href="../assets/icono-tinta.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" type="image/png" href="../assets/icono-tinta-32.png" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/png" href="../assets/icono-papel-32.png" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="../assets/apple-touch.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="../tokens.css?v=1786703126">
-<link rel="stylesheet" href="../base.css?v=1786703126">
-<link rel="stylesheet" href="../panel.css?v=1786703126">
-<link rel="stylesheet" href="dashboard.css?v=1786703126">
+<link rel="stylesheet" href="../tokens.css?v=1786906781">
+<link rel="stylesheet" href="../base.css?v=1786906781">
+<link rel="stylesheet" href="../panel.css?v=1786906781">
+<link rel="stylesheet" href="dashboard.css?v=1786906781">
 
 <script>
   (function () {
@@ -23,7 +28,7 @@
       elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
   })();
 </script>
-<script src="../vendor/iconos.js?v=1786703126" defer></script>
+<script src="../vendor/iconos.js?v=1786906781" defer></script>
 </head>
 
 <body>
@@ -56,10 +61,27 @@
             <div class="k-sub"><span class="delta up"><i data-lucide="arrow-up-right"></i> 31</span> esta semana</div>
           </div>
 
+          <!-- El porcentaje solo no se entiende: "convierte 6,4%" es jerga.
+               Debajo van los dos números de los que sale y ahí se lee solo.
+
+               El denominador son los que SE ENCONTRARON, no los que visitaron
+               ni los que buscaron. Las visitas empeoran el número cuando pasa
+               algo bueno: si el organizador comparte el link en un grupo de
+               500, entran cientos que no corrieron y la tasa se desploma justo
+               el día de mayor difusión. Y el que buscó sin aparecer en ninguna
+               foto no podía comprar, así que contarlo como conversión fallida
+               culpa al fotógrafo por un problema de cobertura.
+
+               Con matchCount > 0 queda sólo lo que él controla: la persona se
+               vio en las fotos y ahí decidió. Si no compró, es el precio, la
+               calidad, la marca de agua o el checkout. Las cuatro son suyas. -->
           <div class="card kpi">
             <div class="k-top"><span class="k-lab">Visitas que compran</span><i data-lucide="percent"></i></div>
             <div class="k-n tnum"><span data-num="6.4" data-dec="1">6,4</span><small>%</small></div>
-            <div class="k-sub"><span class="delta down"><i data-lucide="arrow-down-right"></i> 0,8</span> vs. julio</div>
+            <div class="k-sub razon">
+              <span><i data-lucide="scan-face"></i> <b class="tnum">2.640</b> se encontraron</span>
+              <span><i data-lucide="shopping-cart"></i> <b class="tnum">169</b> compraron</span>
+            </div>
           </div>
         </section>
 
@@ -95,38 +117,74 @@
             <div class="x-ax" id="xax"></div>
           </div>
 
-          <!-- Lo que reemplaza a las seis tarjetas de navegación. -->
+          <!-- Lo que reemplaza a las seis tarjetas de navegación.
+
+               Regla para entrar en esta lista, y las tres tienen que
+               cumplirse: que sea verdad, que se arregle en un click, y que
+               ignorarlo cueste plata o tiempo HOY.
+
+               Por eso se cayeron dos que estaban antes. "Evento sin precio" no
+               existe: el precio siempre tiene valor. Y "fotos sin reconocer"
+               es una falla de procesamiento nuestra, no algo que el fotógrafo
+               haya causado ni pueda arreglar; ponerlo acá es decirle "fallamos,
+               arreglalo vos". Eso va a reintento automático del lado del
+               servidor y sólo se avisa si el reintento también falla.
+
+               El orden es por costo de ignorarlo: primero lo que impide
+               cobrar, después lo que hace vender menos, al final lo cosmético.
+               ─────────────────────────────────────────────────────────── -->
           <div class="card">
             <div class="card-h">
-              <div><h2>Necesita tu atención</h2><div class="sub">3 pendientes</div></div>
+              <div><h2>Necesita tu atención</h2><div class="sub" id="at-n">4 pendientes</div></div>
             </div>
 
-            <a href="../fotos/" class="row at">
-              <span class="at-i warn"><i data-lucide="scan-face"></i></span>
-              <span class="at-t">
-                <b>2.064 fotos sin reconocer</b>
-                <span>Nadie las va a encontrar buscándose</span>
-              </span>
-              <i data-lucide="arrow-right" class="go"></i>
-            </a>
+            <div id="at-lista">
+              <a href="../evento/" class="row at">
+                <span class="at-i warn"><i data-lucide="wallet"></i></span>
+                <span class="at-t">
+                  <b>Lucía no puede cobrar sus fotos</b>
+                  <span>412 fotos suyas en el Duatlón, sin Mercado Pago conectado</span>
+                </span>
+                <i data-lucide="arrow-right" class="go"></i>
+              </a>
 
-            <a href="../eventos/" class="row at">
-              <span class="at-i warn"><i data-lucide="image-off"></i></span>
-              <span class="at-t">
-                <b>Torneo Apertura sin portada</b>
-                <span>Los eventos sin portada venden la mitad</span>
-              </span>
-              <i data-lucide="arrow-right" class="go"></i>
-            </a>
+              <a href="../eventos/" class="row at">
+                <span class="at-i warn"><i data-lucide="image-off"></i></span>
+                <span class="at-t">
+                  <b>Torneo Apertura sin portada</b>
+                  <span>Los eventos sin portada venden la mitad</span>
+                </span>
+                <i data-lucide="arrow-right" class="go"></i>
+              </a>
 
-            <a href="../eventos/" class="row at">
-              <span class="at-i"><i data-lucide="tag"></i></span>
-              <span class="at-t">
-                <b>Maratón Río Cuarto sin precio</b>
-                <span>Publicado hace 6 días, 0 ventas</span>
-              </span>
-              <i data-lucide="arrow-right" class="go"></i>
-            </a>
+              <a href="../evento/" class="row at">
+                <span class="at-i"><i data-lucide="calendar-days"></i></span>
+                <span class="at-t">
+                  <b>Maratón Río Cuarto sigue en borrador</b>
+                  <span>946 fotos subidas hace 6 días, nadie las puede ver</span>
+                </span>
+                <i data-lucide="arrow-right" class="go"></i>
+              </a>
+
+              <a href="../perfil/" class="row at">
+                <span class="at-i"><i data-lucide="user-round"></i></span>
+                <span class="at-t">
+                  <b>Te falta la foto de perfil</b>
+                  <span>Tu página se ve vacía arriba de todo</span>
+                </span>
+                <i data-lucide="arrow-right" class="go"></i>
+              </a>
+            </div>
+
+            <!-- Vacío que se celebra. Un panel que nunca puede quedar limpio
+                 entrena a no mirarlo. -->
+            <div class="empty" id="at-vacio" hidden style="padding:var(--s-6) var(--s-4)">
+              <div class="empty-i" style="background:color-mix(in srgb, var(--ok) 14%, transparent);color:var(--ok)">
+                <i data-lucide="check"></i>
+              </div>
+              <h3>No hay nada pendiente</h3>
+              <p>Tus eventos están publicados, con portada y cobrando.</p>
+            </div>
           </div>
         </section>
 
@@ -142,6 +200,7 @@
               <span class="num soft">Fotos</span><span class="num">Vendido</span><span></span>
             </div>
 
+            <div id="ev-lista">
             <a href="../evento/" class="row ev">
               <span class="ev-cv"></span>
               <span class="ev-n"><b>Duatlón Club Ciclista Chivilcoy</b><span>Hoy</span></span>
@@ -173,6 +232,16 @@
               <span class="num tnum">—</span>
               <span class="pill draft"><i></i> Borrador</span>
             </a>
+            </div>
+
+            <!-- El primer evento no se pide con un texto triste: es la única
+                 acción que hay para hacer, así que va con su botón. -->
+            <div class="empty" id="ev-vacio" hidden>
+              <div class="empty-i"><i data-lucide="calendar-days"></i></div>
+              <h3>No se encontraron eventos</h3>
+              <p>Cuando crees tu primer evento y subas fotos, van a aparecer acá.</p>
+              <a href="../nuevo/" class="btn btn-pri"><i data-lucide="plus"></i> Crear mi primer evento</a>
+            </div>
           </div>
 
           <div class="card">
@@ -181,6 +250,7 @@
               <a href="../ventas/" class="btn btn-ghost btn-sm">Ver todas <i data-lucide="arrow-right" class="go"></i></a>
             </div>
 
+            <div id="ve-lista">
             <div class="row sale">
               <span class="sale-av">MF</span>
               <span class="sale-t"><b>Martina Fernández</b><span>Duatlón · 4 fotos · hace 6 min</span></span>
@@ -207,7 +277,20 @@
               <span class="sale-m tnum">$9.000</span>
             </div>
 
-            <div class="payout">
+            </div>
+
+            <!-- Sin ventas la causa importa: puede ser que no haya nada
+                 publicado, o que esté publicado y nadie lo haya visto. Lo
+                 segundo se arregla repartiendo el link, y eso es lo que
+                 conviene decir. -->
+            <div class="empty" id="ve-vacio" hidden>
+              <div class="empty-i"><i data-lucide="receipt-text"></i></div>
+              <h3>No se encontraron ventas</h3>
+              <p>Pasale el link de tu evento al grupo del club o al organizador: es de donde vienen casi todas las primeras ventas.</p>
+              <a href="../eventos/" class="btn btn-ghost">Ver mis eventos</a>
+            </div>
+
+            <div class="payout" id="ve-total">
               <span>Total de hoy</span>
               <b class="tnum">$48.200</b>
             </div>
@@ -219,13 +302,27 @@
   </div>
 </div>
 
-<script src="../panel.js?v=1786703126" defer></script>
+<script src="../panel.js?v=1786906781" defer></script>
 <script>
   /* Panel.js y Lucide van con defer, o sea que corren antes de este evento.
      Un script suelto al final del body correría ANTES que ellos y Panel no
      existiría todavía. */
   document.addEventListener("DOMContentLoaded", function () {
     Panel.init({ activo: "inicio" });
+
+    /* Laboratorio: con ?vacio=1 en la dirección se muestran los tres estados
+       vacíos. Es la única forma de revisarlos sin borrar los datos. */
+    try {
+      if (new URLSearchParams(location.search).has("vacio")) {
+        [["at-lista", "at-vacio"], ["ev-lista", "ev-vacio"], ["ve-lista", "ve-vacio"]]
+          .forEach(function (par) {
+            document.getElementById(par[0]).hidden = true;
+            document.getElementById(par[1]).hidden = false;
+          });
+        document.getElementById("ve-total").hidden = true;
+        document.getElementById("at-n").textContent = "Nada pendiente";
+      }
+    } catch (e) { console.warn("vacios:", e); }
 
     /* ── Gráfico ────────────────────────────────────────────────────────────
        Reemplaza a la sparkline vieja, que además tenía amount: 0 cableado en

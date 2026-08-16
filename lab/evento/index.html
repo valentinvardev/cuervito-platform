@@ -5,14 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>encontrate · Duatlón Chivilcoy</title>
 
+<link rel="icon" href="../assets/icono-tinta.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" type="image/png" href="../assets/icono-tinta-32.png" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/png" href="../assets/icono-papel-32.png" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="../assets/apple-touch.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="../tokens.css?v=1786703126">
-<link rel="stylesheet" href="../base.css?v=1786703126">
-<link rel="stylesheet" href="../panel.css?v=1786703126">
-<link rel="stylesheet" href="evento.css?v=1786703126">
+<link rel="stylesheet" href="../tokens.css?v=1786906781">
+<link rel="stylesheet" href="../base.css?v=1786906781">
+<link rel="stylesheet" href="../panel.css?v=1786906781">
+<link rel="stylesheet" href="evento.css?v=1786906781">
 
 <script>
   (function () {
@@ -23,7 +28,7 @@
       elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
   })();
 </script>
-<script src="../vendor/iconos.js?v=1786703126" defer></script>
+<script src="../vendor/iconos.js?v=1786906781" defer></script>
 </head>
 
 <body>
@@ -79,12 +84,16 @@
           <div class="card cifra">
             <div class="c-top"><span>Ventas</span><i data-lucide="shopping-bag"></i></div>
             <b class="tnum">12</b>
-            <div class="nota-c">De 168 visitas</div>
+            <div class="nota-c razon">
+              <span><i data-lucide="scan-face"></i> <b class="tnum">168</b> se encontraron</span>
+              <span><i data-lucide="shopping-cart"></i> <b class="tnum">12</b></span>
+              <span class="pct">7,1%</span>
+            </div>
           </div>
           <div class="card cifra">
             <div class="c-top"><span>Recaudado</span><i data-lucide="banknote"></i></div>
             <b class="tnum">$48.200</b>
-            <div class="nota-c">Convierte 7,1%</div>
+            <div class="nota-c">De 12 ventas</div>
           </div>
         </section>
 
@@ -252,7 +261,7 @@
               <span class="col-t"><b>Germán Sosa</b><span>Vos, dueño del evento</span></span>
               <span class="num soft c-fotos tnum">1.604</span>
               <span class="num tnum">$36.400</span>
-              <span class="pill live"><i></i> Dueño</span>
+              <span class="rol duenio"><i data-lucide="crown"></i> Dueño</span>
             </div>
 
             <div class="row col-f">
@@ -260,7 +269,7 @@
               <span class="col-t"><b>Matías Peralta</b><span>matias.peralta@gmail.com</span></span>
               <span class="num soft c-fotos tnum">558</span>
               <span class="num tnum">$11.800</span>
-              <button class="btn btn-ghost btn-sm" style="justify-self:end">Quitar</button>
+              <span class="rol activo"><i data-lucide="circle-check"></i> Activo</span>
             </div>
 
             <!-- El estado que faltaba y es el que más duele: aceptó, subió
@@ -273,7 +282,7 @@
               <span class="col-t"><b>Lucía Cabrera</b><span>lucia.cabrera@gmail.com</span></span>
               <span class="num soft c-fotos tnum">412</span>
               <span class="num tnum">—</span>
-              <span class="pill bad"><i></i> Sin cobrar</span>
+              <span class="rol sincobrar"><i data-lucide="circle-alert"></i> Sin cobrar</span>
             </div>
 
             <div class="row col-f espera">
@@ -281,7 +290,7 @@
               <span class="col-t"><b>Rocío Leiva</b><span>rocio.leiva@gmail.com</span></span>
               <span class="num soft c-fotos tnum">—</span>
               <span class="num tnum">—</span>
-              <span class="pill draft"><i></i> Invitada</span>
+              <span class="rol espera"><i data-lucide="clock"></i> Invitada</span>
             </div>
 
             <div class="nota" style="margin-top:var(--s-4)">
@@ -446,7 +455,7 @@
   </div>
 </div>
 
-<script src="../panel.js?v=1786703126" defer></script>
+<script src="../panel.js?v=1786906781" defer></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     Panel.init({ activo: "eventos", buscar: "Buscar en este evento por dorsal" });

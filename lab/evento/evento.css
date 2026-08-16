@@ -284,10 +284,32 @@
 .col-t span { display: block; font-size: 12px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .col-f .num { font-size: 13px; }
 
-/* La fila pendiente se apaga entera, no sólo la píldora: alguien que todavía
-   no aceptó no aportó nada, y sus columnas en cero al mismo peso que las de
-   los demás se leen como que trabajó y no vendió. */
+/* La fila pendiente se apaga entera, no sólo el rol: alguien que todavía no
+   aceptó no aportó nada, y sus columnas en cero al mismo peso que las de los
+   demás se leen como que trabajó y no vendió. */
 .col-f.espera .col-av, .col-f.espera .col-t b { opacity: .6; }
+
+/* ── El rol de cada uno ──────────────────────────────────────────────────────
+   Antes eran píldoras. Una píldora es una caja con fondo, y cuatro cajas de
+   colores distintos en una columna angosta compiten con los nombres y los
+   números, que es lo que la tabla vino a mostrar. Acá el rol es texto: el
+   ícono hace de ancla para reconocerlo sin leer, y el color hace el resto.
+
+   Los cuatro estados no son lo mismo y por eso no pesan igual. "Sin cobrar" es
+   el único que pide hacer algo, así que es el único en rojo; "invitado" es una
+   espera normal y va apagado, no en amarillo de alerta. */
+.rol {
+  display: inline-flex; align-items: center; gap: 7px;
+  justify-self: end;
+  font-size: 12.5px; font-weight: 500;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+.rol svg { width: 14px; height: 14px; flex-shrink: 0; }
+.rol.duenio { color: var(--acento-txt); }
+.rol.activo { color: var(--ok-txt); }
+.rol.sincobrar { color: var(--bad-txt); }
+.rol.espera { color: var(--ink-3); font-weight: 400; }
 
 .reparto {
   margin-top: var(--s-4); padding: 11px 13px;

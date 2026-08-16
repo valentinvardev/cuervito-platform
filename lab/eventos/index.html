@@ -5,14 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>encontrate · eventos</title>
 
+<link rel="icon" href="../assets/icono-tinta.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" type="image/png" href="../assets/icono-tinta-32.png" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/png" href="../assets/icono-papel-32.png" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="../assets/apple-touch.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="../tokens.css?v=1786703126">
-<link rel="stylesheet" href="../base.css?v=1786703126">
-<link rel="stylesheet" href="../panel.css?v=1786703126">
-<link rel="stylesheet" href="eventos.css?v=1786703126">
+<link rel="stylesheet" href="../tokens.css?v=1786906781">
+<link rel="stylesheet" href="../base.css?v=1786906781">
+<link rel="stylesheet" href="../panel.css?v=1786906781">
+<link rel="stylesheet" href="eventos.css?v=1786906781">
 
 <script>
   (function () {
@@ -23,7 +28,7 @@
       elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
   })();
 </script>
-<script src="../vendor/iconos.js?v=1786703126" defer></script>
+<script src="../vendor/iconos.js?v=1786906781" defer></script>
 </head>
 
 <body>
@@ -74,11 +79,10 @@
             <button type="button" class="et" data-c="nombre">Evento <i data-lucide="chevron-down"></i></button>
             <button type="button" class="et num c-fotos" data-c="fotos">Fotos <i data-lucide="chevron-down"></i></button>
             <button type="button" class="et num" data-c="vendido" data-ord="desc">Vendido <i data-lucide="chevron-down"></i></button>
-            <button type="button" class="et num c-conv" data-c="conv">Convierte <i data-lucide="chevron-down"></i></button>
             <span class="c-estado"></span>
           </div>
 
-          <a href="../evento/" class="ec" data-e="vivo" data-nombre="Duatlón Club Ciclista Chivilcoy" data-fotos="2162" data-vendido="48200" data-conv="7.1">
+          <a href="../evento/" class="ec" data-e="vivo" data-nombre="Duatlón Club Ciclista Chivilcoy" data-fotos="2162" data-vendido="48200">
             <div class="ec-cv" data-cv="1"></div>
             <div class="ec-b">
               <h3>Duatlón Club Ciclista Chivilcoy</h3>
@@ -87,12 +91,11 @@
             <div class="ec-st">
               <div class="c-fotos"><span>Fotos</span><b class="tnum">2.162</b></div>
               <div><span>Vendido</span><b class="tnum">$48.200</b></div>
-              <div class="c-conv"><span>Convierte</span><b class="tnum">7,1%</b></div>
             </div>
             <span class="pill live"><i></i> En vivo</span>
           </a>
 
-          <a href="../evento/" class="ec" data-e="pub" data-nombre="Media Maratón de Chivilcoy" data-fotos="3104" data-vendido="164900" data-conv="9.4">
+          <a href="../evento/" class="ec" data-e="pub" data-nombre="Media Maratón de Chivilcoy" data-fotos="3104" data-vendido="164900">
             <div class="ec-cv" data-cv="2"></div>
             <div class="ec-b">
               <h3>Media Maratón de Chivilcoy</h3>
@@ -101,13 +104,12 @@
             <div class="ec-st">
               <div class="c-fotos"><span>Fotos</span><b class="tnum">3.104</b></div>
               <div><span>Vendido</span><b class="tnum">$164.900</b></div>
-              <div class="c-conv"><span>Convierte</span><b class="tnum">9,4%</b></div>
             </div>
             <span class="pill"><i></i> Publicado</span>
           </a>
 
           <!-- Sin portada: se dice, no se disimula con un gris. -->
-          <a href="../evento/" class="ec" data-e="pub" data-nombre="Torneo Apertura · Fecha 8" data-fotos="1488" data-vendido="91300" data-conv="4.2">
+          <a href="../evento/" class="ec" data-e="pub" data-nombre="Torneo Apertura · Fecha 8" data-fotos="1488" data-vendido="91300">
             <div class="ec-cv">
               <div class="ec-none">
                 <i data-lucide="image-off"></i>
@@ -121,12 +123,11 @@
             <div class="ec-st">
               <div class="c-fotos"><span>Fotos</span><b class="tnum">1.488</b></div>
               <div><span>Vendido</span><b class="tnum">$91.300</b></div>
-              <div class="c-conv"><span>Convierte</span><b class="tnum">4,2%</b></div>
             </div>
             <span class="pill"><i></i> Publicado</span>
           </a>
 
-          <a href="../evento/" class="ec" data-e="pub" data-nombre="Copa Ciudad · Hockey" data-fotos="2740" data-vendido="127600" data-conv="8.0">
+          <a href="../evento/" class="ec" data-e="pub" data-nombre="Copa Ciudad · Hockey" data-fotos="2740" data-vendido="127600">
             <div class="ec-cv" data-cv="3"></div>
             <div class="ec-b">
               <h3>Copa Ciudad · Hockey</h3>
@@ -135,12 +136,11 @@
             <div class="ec-st">
               <div class="c-fotos"><span>Fotos</span><b class="tnum">2.740</b></div>
               <div><span>Vendido</span><b class="tnum">$127.600</b></div>
-              <div class="c-conv"><span>Convierte</span><b class="tnum">8,0%</b></div>
             </div>
             <span class="pill"><i></i> Publicado</span>
           </a>
 
-          <a href="../evento/" class="ec" data-e="bor" data-nombre="Maratón Río Cuarto" data-fotos="946" data-vendido="0" data-conv="0">
+          <a href="../evento/" class="ec" data-e="bor" data-nombre="Maratón Río Cuarto" data-fotos="946" data-vendido="0">
             <div class="ec-cv" data-cv="4"></div>
             <div class="ec-b">
               <h3>Maratón Río Cuarto</h3>
@@ -149,12 +149,11 @@
             <div class="ec-st">
               <div class="c-fotos"><span>Fotos</span><b class="tnum">946</b></div>
               <div><span>Vendido</span><b class="pale">—</b></div>
-              <div class="c-conv"><span>Convierte</span><b class="pale">—</b></div>
             </div>
             <span class="pill draft"><i></i> Borrador</span>
           </a>
 
-          <a href="../evento/" class="ec" data-e="bor" data-nombre="Triatlón de Necochea" data-fotos="1204" data-vendido="0" data-conv="0">
+          <a href="../evento/" class="ec" data-e="bor" data-nombre="Triatlón de Necochea" data-fotos="1204" data-vendido="0">
             <div class="ec-cv" data-cv="5"></div>
             <div class="ec-b">
               <h3>Triatlón de Necochea</h3>
@@ -163,7 +162,6 @@
             <div class="ec-st">
               <div class="c-fotos"><span>Fotos</span><b class="tnum">1.204</b></div>
               <div><span>Vendido</span><b class="pale">—</b></div>
-              <div class="c-conv"><span>Convierte</span><b class="pale">—</b></div>
             </div>
             <span class="pill draft"><i></i> Borrador</span>
           </a>
@@ -185,7 +183,7 @@
   </div>
 </div>
 
-<script src="../panel.js?v=1786703126" defer></script>
+<script src="../panel.js?v=1786906781" defer></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     Panel.init({ activo: "eventos", buscar: "Buscar evento por nombre o lugar" });

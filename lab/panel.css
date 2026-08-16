@@ -1091,3 +1091,14 @@ body { overflow-x: hidden; }
     to   { opacity: 1; transform: none; }
   }
 }
+
+/* ── De dónde sale un porcentaje ─────────────────────────────────────────────
+   Los dos números que originan una tasa, con su ícono. Un "6,4%" solo es
+   jerga: hay que creerle. Con "2.640 miraron / 169 compraron" al lado, el
+   porcentaje deja de ser una nota y pasa a ser una división que se puede
+   verificar de un vistazo. */
+.razon { display: flex; align-items: center; gap: var(--s-4); flex-wrap: wrap; }
+.razon > span { display: inline-flex; align-items: center; gap: 5px; }
+.razon svg { width: 13px; height: 13px; color: var(--ink-3); flex-shrink: 0; }
+.razon b { font-weight: 500; color: var(--ink-2); }
+.razon .pct { margin-left: auto; color: var(--ink-3); }

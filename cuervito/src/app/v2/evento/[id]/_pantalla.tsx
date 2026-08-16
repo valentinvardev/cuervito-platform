@@ -4,8 +4,11 @@ import Link from "next/link";
 import {
   ArrowLeft,
   Check,
-  CloudUpload,
+  CircleAlert,
+  CircleCheck,
+  Clock,
   Copy,
+  Crown,
   ExternalLink,
   Image as ImagenIcono,
   Info,
@@ -14,11 +17,18 @@ import {
   ScanSearch,
   ShoppingBag,
   Tag,
+  Trash2,
   Users,
 } from "lucide-react";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 
-import { guardarPrecioAction } from "./acciones";
+import { iniciales as siglas } from "../../_components/formato";
+import {
+  borrarEventoAction,
+  guardarDatosAction,
+  guardarPrecioAction,
+  publicarAction,
+} from "./acciones";
 import { Soltador } from "./_soltador";
 
 type Foto = { id: string; url: string | null; bib: string | null; vendida: boolean; reconocida: boolean };
@@ -49,6 +59,8 @@ export function Pantalla({
   fotos,
   colaboradores,
   publico,
+  yo,
+  fotosDelDueno,
 }: {
   evento: {
     id: string;
@@ -56,6 +68,8 @@ export function Pantalla({
     fecha: string | null;
     lugar: string | null;
     disciplina: string | null;
+    /** Para el <input type="date">, que quiere aaaa-mm-dd y no "14 de agosto". */
+    fechaISO: string | null;
     portada: string | null;
     publicado: boolean;
     precio: number;
@@ -70,7 +84,12 @@ export function Pantalla({
   fotos: Foto[];
   colaboradores: Colaborador[];
   publico: string | null;
+  yo: string;
+  fotosDelDueno: number;
 }) {
+  const sinCobrar = colaboradores.filter((c) => c.estado !== "PENDING" && !c.cobra);
+  const [publicando, empezarPub] = useTransition();
+  const [avisoPub, setAvisoPub] = useState<string | null>(null);
   const [solapa, setSolapa] = useState<"fotos" | "precio" | "equipo" | "info">("fotos");
   const [filtro, setFiltro] = useState<string>("todas");
   const [buscado, setBuscado] = useState("");
@@ -144,10 +163,31 @@ export function Pantalla({
               </div>
               <h1>{evento.nombre}</h1>
             </div>
+            {/* Publicar es la acción de la pantalla, así que va en la banda y
+                no adentro de una solapa. Antes acá había un link que se iba al
+                panel viejo. */}
             <div className="banda-acc">
-              <Link href={`/dashboard/events/${evento.id}`} className="btn btn-vidrio">
-                Editar en el panel actual
-              </Link>
+              {avisoPub && <span className="btn btn-vidrio">{avisoPub}</span>}
+              <button
+                className="btn btn-vidrio"
+                type="button"
+                disabled={publicando}
+                onClick={() =>
+                  empezarPub(async () => {
+                    const r = await publicarAction(evento.id);
+                    if (r.error) {
+                      setAvisoPub(r.error);
+                      setTimeout(() => setAvisoPub(null), 3000);
+                    }
+                  })
+                }
+              >
+                {publicando
+                  ? "Un momento"
+                  : evento.publicado
+                    ? "Despublicar"
+                    : "Publicar evento"}
+              </button>
             </div>
           </div>
         </section>
@@ -466,44 +506,69 @@ export function Pantalla({
                 </Link>
               </div>
 
-              {colaboradores.length > 0 ? (
-                colaboradores.map((c) => (
-                  <div className="row col-f" key={c.email}>
-                    <span className="col-av">
-                      {c.nombre
-                        .split(" ")
-                        .map((p) => p[0]?.toUpperCase() ?? "")
-                        .slice(0, 2)
-                        .join("")}
-                    </span>
-                    <span className="col-t">
-                      <b>{c.nombre}</b>
-                      <span>{c.email}</span>
-                    </span>
-                    <span className="num soft c-fotos tnum">
-                      {c.fotos > 0 ? c.fotos.toLocaleString("es-AR") : "—"}
-                    </span>
-                    {c.estado === "PENDING" ? (
-                      <span className="pill draft">
-                        <i /> Invitado
-                      </span>
-                    ) : c.cobra ? (
-                      <span className="pill live">
-                        <i /> Activo
-                      </span>
-                    ) : (
-                      // El estado que más duele: aceptó, subió fotos, la gente
-                      // las encuentra y no las puede comprar porque no hay
-                      // dónde depositarle.
-                      <span className="pill bad">
-                        <i /> Sin cobrar
-                      </span>
-                    )}
-                  </div>
-                ))
-              ) : (
+              {/* El dueño va en la tabla y no sólo en la cuenta del encabezado.
+                  Decía "4 fotógrafos" y listaba tres, porque el cuarto era el
+                  que estaba mirando. */}
+              <div className="row col-f">
+                <span className="col-av yo">{siglas(yo)}</span>
+                <span className="col-t">
+                  <b>{yo}</b>
+                  <span>Vos, dueño del evento</span>
+                </span>
+                <span className="num soft c-fotos tnum">
+                  {fotosDelDueno > 0 ? fotosDelDueno.toLocaleString("es-AR") : "—"}
+                </span>
+                <Rol clase="duenio" icono={<Crown />} texto="Dueño" />
+              </div>
+
+              {colaboradores.map((c) => (
+                <div className={`row col-f ${c.estado === "PENDING" ? "espera" : ""}`} key={c.email}>
+                  <span className="col-av">{siglas(c.nombre)}</span>
+                  <span className="col-t">
+                    <b>{c.nombre}</b>
+                    <span>{c.email}</span>
+                  </span>
+                  <span className="num soft c-fotos tnum">
+                    {c.fotos > 0 ? c.fotos.toLocaleString("es-AR") : "—"}
+                  </span>
+                  {c.estado === "PENDING" ? (
+                    <Rol clase="espera" icono={<Clock />} texto="Invitado" />
+                  ) : c.cobra ? (
+                    <Rol clase="activo" icono={<CircleCheck />} texto="Activo" />
+                  ) : (
+                    // El estado que más duele: aceptó, subió fotos, la gente
+                    // las encuentra y no las puede comprar porque no hay
+                    // dónde depositarle.
+                    <Rol clase="sincobrar" icono={<CircleAlert />} texto="Sin cobrar" />
+                  )}
+                </div>
+              ))}
+
+              {colaboradores.length === 0 && (
                 <div className="empty" style={{ padding: "var(--s-6) var(--s-4)" }}>
-                  <p>Todavía no invitaste a nadie a cubrir este evento.</p>
+                  <p>Todavía no invitaste a nadie más a cubrir este evento.</p>
+                </div>
+              )}
+
+              {/* El aviso sólo aparece cuando hay alguien trabado, porque es el
+                  caso en el que el dueño se entera tarde: el atleta encuentra
+                  las fotos, no las puede pagar y le escribe a él. */}
+              {sinCobrar.length > 0 && (
+                <div className="porque" style={{ marginTop: "var(--s-4)" }}>
+                  <CircleAlert />
+                  <span>
+                    {sinCobrar.length === 1 ? (
+                      <>
+                        <b>Las fotos de {sinCobrar[0]!.nombre.split(" ")[0]} no se pueden comprar.</b>{" "}
+                        Todavía no conectó Mercado Pago, así que no hay dónde depositarle.
+                      </>
+                    ) : (
+                      <>
+                        <b>Hay {sinCobrar.length} fotógrafos sin Mercado Pago.</b> Sus fotos aparecen
+                        en las búsquedas pero no se pueden comprar.
+                      </>
+                    )}
+                  </span>
                 </div>
               )}
 
@@ -517,54 +582,236 @@ export function Pantalla({
 
         {solapa === "info" && (
           <section className="panel-s" data-activo="1">
-            <div className="card blq">
-              <h2>Datos del evento</h2>
-              <div className="blq-b">
-                <dl className="dl">
-                  <div>
-                    <dt>Nombre</dt>
-                    <dd>{evento.nombre}</dd>
-                  </div>
-                  <div>
-                    <dt>Fecha</dt>
-                    <dd>{evento.fecha ?? "Sin fecha"}</dd>
-                  </div>
-                  <div>
-                    <dt>Lugar</dt>
-                    <dd>{evento.lugar ?? "—"}</dd>
-                  </div>
-                  <div>
-                    <dt>Disciplina</dt>
-                    <dd>{evento.disciplina ?? "—"}</dd>
-                  </div>
-                  <div>
-                    <dt>Precio por foto</dt>
-                    <dd className="tnum">${evento.precio.toLocaleString("es-AR")}</dd>
-                  </div>
-                </dl>
-
-                {evento.descripcion && (
-                  <div className="cuenta-p" style={{ marginTop: "var(--s-3)" }}>
-                    {evento.descripcion}
-                  </div>
-                )}
-
-                {/* Editar todavía vive en el panel actual: duplicar el
-                    formulario acá sería una segunda validación del mismo dato,
-                    lista para divergir de la que ya funciona. */}
-                <Link
-                  href={`/dashboard/events/${evento.id}/edit`}
-                  className="btn btn-ghost"
-                  style={{ justifySelf: "start" }}
-                >
-                  <CloudUpload /> Editar en el panel actual
-                </Link>
-              </div>
-            </div>
+            <Datos evento={evento} />
+            <Borrar eventoId={evento.id} nombre={evento.nombre} fotos={evento.total} />
           </section>
         )}
       </div>
     </main>
+  );
+}
+
+/**
+ * Los datos del evento, editables acá mismo.
+ *
+ * Antes esto era una lista de sólo lectura y un botón que mandaba a
+ * /dashboard/events/[id]/edit: se salía del panel nuevo para cambiar un lugar,
+ * y se volvía a otra interfaz.
+ *
+ * La fecha va con <input type="date"> y no con el calendario dibujado del
+ * laboratorio. El calendario propio son unas doscientas líneas para conseguir
+ * lo mismo que el nativo, que además ya sabe de teclado, de lectores de
+ * pantalla y del formato de fecha de quien lo usa.
+ */
+function Datos({
+  evento,
+}: {
+  evento: {
+    id: string;
+    nombre: string;
+    fechaISO: string | null;
+    lugar: string | null;
+    disciplina: string | null;
+    descripcion: string | null;
+  };
+}) {
+  const [d, setD] = useState({
+    name: evento.nombre,
+    eventDate: evento.fechaISO ?? "",
+    location: evento.lugar ?? "",
+    discipline: evento.disciplina ?? "",
+    description: evento.descripcion ?? "",
+  });
+  const [guardando, empezar] = useTransition();
+  const [aviso, setAviso] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  const original = {
+    name: evento.nombre,
+    eventDate: evento.fechaISO ?? "",
+    location: evento.lugar ?? "",
+    discipline: evento.disciplina ?? "",
+    description: evento.descripcion ?? "",
+  };
+  const cambiado = (Object.keys(d) as (keyof typeof d)[]).some((k) => d[k] !== original[k]);
+  const cambiaElLink = d.name.trim() !== evento.nombre;
+
+  const campo = (k: keyof typeof d) => ({
+    value: d[k],
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setD({ ...d, [k]: e.target.value }),
+  });
+
+  function guardar() {
+    empezar(async () => {
+      const r = await guardarDatosAction(evento.id, {
+        name: d.name.trim(),
+        location: d.location.trim() || undefined,
+        discipline: d.discipline.trim() || undefined,
+        eventDate: d.eventDate || undefined,
+        description: d.description.trim() || undefined,
+      });
+      setError(!!r.error);
+      setAviso(r.error ?? "Guardado");
+      setTimeout(() => setAviso(null), 2400);
+    });
+  }
+
+  return (
+    <div className="card blq">
+      <h2>Datos del evento</h2>
+      <div className="blq-b">
+        <div className="campo">
+          <label htmlFor="nom">Nombre</label>
+          <input className="inp" id="nom" {...campo("name")} />
+          {/* Se avisa ANTES de guardar y no después. El panel viejo rehace la
+              dirección al cambiar el nombre sin decir nada, y los links que ya
+              se repartieron dejan de funcionar. */}
+          {cambiaElLink && (
+            <div className="pista">
+              Cambiar el nombre cambia el link del evento. Los que ya compartiste dejan de funcionar.
+            </div>
+          )}
+        </div>
+
+        <div className="par">
+          <div className="campo">
+            <label htmlFor="fecha">Fecha</label>
+            <input className="inp" id="fecha" type="date" {...campo("eventDate")} />
+          </div>
+          <div className="campo">
+            <label htmlFor="lugar">Lugar</label>
+            <input className="inp" id="lugar" placeholder="Chivilcoy, Buenos Aires" {...campo("location")} />
+          </div>
+        </div>
+
+        <div className="campo">
+          <label htmlFor="disc">Disciplina</label>
+          <input className="inp" id="disc" placeholder="Running, ciclismo, duatlón…" {...campo("discipline")} />
+        </div>
+
+        <div className="campo">
+          <label htmlFor="desc">Descripción</label>
+          <textarea
+            className="ta"
+            id="desc"
+            placeholder="Un par de líneas para el atleta que llega desde el link."
+            {...campo("description")}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: "var(--s-3)", alignItems: "center" }}>
+          <button
+            className="btn btn-pri"
+            type="button"
+            onClick={guardar}
+            disabled={guardando || !cambiado}
+          >
+            {guardando ? "Guardando" : "Guardar cambios"}
+          </button>
+          {aviso && (
+            <span style={{ fontSize: 13, color: error ? "var(--bad)" : "var(--ok)" }}>{aviso}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Borrar el evento.
+ *
+ * Pide escribir el nombre. Es más fricción que un "¿seguro?", y es a propósito:
+ * esto se lleva puestas las fotos y el link público, y un diálogo de confirmar
+ * se acepta sin leer cuando uno viene haciendo clicks.
+ */
+function Borrar({ eventoId, nombre, fotos }: { eventoId: string; nombre: string; fotos: number }) {
+  const [confirmando, setConfirmando] = useState(false);
+  const [escrito, setEscrito] = useState("");
+  const [borrando, empezar] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const coincide = escrito.trim().toLowerCase() === nombre.trim().toLowerCase();
+
+  return (
+    <div className="card blq riesgo">
+      <h2>Borrar el evento</h2>
+      <p className="ayuda">
+        Se borran {fotos > 0 ? `las ${fotos.toLocaleString("es-AR")} fotos` : "las fotos"} y el link
+        público deja de funcionar. Las ventas ya hechas quedan registradas y el que compró conserva
+        su descarga. No se puede deshacer.
+      </p>
+      <div className="blq-b">
+        {confirmando ? (
+          <>
+            <div className="campo">
+              <label htmlFor="conf">
+                Escribí <b>{nombre}</b> para confirmar
+              </label>
+              <input
+                className="inp"
+                id="conf"
+                value={escrito}
+                autoFocus
+                onChange={(e) => setEscrito(e.target.value)}
+              />
+            </div>
+            <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
+              <button
+                type="button"
+                className="btn btn-peligro"
+                disabled={!coincide || borrando}
+                onClick={() =>
+                  empezar(async () => {
+                    const r = await borrarEventoAction(eventoId);
+                    // Si salió bien no se llega acá: la acción redirige.
+                    if (r?.error) setError(r.error);
+                  })
+                }
+              >
+                <Trash2 /> {borrando ? "Borrando" : "Borrar para siempre"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setConfirmando(false);
+                  setEscrito("");
+                }}
+              >
+                Cancelar
+              </button>
+              {error && <span style={{ color: "var(--bad)", fontSize: 13 }}>{error}</span>}
+            </div>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-peligro"
+            style={{ justifySelf: "start" }}
+            onClick={() => setConfirmando(true)}
+          >
+            Borrar este evento
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * El rol de cada fotógrafo, como texto.
+ *
+ * Antes eran píldoras. Una píldora es una caja con fondo, y cuatro cajas de
+ * colores distintos en una columna angosta compiten con los nombres y los
+ * números, que es lo que la tabla vino a mostrar. Como texto con ícono, el rol
+ * se reconoce igual de rápido y deja de pelear por atención.
+ */
+function Rol({ clase, icono, texto }: { clase: string; icono: React.ReactNode; texto: string }) {
+  return (
+    <span className={`rol ${clase}`}>
+      {icono} {texto}
+    </span>
   );
 }
 
@@ -588,13 +835,16 @@ function Precio({
   inicial: number;
   comision: number;
 }) {
-  const [texto, setTexto] = useState(String(Math.round(inicial)));
+  // Se guardan los dígitos pelados y se muestra con puntos: el separador es
+  // presentación, y tenerlo en el estado obliga a limpiarlo en cada lectura.
+  const [digitos, setDigitos] = useState(String(Math.round(inicial)));
+  const campo = useRef<HTMLInputElement>(null);
   const [guardando, empezar] = useTransition();
   const [aviso, setAviso] = useState<string | null>(null);
   const [error, setError] = useState(false);
 
-  const n = Number(texto);
-  const valido = texto.trim() !== "" && Number.isFinite(n) && n >= 0;
+  const n = Number(digitos);
+  const valido = digitos !== "" && Number.isFinite(n) && n >= 0;
   const cambiado = valido && Math.round(n * 100) !== Math.round(inicial * 100);
   const neto = valido ? Math.round(n * (1 - comision / 100)) : 0;
 
@@ -622,11 +872,33 @@ function Precio({
             <div className="pegado">
               <span className="fijo">$</span>
               <input
+                ref={campo}
                 className="inp tnum"
                 id="p1"
                 inputMode="numeric"
-                value={texto}
-                onChange={(e) => setTexto(e.target.value.replace(/[^\d]/g, ""))}
+                value={digitos === "" ? "" : Number(digitos).toLocaleString("es-AR")}
+                onChange={(e) => {
+                  const el = e.target;
+                  // Cuántos dígitos había antes del cursor. Reformatear corre
+                  // el texto —escribir un dígito puede agregar un punto— y sin
+                  // esto el cursor se va al final en medio de una corrección.
+                  const antes = el.value.slice(0, el.selectionStart ?? 0).replace(/\D/g, "").length;
+                  const limpio = el.value.replace(/\D/g, "").slice(0, 8);
+                  setDigitos(limpio);
+
+                  const puesto = limpio === "" ? "" : Number(limpio).toLocaleString("es-AR");
+                  let pos = puesto.length;
+                  for (let i = 0, d = 0; i < puesto.length; i++) {
+                    if (/\d/.test(puesto[i]!)) d++;
+                    if (d === antes) {
+                      pos = i + 1;
+                      break;
+                    }
+                  }
+                  // En el próximo cuadro: React todavía no escribió el valor
+                  // nuevo en el input, y mover el cursor ahora no serviría.
+                  requestAnimationFrame(() => campo.current?.setSelectionRange(pos, pos));
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
