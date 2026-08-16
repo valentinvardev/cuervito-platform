@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Hammer } from "lucide-react";
 
-import { Shell } from "./shell";
-import { sesionV2 } from "./sesion";
+
 
 /**
  * Pantalla todavía no rediseñada.
@@ -13,21 +12,16 @@ import { sesionV2 } from "./sesion";
  * camino. Acá se conserva el armazón, se dice la verdad y se ofrece el enlace
  * a la pantalla que sí existe.
  */
-export async function Pendiente({
-  activo,
+export function Pendiente({
   titulo,
   bajada,
   actual,
 }: {
-  activo: string;
   titulo: string;
   bajada: string;
   actual: string;
 }) {
-  const { nombre, slug, iniciales } = await sesionV2();
-
   return (
-    <Shell nombre={nombre} slug={slug} iniciales={iniciales} activo={activo}>
       <main className="canvas">
         <div className="canvas-in">
           <div className="head">
@@ -54,6 +48,5 @@ export async function Pendiente({
           </div>
         </div>
       </main>
-    </Shell>
   );
 }

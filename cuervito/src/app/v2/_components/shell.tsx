@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   CalendarDays,
   LayoutGrid,
@@ -9,26 +10,24 @@ import {
   Moon,
   Plus,
   ReceiptText,
-  Search,
   Store,
   Sun,
   UserRound,
   Wallet,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+
+import { Buscador } from "./buscador";
 
 /**
- * Riel y barra superior de la vista previa.
+ * Riel y barra superior.
  *
- * Todos los destinos son rutas /v2. Antes apuntaban al panel actual, y el
- * resultado era que cualquier click te sacaba de la versión nueva y ya no se
- * podía recorrer: para comparar dos diseños hay que poder quedarse adentro de
- * uno el tiempo suficiente.
- *
- * Las pantallas que todavía no están rediseñadas existen igual como ruta /v2 y
- * muestran el armazón nuevo con un aviso y el enlace a la actual. Es preferible
- * a un enlace que te expulsa sin avisar.
+ * Vive en el LAYOUT y no en cada página. Cuando estaba en la página, cada
+ * navegación desmontaba el armazón entero y lo volvía a construir: se veía
+ * parpadear el riel y la barra en cada click, que es de donde salía la
+ * sensación de lentitud. Desde el layout, React lo mantiene montado y sólo
+ * cambia el contenido.
  */
 const NAV = [
   { id: "inicio", href: "/v2", icono: LayoutGrid, texto: "Inicio" },
@@ -43,38 +42,50 @@ const CUENTA = [
   { id: "ayuda", href: "/v2/ayuda", icono: LifeBuoy, texto: "Ayuda" },
 ];
 
+const BUSCAR: Record<string, string> = {
+  eventos: "Buscar evento por nombre o lugar",
+  ventas: "Buscar por comprador, mail o dorsal",
+};
+
+function idDeRuta(p: string) {
+  if (p === "/v2") return "inicio";
+  return p.replace("/v2/", "").split("/")[0] ?? "inicio";
+}
+
 export function Shell({
   nombre,
   slug,
   iniciales,
-  activo,
-  buscar = "Buscar evento, dorsal o venta",
   children,
 }: {
   nombre: string;
   slug: string;
   iniciales: string;
-  activo: string;
-  buscar?: string;
   children: React.ReactNode;
 }) {
+  const ruta = usePathname();
   const [cajon, setCajon] = useState(false);
+  const [, empezar] = useTransition();
 
-  // Misma clave de tema que el panel actual, así pasar de una versión a la
-  // otra no cambia de tema en el camino.
+  // Destino optimista: el riel se marca al soltar el click, sin esperar a que
+  // el servidor conteste. usePathname sólo cambia cuando la navegación ya
+  // terminó, y hasta entonces el ítem apretado seguía apagado: se sentía como
+  // que el click no había hecho nada.
+  const [pedido, setPedido] = useState<string | null>(null);
+  const actual = idDeRuta(ruta);
+  const activo = pedido ?? actual;
+
+  useEffect(() => {
+    setPedido(null);
+  }, [ruta]);
+
   useEffect(() => {
     const raiz = document.documentElement;
     if (!raiz.dataset.theme) {
       const guardado = localStorage.getItem("cuervito-theme");
       const hora = new Date().getHours();
       raiz.dataset.theme =
-        guardado === "light"
-          ? ""
-          : guardado === "dark"
-            ? "dark"
-            : hora >= 7 && hora < 19
-              ? ""
-              : "dark";
+        guardado === "light" ? "" : guardado === "dark" ? "dark" : hora >= 7 && hora < 19 ? "" : "dark";
     }
     raiz.dataset.listo = "1";
   }, []);
@@ -100,7 +111,14 @@ export function Shell({
       href={i.href}
       className="rl"
       aria-current={i.id === activo ? "page" : undefined}
-      onClick={() => setCajon(false)}
+      prefetch
+      onClick={() => {
+        setPedido(i.id);
+        setCajon(false);
+        empezar(() => {
+          /* marca la navegación como transición para que React no bloquee */
+        });
+      }}
     >
       <i.icono /> {i.texto}
     </Link>
@@ -145,10 +163,7 @@ export function Shell({
             <span className="ico ico-menu">{cajon ? <X /> : <Menu />}</span>
           </button>
 
-          <div className="search">
-            <Search className="lupa" />
-            <input type="search" placeholder={buscar} disabled />
-          </div>
+          <Buscador placeholder={BUSCAR[actual] ?? "Buscar evento, dorsal o venta"} />
 
           <div className="top-r">
             <button className="btn btn-ghost btn-icon" onClick={cambiarTema} aria-label="Cambiar tema">

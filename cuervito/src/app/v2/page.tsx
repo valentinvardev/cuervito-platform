@@ -21,7 +21,6 @@ import { db } from "~/server/db";
 
 import { Grafico } from "./_components/grafico";
 import { Numero } from "./_components/numero";
-import { Shell } from "./_components/shell";
 
 export const dynamic = "force-dynamic";
 
@@ -201,8 +200,7 @@ export default async function V2Page() {
   const saludo = hora < 13 ? "Buen día" : hora < 20 ? "Buenas tardes" : "Buenas noches";
 
   return (
-    <Shell nombre={nombre} slug={yo?.slug ?? "tu-usuario"} iniciales={iniciales(nombre)} activo="inicio">
-      <main className="canvas">
+    <main className="canvas">
         <div className="canvas-in">
           <div className="head">
             <div>
@@ -446,6 +444,5 @@ export default async function V2Page() {
           </section>
         </div>
       </main>
-    </Shell>
   );
 }

@@ -3,13 +3,12 @@ import { CalendarDays, ImageOff, Plus } from "lucide-react";
 
 import { db } from "~/server/db";
 
-import { Shell } from "../_components/shell";
 import { pesos, sesionV2 } from "../_components/sesion";
 
 export const dynamic = "force-dynamic";
 
 export default async function V2Eventos() {
-  const { userId, nombre, slug, iniciales } = await sesionV2();
+  const { userId } = await sesionV2();
 
   const eventos = await db.event.findMany({
     where: { ownerId: userId, NOT: { status: "ARCHIVED" } },
@@ -30,14 +29,7 @@ export default async function V2Eventos() {
   const totalFotos = eventos.reduce((a, e) => a + e._count.photos, 0);
 
   return (
-    <Shell
-      nombre={nombre}
-      slug={slug}
-      iniciales={iniciales}
-      activo="eventos"
-      buscar="Buscar evento por nombre o lugar"
-    >
-      <main className="canvas">
+    <main className="canvas">
         <div className="canvas-in">
           <div className="head">
             <div>
@@ -126,6 +118,5 @@ export default async function V2Eventos() {
           )}
         </div>
       </main>
-    </Shell>
   );
 }

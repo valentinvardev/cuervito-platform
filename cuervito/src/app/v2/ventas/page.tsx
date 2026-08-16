@@ -3,7 +3,6 @@ import { ReceiptText } from "lucide-react";
 
 import { db } from "~/server/db";
 
-import { Shell } from "../_components/shell";
 import { hace, iniciales as siglas, pesos, sesionV2 } from "../_components/sesion";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +18,7 @@ const ESTADO: Record<string, { txt: string; cls: string }> = {
 };
 
 export default async function V2Ventas() {
-  const { userId, nombre, slug, iniciales } = await sesionV2();
+  const { userId } = await sesionV2();
 
   const desde = new Date(Date.now() - DIAS * 86400000);
 
@@ -52,14 +51,7 @@ export default async function V2Ventas() {
   const neto = resumen._sum.sellerNetCents ?? 0;
 
   return (
-    <Shell
-      nombre={nombre}
-      slug={slug}
-      iniciales={iniciales}
-      activo="ventas"
-      buscar="Buscar por comprador, mail o dorsal"
-    >
-      <main className="canvas">
+    <main className="canvas">
         <div className="canvas-in">
           <div className="head">
             <div>
@@ -137,6 +129,5 @@ export default async function V2Ventas() {
           </section>
         </div>
       </main>
-    </Shell>
   );
 }
