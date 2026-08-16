@@ -130,8 +130,19 @@
 
 @media (max-width: 1080px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 900px) {
-  .ev { grid-template-columns: 44px minmax(0, 1fr) auto; }
+  /* Tres columnas y la fila pasa a dos renglones. El estado baja al segundo,
+     pegado a la derecha y abajo del importe.
+
+     Antes no llevaba columna: con cuatro hijos para tres columnas, la
+     colocación automática mandaba la píldora al renglón siguiente pero a la
+     PRIMERA columna, que mide 44px. Una píldora de 72px ahí se sale 18px por
+     la izquierda y cruza el borde de la tarjeta. Medido a 500px de ancho.
+
+     La columna del importe pasa a minmax porque con auto se encogía a 44px y
+     el precio quedaba apretado contra el nombre. */
+  .ev { grid-template-columns: 44px minmax(0, 1fr) minmax(84px, auto); }
   .ev .num.soft { display: none; }
+  .ev .pill { grid-column: 3; justify-self: end; }
 }
 @media (max-width: 560px) { .kpis { grid-template-columns: minmax(0, 1fr); } }
 
