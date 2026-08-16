@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 
+import { iniciales, slugDeNombre } from "./formato";
+
 /**
  * Control de acceso y datos del encabezado, para todas las pantallas de /v2.
  *
@@ -35,28 +37,11 @@ export async function sesionV2() {
   };
 }
 
-export function iniciales(nombre: string) {
-  return (
-    nombre
-      .split(" ")
-      .map((p) => p[0]?.toUpperCase() ?? "")
-      .filter(Boolean)
-      .slice(0, 2)
-      .join("") || "?"
-  );
-}
-
-export function pesos(centavos: number) {
-  return "$" + Math.round(centavos / 100).toLocaleString("es-AR");
-}
-
-export function hace(d: Date) {
-  const min = Math.round((Date.now() - d.getTime()) / 60000);
-  if (min < 60) return `hace ${min} min`;
-  if (min < 1440) return `hace ${Math.round(min / 60)} h`;
-  return `hace ${Math.round(min / 1440)} d`;
-}
-
+/* Las funciones de formateo viven en formato.ts, que no importa nada del
+   servidor: así las puede usar también un componente cliente sin arrastrar
+   Prisma al navegador. Se reexportan para no tocar lo que ya las importa
+   desde acá. */
+export { hace, iniciales, pesos, slugDeNombre } from "./formato";
 
 /**
  * Dirección a partir del nombre, con sufijo si está tomada.
@@ -69,21 +54,9 @@ export function hace(d: Date) {
  * viejas que puedan haber quedado sin uno, que si no se caerían al guardar el
  * perfil con un error de un campo que ni siquiera se muestra.
  */
-export function slugDeNombre(nombre: string) {
-  return (
-    nombre
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 40) || "fotografo"
-  );
-}
-
 export async function asegurarSlug(userId: string, nombre: string, actual: string | null) {
-  if (actual) return actual;
   const base = slugDeNombre(nombre);
+  if (actual) return actual;
   let slug = base;
   for (let i = 2; i < 50; i++) {
     const tomado = await db.user.findUnique({ where: { slug }, select: { id: true } });

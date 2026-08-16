@@ -3,19 +3,12 @@ import { ReceiptText } from "lucide-react";
 
 import { db } from "~/server/db";
 
-import { hace, iniciales as siglas, pesos, sesionV2 } from "../_components/sesion";
+import { hace, pesos, sesionV2 } from "../_components/sesion";
+import { Lista } from "./_lista";
 
 export const dynamic = "force-dynamic";
 
 const DIAS = 30;
-
-const ESTADO: Record<string, { txt: string; cls: string }> = {
-  PAID: { txt: "Acreditada", cls: "" },
-  PENDING: { txt: "Pendiente", cls: "draft" },
-  REFUNDED: { txt: "Reembolsada", cls: "bad" },
-  FAILED: { txt: "Fallida", cls: "bad" },
-  EXPIRED: { txt: "Vencida", cls: "bad" },
-};
 
 export default async function V2Ventas() {
   const { userId } = await sesionV2();
@@ -39,6 +32,13 @@ export default async function V2Ventas() {
         sellerNetCents: true,
         status: true,
         createdAt: true,
+        paidAt: true,
+        // Para el cajón. Viajan con la lista porque son cuatro campos de la
+        // misma fila: lo caro del detalle son las miniaturas, y ésas sí se
+        // piden recién al abrir.
+        downloadToken: true,
+        downloadTokenExpires: true,
+        downloadCount: true,
         event: { select: { name: true } },
         _count: { select: { items: true } },
       },
@@ -79,38 +79,22 @@ export default async function V2Ventas() {
 
           <section className="card">
             {ventas.length > 0 ? (
-              <>
-                <div className="row row-h vt">
-                  <span />
-                  <span>Comprador</span>
-                  <span className="c-ev">Evento</span>
-                  <span className="num c-fotos">Fotos</span>
-                  <span className="num c-fecha">Fecha</span>
-                  <span className="num">Te queda</span>
-                  <span className="c-estado" />
-                </div>
-
-                {ventas.map((v) => {
-                  const e = ESTADO[v.status] ?? { txt: v.status, cls: "" };
-                  const quien = v.buyerName ?? v.buyerEmail;
-                  return (
-                    <div key={v.id} className="row vt">
-                      <span className="v-av">{siglas(quien)}</span>
-                      <span className="v-who">
-                        <b>{quien}</b>
-                        <span>{v.buyerEmail}</span>
-                      </span>
-                      <span className="v-ev c-ev">{v.event.name}</span>
-                      <span className="num soft c-fotos">{v._count.items}</span>
-                      <span className="num soft c-fecha">{hace(v.createdAt)}</span>
-                      <span className="num tnum neto">{pesos(v.sellerNetCents)}</span>
-                      <span className={`pill ${e.cls} c-estado`}>
-                        <i /> {e.txt}
-                      </span>
-                    </div>
-                  );
-                })}
-              </>
+              <Lista
+                ventas={ventas.map((v) => ({
+                  id: v.id,
+                  quien: v.buyerName ?? v.buyerEmail,
+                  mail: v.buyerEmail,
+                  evento: v.event.name,
+                  fotos: v._count.items,
+                  neto: v.sellerNetCents,
+                  estado: v.status,
+                  fecha: (v.paidAt ?? v.createdAt).toISOString(),
+                  hace: hace(v.createdAt),
+                  descargas: v.downloadCount,
+                  vence: v.downloadTokenExpires?.toISOString() ?? null,
+                  token: v.downloadToken,
+                }))}
+              />
             ) : (
               <div className="empty">
                 <div className="empty-i">
