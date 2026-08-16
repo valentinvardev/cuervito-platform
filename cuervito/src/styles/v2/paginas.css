@@ -987,3 +987,45 @@
   .contacto { grid-template-columns: minmax(0, 1fr); }
   .guias { grid-template-columns: minmax(0, 1fr); }
 }
+
+
+/* ═════════════════ ARREGLOS DE LA CONCATENACIÓN ══════════════════════════
+   Los archivos del laboratorio son independientes y varios definen las mismas
+   clases de andamiaje (.blq-b, .par, .lado). Puestos uno atrás del otro en un
+   solo archivo, la última definición gana con igual especificidad y rompe a la
+   anterior. El caso que se vio: .cols ponía display:flex para la fila de
+   colores, y el .blq-b de perfil.css, cien líneas más abajo, lo pisaba con
+   display:grid y los colores se apilaban en columna.
+
+   Se resuelve subiendo la especificidad de las combinaciones, no reordenando:
+   el orden depende de qué pantalla se copie primero y volvería a romperse en
+   la próxima copia.
+   ══════════════════════════════════════════════════════════════════════ */
+.blq-b.cols { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.blq-b.plt { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
+.blq-b.redes { display: grid; gap: var(--s-3); }
+
+/* ── Previa real de la página pública ────────────────────────────────────────
+   Ya no es una maqueta dibujada: es la página de verdad adentro de un iframe,
+   reducida para entrar en el marco. Una maqueta se desincroniza en cuanto la
+   página pública cambia y termina mintiendo justo donde más confianza hace
+   falta; el iframe no puede mentir porque ES la página. */
+.previa-real {
+  position: relative;
+  overflow: hidden;
+  background: var(--paper-3);
+}
+.previa-real iframe {
+  border: 0;
+  transform-origin: top left;
+  /* El puntero no entra: es una previa, no un lugar donde navegar. Sin esto,
+     un click adentro te lleva a otra página sin que se vea de dónde salió. */
+  pointer-events: none;
+}
+.previa-vacia {
+  display: grid; place-content: center; justify-items: center; gap: 10px;
+  padding: var(--s-7) var(--s-4);
+  text-align: center;
+  color: var(--ink-3); font-size: 13px;
+}
+.previa-vacia svg { width: 22px; height: 22px; }
