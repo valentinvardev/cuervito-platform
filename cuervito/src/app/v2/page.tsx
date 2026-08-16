@@ -388,7 +388,7 @@ export default async function V2Page() {
                   </div>
                   <h3>No se encontraron eventos</h3>
                   <p>Cuando crees tu primer evento y subas fotos, van a aparecer acá.</p>
-                  <Link href="/dashboard/events/new" className="btn btn-pri">
+                  <Link href="/v2/nuevo" className="btn btn-pri">
                     Crear mi primer evento
                   </Link>
                 </div>

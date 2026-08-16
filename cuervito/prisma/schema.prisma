@@ -182,6 +182,18 @@ model Event {
     pricePerPhoto Decimal     @default(0) @db.Decimal(10, 2)
     currency      String      @default("ARS")
 
+    /// Si este evento usa reconocimiento de caras y dorsales. En false, el
+    /// atleta encuentra sus fotos mirando la galería, como en cualquier álbum
+    /// web. Se elige al crear el evento y define la comisión: procesar cada
+    /// foto una por una lo pagamos nosotros, así que quien no lo usa no lo paga.
+    recognition Boolean @default(true)
+
+    /// Comisión de la plataforma para ESTE evento, en porcentaje. Null usa
+    /// PLATFORM_FEE_PERCENT, que es lo que rige para todos los eventos creados
+    /// antes de que esto existiera: cambiarles la comisión de golpe sería
+    /// modificar el trato de ventas ya en curso.
+    platformFeePct Decimal? @db.Decimal(5, 2)
+
     // AWS Rekognition collection for this event (created on first photo)
     rekCollectionId String?
 

@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
       name: true,
       isPublished: true,
       pricePerPhoto: true,
+      platformFeePct: true,
       ownerId: true,
       owner: {
         select: {
@@ -178,9 +179,14 @@ export async function POST(req: NextRequest) {
   );
 
   const totalCents = Math.max(subtotalCents - discountCents, 0);
-  const platformFeeCents = Math.round(
-    (totalCents * env.PLATFORM_FEE_PERCENT) / 100,
-  );
+  // La comisión la define el EVENTO, no una constante global: un evento sin
+  // reconocimiento paga menos porque no nos cuesta procesarlo. Los eventos
+  // creados antes de que existiera la columna la tienen en null y siguen con
+  // PLATFORM_FEE_PERCENT — cambiarles el porcentaje de golpe sería modificar el
+  // trato de ventas ya en curso.
+  const feePct =
+    event.platformFeePct !== null ? Number(event.platformFeePct) : env.PLATFORM_FEE_PERCENT;
+  const platformFeeCents = Math.round((totalCents * feePct) / 100);
   const sellerNetCents = totalCents - platformFeeCents;
 
   // === TEST MODE ===

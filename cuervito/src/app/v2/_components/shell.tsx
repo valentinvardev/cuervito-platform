@@ -225,7 +225,7 @@ export function Shell({
                 <Sun />
               </span>
             </button>
-            <Link href="/dashboard/events/new" className="btn btn-pri">
+            <Link href="/v2/nuevo" className="btn btn-pri" prefetch>
               <Plus /> Nuevo evento
             </Link>
           </div>
