@@ -10,6 +10,9 @@ const TABS = [
   { href: "/admin/watermark", label: "Watermark", icon: "ti-watermark", tip: "Marca de agua global aplicada a las previews" },
   { href: "/admin/editor", label: "Editor", icon: "ti-color-swatch", tip: "Editor de plantillas y posts (admin only)" },
   { href: "/admin/settings", label: "Settings", icon: "ti-settings", tip: "Configuración global de la plataforma" },
+  // Vive fuera de /admin porque no es una pantalla de administración: es el
+  // panel del fotógrafo rediseñado, mostrado con los datos del admin.
+  { href: "/v2", label: "Panel nuevo", icon: "ti-sparkles", tip: "Vista previa del panel del fotógrafo rediseñado, con tus datos reales" },
 ];
 
 export function AdminTabs() {

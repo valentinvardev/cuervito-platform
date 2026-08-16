@@ -1,0 +1,143 @@
+/* COPIADO DE lab/. No editar acá: los cambios se hacen en el laboratorio
+   y se vuelven a copiar, si no las dos versiones divergen y la del
+   laboratorio deja de servir para decidir. */
+/* =============================================================================
+   encontrate · panel · inicio
+   -----------------------------------------------------------------------------
+   Sólo lo propio de esta pantalla. El riel, la barra, la tarjeta y la fila
+   viven en panel.css.
+
+   El inicio viejo era una grilla de seis tarjetas que decían Eventos, Ventas,
+   Perfil, Ayuda: el menú dibujado dos veces, porque la barra ya llevaba a los
+   mismos lugares. Acá esa grilla desaparece y el espacio se usa para lo que
+   sólo puede estar en el inicio: qué pasa ahora, cuánta plata hay, y qué está
+   frenado esperándote.
+   ========================================================================== */
+
+/* ── Indicadores ─────────────────────────────────────────────────────────── */
+/* Tres y no cuatro: se fue "A cobrar". Con la plata entrando en el momento
+   no hay nada pendiente de nuestro lado, así que esa tarjeta mostraba un
+   saldo que no existe. */
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
+.kpi .k-top { display: flex; align-items: center; justify-content: space-between; color: var(--ink-3); }
+.kpi .k-lab { font-size: 12px; font-weight: 500; }
+.kpi svg { width: 15px; height: 15px; }
+
+/* Outfit 200 en tamaño grande es lo mejor que dio el sistema, y una cifra de
+   plata es exactamente donde luce. Tabular para que no bailen los dígitos. */
+.kpi .k-n {
+  margin-top: var(--s-3);
+  font-size: 34px; font-weight: 200;
+  letter-spacing: -0.035em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.kpi .k-n small { font-size: 20px; font-weight: 300; color: var(--ink-3); }
+.kpi .k-sub { margin-top: 9px; font-size: 12px; color: var(--ink-3); display: flex; align-items: center; gap: 5px; }
+.delta { display: inline-flex; align-items: center; gap: 3px; font-weight: 500; }
+.delta svg { width: 12px; height: 12px; }
+.delta.up { color: var(--ok); }
+.delta.down { color: var(--bad); }
+
+/* ── Gráfico ─────────────────────────────────────────────────────────────── */
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: 190px; overflow: visible; }
+.chart .grid line { stroke: var(--line-soft); stroke-width: 1; }
+.chart .ln {
+  fill: none; stroke: var(--ink); stroke-width: 1.75;
+  stroke-linejoin: round; stroke-linecap: round;
+  vector-effect: non-scaling-stroke;   /* si no, el estirado del viewBox lo engorda */
+}
+.chart .ar { fill: url(#fade); }
+
+/* La línea de cursor y el punto van en HTML sobre el SVG, no adentro: el
+   viewBox se estira con preserveAspectRatio="none" y dentro de ese sistema
+   deformado un círculo sale ovalado. Afuera son simplemente dos div. */
+.chart .cur {
+  position: absolute; top: 0; bottom: 0; width: 1px;
+  background: var(--line-strong);
+  opacity: 0; pointer-events: none; transition: opacity 120ms ease;
+}
+.chart .pt {
+  position: absolute; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--paper-2); border: 2px solid var(--ink);
+  transform: translate(-50%, -50%);
+  opacity: 0; pointer-events: none; transition: opacity 120ms ease;
+}
+.chart.on .cur, .chart.on .pt { opacity: 1; }
+
+.tip {
+  position: absolute; z-index: 5;
+  transform: translate(-50%, -120%);
+  padding: 7px 10px;
+  background: var(--ink); color: var(--paper);
+  border-radius: var(--r-2);
+  font-size: 12px; line-height: 1.35; white-space: nowrap;
+  pointer-events: none; opacity: 0; transition: opacity 120ms ease;
+}
+.chart.on .tip { opacity: 1; }
+.tip b { display: block; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.tip span { color: color-mix(in srgb, var(--paper) 55%, transparent); }
+
+.x-ax { display: flex; justify-content: space-between; margin-top: 9px; font-size: 11px; color: var(--ink-3); }
+
+/* ── Atención ────────────────────────────────────────────────────────────────
+   El bloque que justifica que esta pantalla exista. En vez de seis atajos que
+   repiten el menú, una lista corta de cosas frenadas esperando una decisión,
+   con la acción al lado. Si queda vacía se dice y se celebra: un panel que
+   nunca puede quedar limpio genera ceguera. ──────────────────────────────── */
+.at { grid-template-columns: 26px minmax(0, 1fr) auto; }
+.at-i {
+  width: 26px; height: 26px; border-radius: 7px;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.at-i svg { width: 14px; height: 14px; }
+.at-i.warn { background: var(--accent-wash); color: var(--accent); }
+.at-t { min-width: 0; line-height: 1.35; }
+.at-t b { font-size: 13.5px; font-weight: 500; }
+.at-t span { display: block; font-size: 12px; color: var(--ink-3); margin-top: 1px; }
+
+/* ── Eventos y ventas recientes ──────────────────────────────────────────── */
+.ev { grid-template-columns: 44px minmax(0, 1fr) 96px 96px 84px; }
+.ev-cv {
+  width: 44px; height: 32px; border-radius: 5px;
+  background: linear-gradient(150deg, #3A2C20, #171310);
+  flex-shrink: 0;
+}
+.ev-n { min-width: 0; line-height: 1.3; }
+.ev-n b { display: block; font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev-n span { font-size: 11.5px; color: var(--ink-3); }
+.ev .pill { justify-self: end; }
+.ev .num { font-size: 13px; }
+
+.sale { grid-template-columns: 30px minmax(0, 1fr) auto; gap: 11px; padding: 10px; }
+.sale-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  font-size: 11px; font-weight: 600;
+}
+.sale-t { min-width: 0; line-height: 1.3; }
+.sale-t b { display: block; font-size: 13px; font-weight: 500; }
+.sale-t span { display: block; font-size: 11.5px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sale-m { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* La pregunta real del fotógrafo no es cuánto vendió, es cuánto le queda. */
+.payout {
+  margin-top: var(--s-4); padding-top: var(--s-4);
+  border-top: 1px solid var(--line-soft);
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.payout span { font-size: 12.5px; color: var(--ink-3); }
+.payout b { font-size: 19px; font-weight: 300; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 1080px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 900px) {
+  .ev { grid-template-columns: 44px minmax(0, 1fr) auto; }
+  .ev .num.soft { display: none; }
+}
+@media (max-width: 560px) { .kpis { grid-template-columns: minmax(0, 1fr); } }
+
+/* Tapa el área del gráfico hasta que hay trazo. Sin esto quedan las líneas de
+   la grilla flotando sobre un rectángulo vacío, que se lee como error. */
+.chart-sk { position: absolute; inset: 0; border-radius: var(--r-2); }

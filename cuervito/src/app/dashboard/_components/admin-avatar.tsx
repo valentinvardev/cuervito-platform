@@ -10,6 +10,7 @@ export function AdminAvatar({
   avatarUrl,
   signOutAction,
   showAdminLink = false,
+  esAdmin = false,
 }: {
   initials: string;
   userName: string;
@@ -17,6 +18,10 @@ export function AdminAvatar({
   avatarUrl?: string | null;
   signOutAction: () => void | Promise<void>;
   showAdminLink?: boolean;
+  /** Bandera propia y no showAdminLink: el panel de admin apaga ese link a
+   *  propósito porque ya estás adentro, pero el acceso al panel nuevo sí tiene
+   *  que aparecer justamente ahí. */
+  esAdmin?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -72,6 +77,15 @@ export function AdminAvatar({
           <Link href="/admin/users" className="adm-dropdown-item" role="menuitem">
             <i className="ti ti-shield-check" />
             <span>Panel admin</span>
+          </Link>
+        )}
+        {/* Vista previa del panel rediseñado. Sólo para admins: es la única
+            forma de compararlo contra el panel actual con datos de verdad, sin
+            exponérselo a los fotógrafos. */}
+        {esAdmin && (
+          <Link href="/v2" className="adm-dropdown-item" role="menuitem">
+            <i className="ti ti-sparkles" />
+            <span>Panel nuevo</span>
           </Link>
         )}
         <div className="adm-dropdown-sep" />

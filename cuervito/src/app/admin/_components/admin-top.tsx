@@ -54,6 +54,7 @@ export function AdminTop({ name, email }: { name: string; email: string }) {
           userEmail={email}
           signOutAction={doSignOut}
           showAdminLink={false}
+          esAdmin
         />
       </div>
     </header>

@@ -77,6 +77,7 @@ export function AdminTopClient({
           avatarUrl={avatarUrl}
           signOutAction={signOutAction}
           showAdminLink={showAdminLink}
+          esAdmin={showAdminLink}
         />
       </div>
     </header>
