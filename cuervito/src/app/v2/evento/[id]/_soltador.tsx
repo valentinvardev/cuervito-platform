@@ -30,10 +30,8 @@ export function Soltador({ eventId, maxBytes }: { eventId: string; maxBytes: num
   // Sin miniaturas: esta pantalla muestra una barra y tres números, no una
   // celda por foto. Pedirlas sería leer cada archivo entero a base64 para
   // tirarlo.
-  const { total, hechas, fallidas, cerrado, fase, pct, agregar, limpiar } = useSubida(eventId, {
-    miniaturas: 0,
-    maxBytes,
-  });
+  const { total, hechas, fallidas, cerrado, fase, pct, agregar, reintentar, conFallo, limpiar } =
+    useSubida(eventId, { miniaturas: 0, maxBytes });
 
   async function recibir(lista: FileList | File[]) {
     const r = await agregar(lista);
@@ -69,8 +67,7 @@ export function Soltador({ eventId, maxBytes }: { eventId: string; maxBytes: num
                   <>
                     {fallidas === total
                       ? "No se pudo subir ninguna."
-                      : `${fallidas} no se pudieron subir.`}{" "}
-                    Suele ser la conexión: probá de nuevo con esas.
+                      : `${fallidas} de ${total} no se pudieron subir.`}
                   </>
                 ) : (
                   <>
@@ -84,10 +81,35 @@ export function Soltador({ eventId, maxBytes }: { eventId: string; maxBytes: num
             </div>
           </div>
 
+          {/* Qué falló y por qué, con nombre y todo. Antes decía "3 no se
+              pudieron subir. Suele ser la conexión" y ahí terminaba: si eran
+              tres archivos corruptos, o el disco lleno, o la firma vencida, no
+              había forma de saberlo ni de saber cuáles eran. */}
+          {cerrado && conFallo.length > 0 && (
+            <div className="fallos">
+              {conFallo.slice(0, 6).map((f) => (
+                <div className="fallo" key={f.localId}>
+                  <b>{f.file.name}</b>
+                  <span>{f.error ?? "Error desconocido"}</span>
+                </div>
+              ))}
+              {conFallo.length > 6 && (
+                <div className="fallo">
+                  <span>y {conFallo.length - 6} más</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {cerrado && (
-            <div>
+            <div style={{ display: "flex", gap: "var(--s-2)" }}>
+              {fallidas > 0 && (
+                <button type="button" className="btn btn-pri btn-sm" onClick={reintentar}>
+                  Reintentar {fallidas === 1 ? "la que falló" : `las ${fallidas}`}
+                </button>
+              )}
               <button type="button" className="btn btn-ghost btn-sm" onClick={limpiar}>
-                Subir más fotos
+                {fallidas > 0 ? "Descartar" : "Subir más fotos"}
               </button>
             </div>
           )}

@@ -12,10 +12,9 @@ import { useState } from "react";
  * se toque menos es la que se va a romper sin que nadie se entere. Lo que
  * cambia entre los dos paneles es el dibujo, no cómo se sube.
  *
- * Nota sobre el orden: primero se firma TODO y recién después se sube. Se
- * podría ir firmando y subiendo de a poco, pero la API firma de a 50 y arrancar
- * la cola antes de tener todas las URLs deja obreros sin trabajo esperando la
- * próxima tanda.
+ * Lo que trae además del pedido: se vigila que cada subida AVANCE y no cuánto
+ * tarda, se reintenta hasta dos veces lo que falla por conexión, y lo que no se
+ * pudo subir queda con su motivo para poder mostrarlo.
  */
 export type ItemSubida = {
   localId: string;
@@ -25,6 +24,8 @@ export type ItemSubida = {
   state: "pending" | "uploading" | "complete" | "failed";
   pct: number;
   error?: string;
+  /** En qué intento va. Se muestra sólo cuando es más de uno. */
+  intentos?: number;
   /** Se dibuja como celda en la grilla; el resto cae en el "+X". */
   visible: boolean;
 };
@@ -34,6 +35,18 @@ export type ItemSubida = {
 const MAX_PARALELO = 10;
 const MAX_CELDAS = 11; // la grilla muestra hasta 11 celdas + una de "+X"
 const FIRMA_POR_TANDA = 50; // tope de la API por pedido
+
+/** Sin avanzar tanto tiempo, se corta y se reintenta. Es tiempo SIN progreso,
+ *  no tiempo total: una foto de 30 MB con poca subida tarda minutos y está
+ *  bien que tarde. */
+const SIN_AVANCE_MS = 45_000;
+
+/** Tope para el commit, que es un POST chico contra nuestro servidor. */
+const COMMIT_MS = 30_000;
+
+/** Reintentos por foto, además del primer intento. */
+const REINTENTOS = 2;
+const ESPERA_BASE_MS = 800;
 
 export const ACEPTADOS = "image/jpeg,image/png,image/webp";
 
@@ -148,6 +161,9 @@ export function useSubida(
                 mimeType: b.file.type,
               })),
             }),
+            // Sin tope, un servidor que no contesta deja la tanda esperando
+            // para siempre y ni siquiera llega a mostrarse el error.
+            signal: AbortSignal.timeout(COMMIT_MS),
           });
           if (!res.ok) {
             const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -188,30 +204,62 @@ export function useSubida(
         }
         const idx = cursor++;
         const { b, p } = cola[idx]!;
-        uno(b.localId, { state: "uploading", photoId: p.photoId, pct: 0 });
-        try {
-          await ponerConProgreso({
-            url: p.uploadUrl,
-            file: b.file,
-            contentType: p.contentType,
-            // Se topea en 99: el 100 se pone recién cuando el commit contestó.
-            // Un 100 mientras todavía puede fallar es una mentira barata.
-            alAvanzar: (n) => uno(b.localId, { pct: Math.min(99, n) }),
-          });
-          const cm = await fetch(
-            `/api/dashboard/events/${eventId}/photos/${p.photoId}/commit`,
-            { method: "POST" },
-          );
-          if (!cm.ok) {
-            const data = (await cm.json().catch(() => ({}))) as { error?: string };
-            throw new Error(data.error ?? "Commit falló");
-          }
-          uno(b.localId, { state: "complete", pct: 100 });
-        } catch (err) {
+
+        // Hasta tres intentos, esperando cada vez un poco más. Casi todo lo que
+        // falla en una tanda grande es la conexión pestañeando, y volver a
+        // intentar una vez arregla más que cualquier mensaje de error.
+        for (let intento = 0; ; intento++) {
           uno(b.localId, {
-            state: "failed",
-            error: err instanceof Error ? err.message : "Error",
+            state: "uploading",
+            photoId: p.photoId,
+            pct: 0,
+            intentos: intento + 1,
+            error: undefined,
           });
+          try {
+            await ponerConProgreso({
+              url: p.uploadUrl,
+              file: b.file,
+              contentType: p.contentType,
+              // Se topea en 99: el 100 se pone recién cuando el commit contestó.
+              // Un 100 mientras todavía puede fallar es una mentira barata.
+              alAvanzar: (n) => uno(b.localId, { pct: Math.min(99, n) }),
+            });
+
+            const cm = await fetch(
+              `/api/dashboard/events/${eventId}/photos/${p.photoId}/commit`,
+              // El commit es un POST chico, pero sin tope se cuelga igual que
+              // la subida. Es idempotente, así que reintentarlo no duplica
+              // nada: si la foto ya tenía tamaño, contesta ok y listo.
+              { method: "POST", signal: AbortSignal.timeout(COMMIT_MS) },
+            );
+            if (!cm.ok) {
+              const data = (await cm.json().catch(() => ({}))) as { error?: string };
+              throw new FalloSubida(data.error ?? `El servidor respondió ${cm.status}`, cm.status >= 500);
+            }
+            uno(b.localId, { state: "complete", pct: 100 });
+            break;
+          } catch (err) {
+            const fallo =
+              err instanceof FalloSubida
+                ? err
+                : new FalloSubida(
+                    err instanceof Error && err.name === "TimeoutError"
+                      ? "El servidor no contestó"
+                      : err instanceof Error
+                        ? err.message
+                        : "Error",
+                    true,
+                  );
+
+            if (!fallo.transitorio || intento >= REINTENTOS) {
+              uno(b.localId, { state: "failed", error: fallo.message, intentos: intento + 1 });
+              break;
+            }
+            // Espera creciente: si S3 está saturado, diez obreros reintentando
+            // al mismo tiempo lo saturan más.
+            await new Promise((r) => setTimeout(r, ESPERA_BASE_MS * Math.pow(2, intento)));
+          }
         }
       }
     }
@@ -228,6 +276,21 @@ export function useSubida(
     router.refresh();
   }
 
+  /**
+   * Vuelve a intentar sólo las que fallaron.
+   *
+   * Se piden URLs nuevas en vez de reusar las viejas: la firma pudo haber
+   * vencido, y ése es justamente uno de los motivos por los que se falla. Las
+   * filas de Photo que quedaron a medias no molestan, porque la pantalla sólo
+   * muestra las que tienen tamaño y el commit borra las que nunca llegaron.
+   */
+  function reintentar() {
+    const archivos = items.filter((i) => i.state === "failed").map((i) => i.file);
+    if (archivos.length === 0) return;
+    setItems((prev) => prev.filter((i) => i.state !== "failed"));
+    void agregar(archivos);
+  }
+
   return {
     items,
     total,
@@ -237,8 +300,27 @@ export function useSubida(
     fase,
     pct,
     agregar,
+    reintentar,
+    /** Las que no se pudieron subir, con el motivo. */
+    conFallo: items.filter((i) => i.state === "failed"),
     limpiar: () => setItems([]),
   };
+}
+
+/**
+ * Un fallo del que tiene sentido reintentar, y uno del que no.
+ *
+ * Una conexión cortada o un 503 de S3 se arreglan solos al segundo intento. Un
+ * 403 por firma vencida o un archivo rechazado van a fallar las tres veces
+ * igual, y reintentarlos es hacer esperar al fotógrafo por nada.
+ */
+class FalloSubida extends Error {
+  constructor(
+    mensaje: string,
+    readonly transitorio: boolean,
+  ) {
+    super(mensaje);
+  }
 }
 
 function ponerConProgreso(opts: {
@@ -252,17 +334,54 @@ function ponerConProgreso(opts: {
   // una pantalla quieta durante varios minutos.
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+
+    // Se vigila que AVANCE, no cuánto tarda en total.
+    //
+    // xhr.timeout es un tope al tiempo total, y acá no sirve: una foto de 30 MB
+    // con poca subida tarda minutos legítimamente, y cualquier número que la
+    // deje pasar es tan grande que ya no protege de nada. Esto en cambio corta
+    // cuando deja de moverse, que es lo que pasa cuando la conexión se cuelga.
+    //
+    // Antes ontimeout estaba enganchado pero xhr.timeout nunca se seteaba, así
+    // que no disparaba nunca: una subida colgada dejaba ese obrero trabado para
+    // siempre y la tanda entera no terminaba jamás.
+    let reloj: ReturnType<typeof setTimeout> | undefined;
+    const rearmar = () => {
+      clearTimeout(reloj);
+      reloj = setTimeout(() => {
+        xhr.abort();
+        reject(new FalloSubida(`Se quedó sin avanzar ${SIN_AVANCE_MS / 1000}s`, true));
+      }, SIN_AVANCE_MS);
+    };
+    const parar = () => clearTimeout(reloj);
+
     xhr.upload.onprogress = (e) => {
+      rearmar();
       if (e.lengthComputable) opts.alAvanzar(Math.round((e.loaded / e.total) * 100));
     };
-    xhr.onerror = () => reject(new Error("Network error"));
-    xhr.ontimeout = () => reject(new Error("Timeout"));
+    xhr.onerror = () => {
+      parar();
+      reject(new FalloSubida("Se cortó la conexión", true));
+    };
+    xhr.ontimeout = () => {
+      parar();
+      reject(new FalloSubida("Tardó demasiado", true));
+    };
+    xhr.onabort = () => parar();
     xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) resolve();
-      else reject(new Error(`S3 PUT failed (${xhr.status})`));
+      parar();
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+        return;
+      }
+      // 5xx y 429 son de S3 teniendo un mal momento y pasan solos. Un 4xx es la
+      // firma vencida o el archivo rechazado: reintentar no lo va a arreglar.
+      const transitorio = xhr.status >= 500 || xhr.status === 429 || xhr.status === 0;
+      reject(new FalloSubida(`S3 respondió ${xhr.status}`, transitorio));
     };
     xhr.open("PUT", opts.url);
     xhr.setRequestHeader("Content-Type", opts.contentType);
+    rearmar();
     xhr.send(opts.file);
   });
 }

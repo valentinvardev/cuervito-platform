@@ -156,6 +156,31 @@
 .etapa.lenta .pista-b i { background: var(--accent); }
 .etapa .detalle { font-size: 12px; color: var(--ink-3); }
 
+/* ── Lo que no se pudo subir ────────────────────────────────────────────────
+   Con el nombre del archivo y el motivo, uno por línea. Un total de fallos sin
+   decir cuáles ni por qué no deja hacer nada: no se sabe si reintentar sirve,
+   si hay que exportar de nuevo, o si el problema es la conexión.
+
+   Se muestran seis y se cuenta el resto. En una tanda donde falló todo, la
+   lista completa empuja el botón de reintentar fuera de la pantalla, que es
+   justo lo que hay que poder apretar. */
+.fallos {
+  display: grid; gap: 1px;
+  max-height: 190px; overflow-y: auto;
+  padding: var(--s-3);
+  background: var(--paper-3); border-radius: var(--r-2);
+}
+.fallo {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s-3); padding: 4px 0;
+  font-size: 12px;
+}
+.fallo b {
+  font-weight: 500; color: var(--ink-2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fallo span { color: var(--bad-txt); white-space: nowrap; flex-shrink: 0; }
+
 /* ── Solapas ─────────────────────────────────────────────────────────────── */
 .solapas {
   display: flex; gap: var(--s-5);

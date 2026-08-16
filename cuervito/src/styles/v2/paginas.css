@@ -3108,4 +3108,3339 @@
 
 /* El paginado de la pantalla del evento usa flechas de texto y no íconos, así
    que necesita el tamaño de fuente que los botones de ícono no traen. */
+.pag-b { font-size: 16px; line-height: 1; }
+
+/* ═══════════════ eventos/eventos.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · eventos
+   -----------------------------------------------------------------------------
+   La lista vieja era una fila de texto con una miniatura de 44px al costado.
+   Para un producto que vende fotografía eso es raro: el fotógrafo reconoce sus
+   eventos por la imagen mucho antes que por el nombre, sobre todo cuando tiene
+   cuatro fechas del mismo torneo con títulos casi idénticos.
+
+   Hay dos vistas y sirven para cosas distintas. La grilla es para RECONOCER:
+   manda la portada y las cifras van al pie de cada tarjeta. La lista es para
+   COMPARAR: columnas alineadas, encabezado que ordena, y el mismo dato de
+   todos los eventos leyéndose en vertical.
+
+   Quedan dos cifras por evento, fotos y vendido. La conversión se fue: en una
+   grilla de seis eventos, un porcentaje sin el par de números que lo origina
+   se lee como una nota del colegio. Vive en la pantalla del evento, donde hay
+   lugar para mostrarlo junto a las visitas de las que sale.
+
+   El marcado es uno solo para las dos. Lo que cambia es la caja: en grilla la
+   tarjeta es una columna flex, en lista es una grilla de seis columnas y
+   .ec-st pasa a display:contents para que sus tres cifras se repartan como
+   celdas propias en vez de quedar apiladas adentro de un cajón.
+   ========================================================================== */
+
+/* Alternador de vista. */
+.vista { display: flex; gap: 1px; padding: 2px; background: var(--paper-3); border-radius: var(--r-2); }
+.vista button {
+  display: grid; place-items: center;
+  width: 28px; height: 26px; padding: 0;
+  border: 0; background: none; border-radius: 4px; cursor: pointer;
+  color: var(--ink-3);
+  transition: background 140ms ease, color 140ms ease;
+}
+.vista button:hover { color: var(--ink); }
+.vista button[aria-pressed="true"] {
+  background: var(--paper-2); color: var(--ink);
+  box-shadow: 0 1px 2px rgba(18, 17, 15, .07);
+}
+.vista svg { width: 15px; height: 15px; }
+
+/* ═══════════════════════════════ GRILLA ══════════════════════════════════ */
+.evs { display: grid; grid-template-columns: repeat(auto-fill, minmax(286px, 1fr)); gap: var(--s-3); }
+.evs .ec-h { display: none; }   /* el encabezado es sólo de la lista */
+
+.ec {
+  position: relative;
+  display: flex; flex-direction: column;
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  overflow: hidden;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms cubic-bezier(.2, .8, .3, 1);
+}
+.ec:hover { border-color: var(--line); box-shadow: var(--shadow-card); transform: translateY(-2px); }
+
+.ec-cv { position: relative; aspect-ratio: 16 / 10; background: var(--paper-3); overflow: hidden; }
+/* Marcadores: cada evento con su propia luz, para que la grilla no parezca
+   cuatro veces la misma foto. Van fotos reales. */
+.ec-cv[data-cv="1"] { background: radial-gradient(112% 80% at 68% 22%, #FFB25E, transparent 58%), linear-gradient(162deg, #35281C, #12100E); }
+.ec-cv[data-cv="2"] { background: radial-gradient(100% 74% at 26% 30%, #7FA8D8, transparent 60%), linear-gradient(160deg, #1E2836, #0E1116); }
+.ec-cv[data-cv="3"] { background: radial-gradient(108% 78% at 74% 68%, #8FD08A, transparent 58%), linear-gradient(158deg, #1D2A1C, #0E120D); }
+.ec-cv[data-cv="4"] { background: radial-gradient(104% 76% at 40% 24%, #E08C7A, transparent 58%), linear-gradient(164deg, #33201D, #14100F); }
+.ec-cv[data-cv="5"] { background: radial-gradient(110% 80% at 60% 34%, #C9A7E8, transparent 58%), linear-gradient(160deg, #261E33, #100E14); }
+
+/* La píldora es hija directa de la tarjeta, no de la portada. Cuando vivía
+   adentro de la portada había que esconderla en la vista lista, porque ahí la
+   portada es una miniatura de 64px: el resultado era que en lista no se podía
+   distinguir un borrador de uno publicado. Ahora en grilla se posiciona sobre
+   la portada y en lista es una columna más. */
+.ec > .pill { position: absolute; top: 9px; left: 9px; z-index: 1; }
+
+/* Sin portada: no se disimula con un gris, se dice y se ofrece el arreglo.
+   Un evento sin portada vende bastante menos, así que callarlo no ayuda. */
+.ec-none {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; justify-items: center; gap: 9px;
+  background: var(--paper-3); color: var(--ink-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+.ec-none svg { width: 20px; height: 20px; }
+.ec-none span { font-size: 12px; }
+
+.ec-b { padding: var(--s-4) var(--s-4) 0; display: grid; gap: 3px; align-content: start; }
+.ec-b h3 {
+  font-family: var(--sans); font-size: 15px; font-weight: 600;
+  letter-spacing: -0.02em; line-height: 1.28;
+}
+.ec-meta { font-size: 12.5px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.ec-meta i { width: 3px; height: 3px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+/* margin-top:auto pega el pie abajo aunque los títulos midan distinto: sin
+   esto las cifras quedan a alturas diferentes en cada tarjeta. */
+.ec-st {
+  margin-top: auto; padding: var(--s-4);
+  display: grid; grid-template-columns: repeat(2, 1fr);
+}
+.ec-st > div + div { border-left: 1px solid var(--line-soft); padding-left: var(--s-3); }
+.ec-st span {
+  display: block; font-size: 10.5px; color: var(--ink-3);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.ec-st b {
+  display: block; margin-top: 3px;
+  font-size: 17px; font-weight: 300; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.ec-st b.pale { color: var(--ink-3); }
+
+/* ═══════════════════════════════ LISTA ═══════════════════════════════════
+   Las columnas se definen UNA vez en la variable y las usan el encabezado y
+   las filas. Con dos plantillas separadas, cualquier retoque desalinea los
+   títulos de los números y el error se ve recién al mirar.
+   ══════════════════════════════════════════════════════════════════════ */
+.evs[data-vista="lista"] {
+  --cols: 64px minmax(0, 1fr) 96px 116px 104px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  overflow: hidden;
+}
+
+.evs[data-vista="lista"] .ec-h,
+.evs[data-vista="lista"] .ec {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+  gap: var(--s-4);
+  padding: 10px var(--s-4);
+}
+
+.evs[data-vista="lista"] .ec-h {
+  padding-top: 12px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--paper-3);
+}
+
+.evs[data-vista="lista"] .ec {
+  position: static;
+  background: none;
+  border: 0; border-bottom: 1px solid var(--line-soft);
+  border-radius: 0;
+  transform: none; box-shadow: none;
+}
+.evs[data-vista="lista"] .ec:last-child { border-bottom: 0; }
+.evs[data-vista="lista"] .ec:hover { background: var(--paper-3); }
+
+.evs[data-vista="lista"] .ec-cv {
+  width: 64px; aspect-ratio: 16 / 10; border-radius: 5px;
+  border: 1px solid var(--line-soft);
+}
+.evs[data-vista="lista"] .ec-none { border: 0; }
+.evs[data-vista="lista"] .ec-none span { display: none; }
+.evs[data-vista="lista"] .ec-none svg { width: 15px; height: 15px; }
+
+.evs[data-vista="lista"] .ec-b { padding: 0; gap: 1px; }
+.evs[data-vista="lista"] .ec-b h3 {
+  font-size: 14px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.evs[data-vista="lista"] .ec-meta { font-size: 12px; }
+
+/* display:contents disuelve el cajón de las cifras y deja que sus tres hijos
+   se coloquen como celdas de la fila. Sin esto habría que duplicar el marcado
+   para tener columnas de verdad. */
+.evs[data-vista="lista"] .ec-st { display: contents; }
+.evs[data-vista="lista"] .ec-st > div {
+  border-left: 0; padding-left: 0;
+  text-align: right;
+}
+.evs[data-vista="lista"] .ec-st span { display: none; }   /* la etiqueta vive en el encabezado */
+.evs[data-vista="lista"] .ec-st b { margin-top: 0; font-size: 14px; font-weight: 400; }
+
+/* Sin grid-column forzada: la píldora es el último hijo del marcado, así que
+   la autocolocación la manda sola a la última columna. Cuando SÍ tenía columna
+   fija, adelantaba el cursor de autocolocación y empujaba a .ec-b a una
+   segunda fila: la fila entera se partía en dos renglones. */
+.evs[data-vista="lista"] .ec > .pill {
+  position: static; justify-self: end;
+  backdrop-filter: none;
+}
+
+/* Encabezado ordenable. La flecha aparece sólo en la columna activa: tres
+   flechas simultáneas no dicen por cuál está ordenado. */
+.ec-h .et {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font-family: var(--sans); font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-3);
+  transition: color 140ms ease;
+}
+.ec-h .et:hover { color: var(--ink); }
+.ec-h .et svg { width: 12px; height: 12px; opacity: 0; transition: opacity 140ms ease, transform 220ms ease; }
+.ec-h .et[data-ord] { color: var(--ink); }
+.ec-h .et[data-ord] svg { opacity: 1; }
+.ec-h .et[data-ord="asc"] svg { transform: rotate(180deg); }
+.ec-h .et.num { justify-content: flex-end; width: 100%; }
+
+@media (max-width: 900px) {
+  .evs[data-vista="lista"] { --cols: 56px minmax(0, 1fr) 104px 96px; }
+  .evs[data-vista="lista"] .ec-cv { width: 56px; }
+  /* Se caen fotos y conversión, se quedan el dinero y el estado: con poco
+     ancho, lo que hay que poder comparar es cuánto entró y si está publicado. */
+  .evs[data-vista="lista"] .c-fotos { display: none; }
+}
+@media (max-width: 560px) {
+  .evs[data-vista="lista"] { --cols: 44px minmax(0, 1fr) 104px; }
+  .evs[data-vista="lista"] .ec-cv { width: 44px; }
+  .evs[data-vista="lista"] .c-estado { display: none; }
+  .evs[data-vista="lista"] .ec > .pill { display: none; }
+}
+
+
+/* ═══════════════ evento/evento.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · evento
+   -----------------------------------------------------------------------------
+   La versión de cuervito abría con tres tarjetas-solapa enormes (Galería,
+   Monetización, Info), con ícono, título y subtítulo cada una. Ocupaban una
+   franja entera de alto permanente, arriba del contenido, sólo para elegir
+   pestaña. En una pantalla donde el fotógrafo viene a mirar sus fotos, ese
+   espacio es de las fotos.
+
+   Acá las solapas son una barra compacta, y el alto liberado se usa para dos
+   cosas que antes no estaban:
+
+   · La portada como banda. Es la identidad del evento y lo primero que ve el
+     atleta, así que tiene que estar presente mientras trabajás, no escondida
+     en un ajuste.
+
+   · El progreso REAL del procesamiento, en dos etapas: subidas y reconocidas.
+     Son cosas distintas y tardan distinto. cuervito sólo mostraba la subida,
+     que es la rápida, y después había un rato largo en el que parecía que no
+     pasaba nada mientras corría el reconocimiento.
+   ========================================================================== */
+
+/* ── Portada ─────────────────────────────────────────────────────────────── */
+.banda {
+  position: relative;
+  border-radius: var(--r-3);
+  overflow: hidden;
+  aspect-ratio: 21 / 6;
+  min-height: 190px;
+  background: radial-gradient(112% 80% at 66% 24%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
+  display: flex; align-items: flex-end;
+}
+/* Velo desde abajo: el texto se apoya en el borde inferior, así que oscurecer
+   la foto entera la apagaría sin necesidad. */
+.banda::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(8, 7, 6, .88), rgba(8, 7, 6, .3) 46%, rgba(8, 7, 6, .05) 78%);
+}
+.banda-in {
+  position: relative; z-index: 1;
+  width: 100%;
+  padding: var(--s-5);
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--s-4); flex-wrap: wrap;
+}
+.banda h1 {
+  color: #FFF;
+  font-size: clamp(22px, 2.6vw, 34px);
+  font-weight: var(--display-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--display-track);
+  line-height: 1.04;
+  max-width: 20ch;
+}
+.banda-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 11px;
+}
+.banda-meta .dato { color: rgba(255, 255, 255, .78); font-size: 12.5px; }
+.banda-meta .dato i { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: currentColor; margin: 0 5px 3px; }
+.banda-acc { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+
+
+/* Botón sobre foto: vidrio, no relleno. Un botón sólido sobre una fotografía
+   la tapa; el vidrio deja ver qué hay debajo y sigue siendo legible. */
+.btn-vidrio {
+  background: rgba(255, 255, 255, .14);
+  border-color: rgba(255, 255, 255, .26);
+  color: #FFF;
+  backdrop-filter: blur(10px);
+}
+.btn-vidrio:hover { background: rgba(255, 255, 255, .24); border-color: rgba(255, 255, 255, .42); }
+
+/* ── Enlace público ──────────────────────────────────────────────────────────
+   Va arriba y no enterrado: publicar sin repartir el link no vende nada, así
+   que el paso siguiente a publicar tiene que estar a la vista. */
+.link-pub {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: 11px var(--s-4);
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-2);
+}
+.link-pub .url {
+  flex: 1; min-width: 0;
+  font-size: 13.5px; color: var(--ink-2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.link-pub .url b { color: var(--ink); font-weight: 500; }
+.link-pub svg { width: 15px; height: 15px; color: var(--ink-3); flex-shrink: 0; }
+
+/* ── Cifras ──────────────────────────────────────────────────────────────── */
+.cifras { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-3); }
+/* Mismo patrón que los indicadores del inicio: rótulo a la izquierda, ícono
+   a la derecha y tenue. Que las dos pantallas usen la misma tarjeta importa
+   más que el ícono en sí: el fotógrafo entra al evento desde el inicio y no
+   tiene que volver a aprender dónde mirar. */
+.cifra .c-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-3);
+  color: var(--ink-3);
+}
+.cifra .c-top svg { width: 15px; height: 15px; }
+.cifra span {
+  display: block; font-size: 11.5px; color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+.cifra b {
+  display: block; margin-top: 7px;
+  font-size: 28px; font-weight: 200; letter-spacing: -0.035em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.cifra .nota-c { margin-top: 8px; font-size: 12px; color: var(--ink-3); }
+.cifra .nota-c.alerta { color: var(--accent); }
+/* Si la tarjeta tiene algo que avisar, el ícono se tiñe igual que el aviso.
+   Un ícono neutro arriba de una cifra que reclama atención resta en vez de
+   sumar: hay que leer la línea de abajo para enterarse. */
+.cifra:has(.nota-c.alerta) .c-top svg { color: var(--accent); }
+
+/* ── Procesamiento en dos etapas ─────────────────────────────────────────────
+   Subir y reconocer son cosas distintas y tardan muy distinto. Mostrar una
+   sola barra hace que después de subir parezca que el sistema se colgó,
+   cuando en realidad está en la parte lenta. Dos barras y dos números. */
+.proc { display: grid; gap: var(--s-4); }
+.etapa { display: grid; gap: 8px; }
+.etapa-t { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.etapa-t b { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 500; }
+
+/* El ícono no es adorno: toma el color del estado de su etapa, el mismo que
+   la barra. Verde cuando terminó, acento mientras corre. Así el estado se lee
+   de un vistazo sin recorrer la barra hasta el final. */
+.et-i {
+  width: 26px; height: 26px; border-radius: 8px;
+  flex-shrink: 0;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  color: var(--ok);
+  transition: background 400ms ease, color 400ms ease;
+}
+.et-i svg { width: 14px; height: 14px; }
+.etapa.lenta .et-i { background: var(--accent-wash); color: var(--accent); }
+.etapa-t .cuenta {
+  font-size: 12.5px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.pista-b {
+  height: 5px; border-radius: 100px;
+  background: var(--paper-3);
+  overflow: hidden;
+}
+.pista-b i {
+  display: block; height: 100%; border-radius: 100px;
+  background: var(--ok);
+  transition: width 600ms cubic-bezier(.3, .8, .4, 1);
+}
+.etapa.lenta .pista-b i { background: var(--accent); }
+.etapa .detalle { font-size: 12px; color: var(--ink-3); }
+
+/* ── Lo que no se pudo subir ────────────────────────────────────────────────
+   Con el nombre del archivo y el motivo, uno por línea. Un total de fallos sin
+   decir cuáles ni por qué no deja hacer nada: no se sabe si reintentar sirve,
+   si hay que exportar de nuevo, o si el problema es la conexión.
+
+   Se muestran seis y se cuenta el resto. En una tanda donde falló todo, la
+   lista completa empuja el botón de reintentar fuera de la pantalla, que es
+   justo lo que hay que poder apretar. */
+.fallos {
+  display: grid; gap: 1px;
+  max-height: 190px; overflow-y: auto;
+  padding: var(--s-3);
+  background: var(--paper-3); border-radius: var(--r-2);
+}
+.fallo {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s-3); padding: 4px 0;
+  font-size: 12px;
+}
+.fallo b {
+  font-weight: 500; color: var(--ink-2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fallo span { color: var(--bad-txt); white-space: nowrap; flex-shrink: 0; }
+
+/* ── Solapas ─────────────────────────────────────────────────────────────── */
+.solapas {
+  display: flex; gap: var(--s-5);
+  border-bottom: 1px solid var(--line-soft);
+}
+.solapa {
+  position: relative;
+  display: flex; align-items: center; gap: 7px;
+  padding: 0 2px 12px;
+  border: 0; background: none; cursor: pointer;
+  font-family: var(--sans); font-size: 14px; font-weight: 500;
+  color: var(--ink-3);
+  transition: color 150ms ease;
+}
+.solapa:hover { color: var(--ink); }
+.solapa svg { width: 15px; height: 15px; }
+.solapa .n {
+  font-size: 11.5px; font-weight: 500;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+/* Subrayado con transform en vez de border: se puede animar y no mueve el
+   texto un pixel al activarse, que es lo que pasa cuando se agrega borde. */
+.solapa::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px;
+  height: 2px; background: var(--ink);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 260ms cubic-bezier(.2, .8, .3, 1);
+}
+.solapa[aria-selected="true"] { color: var(--ink); }
+.solapa[aria-selected="true"]::after { transform: scaleX(1); }
+
+.panel-s { display: none; }
+.panel-s[data-activo="1"] { display: grid; gap: var(--s-4); }
+
+/* ── Zona de subida ──────────────────────────────────────────────────────── */
+.soltar {
+  display: grid; place-content: center; justify-items: center; gap: 9px;
+  padding: var(--s-7) var(--s-4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-3);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.soltar:hover, .soltar.encima { border-color: var(--ink-3); background: var(--paper-3); }
+.soltar-i {
+  width: 40px; height: 40px; border-radius: var(--r-3);
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.soltar-i svg { width: 19px; height: 19px; }
+.soltar b { font-size: 14.5px; font-weight: 500; }
+.soltar span { font-size: 12.5px; color: var(--ink-3); }
+
+/* ── Precio ──────────────────────────────────────────────────────────────── */
+.precios { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+.cuenta-p {
+  padding: 11px 13px;
+  background: var(--paper-3);
+  border-radius: var(--r-2);
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.5;
+}
+.cuenta-p b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.blq h2 {
+  font-family: var(--sans); font-size: 14.5px; font-weight: 600;
+  letter-spacing: -0.015em; text-transform: none;
+}
+.blq .ayuda { margin-top: 3px; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+.blq-b { margin-top: var(--s-4); display: grid; gap: var(--s-4); }
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+
+/* Zona de riesgo, igual que en Perfil: abajo, con borde propio y sin botón
+   rojo grande. El rojo grande invita a apretar. */
+.riesgo { border-color: color-mix(in srgb, var(--bad) 26%, transparent); }
+.riesgo h2 { color: var(--bad); }
+.riesgo .btn-peligro {
+  border-color: color-mix(in srgb, var(--bad) 40%, transparent);
+  color: var(--bad); background: transparent;
+}
+.riesgo .btn-peligro:hover {
+  background: color-mix(in srgb, var(--bad) 8%, transparent);
+  border-color: var(--bad);
+}
+
+@media (max-width: 900px) {
+  .cifras { grid-template-columns: repeat(2, 1fr); }
+  .banda { aspect-ratio: auto; }
+  .banda-in { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 560px) {
+  .precios, .par { grid-template-columns: minmax(0, 1fr); }
+  .solapas { gap: var(--s-4); overflow-x: auto; }
+  .solapa .n { display: none; }
+}
+
+/* ── Grilla del evento: cuatro columnas fijas ────────────────────────────────
+   La biblioteca usa auto-fill porque ahí se barre buscando algo puntual y
+   conviene la densidad. Acá es al revés: el fotógrafo está revisando SU
+   material, mirando encuadre y foco, y para eso la miniatura tiene que ser
+   grande. Cuatro columnas es lo que da un tamaño en el que se puede juzgar
+   una foto sin abrirla. */
+.panel-s .fg { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 900px) { .panel-s .fg { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 620px) { .panel-s .fg { grid-template-columns: repeat(2, 1fr); } }
+
+/* ── Equipo ──────────────────────────────────────────────────────────────────
+   Un evento grande lo cubren varios fotógrafos. Cada uno sube lo suyo y cobra
+   lo suyo: la plata no se reparte por porcentaje sino por autoría, que es lo
+   que evita la discusión de "yo saqué más que vos". La tabla lo muestra así,
+   con fotos y recaudado por persona. */
+.inv { display: flex; gap: var(--s-2); align-items: flex-start; flex-wrap: wrap; }
+.inv .campo { flex: 1; min-width: 240px; }
+
+.col-f { grid-template-columns: 34px minmax(0, 1fr) 96px 104px auto; }
+.col-av {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  font-size: 12px; font-weight: 600;
+}
+.col-av.yo { background: var(--cta-bg); color: var(--cta-fg); }
+.col-t { min-width: 0; line-height: 1.35; }
+.col-t b { display: block; font-size: 13.5px; font-weight: 500; }
+.col-t span { display: block; font-size: 12px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-f .num { font-size: 13px; }
+
+/* La fila pendiente se apaga entera, no sólo el rol: alguien que todavía no
+   aceptó no aportó nada, y sus columnas en cero al mismo peso que las de los
+   demás se leen como que trabajó y no vendió. */
+.col-f.espera .col-av, .col-f.espera .col-t b { opacity: .6; }
+
+/* ── El rol de cada uno ──────────────────────────────────────────────────────
+   Antes eran píldoras. Una píldora es una caja con fondo, y cuatro cajas de
+   colores distintos en una columna angosta compiten con los nombres y los
+   números, que es lo que la tabla vino a mostrar. Acá el rol es texto: el
+   ícono hace de ancla para reconocerlo sin leer, y el color hace el resto.
+
+   Los cuatro estados no son lo mismo y por eso no pesan igual. "Sin cobrar" es
+   el único que pide hacer algo, así que es el único en rojo; "invitado" es una
+   espera normal y va apagado, no en amarillo de alerta. */
+.rol {
+  display: inline-flex; align-items: center; gap: 7px;
+  justify-self: end;
+  font-size: 12.5px; font-weight: 500;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+.rol svg { width: 14px; height: 14px; flex-shrink: 0; }
+.rol.duenio { color: var(--acento-txt); }
+.rol.activo { color: var(--ok-txt); }
+.rol.sincobrar { color: var(--bad-txt); }
+.rol.espera { color: var(--ink-3); font-weight: 400; }
+
+.reparto {
+  margin-top: var(--s-4); padding: 11px 13px;
+  background: var(--paper-3); border-radius: var(--r-2);
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.55;
+}
+.reparto b { color: var(--ink); font-weight: 500; }
+
+@media (max-width: 760px) {
+  .col-f { grid-template-columns: 34px minmax(0, 1fr) auto; }
+  .col-f .c-fotos { display: none; }
+}
+
+/* Lo que le queda al colaborador, dentro del diálogo. El número va resuelto y
+   no explicado: quien invita tiene que poder contestar "¿cuánto me queda?" si
+   se lo preguntan por teléfono, sin ir a buscarlo. */
+.queda-inv {
+  padding: var(--s-4);
+  border-radius: var(--r-2);
+  background: var(--acento-lleno); color: #FFFFFF;
+}
+.queda-inv > div { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); }
+.queda-inv span { font-size: 12.5px; color: rgba(255, 255, 255, .9); }
+.queda-inv b {
+  font-size: 26px; font-weight: 200; letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+.queda-inv p {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, .25);
+  font-size: 12px; line-height: 1.55; color: rgba(255, 255, 255, .9);
+}
+.queda-inv p b { font-size: inherit; font-weight: 500; color: #FFFFFF; }
+
+.aj .pill { flex-shrink: 0; }
+
+/* ═══════════════════════════════ TELÉFONO ════════════════════════════════
+   A 375px la pantalla se iba a 524 de ancho. No eran veinte ajustes: eran dos
+   causas que arrastraban a todo lo demás.
+
+   1. El título de la portada tenía max-width en ch y su contenedor no llevaba
+      min-width:0. Un hijo de flex no baja de su ancho de contenido salvo que
+      se lo permitas, así que "DUATLÓN CLUB CICLISTA CHIVILCOY" en Unbounded,
+      que es una tipografía muy ancha, empujaba la banda entera.
+
+   2. La fila del enlace público no envolvía: URL más dos botones en una sola
+      línea que no se podía partir.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 620px) {
+
+  /* ── Portada ── */
+  .banda { min-height: 0; }
+  .banda-in { padding: var(--s-4); gap: var(--s-3); }
+  .banda-in > div:first-child { min-width: 0; width: 100%; }
+  .banda h1 { max-width: none; font-size: 23px; }
+  .banda-acc { width: 100%; }
+  /* El botón de portada se lleva el ancho y el de editar queda cuadrado al
+     lado: en el teléfono cambiar la portada es lo que se hace, editar el
+     nombre no. */
+  .banda-acc .btn:first-child { flex: 1; }
+
+  /* ── Enlace público ── */
+  .link-pub { flex-wrap: wrap; row-gap: var(--s-3); }
+  .link-pub .url { flex: 1 1 auto; min-width: 0; }
+  .link-pub .btn { flex: 1 1 0; }
+  .link-pub > svg { flex-shrink: 0; }
+
+  /* ── Cifras ── */
+  .cifras { gap: var(--s-2); }
+  .cifra { padding: var(--s-3); }
+  .cifra b { font-size: 23px; }
+  .cifra .nota-c { font-size: 11.5px; }
+
+  /* ── Procesamiento ── */
+  .etapa-t { flex-wrap: wrap; row-gap: 4px; }
+  .etapa-t b { font-size: 13px; }
+  .etapa-t .cuenta { margin-left: 34px; }   /* alineado con el texto, no con el ícono */
+
+  /* ── Solapas ──
+     Se desbordan a propósito con scroll horizontal propio. Apilarlas en dos
+     filas rompe la lectura de "dónde estoy" que da una barra de pestañas. */
+  .solapas {
+    gap: var(--s-4);
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: calc(var(--s-4) * -1);
+    padding-inline: var(--s-4);
+  }
+  .solapas::-webkit-scrollbar { display: none; }
+  .solapa { flex-shrink: 0; }
+
+  /* ── Equipo ── */
+  .col-f { grid-template-columns: 34px minmax(0, 1fr) auto; row-gap: 4px; }
+  .col-f .num { font-size: 12.5px; }
+  .inv .campo { min-width: 0; }
+
+  /* ── Precio e info ── */
+  .aj { flex-wrap: wrap; row-gap: var(--s-2); }
+  .aj .btn, .aj .sw, .aj .pill { margin-left: auto; }
+
+  /* ── Diálogo ── */
+  .queda-inv > div { flex-wrap: wrap; row-gap: 2px; }
+}
+
+
+/* ═══════════════ nuevo/nuevo.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · nuevo evento
+   -----------------------------------------------------------------------------
+   Tres pasos. La versión anterior era una página sola con todas las secciones
+   apiladas, y el problema no era el largo sino que ponía al mismo nivel cosas
+   de peso muy distinto: el nombre del evento y la decisión de usar o no
+   reconocimiento, que cambia lo que te cobramos, estaban una debajo de la otra
+   como si fueran lo mismo.
+
+   Separado en pasos, cada decisión ocupa la pantalla entera el rato que dura.
+   Y como el paso 2 define la comisión, el paso 3 puede mostrar directamente
+   cuánto te queda de cada foto, sin explicar de nuevo de dónde sale.
+
+   Para que no castigue al que ya sabe: sólo el nombre y la fecha son
+   obligatorios, Enter avanza, y los pasos 2 y 3 vienen con valores puestos que
+   sirven tal cual.
+   ========================================================================== */
+
+.wiz { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--s-6); align-items: start; }
+
+/* ── Barra de pasos ──────────────────────────────────────────────────────── */
+.wpasos { display: flex; align-items: center; gap: 10px; margin-bottom: var(--s-6); }
+.wp { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-3); }
+.wp i.bola {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 1.5px solid var(--line-strong);
+  font-size: 11.5px; font-weight: 600; font-style: normal;
+  transition: background 240ms ease, border-color 240ms ease, color 240ms ease;
+}
+.wp[data-e="aqui"] { color: var(--ink); font-weight: 500; }
+.wp[data-e="aqui"] i.bola { background: var(--cta-bg); border-color: var(--cta-bg); color: var(--cta-fg); }
+.wp[data-e="hecho"] i.bola { background: var(--ok); border-color: var(--ok); color: #FFF; }
+.wp[data-e="hecho"] i.bola::after {
+  content: ""; width: 12px; height: 12px; background: currentColor;
+  -webkit-mask: var(--tic) center / contain no-repeat;
+  mask: var(--tic) center / contain no-repeat;
+}
+.wp[data-e="hecho"] i.bola span { display: none; }
+.wp-linea { flex: 1; max-width: 40px; height: 1px; background: var(--line); }
+
+.wpaso { display: none; }
+.wpaso[data-activo="1"] { display: grid; gap: var(--s-3); animation: aparecer 300ms cubic-bezier(.2, .8, .3, 1); }
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.wtit { margin-bottom: var(--s-2); }
+.wtit h2 {
+  font-family: var(--sans); font-size: 19px; font-weight: 600;
+  letter-spacing: -0.025em; text-transform: none;
+}
+.wtit p { margin-top: 5px; font-size: 13.5px; color: var(--ink-3); line-height: 1.55; }
+
+.blq-b { display: grid; gap: var(--s-4); }
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+
+/* ── Portada ─────────────────────────────────────────────────────────────── */
+.cover {
+  position: relative;
+  aspect-ratio: 16 / 7;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-2);
+  display: grid; place-content: center; justify-items: center; gap: 8px;
+  color: var(--ink-3); cursor: pointer; overflow: hidden;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.cover:hover { border-color: var(--ink-3); background: var(--paper-3); }
+.cover svg { width: 20px; height: 20px; }
+.cover b { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+.cover span { font-size: 12px; }
+.cover.puesta {
+  border-style: solid; border-color: transparent;
+  background: radial-gradient(112% 80% at 66% 24%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
+}
+.cover.puesta > *:not(.quitar) { display: none; }
+.cover.puesta .quitar { display: inline-flex; }
+.quitar {
+  display: none;
+  position: absolute; top: 8px; right: 8px;
+  align-items: center; gap: 5px;
+  padding: 4px 9px; border: 0; border-radius: 100px;
+  background: rgba(8, 7, 6, .6); backdrop-filter: blur(6px);
+  color: #FFF; font-family: var(--sans); font-size: 11.5px; cursor: pointer;
+}
+.quitar svg { width: 12px; height: 12px; }
+
+/* ── Elección de reconocimiento ──────────────────────────────────────────────
+   Dos tarjetas y no un interruptor. Un interruptor sugiere que hay una opción
+   normal y otra rara, y acá son dos productos distintos con dos precios
+   distintos: quien no usa reconocimiento no está desactivando una función,
+   está eligiendo un plan más barato porque no le hacemos el trabajo caro. Con
+   las dos cartas al lado, la comparación es la interfaz. */
+.opciones { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+.op { position: relative; cursor: pointer; }
+.op input { position: absolute; opacity: 0; pointer-events: none; }
+.op-caja {
+  height: 100%;
+  display: grid; gap: 10px; align-content: start;
+  padding: var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  background: var(--paper-2);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms cubic-bezier(.2,.8,.3,1);
+}
+.op:hover .op-caja { border-color: var(--line-strong); }
+.op input:checked + .op-caja {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.op-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.op-i {
+  width: 32px; height: 32px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  transition: background 160ms ease, color 160ms ease;
+}
+.op input:checked + .op-caja .op-i { background: var(--cta-bg); color: var(--cta-fg); }
+.op-i svg { width: 16px; height: 16px; }
+
+/* La comisión es el dato que decide, así que va grande y en la tarjeta, no en
+   una nota al pie. */
+.op-com { text-align: right; line-height: 1; }
+.op-com b {
+  display: block;
+  font-size: 26px; font-weight: 200; letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.op-com span { display: block; margin-top: 4px; font-size: 10.5px; color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase; }
+
+.op-caja h3 { font-family: var(--sans); font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+.op-caja p { font-size: 12.5px; color: var(--ink-3); line-height: 1.55; }
+.op-lista { display: grid; gap: 6px; margin-top: 2px; }
+.op-lista li { display: flex; gap: 7px; font-size: 12.5px; color: var(--ink-2); list-style: none; line-height: 1.4; }
+.op-lista svg { width: 13px; height: 13px; flex-shrink: 0; margin-top: 2px; color: var(--ink-3); }
+.op-lista li.no { color: var(--ink-3); }
+
+/* ── Cuentas del precio ─────────────────────────────────────────────────── */
+.precios { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+
+/* Lo que te queda de cada foto, con el número grande. Es la traducción de la
+   comisión a la unidad en la que el fotógrafo piensa. */
+.queda {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  border-radius: var(--r-3);
+  background: var(--acento-lleno); color: #FFFFFF;
+}
+/* Blanco casi pleno, no translúcido: ver la nota del token --acento-lleno. */
+.queda-t span { display: block; font-size: 11.5px; color: rgba(255, 255, 255, .9); }
+.queda-t b {
+  display: block; margin-top: 6px;
+  font-size: 32px; font-weight: 200; letter-spacing: -0.035em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.queda-d { text-align: right; font-size: 12px; color: rgba(255, 255, 255, .9); line-height: 1.6; }
+.queda-d b { color: #FFFFFF; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.cuenta {
+  padding: 11px 13px;
+  background: var(--paper-3); border-radius: var(--r-2);
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.5;
+}
+.cuenta b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* ── Columna derecha ─────────────────────────────────────────────────────── */
+.lado { position: sticky; top: calc(62px + var(--s-5)); display: grid; gap: var(--s-3); }
+
+.previa-ev { border-radius: var(--r-2); overflow: hidden; border: 1px solid var(--line-soft); }
+.previa-cv {
+  aspect-ratio: 16 / 10; background: var(--paper-3);
+  display: grid; place-items: center; color: var(--ink-3);
+}
+.previa-cv svg { width: 18px; height: 18px; }
+.previa-cv.puesta {
+  background: radial-gradient(112% 80% at 66% 24%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
+}
+.previa-cv.puesta svg { display: none; }
+.previa-b { padding: var(--s-3); }
+.previa-b b { display: block; font-size: 14px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.3; }
+.previa-b span { display: block; margin-top: 3px; font-size: 12px; color: var(--ink-3); }
+
+/* Resumen que se va llenando. Reemplaza a la lista de "lo que falta": con
+   pasos, lo que falta ya lo marca la barra de arriba; lo que no se ve es lo
+   que quedó decidido dos pantallas atrás. */
+.resumen { display: grid; gap: 1px; }
+.rs {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s-3); padding: 8px 0;
+  font-size: 13px;
+}
+.rs + .rs { border-top: 1px solid var(--line-soft); }
+.rs dt { color: var(--ink-3); }
+.rs dd { text-align: right; font-variant-numeric: tabular-nums; }
+.rs dd.pendiente { color: var(--ink-3); }
+
+@media (max-width: 1080px) {
+  .wiz { grid-template-columns: minmax(0, 1fr); }
+  .lado { position: static; }
+}
+@media (max-width: 700px) {
+  .opciones, .precios, .par { grid-template-columns: minmax(0, 1fr); }
+  .wp span.txt { display: none; }
+  .queda { grid-template-columns: minmax(0, 1fr); }
+  .queda-d { text-align: left; }
+}
+
+
+/* ═══════════════ ventas/ventas.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · ventas
+   -----------------------------------------------------------------------------
+   La pantalla vieja listaba las ventas y nada más. Le faltaba lo primero que
+   uno mira al entrar: cuánto ganó. Ese total estaba sólo en la pantalla de
+   cobros, o sea a un
+   click de distancia de la pantalla donde naturalmente se lo busca.
+
+   La resta de la comisión NO se muestra acá. Recordarle en cada pantalla
+   cuánto se lleva la plataforma no lo ayuda a vender, y el número que le
+   importa es el que le queda. El desglose vive en Métodos de pago, para el
+   que lo busque.
+   ========================================================================== */
+
+.sum { display: grid; gap: var(--s-3); }
+.sum .k-lab { font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.sum .k-n {
+  margin-top: var(--s-3);
+  font-size: 30px; font-weight: 200; letter-spacing: -0.035em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.sum .k-sub { margin-top: 8px; font-size: 12px; color: var(--ink-3); }
+/* Acento lleno: es el único número de la pantalla y tiene que pesar como tal.
+   Blanco casi pleno en los secundarios, no translúcido: sobre color saturado
+   la transparencia acerca el texto al fondo en vez de alejarlo. */
+.sum .neto {
+  background: var(--acento-lleno); color: #FFFFFF;
+  border-color: var(--acento-lleno); padding: var(--s-5);
+}
+.sum .neto .k-lab { color: rgba(255, 255, 255, .9); }
+.sum .neto .k-sub { color: rgba(255, 255, 255, .9); }
+.sum .neto .k-n { font-size: 44px; }
+
+.filtros { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.filtros .sp { margin-left: auto; }
+
+
+/* ── Tabla ───────────────────────────────────────────────────────────────── */
+.vt { grid-template-columns: 30px minmax(0, 1.5fr) minmax(0, 1.2fr) 60px 108px 96px 88px; }
+.vt.row-h { cursor: default; }
+
+/* Encabezado ordenable. La flecha aparece sólo en la columna activa: seis
+   flechas simultáneas no dicen por cuál está ordenado. */
+.th {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.th:hover { color: var(--ink); }
+.th svg { width: 12px; height: 12px; opacity: 0; transition: opacity 140ms ease, transform 220ms ease; }
+.th[data-ord] { color: var(--ink); }
+.th[data-ord] svg { opacity: 1; }
+.th[data-ord="asc"] svg { transform: rotate(180deg); }
+.th.num { justify-content: flex-end; width: 100%; }
+
+.v-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  font-size: 11px; font-weight: 600;
+}
+.v-who { min-width: 0; line-height: 1.3; }
+.v-who b { display: block; font-size: 13.5px; font-weight: 500; }
+.v-who span { display: block; font-size: 11.5px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v-ev { font-size: 13px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vt .num { font-size: 13px; }
+.vt .neto { font-weight: 500; }
+.vt .pill { justify-self: end; }
+
+/* ── Cajón de detalle ────────────────────────────────────────────────────────
+   Cajón y no página aparte: revisar ventas es una tarea de barrido, se miran
+   ocho seguidas. Con navegación completa cada vuelta cuesta dos cargas y se
+   pierde el lugar en la lista. ──────────────────────────────────────────── */
+.dscrim {
+  position: fixed; inset: 0; z-index: 80;
+  background: color-mix(in srgb, var(--ink) 26%, transparent);
+  opacity: 0; pointer-events: none;
+  transition: opacity 240ms ease;
+}
+:root[data-venta="open"] .dscrim { opacity: 1; pointer-events: auto; }
+
+.drw {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 81;
+  width: min(430px, 92vw);
+  display: flex; flex-direction: column;
+  background: var(--paper-2);
+  border-left: 1px solid var(--line);
+  box-shadow: -30px 0 60px rgba(18, 17, 15, .14);
+  transform: translateX(100%);
+  transition: transform 340ms cubic-bezier(.2, .8, .3, 1);
+}
+:root[data-venta="open"] .drw { transform: none; }
+
+.drw-h {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--s-5) var(--s-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+.drw-h h2 { font-family: var(--sans); font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+.drw-h .sub { margin-top: 3px; font-size: 12.5px; color: var(--ink-3); }
+.drw-b { flex: 1; overflow-y: auto; padding: var(--s-5); display: grid; gap: var(--s-5); }
+.drw-f { padding: var(--s-4) var(--s-5); border-top: 1px solid var(--line-soft); display: flex; gap: var(--s-2); }
+
+.dl { display: grid; gap: 9px; }
+.dl > div { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-4); font-size: 13.5px; }
+.dl dt { color: var(--ink-3); }
+.dl dd { font-variant-numeric: tabular-nums; text-align: right; }
+
+/* El monto de la venta, solo y sin cuentas al lado. */
+.desg { padding: var(--s-4); background: var(--paper-3); border-radius: var(--r-2); }
+.desg .tot { font-size: 15px; font-weight: 500; }
+.desg .tot dt { color: var(--ink); }
+.desg .tot dd { font-size: 19px; font-weight: 300; }
+
+.minis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.mini {
+  aspect-ratio: 3 / 2; border-radius: 5px;
+  background: radial-gradient(110% 80% at 62% 26%, #FFB25E, transparent 58%), linear-gradient(160deg, #35281C, #12100E);
+}
+.mini.mas {
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-3);
+  font-size: 12px; font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1080px) {
+  .vt { grid-template-columns: 30px minmax(0, 1.4fr) 100px 96px 88px; }
+  .vt .v-ev, .vt .c-fotos { display: none; }
+}
+@media (max-width: 640px) {
+  .sum .neto .k-n { font-size: 36px; }
+  .vt { grid-template-columns: 30px minmax(0, 1fr) 96px; }
+  .vt .c-fecha, .vt .pill, .vt .c-estado { display: none; }
+}
+
+/* Esqueleto de la tabla. Las filas son JS: hasta que corre, este bloque está
+   vacío de verdad, no es teatro. Se van solas cuando pintar() reemplaza el
+   innerHTML de #filas. */
+.sk-fila { pointer-events: none; }
+.sk-fila:hover { background: none; }
+
+
+/* ═══════════════ pagina/pagina.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · mi página
+   -----------------------------------------------------------------------------
+   La pantalla vieja tenía las opciones correctas (dominio, plantilla, color,
+   logo, marca de agua) y ningún lugar donde ver el resultado. Para saber cómo
+   quedaba un color había que guardar, abrir la página pública en otra pestaña
+   y volver. Eso convierte cada ajuste en un viaje de ida y vuelta, y termina
+   en que nadie personaliza nada.
+
+   Acá los controles quedan a la izquierda y la página se dibuja al lado,
+   reaccionando en el momento. La previa es el producto de esta pantalla; los
+   controles son el medio.
+   ========================================================================== */
+
+.tienda { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr); gap: var(--s-5); align-items: start; }
+.ctrl { display: grid; gap: var(--s-3); }
+
+.blq h2 {
+  font-family: var(--sans); font-size: 14.5px; font-weight: 600;
+  letter-spacing: -0.015em; text-transform: none;
+}
+.blq .ayuda { margin-top: 3px; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+.blq-b { margin-top: var(--s-4); }
+
+/* ── Dominio ─────────────────────────────────────────────────────────────── */
+.dom {
+  display: flex; align-items: center;
+  height: 40px;
+  border: 1px solid var(--line); border-radius: var(--r-2);
+  overflow: hidden;
+  background: var(--paper);
+}
+.dom .fijo {
+  padding: 0 2px 0 12px;
+  font-size: 14px; color: var(--ink-3);
+  white-space: nowrap;
+}
+.dom input {
+  flex: 1; min-width: 0; height: 100%;
+  border: 0; background: none; padding: 0 12px 0 0;
+  font-family: var(--sans); font-size: 14px; font-weight: 500; color: var(--ink);
+}
+.dom input:focus { outline: none; }
+.dom:focus-within { border-color: var(--ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 9%, transparent); }
+
+.dom-est {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 10px; font-size: 12.5px; color: var(--ok);
+}
+.dom-est svg { width: 14px; height: 14px; }
+
+.propio {
+  display: flex; align-items: center; gap: var(--s-3);
+  margin-top: var(--s-3); padding-top: var(--s-3);
+  border-top: 1px solid var(--line-soft);
+  font-size: 13px; color: var(--ink-3);
+}
+.propio .btn { margin-left: auto; }
+
+/* ── Plantillas ──────────────────────────────────────────────────────────────
+   Miniaturas reales y no nombres en una lista: "Editorial" no le dice nada a
+   nadie hasta que lo ve. */
+.plt { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
+.pl { cursor: pointer; }
+.pl input { position: absolute; opacity: 0; pointer-events: none; }
+.pl-v {
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  overflow: hidden;
+  padding: 7px;
+  display: grid; gap: 4px; grid-template-rows: 8px 1fr;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.pl:hover .pl-v { border-color: var(--line-strong); }
+.pl input:checked + .pl-v {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.pl-n { margin-top: 7px; font-size: 12.5px; text-align: center; color: var(--ink-2); }
+.pl input:checked ~ .pl-n { color: var(--ink); font-weight: 500; }
+
+.pl-v i { display: block; border-radius: 2px; }
+.pl-v .barra-m { height: 8px; }
+.pl-v .rejilla { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.pl-v .rejilla i { border-radius: 2px; }
+
+.pl-v[data-t="claro"] { background: #FFF; }
+.pl-v[data-t="claro"] .barra-m { background: #E6E4DF; }
+.pl-v[data-t="claro"] .rejilla i { background: #D9D6D0; }
+
+.pl-v[data-t="oscuro"] { background: #131211; }
+.pl-v[data-t="oscuro"] .barra-m { background: #34302A; }
+.pl-v[data-t="oscuro"] .rejilla i { background: #2A2620; }
+
+.pl-v[data-t="editorial"] { background: #F4F2ED; padding: 10px; }
+.pl-v[data-t="editorial"] .barra-m { height: 5px; width: 60%; background: #1A1815; }
+.pl-v[data-t="editorial"] .rejilla { grid-template-columns: repeat(2, 1fr); gap: 4px; }
+.pl-v[data-t="editorial"] .rejilla i { background: #CFCAC1; }
+
+/* ── Color ───────────────────────────────────────────────────────────────── */
+.cols { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.co {
+  position: relative;
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 0; padding: 0; cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(18, 17, 15, .12);
+  transition: transform 160ms cubic-bezier(.2, .8, .3, 1);
+}
+.co:hover { transform: scale(1.12); }
+.co[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--paper-2), 0 0 0 4px var(--ink); }
+
+.co-libre {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px dashed var(--line-strong);
+  padding: 0; cursor: pointer; background: none;
+  display: grid; place-items: center; color: var(--ink-3);
+  overflow: hidden;
+}
+.co-libre svg { width: 14px; height: 14px; }
+.co-libre input { position: absolute; opacity: 0; width: 30px; height: 30px; cursor: pointer; }
+
+/* ── Subidas ─────────────────────────────────────────────────────────────── */
+.subir {
+  display: flex; align-items: center; gap: var(--s-4);
+  padding: var(--s-4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-2);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.subir:hover { border-color: var(--ink-3); background: var(--paper-3); }
+.subir-v {
+  width: 62px; height: 62px; border-radius: var(--r-2);
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-3);
+  flex-shrink: 0;
+}
+.subir-v svg { width: 20px; height: 20px; }
+.subir-t { flex: 1; min-width: 0; font-size: 13px; color: var(--ink-3); line-height: 1.5; }
+.subir-t b { display: block; color: var(--ink); font-size: 13.5px; font-weight: 500; margin-bottom: 2px; }
+
+/* ═══════════════════════════════ PREVIA ══════════════════════════════════
+   Pegajosa: los controles son más largos que la previa, y sin sticky se
+   ajusta el color con la previa ya fuera de pantalla, que es exactamente el
+   problema que esta pantalla venía a resolver. */
+.previa { position: sticky; top: calc(62px + var(--s-5)); }
+.previa-h {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-3); margin-bottom: var(--s-3);
+}
+.previa-h .label { color: var(--ink-3); }
+
+.marco {
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  background: var(--paper-2);
+}
+/* Barra del navegador. Encuadra la previa como página web y no como imagen
+   suelta: sin el marco, el usuario no sabe si está viendo su página o una
+   ilustración de su página. */
+.crome {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 11px;
+  background: var(--paper-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+.crome i { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
+.crome .url {
+  flex: 1; margin-left: 5px;
+  padding: 3px 9px; border-radius: 100px;
+  background: var(--paper-2);
+  font-size: 11px; color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* La previa vive en su propio universo de color: define sus variables y no
+   hereda las del panel. Si heredara, el tema oscuro del panel le cambiaría
+   la página al fotógrafo sin que él haya tocado nada. */
+.sf {
+  --sf-bg: #FFFFFF;
+  --sf-fg: #14120F;
+  --sf-fg2: #6E6A63;
+  --sf-line: rgba(20, 18, 15, .10);
+  --sf-acc: #F0410F;
+  background: var(--sf-bg); color: var(--sf-fg);
+  transition: background 260ms ease, color 260ms ease;
+}
+.sf[data-t="oscuro"] {
+  --sf-bg: #0E0D0C; --sf-fg: #F2F0EC; --sf-fg2: #9B968D;
+  --sf-line: rgba(242, 240, 236, .12);
+}
+.sf[data-t="editorial"] { --sf-bg: #F4F2ED; --sf-fg: #1A1815; --sf-fg2: #6B665E; }
+
+.sf-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--sf-line);
+}
+.sf-marca { display: flex; align-items: center; gap: 8px; }
+.sf-logo {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: var(--sf-acc);
+  display: grid; place-items: center;
+  color: #FFF; font-size: 11px; font-weight: 700;
+  transition: background 260ms ease;
+}
+.sf-marca b { font-size: 13.5px; font-weight: 600; letter-spacing: -0.02em; }
+.sf-buscar {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 100px;
+  border: 1px solid var(--sf-line);
+  font-size: 11px; color: var(--sf-fg2);
+}
+.sf-buscar svg { width: 11px; height: 11px; }
+
+.sf-hero { padding: 20px 16px; }
+.sf[data-t="editorial"] .sf-hero { padding: 26px 16px 20px; }
+.sf-hero h3 {
+  font-family: var(--display);
+  font-size: 19px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: -0.045em; line-height: 1.05;
+}
+.sf[data-t="editorial"] .sf-hero h3 { font-size: 23px; }
+.sf-hero p { margin-top: 6px; font-size: 12px; color: var(--sf-fg2); }
+.sf-cta {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 12px; padding: 7px 13px;
+  border-radius: 5px;
+  background: var(--sf-acc); color: #FFF;
+  font-size: 12px; font-weight: 500;
+  transition: background 260ms ease;
+}
+.sf-cta svg { width: 12px; height: 12px; }
+
+.sf-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;
+  padding: 0 16px 18px;
+}
+.sf[data-t="editorial"] .sf-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.sf-ph {
+  aspect-ratio: 3 / 2; border-radius: 4px;
+  background: radial-gradient(110% 82% at 64% 26%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
+}
+.sf-ph:nth-child(2) { background: radial-gradient(104% 78% at 30% 34%, #7FA8D8, transparent 58%), linear-gradient(158deg, #1E2836, #0E1116); }
+.sf-ph:nth-child(3) { background: radial-gradient(110% 80% at 70% 64%, #8FD08A, transparent 56%), linear-gradient(160deg, #1D2A1C, #0E120D); }
+.sf-ph:nth-child(4) { background: radial-gradient(106% 78% at 44% 28%, #E08C7A, transparent 56%), linear-gradient(162deg, #33201D, #14100F); }
+.sf-ph:nth-child(5) { background: radial-gradient(110% 82% at 56% 38%, #C9A7E8, transparent 56%), linear-gradient(160deg, #261E33, #100E14); }
+.sf-ph:nth-child(6) { background: radial-gradient(112% 84% at 66% 24%, #FFCF7A, transparent 56%), linear-gradient(160deg, #33291B, #12100E); }
+
+/* Marca de agua sobre la previa: es la única forma de ver si tapa la foto o
+   si queda tan tenue que no protege nada. */
+.sf-ph { position: relative; overflow: hidden; }
+.sf[data-agua="1"] .sf-ph::after {
+  content: "GERMÁN SOSA";
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: rgba(255, 255, 255, .5);
+  font-size: 7px; font-weight: 600; letter-spacing: 0.1em;
+  transform: rotate(-18deg);
+}
+
+@media (max-width: 1080px) {
+  .tienda { grid-template-columns: minmax(0, 1fr); }
+  .previa { position: static; }
+}
+@media (max-width: 560px) {
+  .plt { grid-template-columns: repeat(2, 1fr); }
+}
+
+
+/* ═══════════════ pagos/pagos.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · métodos de pago
+   -----------------------------------------------------------------------------
+   Antes esta pantalla se llamaba Cobros y abría con "te va a entrar $186.400,
+   se acredita el lunes 18". Estaba mal de raíz: con el reparto de Mercado Pago
+   la plata cae en la cuenta del fotógrafo en el momento de la venta, así que
+   no existe ningún saldo pendiente de nuestro lado. Esa tarjeta prometía un
+   depósito que nunca íbamos a hacer, y una fecha que no era nuestra.
+
+   Lo que sí hace falta acá es la cuenta conectada: es lo único que el
+   fotógrafo puede cambiar y lo único sin lo cual no cobra. Por eso va primera
+   y grande, y le da el nombre a la pantalla.
+
+   El desglose de la comisión se queda: en Ventas el fotógrafo mira cómo le va
+   y meterle ahí la resta convierte una buena noticia en una mala. Acá viene a
+   entender cómo cobra, así que es lo que vino a buscar.
+   ========================================================================== */
+
+/* ── La cuenta conectada ─────────────────────────────────────────────────────
+   Es lo que la pantalla viene a resolver, así que ocupa el lugar que antes
+   tenía la falsa próxima acreditación. */
+.metodo {
+  padding: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  background: var(--paper-2);
+}
+.metodo-h {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-4); flex-wrap: wrap;
+}
+
+/* Datos en columnas y no en renglones sueltos: son tres hechos del mismo
+   rango, y apilados parecerían una jerarquía que no existe. */
+.metodo-d {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-4);
+  margin-top: var(--s-5); padding-top: var(--s-5);
+  border-top: 1px solid var(--line-soft);
+}
+.metodo-d dt { font-size: 11.5px; color: var(--ink-3); }
+.metodo-d dd {
+  margin-top: 5px; font-size: 14.5px; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.metodo-f {
+  display: flex; gap: var(--s-2);
+  margin-top: var(--s-5); padding-top: var(--s-4);
+  border-top: 1px solid var(--line-soft);
+}
+
+.mp { display: flex; align-items: center; gap: var(--s-4); }
+/* El logotipo va monocromático y en tinta, no en el celeste corporativo dentro
+   de un cuadradito. Sobre papel, un bloque de color saturado es la cosa más
+   ruidosa de la pantalla, y acá Mercado Pago es un dato de la cuenta, no una
+   marca que tengamos que promocionar. La proporción sale del viewBox del SVG
+   original, 1048.82 x 425.2. */
+.metodo .mp-marca, .mp .mp-marca {
+  width: 128px; height: 52px;
+  flex-shrink: 0;
+  color: var(--ink);
+}
+.mp-t { flex: 1; min-width: 0; line-height: 1.4; }
+.mp-t b { display: block; font-size: 14.5px; font-weight: 600; }
+.mp-t span { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+.mp-ok { display: inline-flex; align-items: center; gap: 5px; color: var(--ok); font-size: 12.5px; }
+.mp-ok svg { width: 14px; height: 14px; }
+
+/* ── Desglose ────────────────────────────────────────────────────────────── */
+.desglose { display: grid; gap: 10px; }
+.desglose > div {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s-4); font-size: 14px;
+}
+.desglose dt { color: var(--ink-2); }
+.desglose dd { font-variant-numeric: tabular-nums; }
+.desglose .fee dd { color: var(--accent); }
+.desglose .tot {
+  margin-top: 5px; padding-top: 13px;
+  border-top: 1px solid var(--line);
+  font-size: 16px; font-weight: 500;
+}
+.desglose .tot dd { font-size: 22px; font-weight: 300; }
+
+/* El desglose por tipo de evento. Es el único lugar donde el fotógrafo puede
+   verificar de dónde sale el total que le descontamos. */
+.fund {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin-top: var(--s-4); padding: 11px 13px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  background: var(--accent-wash);
+  border-radius: var(--r-2);
+  font-size: 12.5px; line-height: 1.5; color: var(--ink-2);
+}
+.fund svg { width: 15px; height: 15px; color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+.fund { border-color: var(--line); background: var(--paper-3); }
+.fund b { color: var(--ink); font-weight: 500; }
+
+/* ── Cómo funciona ───────────────────────────────────────────────────────── */
+.pasos { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-4); }
+.paso { display: grid; gap: 7px; align-content: start; }
+.paso-n {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  font-size: 11.5px; font-weight: 600;
+}
+.paso b { font-size: 13.5px; font-weight: 500; }
+.paso p { font-size: 12.5px; color: var(--ink-3); line-height: 1.55; }
+
+@media (max-width: 900px) {
+  .pasos { grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+}
+@media (max-width: 560px) {
+  .metodo-d { grid-template-columns: minmax(0, 1fr); gap: var(--s-3); }
+}
+
+
+/* ═══════════════ perfil/perfil.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · perfil
+   -----------------------------------------------------------------------------
+   Dos cosas conviven acá y no son lo mismo: lo que el atleta ve de vos (foto,
+   nombre, bio, redes) y lo que es de la cuenta (mail, contraseña, borrar
+   todo). El panel viejo las mezclaba en una lista de campos, y el resultado
+   es que nadie sabe cuál de los datos que está escribiendo se publica.
+
+   Acá van separadas y la parte pública se rotula como tal, con la previa al
+   lado para que no quede duda.
+   ========================================================================== */
+
+.perfil { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--s-5); align-items: start; }
+.pcol { display: grid; gap: var(--s-3); }
+
+.blq h2 {
+  font-family: var(--sans); font-size: 14.5px; font-weight: 600;
+  letter-spacing: -0.015em; text-transform: none;
+}
+.blq .ayuda { margin-top: 3px; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+.blq-b { margin-top: var(--s-4); display: grid; gap: var(--s-4); }
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+
+/* ── Foto ────────────────────────────────────────────────────────────────── */
+.foto { display: flex; align-items: center; gap: var(--s-4); }
+.foto-av {
+  width: 66px; height: 66px; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--cta-bg); color: var(--cta-fg);
+  font-size: 21px; font-weight: 600; letter-spacing: 0.01em;
+}
+.foto-t { flex: 1; min-width: 0; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+.foto-b { display: flex; gap: var(--s-2); margin-top: 8px; }
+
+/* Contador de la bio. Aparece recién cerca del límite: un contador siempre
+   visible convierte escribir dos líneas en un examen. */
+.cuenta-c {
+  font-size: 11.5px; color: var(--ink-3);
+  text-align: right; font-variant-numeric: tabular-nums;
+  opacity: 0; transition: opacity 200ms ease;
+}
+.cuenta-c[data-cerca="1"] { opacity: 1; }
+.cuenta-c[data-pasado="1"] { color: var(--bad); opacity: 1; }
+
+/* ── Redes ───────────────────────────────────────────────────────────────── */
+.redes { display: grid; gap: var(--s-3); }
+.red { display: flex; align-items: center; gap: var(--s-3); }
+.red-i {
+  width: 34px; height: 34px; border-radius: var(--r-2);
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.red-i svg { width: 16px; height: 16px; }
+
+/* ── Zona de riesgo ──────────────────────────────────────────────────────────
+   Abajo de todo, con su propio borde y sin ningún botón rojo grande. El rojo
+   grande invita a apretar; el botón fantasma con borde rojo hay que ir a
+   buscarlo, que es exactamente lo que corresponde para algo irreversible. */
+.riesgo { border-color: color-mix(in srgb, var(--bad) 26%, transparent); }
+.riesgo h2 { color: var(--bad); }
+.riesgo .btn-peligro {
+  border-color: color-mix(in srgb, var(--bad) 40%, transparent);
+  color: var(--bad); background: transparent;
+}
+.riesgo .btn-peligro:hover {
+  background: color-mix(in srgb, var(--bad) 8%, transparent);
+  border-color: var(--bad);
+}
+
+/* ── Previa pública ──────────────────────────────────────────────────────── */
+.lado { position: sticky; top: calc(62px + var(--s-5)); display: grid; gap: var(--s-3); }
+.tarjeta-pub { text-align: center; padding: var(--s-5) var(--s-4); }
+.tarjeta-pub .foto-av { margin: 0 auto var(--s-3); }
+.tarjeta-pub b { display: block; font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+.tarjeta-pub .bio {
+  margin-top: 7px; font-size: 12.5px; color: var(--ink-3);
+  line-height: 1.55; min-height: 2.2em;
+}
+.tarjeta-pub .link {
+  display: inline-block; margin-top: var(--s-3);
+  font-size: 12px; color: var(--ink-2);
+  border-bottom: 1px solid var(--line-strong);
+}
+.tarjeta-pub .iconos { display: flex; justify-content: center; gap: 9px; margin-top: var(--s-4); color: var(--ink-3); }
+.tarjeta-pub .iconos svg { width: 15px; height: 15px; }
+.tarjeta-pub .iconos span[hidden] { display: none; }
+
+@media (max-width: 1080px) {
+  .perfil { grid-template-columns: minmax(0, 1fr); }
+  .lado { position: static; }
+}
+@media (max-width: 560px) { .par { grid-template-columns: minmax(0, 1fr); } }
+
+
+/* ═══════════════ ayuda/ayuda.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · ayuda
+   -----------------------------------------------------------------------------
+   El centro de ayuda viejo prometía respuesta en 12 horas hábiles. Eso, para
+   un fotógrafo que está subiendo fotos un domingo a las 8 de la noche con el
+   evento todavía caliente, equivale a no tener soporte: cuando le contesten,
+   la venta ya no está.
+
+   Por eso el contacto directo va arriba y no al final, y dice la verdad de lo
+   que ofrecemos, que es WhatsApp las 24 horas. Las preguntas frecuentes van
+   abajo: sirven, pero el que entra acá con un problema en vivo no viene a
+   leer.
+   ========================================================================== */
+
+/* ── Contacto ────────────────────────────────────────────────────────────── */
+/* Verde WhatsApp, pero NO el #25D366 de la marca: blanco sobre ese verde da
+   1,98:1 de contraste, o sea ilegible. Este es el mismo verde bajado en
+   luminancia hasta 5,28:1, que pasa AA con holgura.
+
+   Color plano, sin degradé. En una superficie de este tamaño el degradé no
+   agrega información y sí agrega una dirección de luz que ninguna otra
+   tarjeta del panel tiene: se leía como un elemento de otro sistema. */
+.contacto {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center; gap: var(--s-5);
+  padding: var(--s-5);
+  border-radius: var(--r-3);
+  background: #0A7C42; color: #FFFFFF;
+  box-shadow: var(--shadow-card);
+}
+/* El ícono al lado del título hace de marca de sección: dice "soporte" sin
+   necesidad de un rótulo arriba, que es justo lo que se sacó. */
+.contacto h2 {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--sans); font-size: 18px; font-weight: 600;
+  letter-spacing: -0.02em; text-transform: none;
+}
+.ct-i {
+  width: 32px; height: 32px; border-radius: 50%;
+  flex-shrink: 0;
+  display: grid; place-items: center;
+  background: rgba(255, 255, 255, .16);
+}
+.ct-i svg { width: 17px; height: 17px; }
+.contacto p {
+  margin-top: 7px; font-size: 13.5px; line-height: 1.55;
+  color: rgba(255, 255, 255, .82);
+  max-width: 48ch;
+}
+
+/* Botón de trazo blanco y no relleno: sobre una superficie de color, un botón
+   blanco sólido es una segunda mancha que pelea con la tarjeta. El trazo deja
+   que la tarjeta siga siendo el bloque y el botón siga siendo el borde. */
+.contacto .btn-wa {
+  background: rgba(255, 255, 255, .12);
+  border-color: rgba(255, 255, 255, .55);
+  color: #FFFFFF;
+  backdrop-filter: blur(6px);
+}
+.contacto .btn-wa:hover { background: rgba(255, 255, 255, .22); border-color: #FFFFFF; }
+.contacto .btn-wa .wa { width: 17px; height: 17px; fill: currentColor; }
+
+/* ── Guías ───────────────────────────────────────────────────────────────── */
+.guias { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
+.gu {
+  display: grid; gap: 9px; align-content: start;
+  padding: var(--s-4);
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  transition: border-color 160ms ease, transform 160ms cubic-bezier(.2, .8, .3, 1), box-shadow 160ms ease;
+}
+.gu:hover { border-color: var(--line); transform: translateY(-2px); box-shadow: var(--shadow-card); }
+.gu-i {
+  width: 32px; height: 32px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.gu-i svg { width: 16px; height: 16px; }
+.gu b { font-size: 14px; font-weight: 600; letter-spacing: -0.015em; }
+.gu p { font-size: 12.5px; color: var(--ink-3); line-height: 1.55; }
+.gu .mas {
+  margin-top: 3px; display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12.5px; font-weight: 500; color: var(--ink);
+}
+.gu .mas svg { width: 13px; height: 13px; transition: transform 180ms cubic-bezier(.2, .8, .3, 1); }
+.gu:hover .mas svg { transform: translateX(3px); }
+
+/* ── Preguntas ───────────────────────────────────────────────────────────────
+   Misma mecánica de altura que en la landing: grid-template-rows de 0fr a 1fr
+   anima sin medir con JS y sirve para cualquier largo de respuesta. */
+.qa { border-top: 1px solid var(--line-soft); }
+.qa:last-child { border-bottom: 1px solid var(--line-soft); }
+.qa-t {
+  display: flex; align-items: center; gap: var(--s-4);
+  width: 100%; padding: 15px 4px;
+  border: 0; background: none; cursor: pointer; text-align: left;
+  font-family: var(--sans); font-size: 14.5px; font-weight: 500; color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.qa-t .mas-i {
+  margin-left: auto; flex-shrink: 0;
+  width: 18px; height: 18px;
+  display: grid; place-items: center;
+  color: var(--ink-3);
+  transition: transform 300ms cubic-bezier(.2, .8, .3, 1), color 160ms ease;
+}
+.qa-t:hover .mas-i { color: var(--ink); }
+.qa-t[aria-expanded="true"] .mas-i { transform: rotate(45deg); }
+.qa-t .mas-i svg { width: 16px; height: 16px; }
+
+.qa-b {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows 320ms cubic-bezier(.2, .8, .3, 1);
+}
+.qa[data-abierta="1"] .qa-b { grid-template-rows: 1fr; }
+.qa-b > div {
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.qa[data-abierta="1"] .qa-b > div { opacity: 1; transition: opacity 240ms ease 110ms; }
+.qa-b p {
+  padding: 0 4px 17px;
+  font-size: 13.5px; line-height: 1.65; color: var(--ink-2);
+  max-width: 74ch;
+}
+
+@media (max-width: 900px) {
+  .contacto { grid-template-columns: minmax(0, 1fr); }
+  .guias { grid-template-columns: minmax(0, 1fr); }
+}
+
+
+/* ═════════════════ ARREGLOS DE LA CONCATENACIÓN ══════════════════════════
+   Los archivos del laboratorio son independientes y varios definen las mismas
+   clases de andamiaje (.blq-b, .par, .lado, .precios). Puestos uno atrás del
+   otro, la última definición gana con igual especificidad y rompe a la
+   anterior. El caso que se vio: .cols ponía display:flex para la fila de
+   colores, y el .blq-b de perfil.css lo pisaba con display:grid cien líneas
+   más abajo, así que los colores se apilaban en columna.
+
+   Se resuelve subiendo la especificidad de las combinaciones y no
+   reordenando: el orden depende de qué pantalla se copie primero y volvería a
+   romperse en la próxima copia.
+   ══════════════════════════════════════════════════════════════════════ */
+.blq-b.cols { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.blq-b.plt { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
+.blq-b.redes { display: grid; gap: var(--s-3); }
+
+/* ── Previa real de la página pública ────────────────────────────────────────
+   Ya no es una maqueta dibujada: es la página de verdad adentro de un iframe,
+   reducida para entrar en el marco. Una maqueta se desincroniza en cuanto la
+   página pública cambia y termina mintiendo justo donde más confianza hace
+   falta; el iframe no puede mentir porque ES la página. */
+.previa-real {
+  position: relative;
+  overflow: hidden;
+  background: var(--paper-3);
+}
+.previa-real iframe {
+  border: 0;
+  transform-origin: top left;
+  /* El puntero no entra: es una previa, no un lugar donde navegar. */
+  pointer-events: none;
+}
+.previa-vacia {
+  display: grid; place-content: center; justify-items: center; gap: 10px;
+  padding: var(--s-7) var(--s-4);
+  text-align: center;
+  color: var(--ink-3); font-size: 13px;
+}
+.previa-vacia svg { width: 22px; height: 22px; }
+
+/* El paginado de la pantalla del evento usa flechas de texto y no íconos, así
+   que necesita el tamaño de fuente que los botones de ícono no traen. */
+.pag-b { font-size: 16px; line-height: 1; }
+
+/* ═══════════════ eventos/eventos.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · eventos
+   -----------------------------------------------------------------------------
+   La lista vieja era una fila de texto con una miniatura de 44px al costado.
+   Para un producto que vende fotografía eso es raro: el fotógrafo reconoce sus
+   eventos por la imagen mucho antes que por el nombre, sobre todo cuando tiene
+   cuatro fechas del mismo torneo con títulos casi idénticos.
+
+   Hay dos vistas y sirven para cosas distintas. La grilla es para RECONOCER:
+   manda la portada y las cifras van al pie de cada tarjeta. La lista es para
+   COMPARAR: columnas alineadas, encabezado que ordena, y el mismo dato de
+   todos los eventos leyéndose en vertical.
+
+   Quedan dos cifras por evento, fotos y vendido. La conversión se fue: en una
+   grilla de seis eventos, un porcentaje sin el par de números que lo origina
+   se lee como una nota del colegio. Vive en la pantalla del evento, donde hay
+   lugar para mostrarlo junto a las visitas de las que sale.
+
+   El marcado es uno solo para las dos. Lo que cambia es la caja: en grilla la
+   tarjeta es una columna flex, en lista es una grilla de seis columnas y
+   .ec-st pasa a display:contents para que sus tres cifras se repartan como
+   celdas propias en vez de quedar apiladas adentro de un cajón.
+   ========================================================================== */
+
+/* Alternador de vista. */
+.vista { display: flex; gap: 1px; padding: 2px; background: var(--paper-3); border-radius: var(--r-2); }
+.vista button {
+  display: grid; place-items: center;
+  width: 28px; height: 26px; padding: 0;
+  border: 0; background: none; border-radius: 4px; cursor: pointer;
+  color: var(--ink-3);
+  transition: background 140ms ease, color 140ms ease;
+}
+.vista button:hover { color: var(--ink); }
+.vista button[aria-pressed="true"] {
+  background: var(--paper-2); color: var(--ink);
+  box-shadow: 0 1px 2px rgba(18, 17, 15, .07);
+}
+.vista svg { width: 15px; height: 15px; }
+
+/* ═══════════════════════════════ GRILLA ══════════════════════════════════ */
+.evs { display: grid; grid-template-columns: repeat(auto-fill, minmax(286px, 1fr)); gap: var(--s-3); }
+.evs .ec-h { display: none; }   /* el encabezado es sólo de la lista */
+
+.ec {
+  position: relative;
+  display: flex; flex-direction: column;
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  overflow: hidden;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms cubic-bezier(.2, .8, .3, 1);
+}
+.ec:hover { border-color: var(--line); box-shadow: var(--shadow-card); transform: translateY(-2px); }
+
+.ec-cv { position: relative; aspect-ratio: 16 / 10; background: var(--paper-3); overflow: hidden; }
+/* Marcadores: cada evento con su propia luz, para que la grilla no parezca
+   cuatro veces la misma foto. Van fotos reales. */
+.ec-cv[data-cv="1"] { background: radial-gradient(112% 80% at 68% 22%, #FFB25E, transparent 58%), linear-gradient(162deg, #35281C, #12100E); }
+.ec-cv[data-cv="2"] { background: radial-gradient(100% 74% at 26% 30%, #7FA8D8, transparent 60%), linear-gradient(160deg, #1E2836, #0E1116); }
+.ec-cv[data-cv="3"] { background: radial-gradient(108% 78% at 74% 68%, #8FD08A, transparent 58%), linear-gradient(158deg, #1D2A1C, #0E120D); }
+.ec-cv[data-cv="4"] { background: radial-gradient(104% 76% at 40% 24%, #E08C7A, transparent 58%), linear-gradient(164deg, #33201D, #14100F); }
+.ec-cv[data-cv="5"] { background: radial-gradient(110% 80% at 60% 34%, #C9A7E8, transparent 58%), linear-gradient(160deg, #261E33, #100E14); }
+
+/* La píldora es hija directa de la tarjeta, no de la portada. Cuando vivía
+   adentro de la portada había que esconderla en la vista lista, porque ahí la
+   portada es una miniatura de 64px: el resultado era que en lista no se podía
+   distinguir un borrador de uno publicado. Ahora en grilla se posiciona sobre
+   la portada y en lista es una columna más. */
+.ec > .pill { position: absolute; top: 9px; left: 9px; z-index: 1; }
+
+/* Sin portada: no se disimula con un gris, se dice y se ofrece el arreglo.
+   Un evento sin portada vende bastante menos, así que callarlo no ayuda. */
+.ec-none {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; justify-items: center; gap: 9px;
+  background: var(--paper-3); color: var(--ink-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+.ec-none svg { width: 20px; height: 20px; }
+.ec-none span { font-size: 12px; }
+
+.ec-b { padding: var(--s-4) var(--s-4) 0; display: grid; gap: 3px; align-content: start; }
+.ec-b h3 {
+  font-family: var(--sans); font-size: 15px; font-weight: 600;
+  letter-spacing: -0.02em; line-height: 1.28;
+}
+.ec-meta { font-size: 12.5px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.ec-meta i { width: 3px; height: 3px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+/* margin-top:auto pega el pie abajo aunque los títulos midan distinto: sin
+   esto las cifras quedan a alturas diferentes en cada tarjeta. */
+.ec-st {
+  margin-top: auto; padding: var(--s-4);
+  display: grid; grid-template-columns: repeat(2, 1fr);
+}
+.ec-st > div + div { border-left: 1px solid var(--line-soft); padding-left: var(--s-3); }
+.ec-st span {
+  display: block; font-size: 10.5px; color: var(--ink-3);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.ec-st b {
+  display: block; margin-top: 3px;
+  font-size: 17px; font-weight: 300; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.ec-st b.pale { color: var(--ink-3); }
+
+/* ═══════════════════════════════ LISTA ═══════════════════════════════════
+   Las columnas se definen UNA vez en la variable y las usan el encabezado y
+   las filas. Con dos plantillas separadas, cualquier retoque desalinea los
+   títulos de los números y el error se ve recién al mirar.
+   ══════════════════════════════════════════════════════════════════════ */
+.evs[data-vista="lista"] {
+  --cols: 64px minmax(0, 1fr) 96px 116px 104px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  overflow: hidden;
+}
+
+.evs[data-vista="lista"] .ec-h,
+.evs[data-vista="lista"] .ec {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+  gap: var(--s-4);
+  padding: 10px var(--s-4);
+}
+
+.evs[data-vista="lista"] .ec-h {
+  padding-top: 12px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--paper-3);
+}
+
+.evs[data-vista="lista"] .ec {
+  position: static;
+  background: none;
+  border: 0; border-bottom: 1px solid var(--line-soft);
+  border-radius: 0;
+  transform: none; box-shadow: none;
+}
+.evs[data-vista="lista"] .ec:last-child { border-bottom: 0; }
+.evs[data-vista="lista"] .ec:hover { background: var(--paper-3); }
+
+.evs[data-vista="lista"] .ec-cv {
+  width: 64px; aspect-ratio: 16 / 10; border-radius: 5px;
+  border: 1px solid var(--line-soft);
+}
+.evs[data-vista="lista"] .ec-none { border: 0; }
+.evs[data-vista="lista"] .ec-none span { display: none; }
+.evs[data-vista="lista"] .ec-none svg { width: 15px; height: 15px; }
+
+.evs[data-vista="lista"] .ec-b { padding: 0; gap: 1px; }
+.evs[data-vista="lista"] .ec-b h3 {
+  font-size: 14px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.evs[data-vista="lista"] .ec-meta { font-size: 12px; }
+
+/* display:contents disuelve el cajón de las cifras y deja que sus tres hijos
+   se coloquen como celdas de la fila. Sin esto habría que duplicar el marcado
+   para tener columnas de verdad. */
+.evs[data-vista="lista"] .ec-st { display: contents; }
+.evs[data-vista="lista"] .ec-st > div {
+  border-left: 0; padding-left: 0;
+  text-align: right;
+}
+.evs[data-vista="lista"] .ec-st span { display: none; }   /* la etiqueta vive en el encabezado */
+.evs[data-vista="lista"] .ec-st b { margin-top: 0; font-size: 14px; font-weight: 400; }
+
+/* Sin grid-column forzada: la píldora es el último hijo del marcado, así que
+   la autocolocación la manda sola a la última columna. Cuando SÍ tenía columna
+   fija, adelantaba el cursor de autocolocación y empujaba a .ec-b a una
+   segunda fila: la fila entera se partía en dos renglones. */
+.evs[data-vista="lista"] .ec > .pill {
+  position: static; justify-self: end;
+  backdrop-filter: none;
+}
+
+/* Encabezado ordenable. La flecha aparece sólo en la columna activa: tres
+   flechas simultáneas no dicen por cuál está ordenado. */
+.ec-h .et {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font-family: var(--sans); font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-3);
+  transition: color 140ms ease;
+}
+.ec-h .et:hover { color: var(--ink); }
+.ec-h .et svg { width: 12px; height: 12px; opacity: 0; transition: opacity 140ms ease, transform 220ms ease; }
+.ec-h .et[data-ord] { color: var(--ink); }
+.ec-h .et[data-ord] svg { opacity: 1; }
+.ec-h .et[data-ord="asc"] svg { transform: rotate(180deg); }
+.ec-h .et.num { justify-content: flex-end; width: 100%; }
+
+@media (max-width: 900px) {
+  .evs[data-vista="lista"] { --cols: 56px minmax(0, 1fr) 104px 96px; }
+  .evs[data-vista="lista"] .ec-cv { width: 56px; }
+  /* Se caen fotos y conversión, se quedan el dinero y el estado: con poco
+     ancho, lo que hay que poder comparar es cuánto entró y si está publicado. */
+  .evs[data-vista="lista"] .c-fotos { display: none; }
+}
+@media (max-width: 560px) {
+  .evs[data-vista="lista"] { --cols: 44px minmax(0, 1fr) 104px; }
+  .evs[data-vista="lista"] .ec-cv { width: 44px; }
+  .evs[data-vista="lista"] .c-estado { display: none; }
+  .evs[data-vista="lista"] .ec > .pill { display: none; }
+}
+
+
+/* ═══════════════ evento/evento.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · evento
+   -----------------------------------------------------------------------------
+   La versión de cuervito abría con tres tarjetas-solapa enormes (Galería,
+   Monetización, Info), con ícono, título y subtítulo cada una. Ocupaban una
+   franja entera de alto permanente, arriba del contenido, sólo para elegir
+   pestaña. En una pantalla donde el fotógrafo viene a mirar sus fotos, ese
+   espacio es de las fotos.
+
+   Acá las solapas son una barra compacta, y el alto liberado se usa para dos
+   cosas que antes no estaban:
+
+   · La portada como banda. Es la identidad del evento y lo primero que ve el
+     atleta, así que tiene que estar presente mientras trabajás, no escondida
+     en un ajuste.
+
+   · El progreso REAL del procesamiento, en dos etapas: subidas y reconocidas.
+     Son cosas distintas y tardan distinto. cuervito sólo mostraba la subida,
+     que es la rápida, y después había un rato largo en el que parecía que no
+     pasaba nada mientras corría el reconocimiento.
+   ========================================================================== */
+
+/* ── Portada ─────────────────────────────────────────────────────────────── */
+.banda {
+  position: relative;
+  border-radius: var(--r-3);
+  overflow: hidden;
+  aspect-ratio: 21 / 6;
+  min-height: 190px;
+  background: radial-gradient(112% 80% at 66% 24%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
+  display: flex; align-items: flex-end;
+}
+/* Velo desde abajo: el texto se apoya en el borde inferior, así que oscurecer
+   la foto entera la apagaría sin necesidad. */
+.banda::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(8, 7, 6, .88), rgba(8, 7, 6, .3) 46%, rgba(8, 7, 6, .05) 78%);
+}
+.banda-in {
+  position: relative; z-index: 1;
+  width: 100%;
+  padding: var(--s-5);
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--s-4); flex-wrap: wrap;
+}
+.banda h1 {
+  color: #FFF;
+  font-size: clamp(22px, 2.6vw, 34px);
+  font-weight: var(--display-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--display-track);
+  line-height: 1.04;
+  max-width: 20ch;
+}
+.banda-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 11px;
+}
+.banda-meta .dato { color: rgba(255, 255, 255, .78); font-size: 12.5px; }
+.banda-meta .dato i { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: currentColor; margin: 0 5px 3px; }
+.banda-acc { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+
+
+/* Botón sobre foto: vidrio, no relleno. Un botón sólido sobre una fotografía
+   la tapa; el vidrio deja ver qué hay debajo y sigue siendo legible. */
+.btn-vidrio {
+  background: rgba(255, 255, 255, .14);
+  border-color: rgba(255, 255, 255, .26);
+  color: #FFF;
+  backdrop-filter: blur(10px);
+}
+.btn-vidrio:hover { background: rgba(255, 255, 255, .24); border-color: rgba(255, 255, 255, .42); }
+
+/* ── Enlace público ──────────────────────────────────────────────────────────
+   Va arriba y no enterrado: publicar sin repartir el link no vende nada, así
+   que el paso siguiente a publicar tiene que estar a la vista. */
+.link-pub {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: 11px var(--s-4);
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-2);
+}
+.link-pub .url {
+  flex: 1; min-width: 0;
+  font-size: 13.5px; color: var(--ink-2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.link-pub .url b { color: var(--ink); font-weight: 500; }
+.link-pub svg { width: 15px; height: 15px; color: var(--ink-3); flex-shrink: 0; }
+
+/* ── Cifras ──────────────────────────────────────────────────────────────── */
+.cifras { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-3); }
+/* Mismo patrón que los indicadores del inicio: rótulo a la izquierda, ícono
+   a la derecha y tenue. Que las dos pantallas usen la misma tarjeta importa
+   más que el ícono en sí: el fotógrafo entra al evento desde el inicio y no
+   tiene que volver a aprender dónde mirar. */
+.cifra .c-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-3);
+  color: var(--ink-3);
+}
+.cifra .c-top svg { width: 15px; height: 15px; }
+.cifra span {
+  display: block; font-size: 11.5px; color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+.cifra b {
+  display: block; margin-top: 7px;
+  font-size: 28px; font-weight: 200; letter-spacing: -0.035em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.cifra .nota-c { margin-top: 8px; font-size: 12px; color: var(--ink-3); }
+.cifra .nota-c.alerta { color: var(--accent); }
+/* Si la tarjeta tiene algo que avisar, el ícono se tiñe igual que el aviso.
+   Un ícono neutro arriba de una cifra que reclama atención resta en vez de
+   sumar: hay que leer la línea de abajo para enterarse. */
+.cifra:has(.nota-c.alerta) .c-top svg { color: var(--accent); }
+
+/* ── Procesamiento en dos etapas ─────────────────────────────────────────────
+   Subir y reconocer son cosas distintas y tardan muy distinto. Mostrar una
+   sola barra hace que después de subir parezca que el sistema se colgó,
+   cuando en realidad está en la parte lenta. Dos barras y dos números. */
+.proc { display: grid; gap: var(--s-4); }
+.etapa { display: grid; gap: 8px; }
+.etapa-t { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.etapa-t b { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 500; }
+
+/* El ícono no es adorno: toma el color del estado de su etapa, el mismo que
+   la barra. Verde cuando terminó, acento mientras corre. Así el estado se lee
+   de un vistazo sin recorrer la barra hasta el final. */
+.et-i {
+  width: 26px; height: 26px; border-radius: 8px;
+  flex-shrink: 0;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  color: var(--ok);
+  transition: background 400ms ease, color 400ms ease;
+}
+.et-i svg { width: 14px; height: 14px; }
+.etapa.lenta .et-i { background: var(--accent-wash); color: var(--accent); }
+.etapa-t .cuenta {
+  font-size: 12.5px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.pista-b {
+  height: 5px; border-radius: 100px;
+  background: var(--paper-3);
+  overflow: hidden;
+}
+.pista-b i {
+  display: block; height: 100%; border-radius: 100px;
+  background: var(--ok);
+  transition: width 600ms cubic-bezier(.3, .8, .4, 1);
+}
+.etapa.lenta .pista-b i { background: var(--accent); }
+.etapa .detalle { font-size: 12px; color: var(--ink-3); }
+
+/* ── Solapas ─────────────────────────────────────────────────────────────── */
+.solapas {
+  display: flex; gap: var(--s-5);
+  border-bottom: 1px solid var(--line-soft);
+}
+.solapa {
+  position: relative;
+  display: flex; align-items: center; gap: 7px;
+  padding: 0 2px 12px;
+  border: 0; background: none; cursor: pointer;
+  font-family: var(--sans); font-size: 14px; font-weight: 500;
+  color: var(--ink-3);
+  transition: color 150ms ease;
+}
+.solapa:hover { color: var(--ink); }
+.solapa svg { width: 15px; height: 15px; }
+.solapa .n {
+  font-size: 11.5px; font-weight: 500;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+/* Subrayado con transform en vez de border: se puede animar y no mueve el
+   texto un pixel al activarse, que es lo que pasa cuando se agrega borde. */
+.solapa::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px;
+  height: 2px; background: var(--ink);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 260ms cubic-bezier(.2, .8, .3, 1);
+}
+.solapa[aria-selected="true"] { color: var(--ink); }
+.solapa[aria-selected="true"]::after { transform: scaleX(1); }
+
+.panel-s { display: none; }
+.panel-s[data-activo="1"] { display: grid; gap: var(--s-4); }
+
+/* ── Zona de subida ──────────────────────────────────────────────────────── */
+.soltar {
+  display: grid; place-content: center; justify-items: center; gap: 9px;
+  padding: var(--s-7) var(--s-4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-3);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.soltar:hover, .soltar.encima { border-color: var(--ink-3); background: var(--paper-3); }
+.soltar-i {
+  width: 40px; height: 40px; border-radius: var(--r-3);
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.soltar-i svg { width: 19px; height: 19px; }
+.soltar b { font-size: 14.5px; font-weight: 500; }
+.soltar span { font-size: 12.5px; color: var(--ink-3); }
+
+/* ── Precio ──────────────────────────────────────────────────────────────── */
+.precios { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+.cuenta-p {
+  padding: 11px 13px;
+  background: var(--paper-3);
+  border-radius: var(--r-2);
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.5;
+}
+.cuenta-p b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.blq h2 {
+  font-family: var(--sans); font-size: 14.5px; font-weight: 600;
+  letter-spacing: -0.015em; text-transform: none;
+}
+.blq .ayuda { margin-top: 3px; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+.blq-b { margin-top: var(--s-4); display: grid; gap: var(--s-4); }
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+
+/* Zona de riesgo, igual que en Perfil: abajo, con borde propio y sin botón
+   rojo grande. El rojo grande invita a apretar. */
+.riesgo { border-color: color-mix(in srgb, var(--bad) 26%, transparent); }
+.riesgo h2 { color: var(--bad); }
+.riesgo .btn-peligro {
+  border-color: color-mix(in srgb, var(--bad) 40%, transparent);
+  color: var(--bad); background: transparent;
+}
+.riesgo .btn-peligro:hover {
+  background: color-mix(in srgb, var(--bad) 8%, transparent);
+  border-color: var(--bad);
+}
+
+@media (max-width: 900px) {
+  .cifras { grid-template-columns: repeat(2, 1fr); }
+  .banda { aspect-ratio: auto; }
+  .banda-in { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 560px) {
+  .precios, .par { grid-template-columns: minmax(0, 1fr); }
+  .solapas { gap: var(--s-4); overflow-x: auto; }
+  .solapa .n { display: none; }
+}
+
+/* ── Grilla del evento: cuatro columnas fijas ────────────────────────────────
+   La biblioteca usa auto-fill porque ahí se barre buscando algo puntual y
+   conviene la densidad. Acá es al revés: el fotógrafo está revisando SU
+   material, mirando encuadre y foco, y para eso la miniatura tiene que ser
+   grande. Cuatro columnas es lo que da un tamaño en el que se puede juzgar
+   una foto sin abrirla. */
+.panel-s .fg { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 900px) { .panel-s .fg { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 620px) { .panel-s .fg { grid-template-columns: repeat(2, 1fr); } }
+
+/* ── Equipo ──────────────────────────────────────────────────────────────────
+   Un evento grande lo cubren varios fotógrafos. Cada uno sube lo suyo y cobra
+   lo suyo: la plata no se reparte por porcentaje sino por autoría, que es lo
+   que evita la discusión de "yo saqué más que vos". La tabla lo muestra así,
+   con fotos y recaudado por persona. */
+.inv { display: flex; gap: var(--s-2); align-items: flex-start; flex-wrap: wrap; }
+.inv .campo { flex: 1; min-width: 240px; }
+
+.col-f { grid-template-columns: 34px minmax(0, 1fr) 96px 104px auto; }
+.col-av {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  font-size: 12px; font-weight: 600;
+}
+.col-av.yo { background: var(--cta-bg); color: var(--cta-fg); }
+.col-t { min-width: 0; line-height: 1.35; }
+.col-t b { display: block; font-size: 13.5px; font-weight: 500; }
+.col-t span { display: block; font-size: 12px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-f .num { font-size: 13px; }
+
+/* La fila pendiente se apaga entera, no sólo el rol: alguien que todavía no
+   aceptó no aportó nada, y sus columnas en cero al mismo peso que las de los
+   demás se leen como que trabajó y no vendió. */
+.col-f.espera .col-av, .col-f.espera .col-t b { opacity: .6; }
+
+/* ── El rol de cada uno ──────────────────────────────────────────────────────
+   Antes eran píldoras. Una píldora es una caja con fondo, y cuatro cajas de
+   colores distintos en una columna angosta compiten con los nombres y los
+   números, que es lo que la tabla vino a mostrar. Acá el rol es texto: el
+   ícono hace de ancla para reconocerlo sin leer, y el color hace el resto.
+
+   Los cuatro estados no son lo mismo y por eso no pesan igual. "Sin cobrar" es
+   el único que pide hacer algo, así que es el único en rojo; "invitado" es una
+   espera normal y va apagado, no en amarillo de alerta. */
+.rol {
+  display: inline-flex; align-items: center; gap: 7px;
+  justify-self: end;
+  font-size: 12.5px; font-weight: 500;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+.rol svg { width: 14px; height: 14px; flex-shrink: 0; }
+.rol.duenio { color: var(--acento-txt); }
+.rol.activo { color: var(--ok-txt); }
+.rol.sincobrar { color: var(--bad-txt); }
+.rol.espera { color: var(--ink-3); font-weight: 400; }
+
+.reparto {
+  margin-top: var(--s-4); padding: 11px 13px;
+  background: var(--paper-3); border-radius: var(--r-2);
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.55;
+}
+.reparto b { color: var(--ink); font-weight: 500; }
+
+@media (max-width: 760px) {
+  .col-f { grid-template-columns: 34px minmax(0, 1fr) auto; }
+  .col-f .c-fotos { display: none; }
+}
+
+/* Lo que le queda al colaborador, dentro del diálogo. El número va resuelto y
+   no explicado: quien invita tiene que poder contestar "¿cuánto me queda?" si
+   se lo preguntan por teléfono, sin ir a buscarlo. */
+.queda-inv {
+  padding: var(--s-4);
+  border-radius: var(--r-2);
+  background: var(--acento-lleno); color: #FFFFFF;
+}
+.queda-inv > div { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); }
+.queda-inv span { font-size: 12.5px; color: rgba(255, 255, 255, .9); }
+.queda-inv b {
+  font-size: 26px; font-weight: 200; letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+.queda-inv p {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, .25);
+  font-size: 12px; line-height: 1.55; color: rgba(255, 255, 255, .9);
+}
+.queda-inv p b { font-size: inherit; font-weight: 500; color: #FFFFFF; }
+
+.aj .pill { flex-shrink: 0; }
+
+/* ═══════════════════════════════ TELÉFONO ════════════════════════════════
+   A 375px la pantalla se iba a 524 de ancho. No eran veinte ajustes: eran dos
+   causas que arrastraban a todo lo demás.
+
+   1. El título de la portada tenía max-width en ch y su contenedor no llevaba
+      min-width:0. Un hijo de flex no baja de su ancho de contenido salvo que
+      se lo permitas, así que "DUATLÓN CLUB CICLISTA CHIVILCOY" en Unbounded,
+      que es una tipografía muy ancha, empujaba la banda entera.
+
+   2. La fila del enlace público no envolvía: URL más dos botones en una sola
+      línea que no se podía partir.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 620px) {
+
+  /* ── Portada ── */
+  .banda { min-height: 0; }
+  .banda-in { padding: var(--s-4); gap: var(--s-3); }
+  .banda-in > div:first-child { min-width: 0; width: 100%; }
+  .banda h1 { max-width: none; font-size: 23px; }
+  .banda-acc { width: 100%; }
+  /* El botón de portada se lleva el ancho y el de editar queda cuadrado al
+     lado: en el teléfono cambiar la portada es lo que se hace, editar el
+     nombre no. */
+  .banda-acc .btn:first-child { flex: 1; }
+
+  /* ── Enlace público ── */
+  .link-pub { flex-wrap: wrap; row-gap: var(--s-3); }
+  .link-pub .url { flex: 1 1 auto; min-width: 0; }
+  .link-pub .btn { flex: 1 1 0; }
+  .link-pub > svg { flex-shrink: 0; }
+
+  /* ── Cifras ── */
+  .cifras { gap: var(--s-2); }
+  .cifra { padding: var(--s-3); }
+  .cifra b { font-size: 23px; }
+  .cifra .nota-c { font-size: 11.5px; }
+
+  /* ── Procesamiento ── */
+  .etapa-t { flex-wrap: wrap; row-gap: 4px; }
+  .etapa-t b { font-size: 13px; }
+  .etapa-t .cuenta { margin-left: 34px; }   /* alineado con el texto, no con el ícono */
+
+  /* ── Solapas ──
+     Se desbordan a propósito con scroll horizontal propio. Apilarlas en dos
+     filas rompe la lectura de "dónde estoy" que da una barra de pestañas. */
+  .solapas {
+    gap: var(--s-4);
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: calc(var(--s-4) * -1);
+    padding-inline: var(--s-4);
+  }
+  .solapas::-webkit-scrollbar { display: none; }
+  .solapa { flex-shrink: 0; }
+
+  /* ── Equipo ── */
+  .col-f { grid-template-columns: 34px minmax(0, 1fr) auto; row-gap: 4px; }
+  .col-f .num { font-size: 12.5px; }
+  .inv .campo { min-width: 0; }
+
+  /* ── Precio e info ── */
+  .aj { flex-wrap: wrap; row-gap: var(--s-2); }
+  .aj .btn, .aj .sw, .aj .pill { margin-left: auto; }
+
+  /* ── Diálogo ── */
+  .queda-inv > div { flex-wrap: wrap; row-gap: 2px; }
+}
+
+
+/* ═══════════════ nuevo/nuevo.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · nuevo evento
+   -----------------------------------------------------------------------------
+   Tres pasos. La versión anterior era una página sola con todas las secciones
+   apiladas, y el problema no era el largo sino que ponía al mismo nivel cosas
+   de peso muy distinto: el nombre del evento y la decisión de usar o no
+   reconocimiento, que cambia lo que te cobramos, estaban una debajo de la otra
+   como si fueran lo mismo.
+
+   Separado en pasos, cada decisión ocupa la pantalla entera el rato que dura.
+   Y como el paso 2 define la comisión, el paso 3 puede mostrar directamente
+   cuánto te queda de cada foto, sin explicar de nuevo de dónde sale.
+
+   Para que no castigue al que ya sabe: sólo el nombre y la fecha son
+   obligatorios, Enter avanza, y los pasos 2 y 3 vienen con valores puestos que
+   sirven tal cual.
+   ========================================================================== */
+
+.wiz { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--s-6); align-items: start; }
+
+/* ── Barra de pasos ──────────────────────────────────────────────────────── */
+.wpasos { display: flex; align-items: center; gap: 10px; margin-bottom: var(--s-6); }
+.wp { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-3); }
+.wp i.bola {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 1.5px solid var(--line-strong);
+  font-size: 11.5px; font-weight: 600; font-style: normal;
+  transition: background 240ms ease, border-color 240ms ease, color 240ms ease;
+}
+.wp[data-e="aqui"] { color: var(--ink); font-weight: 500; }
+.wp[data-e="aqui"] i.bola { background: var(--cta-bg); border-color: var(--cta-bg); color: var(--cta-fg); }
+.wp[data-e="hecho"] i.bola { background: var(--ok); border-color: var(--ok); color: #FFF; }
+.wp[data-e="hecho"] i.bola::after {
+  content: ""; width: 12px; height: 12px; background: currentColor;
+  -webkit-mask: var(--tic) center / contain no-repeat;
+  mask: var(--tic) center / contain no-repeat;
+}
+.wp[data-e="hecho"] i.bola span { display: none; }
+.wp-linea { flex: 1; max-width: 40px; height: 1px; background: var(--line); }
+
+.wpaso { display: none; }
+.wpaso[data-activo="1"] { display: grid; gap: var(--s-3); animation: aparecer 300ms cubic-bezier(.2, .8, .3, 1); }
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.wtit { margin-bottom: var(--s-2); }
+.wtit h2 {
+  font-family: var(--sans); font-size: 19px; font-weight: 600;
+  letter-spacing: -0.025em; text-transform: none;
+}
+.wtit p { margin-top: 5px; font-size: 13.5px; color: var(--ink-3); line-height: 1.55; }
+
+.blq-b { display: grid; gap: var(--s-4); }
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+
+/* ── Portada ─────────────────────────────────────────────────────────────── */
+.cover {
+  position: relative;
+  aspect-ratio: 16 / 7;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-2);
+  display: grid; place-content: center; justify-items: center; gap: 8px;
+  color: var(--ink-3); cursor: pointer; overflow: hidden;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.cover:hover { border-color: var(--ink-3); background: var(--paper-3); }
+.cover svg { width: 20px; height: 20px; }
+.cover b { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+.cover span { font-size: 12px; }
+.cover.puesta {
+  border-style: solid; border-color: transparent;
+  background: radial-gradient(112% 80% at 66% 24%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
+}
+.cover.puesta > *:not(.quitar) { display: none; }
+.cover.puesta .quitar { display: inline-flex; }
+.quitar {
+  display: none;
+  position: absolute; top: 8px; right: 8px;
+  align-items: center; gap: 5px;
+  padding: 4px 9px; border: 0; border-radius: 100px;
+  background: rgba(8, 7, 6, .6); backdrop-filter: blur(6px);
+  color: #FFF; font-family: var(--sans); font-size: 11.5px; cursor: pointer;
+}
+.quitar svg { width: 12px; height: 12px; }
+
+/* ── Elección de reconocimiento ──────────────────────────────────────────────
+   Dos tarjetas y no un interruptor. Un interruptor sugiere que hay una opción
+   normal y otra rara, y acá son dos productos distintos con dos precios
+   distintos: quien no usa reconocimiento no está desactivando una función,
+   está eligiendo un plan más barato porque no le hacemos el trabajo caro. Con
+   las dos cartas al lado, la comparación es la interfaz. */
+.opciones { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+.op { position: relative; cursor: pointer; }
+.op input { position: absolute; opacity: 0; pointer-events: none; }
+.op-caja {
+  height: 100%;
+  display: grid; gap: 10px; align-content: start;
+  padding: var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  background: var(--paper-2);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms cubic-bezier(.2,.8,.3,1);
+}
+.op:hover .op-caja { border-color: var(--line-strong); }
+.op input:checked + .op-caja {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.op-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.op-i {
+  width: 32px; height: 32px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  transition: background 160ms ease, color 160ms ease;
+}
+.op input:checked + .op-caja .op-i { background: var(--cta-bg); color: var(--cta-fg); }
+.op-i svg { width: 16px; height: 16px; }
+
+/* La comisión es el dato que decide, así que va grande y en la tarjeta, no en
+   una nota al pie. */
+.op-com { text-align: right; line-height: 1; }
+.op-com b {
+  display: block;
+  font-size: 26px; font-weight: 200; letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.op-com span { display: block; margin-top: 4px; font-size: 10.5px; color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase; }
+
+.op-caja h3 { font-family: var(--sans); font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+.op-caja p { font-size: 12.5px; color: var(--ink-3); line-height: 1.55; }
+.op-lista { display: grid; gap: 6px; margin-top: 2px; }
+.op-lista li { display: flex; gap: 7px; font-size: 12.5px; color: var(--ink-2); list-style: none; line-height: 1.4; }
+.op-lista svg { width: 13px; height: 13px; flex-shrink: 0; margin-top: 2px; color: var(--ink-3); }
+.op-lista li.no { color: var(--ink-3); }
+
+/* ── Cuentas del precio ─────────────────────────────────────────────────── */
+.precios { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+
+/* Lo que te queda de cada foto, con el número grande. Es la traducción de la
+   comisión a la unidad en la que el fotógrafo piensa. */
+.queda {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  border-radius: var(--r-3);
+  background: var(--acento-lleno); color: #FFFFFF;
+}
+/* Blanco casi pleno, no translúcido: ver la nota del token --acento-lleno. */
+.queda-t span { display: block; font-size: 11.5px; color: rgba(255, 255, 255, .9); }
+.queda-t b {
+  display: block; margin-top: 6px;
+  font-size: 32px; font-weight: 200; letter-spacing: -0.035em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.queda-d { text-align: right; font-size: 12px; color: rgba(255, 255, 255, .9); line-height: 1.6; }
+.queda-d b { color: #FFFFFF; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.cuenta {
+  padding: 11px 13px;
+  background: var(--paper-3); border-radius: var(--r-2);
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.5;
+}
+.cuenta b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* ── Columna derecha ─────────────────────────────────────────────────────── */
+.lado { position: sticky; top: calc(62px + var(--s-5)); display: grid; gap: var(--s-3); }
+
+.previa-ev { border-radius: var(--r-2); overflow: hidden; border: 1px solid var(--line-soft); }
+.previa-cv {
+  aspect-ratio: 16 / 10; background: var(--paper-3);
+  display: grid; place-items: center; color: var(--ink-3);
+}
+.previa-cv svg { width: 18px; height: 18px; }
+.previa-cv.puesta {
+  background: radial-gradient(112% 80% at 66% 24%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
+}
+.previa-cv.puesta svg { display: none; }
+.previa-b { padding: var(--s-3); }
+.previa-b b { display: block; font-size: 14px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.3; }
+.previa-b span { display: block; margin-top: 3px; font-size: 12px; color: var(--ink-3); }
+
+/* Resumen que se va llenando. Reemplaza a la lista de "lo que falta": con
+   pasos, lo que falta ya lo marca la barra de arriba; lo que no se ve es lo
+   que quedó decidido dos pantallas atrás. */
+.resumen { display: grid; gap: 1px; }
+.rs {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s-3); padding: 8px 0;
+  font-size: 13px;
+}
+.rs + .rs { border-top: 1px solid var(--line-soft); }
+.rs dt { color: var(--ink-3); }
+.rs dd { text-align: right; font-variant-numeric: tabular-nums; }
+.rs dd.pendiente { color: var(--ink-3); }
+
+@media (max-width: 1080px) {
+  .wiz { grid-template-columns: minmax(0, 1fr); }
+  .lado { position: static; }
+}
+@media (max-width: 700px) {
+  .opciones, .precios, .par { grid-template-columns: minmax(0, 1fr); }
+  .wp span.txt { display: none; }
+  .queda { grid-template-columns: minmax(0, 1fr); }
+  .queda-d { text-align: left; }
+}
+
+
+/* ═══════════════ ventas/ventas.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · ventas
+   -----------------------------------------------------------------------------
+   La pantalla vieja listaba las ventas y nada más. Le faltaba lo primero que
+   uno mira al entrar: cuánto ganó. Ese total estaba sólo en la pantalla de
+   cobros, o sea a un
+   click de distancia de la pantalla donde naturalmente se lo busca.
+
+   La resta de la comisión NO se muestra acá. Recordarle en cada pantalla
+   cuánto se lleva la plataforma no lo ayuda a vender, y el número que le
+   importa es el que le queda. El desglose vive en Métodos de pago, para el
+   que lo busque.
+   ========================================================================== */
+
+.sum { display: grid; gap: var(--s-3); }
+.sum .k-lab { font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.sum .k-n {
+  margin-top: var(--s-3);
+  font-size: 30px; font-weight: 200; letter-spacing: -0.035em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.sum .k-sub { margin-top: 8px; font-size: 12px; color: var(--ink-3); }
+/* Acento lleno: es el único número de la pantalla y tiene que pesar como tal.
+   Blanco casi pleno en los secundarios, no translúcido: sobre color saturado
+   la transparencia acerca el texto al fondo en vez de alejarlo. */
+.sum .neto {
+  background: var(--acento-lleno); color: #FFFFFF;
+  border-color: var(--acento-lleno); padding: var(--s-5);
+}
+.sum .neto .k-lab { color: rgba(255, 255, 255, .9); }
+.sum .neto .k-sub { color: rgba(255, 255, 255, .9); }
+.sum .neto .k-n { font-size: 44px; }
+
+.filtros { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.filtros .sp { margin-left: auto; }
+
+
+/* ── Tabla ───────────────────────────────────────────────────────────────── */
+.vt { grid-template-columns: 30px minmax(0, 1.5fr) minmax(0, 1.2fr) 60px 108px 96px 88px; }
+.vt.row-h { cursor: default; }
+
+/* Encabezado ordenable. La flecha aparece sólo en la columna activa: seis
+   flechas simultáneas no dicen por cuál está ordenado. */
+.th {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.th:hover { color: var(--ink); }
+.th svg { width: 12px; height: 12px; opacity: 0; transition: opacity 140ms ease, transform 220ms ease; }
+.th[data-ord] { color: var(--ink); }
+.th[data-ord] svg { opacity: 1; }
+.th[data-ord="asc"] svg { transform: rotate(180deg); }
+.th.num { justify-content: flex-end; width: 100%; }
+
+.v-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  font-size: 11px; font-weight: 600;
+}
+.v-who { min-width: 0; line-height: 1.3; }
+.v-who b { display: block; font-size: 13.5px; font-weight: 500; }
+.v-who span { display: block; font-size: 11.5px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v-ev { font-size: 13px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vt .num { font-size: 13px; }
+.vt .neto { font-weight: 500; }
+.vt .pill { justify-self: end; }
+
+/* ── Cajón de detalle ────────────────────────────────────────────────────────
+   Cajón y no página aparte: revisar ventas es una tarea de barrido, se miran
+   ocho seguidas. Con navegación completa cada vuelta cuesta dos cargas y se
+   pierde el lugar en la lista. ──────────────────────────────────────────── */
+.dscrim {
+  position: fixed; inset: 0; z-index: 80;
+  background: color-mix(in srgb, var(--ink) 26%, transparent);
+  opacity: 0; pointer-events: none;
+  transition: opacity 240ms ease;
+}
+:root[data-venta="open"] .dscrim { opacity: 1; pointer-events: auto; }
+
+.drw {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 81;
+  width: min(430px, 92vw);
+  display: flex; flex-direction: column;
+  background: var(--paper-2);
+  border-left: 1px solid var(--line);
+  box-shadow: -30px 0 60px rgba(18, 17, 15, .14);
+  transform: translateX(100%);
+  transition: transform 340ms cubic-bezier(.2, .8, .3, 1);
+}
+:root[data-venta="open"] .drw { transform: none; }
+
+.drw-h {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--s-5) var(--s-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+.drw-h h2 { font-family: var(--sans); font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+.drw-h .sub { margin-top: 3px; font-size: 12.5px; color: var(--ink-3); }
+.drw-b { flex: 1; overflow-y: auto; padding: var(--s-5); display: grid; gap: var(--s-5); }
+.drw-f { padding: var(--s-4) var(--s-5); border-top: 1px solid var(--line-soft); display: flex; gap: var(--s-2); }
+
+.dl { display: grid; gap: 9px; }
+.dl > div { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-4); font-size: 13.5px; }
+.dl dt { color: var(--ink-3); }
+.dl dd { font-variant-numeric: tabular-nums; text-align: right; }
+
+/* El monto de la venta, solo y sin cuentas al lado. */
+.desg { padding: var(--s-4); background: var(--paper-3); border-radius: var(--r-2); }
+.desg .tot { font-size: 15px; font-weight: 500; }
+.desg .tot dt { color: var(--ink); }
+.desg .tot dd { font-size: 19px; font-weight: 300; }
+
+.minis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.mini {
+  aspect-ratio: 3 / 2; border-radius: 5px;
+  background: radial-gradient(110% 80% at 62% 26%, #FFB25E, transparent 58%), linear-gradient(160deg, #35281C, #12100E);
+}
+.mini.mas {
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-3);
+  font-size: 12px; font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1080px) {
+  .vt { grid-template-columns: 30px minmax(0, 1.4fr) 100px 96px 88px; }
+  .vt .v-ev, .vt .c-fotos { display: none; }
+}
+@media (max-width: 640px) {
+  .sum .neto .k-n { font-size: 36px; }
+  .vt { grid-template-columns: 30px minmax(0, 1fr) 96px; }
+  .vt .c-fecha, .vt .pill, .vt .c-estado { display: none; }
+}
+
+/* Esqueleto de la tabla. Las filas son JS: hasta que corre, este bloque está
+   vacío de verdad, no es teatro. Se van solas cuando pintar() reemplaza el
+   innerHTML de #filas. */
+.sk-fila { pointer-events: none; }
+.sk-fila:hover { background: none; }
+
+
+/* ═══════════════ pagina/pagina.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · mi página
+   -----------------------------------------------------------------------------
+   La pantalla vieja tenía las opciones correctas (dominio, plantilla, color,
+   logo, marca de agua) y ningún lugar donde ver el resultado. Para saber cómo
+   quedaba un color había que guardar, abrir la página pública en otra pestaña
+   y volver. Eso convierte cada ajuste en un viaje de ida y vuelta, y termina
+   en que nadie personaliza nada.
+
+   Acá los controles quedan a la izquierda y la página se dibuja al lado,
+   reaccionando en el momento. La previa es el producto de esta pantalla; los
+   controles son el medio.
+   ========================================================================== */
+
+.tienda { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr); gap: var(--s-5); align-items: start; }
+.ctrl { display: grid; gap: var(--s-3); }
+
+.blq h2 {
+  font-family: var(--sans); font-size: 14.5px; font-weight: 600;
+  letter-spacing: -0.015em; text-transform: none;
+}
+.blq .ayuda { margin-top: 3px; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+.blq-b { margin-top: var(--s-4); }
+
+/* ── Dominio ─────────────────────────────────────────────────────────────── */
+.dom {
+  display: flex; align-items: center;
+  height: 40px;
+  border: 1px solid var(--line); border-radius: var(--r-2);
+  overflow: hidden;
+  background: var(--paper);
+}
+.dom .fijo {
+  padding: 0 2px 0 12px;
+  font-size: 14px; color: var(--ink-3);
+  white-space: nowrap;
+}
+.dom input {
+  flex: 1; min-width: 0; height: 100%;
+  border: 0; background: none; padding: 0 12px 0 0;
+  font-family: var(--sans); font-size: 14px; font-weight: 500; color: var(--ink);
+}
+.dom input:focus { outline: none; }
+.dom:focus-within { border-color: var(--ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 9%, transparent); }
+
+.dom-est {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 10px; font-size: 12.5px; color: var(--ok);
+}
+.dom-est svg { width: 14px; height: 14px; }
+
+.propio {
+  display: flex; align-items: center; gap: var(--s-3);
+  margin-top: var(--s-3); padding-top: var(--s-3);
+  border-top: 1px solid var(--line-soft);
+  font-size: 13px; color: var(--ink-3);
+}
+.propio .btn { margin-left: auto; }
+
+/* ── Plantillas ──────────────────────────────────────────────────────────────
+   Miniaturas reales y no nombres en una lista: "Editorial" no le dice nada a
+   nadie hasta que lo ve. */
+.plt { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
+.pl { cursor: pointer; }
+.pl input { position: absolute; opacity: 0; pointer-events: none; }
+.pl-v {
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  overflow: hidden;
+  padding: 7px;
+  display: grid; gap: 4px; grid-template-rows: 8px 1fr;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.pl:hover .pl-v { border-color: var(--line-strong); }
+.pl input:checked + .pl-v {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.pl-n { margin-top: 7px; font-size: 12.5px; text-align: center; color: var(--ink-2); }
+.pl input:checked ~ .pl-n { color: var(--ink); font-weight: 500; }
+
+.pl-v i { display: block; border-radius: 2px; }
+.pl-v .barra-m { height: 8px; }
+.pl-v .rejilla { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.pl-v .rejilla i { border-radius: 2px; }
+
+.pl-v[data-t="claro"] { background: #FFF; }
+.pl-v[data-t="claro"] .barra-m { background: #E6E4DF; }
+.pl-v[data-t="claro"] .rejilla i { background: #D9D6D0; }
+
+.pl-v[data-t="oscuro"] { background: #131211; }
+.pl-v[data-t="oscuro"] .barra-m { background: #34302A; }
+.pl-v[data-t="oscuro"] .rejilla i { background: #2A2620; }
+
+.pl-v[data-t="editorial"] { background: #F4F2ED; padding: 10px; }
+.pl-v[data-t="editorial"] .barra-m { height: 5px; width: 60%; background: #1A1815; }
+.pl-v[data-t="editorial"] .rejilla { grid-template-columns: repeat(2, 1fr); gap: 4px; }
+.pl-v[data-t="editorial"] .rejilla i { background: #CFCAC1; }
+
+/* ── Color ───────────────────────────────────────────────────────────────── */
+.cols { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.co {
+  position: relative;
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 0; padding: 0; cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(18, 17, 15, .12);
+  transition: transform 160ms cubic-bezier(.2, .8, .3, 1);
+}
+.co:hover { transform: scale(1.12); }
+.co[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--paper-2), 0 0 0 4px var(--ink); }
+
+.co-libre {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px dashed var(--line-strong);
+  padding: 0; cursor: pointer; background: none;
+  display: grid; place-items: center; color: var(--ink-3);
+  overflow: hidden;
+}
+.co-libre svg { width: 14px; height: 14px; }
+.co-libre input { position: absolute; opacity: 0; width: 30px; height: 30px; cursor: pointer; }
+
+/* ── Subidas ─────────────────────────────────────────────────────────────── */
+.subir {
+  display: flex; align-items: center; gap: var(--s-4);
+  padding: var(--s-4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-2);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.subir:hover { border-color: var(--ink-3); background: var(--paper-3); }
+.subir-v {
+  width: 62px; height: 62px; border-radius: var(--r-2);
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-3);
+  flex-shrink: 0;
+}
+.subir-v svg { width: 20px; height: 20px; }
+.subir-t { flex: 1; min-width: 0; font-size: 13px; color: var(--ink-3); line-height: 1.5; }
+.subir-t b { display: block; color: var(--ink); font-size: 13.5px; font-weight: 500; margin-bottom: 2px; }
+
+/* ═══════════════════════════════ PREVIA ══════════════════════════════════
+   Pegajosa: los controles son más largos que la previa, y sin sticky se
+   ajusta el color con la previa ya fuera de pantalla, que es exactamente el
+   problema que esta pantalla venía a resolver. */
+.previa { position: sticky; top: calc(62px + var(--s-5)); }
+.previa-h {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-3); margin-bottom: var(--s-3);
+}
+.previa-h .label { color: var(--ink-3); }
+
+.marco {
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  background: var(--paper-2);
+}
+/* Barra del navegador. Encuadra la previa como página web y no como imagen
+   suelta: sin el marco, el usuario no sabe si está viendo su página o una
+   ilustración de su página. */
+.crome {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 11px;
+  background: var(--paper-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+.crome i { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
+.crome .url {
+  flex: 1; margin-left: 5px;
+  padding: 3px 9px; border-radius: 100px;
+  background: var(--paper-2);
+  font-size: 11px; color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* La previa vive en su propio universo de color: define sus variables y no
+   hereda las del panel. Si heredara, el tema oscuro del panel le cambiaría
+   la página al fotógrafo sin que él haya tocado nada. */
+.sf {
+  --sf-bg: #FFFFFF;
+  --sf-fg: #14120F;
+  --sf-fg2: #6E6A63;
+  --sf-line: rgba(20, 18, 15, .10);
+  --sf-acc: #F0410F;
+  background: var(--sf-bg); color: var(--sf-fg);
+  transition: background 260ms ease, color 260ms ease;
+}
+.sf[data-t="oscuro"] {
+  --sf-bg: #0E0D0C; --sf-fg: #F2F0EC; --sf-fg2: #9B968D;
+  --sf-line: rgba(242, 240, 236, .12);
+}
+.sf[data-t="editorial"] { --sf-bg: #F4F2ED; --sf-fg: #1A1815; --sf-fg2: #6B665E; }
+
+.sf-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--sf-line);
+}
+.sf-marca { display: flex; align-items: center; gap: 8px; }
+.sf-logo {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: var(--sf-acc);
+  display: grid; place-items: center;
+  color: #FFF; font-size: 11px; font-weight: 700;
+  transition: background 260ms ease;
+}
+.sf-marca b { font-size: 13.5px; font-weight: 600; letter-spacing: -0.02em; }
+.sf-buscar {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 100px;
+  border: 1px solid var(--sf-line);
+  font-size: 11px; color: var(--sf-fg2);
+}
+.sf-buscar svg { width: 11px; height: 11px; }
+
+.sf-hero { padding: 20px 16px; }
+.sf[data-t="editorial"] .sf-hero { padding: 26px 16px 20px; }
+.sf-hero h3 {
+  font-family: var(--display);
+  font-size: 19px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: -0.045em; line-height: 1.05;
+}
+.sf[data-t="editorial"] .sf-hero h3 { font-size: 23px; }
+.sf-hero p { margin-top: 6px; font-size: 12px; color: var(--sf-fg2); }
+.sf-cta {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 12px; padding: 7px 13px;
+  border-radius: 5px;
+  background: var(--sf-acc); color: #FFF;
+  font-size: 12px; font-weight: 500;
+  transition: background 260ms ease;
+}
+.sf-cta svg { width: 12px; height: 12px; }
+
+.sf-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;
+  padding: 0 16px 18px;
+}
+.sf[data-t="editorial"] .sf-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.sf-ph {
+  aspect-ratio: 3 / 2; border-radius: 4px;
+  background: radial-gradient(110% 82% at 64% 26%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
+}
+.sf-ph:nth-child(2) { background: radial-gradient(104% 78% at 30% 34%, #7FA8D8, transparent 58%), linear-gradient(158deg, #1E2836, #0E1116); }
+.sf-ph:nth-child(3) { background: radial-gradient(110% 80% at 70% 64%, #8FD08A, transparent 56%), linear-gradient(160deg, #1D2A1C, #0E120D); }
+.sf-ph:nth-child(4) { background: radial-gradient(106% 78% at 44% 28%, #E08C7A, transparent 56%), linear-gradient(162deg, #33201D, #14100F); }
+.sf-ph:nth-child(5) { background: radial-gradient(110% 82% at 56% 38%, #C9A7E8, transparent 56%), linear-gradient(160deg, #261E33, #100E14); }
+.sf-ph:nth-child(6) { background: radial-gradient(112% 84% at 66% 24%, #FFCF7A, transparent 56%), linear-gradient(160deg, #33291B, #12100E); }
+
+/* Marca de agua sobre la previa: es la única forma de ver si tapa la foto o
+   si queda tan tenue que no protege nada. */
+.sf-ph { position: relative; overflow: hidden; }
+.sf[data-agua="1"] .sf-ph::after {
+  content: "GERMÁN SOSA";
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: rgba(255, 255, 255, .5);
+  font-size: 7px; font-weight: 600; letter-spacing: 0.1em;
+  transform: rotate(-18deg);
+}
+
+@media (max-width: 1080px) {
+  .tienda { grid-template-columns: minmax(0, 1fr); }
+  .previa { position: static; }
+}
+@media (max-width: 560px) {
+  .plt { grid-template-columns: repeat(2, 1fr); }
+}
+
+
+/* ═══════════════ pagos/pagos.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · métodos de pago
+   -----------------------------------------------------------------------------
+   Antes esta pantalla se llamaba Cobros y abría con "te va a entrar $186.400,
+   se acredita el lunes 18". Estaba mal de raíz: con el reparto de Mercado Pago
+   la plata cae en la cuenta del fotógrafo en el momento de la venta, así que
+   no existe ningún saldo pendiente de nuestro lado. Esa tarjeta prometía un
+   depósito que nunca íbamos a hacer, y una fecha que no era nuestra.
+
+   Lo que sí hace falta acá es la cuenta conectada: es lo único que el
+   fotógrafo puede cambiar y lo único sin lo cual no cobra. Por eso va primera
+   y grande, y le da el nombre a la pantalla.
+
+   El desglose de la comisión se queda: en Ventas el fotógrafo mira cómo le va
+   y meterle ahí la resta convierte una buena noticia en una mala. Acá viene a
+   entender cómo cobra, así que es lo que vino a buscar.
+   ========================================================================== */
+
+/* ── La cuenta conectada ─────────────────────────────────────────────────────
+   Es lo que la pantalla viene a resolver, así que ocupa el lugar que antes
+   tenía la falsa próxima acreditación. */
+.metodo {
+  padding: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  background: var(--paper-2);
+}
+.metodo-h {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-4); flex-wrap: wrap;
+}
+
+/* Datos en columnas y no en renglones sueltos: son tres hechos del mismo
+   rango, y apilados parecerían una jerarquía que no existe. */
+.metodo-d {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-4);
+  margin-top: var(--s-5); padding-top: var(--s-5);
+  border-top: 1px solid var(--line-soft);
+}
+.metodo-d dt { font-size: 11.5px; color: var(--ink-3); }
+.metodo-d dd {
+  margin-top: 5px; font-size: 14.5px; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.metodo-f {
+  display: flex; gap: var(--s-2);
+  margin-top: var(--s-5); padding-top: var(--s-4);
+  border-top: 1px solid var(--line-soft);
+}
+
+.mp { display: flex; align-items: center; gap: var(--s-4); }
+/* El logotipo va monocromático y en tinta, no en el celeste corporativo dentro
+   de un cuadradito. Sobre papel, un bloque de color saturado es la cosa más
+   ruidosa de la pantalla, y acá Mercado Pago es un dato de la cuenta, no una
+   marca que tengamos que promocionar. La proporción sale del viewBox del SVG
+   original, 1048.82 x 425.2. */
+.metodo .mp-marca, .mp .mp-marca {
+  width: 128px; height: 52px;
+  flex-shrink: 0;
+  color: var(--ink);
+}
+.mp-t { flex: 1; min-width: 0; line-height: 1.4; }
+.mp-t b { display: block; font-size: 14.5px; font-weight: 600; }
+.mp-t span { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+.mp-ok { display: inline-flex; align-items: center; gap: 5px; color: var(--ok); font-size: 12.5px; }
+.mp-ok svg { width: 14px; height: 14px; }
+
+/* ── Desglose ────────────────────────────────────────────────────────────── */
+.desglose { display: grid; gap: 10px; }
+.desglose > div {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s-4); font-size: 14px;
+}
+.desglose dt { color: var(--ink-2); }
+.desglose dd { font-variant-numeric: tabular-nums; }
+.desglose .fee dd { color: var(--accent); }
+.desglose .tot {
+  margin-top: 5px; padding-top: 13px;
+  border-top: 1px solid var(--line);
+  font-size: 16px; font-weight: 500;
+}
+.desglose .tot dd { font-size: 22px; font-weight: 300; }
+
+/* El desglose por tipo de evento. Es el único lugar donde el fotógrafo puede
+   verificar de dónde sale el total que le descontamos. */
+.fund {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin-top: var(--s-4); padding: 11px 13px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  background: var(--accent-wash);
+  border-radius: var(--r-2);
+  font-size: 12.5px; line-height: 1.5; color: var(--ink-2);
+}
+.fund svg { width: 15px; height: 15px; color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+.fund { border-color: var(--line); background: var(--paper-3); }
+.fund b { color: var(--ink); font-weight: 500; }
+
+/* ── Cómo funciona ───────────────────────────────────────────────────────── */
+.pasos { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-4); }
+.paso { display: grid; gap: 7px; align-content: start; }
+.paso-n {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  font-size: 11.5px; font-weight: 600;
+}
+.paso b { font-size: 13.5px; font-weight: 500; }
+.paso p { font-size: 12.5px; color: var(--ink-3); line-height: 1.55; }
+
+@media (max-width: 900px) {
+  .pasos { grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+}
+@media (max-width: 560px) {
+  .metodo-d { grid-template-columns: minmax(0, 1fr); gap: var(--s-3); }
+}
+
+
+/* ═══════════════ perfil/perfil.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · perfil
+   -----------------------------------------------------------------------------
+   Dos cosas conviven acá y no son lo mismo: lo que el atleta ve de vos (foto,
+   nombre, bio, redes) y lo que es de la cuenta (mail, contraseña, borrar
+   todo). El panel viejo las mezclaba en una lista de campos, y el resultado
+   es que nadie sabe cuál de los datos que está escribiendo se publica.
+
+   Acá van separadas y la parte pública se rotula como tal, con la previa al
+   lado para que no quede duda.
+   ========================================================================== */
+
+.perfil { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--s-5); align-items: start; }
+.pcol { display: grid; gap: var(--s-3); }
+
+.blq h2 {
+  font-family: var(--sans); font-size: 14.5px; font-weight: 600;
+  letter-spacing: -0.015em; text-transform: none;
+}
+.blq .ayuda { margin-top: 3px; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+.blq-b { margin-top: var(--s-4); display: grid; gap: var(--s-4); }
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+
+/* ── Foto ────────────────────────────────────────────────────────────────── */
+.foto { display: flex; align-items: center; gap: var(--s-4); }
+.foto-av {
+  width: 66px; height: 66px; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--cta-bg); color: var(--cta-fg);
+  font-size: 21px; font-weight: 600; letter-spacing: 0.01em;
+}
+.foto-t { flex: 1; min-width: 0; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+.foto-b { display: flex; gap: var(--s-2); margin-top: 8px; }
+
+/* Contador de la bio. Aparece recién cerca del límite: un contador siempre
+   visible convierte escribir dos líneas en un examen. */
+.cuenta-c {
+  font-size: 11.5px; color: var(--ink-3);
+  text-align: right; font-variant-numeric: tabular-nums;
+  opacity: 0; transition: opacity 200ms ease;
+}
+.cuenta-c[data-cerca="1"] { opacity: 1; }
+.cuenta-c[data-pasado="1"] { color: var(--bad); opacity: 1; }
+
+/* ── Redes ───────────────────────────────────────────────────────────────── */
+.redes { display: grid; gap: var(--s-3); }
+.red { display: flex; align-items: center; gap: var(--s-3); }
+.red-i {
+  width: 34px; height: 34px; border-radius: var(--r-2);
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.red-i svg { width: 16px; height: 16px; }
+
+/* ── Zona de riesgo ──────────────────────────────────────────────────────────
+   Abajo de todo, con su propio borde y sin ningún botón rojo grande. El rojo
+   grande invita a apretar; el botón fantasma con borde rojo hay que ir a
+   buscarlo, que es exactamente lo que corresponde para algo irreversible. */
+.riesgo { border-color: color-mix(in srgb, var(--bad) 26%, transparent); }
+.riesgo h2 { color: var(--bad); }
+.riesgo .btn-peligro {
+  border-color: color-mix(in srgb, var(--bad) 40%, transparent);
+  color: var(--bad); background: transparent;
+}
+.riesgo .btn-peligro:hover {
+  background: color-mix(in srgb, var(--bad) 8%, transparent);
+  border-color: var(--bad);
+}
+
+/* ── Previa pública ──────────────────────────────────────────────────────── */
+.lado { position: sticky; top: calc(62px + var(--s-5)); display: grid; gap: var(--s-3); }
+.tarjeta-pub { text-align: center; padding: var(--s-5) var(--s-4); }
+.tarjeta-pub .foto-av { margin: 0 auto var(--s-3); }
+.tarjeta-pub b { display: block; font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+.tarjeta-pub .bio {
+  margin-top: 7px; font-size: 12.5px; color: var(--ink-3);
+  line-height: 1.55; min-height: 2.2em;
+}
+.tarjeta-pub .link {
+  display: inline-block; margin-top: var(--s-3);
+  font-size: 12px; color: var(--ink-2);
+  border-bottom: 1px solid var(--line-strong);
+}
+.tarjeta-pub .iconos { display: flex; justify-content: center; gap: 9px; margin-top: var(--s-4); color: var(--ink-3); }
+.tarjeta-pub .iconos svg { width: 15px; height: 15px; }
+.tarjeta-pub .iconos span[hidden] { display: none; }
+
+@media (max-width: 1080px) {
+  .perfil { grid-template-columns: minmax(0, 1fr); }
+  .lado { position: static; }
+}
+@media (max-width: 560px) { .par { grid-template-columns: minmax(0, 1fr); } }
+
+
+/* ═══════════════ ayuda/ayuda.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · ayuda
+   -----------------------------------------------------------------------------
+   El centro de ayuda viejo prometía respuesta en 12 horas hábiles. Eso, para
+   un fotógrafo que está subiendo fotos un domingo a las 8 de la noche con el
+   evento todavía caliente, equivale a no tener soporte: cuando le contesten,
+   la venta ya no está.
+
+   Por eso el contacto directo va arriba y no al final, y dice la verdad de lo
+   que ofrecemos, que es WhatsApp las 24 horas. Las preguntas frecuentes van
+   abajo: sirven, pero el que entra acá con un problema en vivo no viene a
+   leer.
+   ========================================================================== */
+
+/* ── Contacto ────────────────────────────────────────────────────────────── */
+/* Verde WhatsApp, pero NO el #25D366 de la marca: blanco sobre ese verde da
+   1,98:1 de contraste, o sea ilegible. Este es el mismo verde bajado en
+   luminancia hasta 5,28:1, que pasa AA con holgura.
+
+   Color plano, sin degradé. En una superficie de este tamaño el degradé no
+   agrega información y sí agrega una dirección de luz que ninguna otra
+   tarjeta del panel tiene: se leía como un elemento de otro sistema. */
+.contacto {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center; gap: var(--s-5);
+  padding: var(--s-5);
+  border-radius: var(--r-3);
+  background: #0A7C42; color: #FFFFFF;
+  box-shadow: var(--shadow-card);
+}
+/* El ícono al lado del título hace de marca de sección: dice "soporte" sin
+   necesidad de un rótulo arriba, que es justo lo que se sacó. */
+.contacto h2 {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--sans); font-size: 18px; font-weight: 600;
+  letter-spacing: -0.02em; text-transform: none;
+}
+.ct-i {
+  width: 32px; height: 32px; border-radius: 50%;
+  flex-shrink: 0;
+  display: grid; place-items: center;
+  background: rgba(255, 255, 255, .16);
+}
+.ct-i svg { width: 17px; height: 17px; }
+.contacto p {
+  margin-top: 7px; font-size: 13.5px; line-height: 1.55;
+  color: rgba(255, 255, 255, .82);
+  max-width: 48ch;
+}
+
+/* Botón de trazo blanco y no relleno: sobre una superficie de color, un botón
+   blanco sólido es una segunda mancha que pelea con la tarjeta. El trazo deja
+   que la tarjeta siga siendo el bloque y el botón siga siendo el borde. */
+.contacto .btn-wa {
+  background: rgba(255, 255, 255, .12);
+  border-color: rgba(255, 255, 255, .55);
+  color: #FFFFFF;
+  backdrop-filter: blur(6px);
+}
+.contacto .btn-wa:hover { background: rgba(255, 255, 255, .22); border-color: #FFFFFF; }
+.contacto .btn-wa .wa { width: 17px; height: 17px; fill: currentColor; }
+
+/* ── Guías ───────────────────────────────────────────────────────────────── */
+.guias { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
+.gu {
+  display: grid; gap: 9px; align-content: start;
+  padding: var(--s-4);
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  transition: border-color 160ms ease, transform 160ms cubic-bezier(.2, .8, .3, 1), box-shadow 160ms ease;
+}
+.gu:hover { border-color: var(--line); transform: translateY(-2px); box-shadow: var(--shadow-card); }
+.gu-i {
+  width: 32px; height: 32px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.gu-i svg { width: 16px; height: 16px; }
+.gu b { font-size: 14px; font-weight: 600; letter-spacing: -0.015em; }
+.gu p { font-size: 12.5px; color: var(--ink-3); line-height: 1.55; }
+.gu .mas {
+  margin-top: 3px; display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12.5px; font-weight: 500; color: var(--ink);
+}
+.gu .mas svg { width: 13px; height: 13px; transition: transform 180ms cubic-bezier(.2, .8, .3, 1); }
+.gu:hover .mas svg { transform: translateX(3px); }
+
+/* ── Preguntas ───────────────────────────────────────────────────────────────
+   Misma mecánica de altura que en la landing: grid-template-rows de 0fr a 1fr
+   anima sin medir con JS y sirve para cualquier largo de respuesta. */
+.qa { border-top: 1px solid var(--line-soft); }
+.qa:last-child { border-bottom: 1px solid var(--line-soft); }
+.qa-t {
+  display: flex; align-items: center; gap: var(--s-4);
+  width: 100%; padding: 15px 4px;
+  border: 0; background: none; cursor: pointer; text-align: left;
+  font-family: var(--sans); font-size: 14.5px; font-weight: 500; color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.qa-t .mas-i {
+  margin-left: auto; flex-shrink: 0;
+  width: 18px; height: 18px;
+  display: grid; place-items: center;
+  color: var(--ink-3);
+  transition: transform 300ms cubic-bezier(.2, .8, .3, 1), color 160ms ease;
+}
+.qa-t:hover .mas-i { color: var(--ink); }
+.qa-t[aria-expanded="true"] .mas-i { transform: rotate(45deg); }
+.qa-t .mas-i svg { width: 16px; height: 16px; }
+
+.qa-b {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows 320ms cubic-bezier(.2, .8, .3, 1);
+}
+.qa[data-abierta="1"] .qa-b { grid-template-rows: 1fr; }
+.qa-b > div {
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.qa[data-abierta="1"] .qa-b > div { opacity: 1; transition: opacity 240ms ease 110ms; }
+.qa-b p {
+  padding: 0 4px 17px;
+  font-size: 13.5px; line-height: 1.65; color: var(--ink-2);
+  max-width: 74ch;
+}
+
+@media (max-width: 900px) {
+  .contacto { grid-template-columns: minmax(0, 1fr); }
+  .guias { grid-template-columns: minmax(0, 1fr); }
+}
+
+
+/* ═════════════════ ARREGLOS DE LA CONCATENACIÓN ══════════════════════════
+   Los archivos del laboratorio son independientes y varios definen las mismas
+   clases de andamiaje (.blq-b, .par, .lado, .precios). Puestos uno atrás del
+   otro, la última definición gana con igual especificidad y rompe a la
+   anterior. El caso que se vio: .cols ponía display:flex para la fila de
+   colores, y el .blq-b de perfil.css lo pisaba con display:grid cien líneas
+   más abajo, así que los colores se apilaban en columna.
+
+   Se resuelve subiendo la especificidad de las combinaciones y no
+   reordenando: el orden depende de qué pantalla se copie primero y volvería a
+   romperse en la próxima copia.
+   ══════════════════════════════════════════════════════════════════════ */
+.blq-b.cols { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.blq-b.plt { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
+.blq-b.redes { display: grid; gap: var(--s-3); }
+
+/* ── Previa real de la página pública ────────────────────────────────────────
+   Ya no es una maqueta dibujada: es la página de verdad adentro de un iframe,
+   reducida para entrar en el marco. Una maqueta se desincroniza en cuanto la
+   página pública cambia y termina mintiendo justo donde más confianza hace
+   falta; el iframe no puede mentir porque ES la página. */
+.previa-real {
+  position: relative;
+  overflow: hidden;
+  background: var(--paper-3);
+}
+.previa-real iframe {
+  border: 0;
+  transform-origin: top left;
+  /* El puntero no entra: es una previa, no un lugar donde navegar. */
+  pointer-events: none;
+}
+.previa-vacia {
+  display: grid; place-content: center; justify-items: center; gap: 10px;
+  padding: var(--s-7) var(--s-4);
+  text-align: center;
+  color: var(--ink-3); font-size: 13px;
+}
+.previa-vacia svg { width: 22px; height: 22px; }
+
+/* El paginado de la pantalla del evento usa flechas de texto y no íconos, así
+   que necesita el tamaño de fuente que los botones de ícono no traen. */
 .pag-b { font-size: 16px; line-height: 1; }
