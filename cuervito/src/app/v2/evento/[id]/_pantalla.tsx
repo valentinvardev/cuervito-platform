@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Check,
@@ -19,8 +20,9 @@ import {
   Tag,
   Trash2,
   Users,
+  X,
 } from "lucide-react";
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { iniciales as siglas } from "../../_components/formato";
 import {
@@ -31,7 +33,15 @@ import {
 } from "./acciones";
 import { Soltador } from "./_soltador";
 
-type Foto = { id: string; url: string | null; bib: string | null; vendida: boolean; reconocida: boolean };
+type Foto = {
+  id: string;
+  url: string | null;
+  bib: string | null;
+  vendida: boolean;
+  ventas: number;
+  caras: number;
+  reconocida: boolean;
+};
 type Colaborador = { nombre: string; email: string; estado: string; fotos: number; cobra: boolean };
 
 const POR_PAG = 20;
@@ -90,12 +100,55 @@ export function Pantalla({
   const sinCobrar = colaboradores.filter((c) => c.estado !== "PENDING" && !c.cobra);
   const [publicando, empezarPub] = useTransition();
   const [avisoPub, setAvisoPub] = useState<string | null>(null);
+
+
   const [solapa, setSolapa] = useState<"fotos" | "precio" | "equipo" | "info">("fotos");
   const [filtro, setFiltro] = useState<string>("todas");
   const [buscado, setBuscado] = useState("");
   const [pagina, setPagina] = useState(1);
   const [abierto, setAbierto] = useState(false);
   const [copiado, setCopiado] = useState(false);
+
+  const router = useRouter();
+  const [elegidas, setElegidas] = useState<Set<string>>(new Set());
+  const [borrando, setBorrando] = useState(false);
+  const [errorLote, setErrorLote] = useState<string | null>(null);
+
+  function alternar(id: string) {
+    setElegidas((prev) => {
+      const s = new Set(prev);
+      if (s.has(id)) s.delete(id);
+      else s.add(id);
+      return s;
+    });
+  }
+
+  // La barra flotante y el recuadro de cada foto cuelgan de :root[data-sel] en
+  // el CSS del laboratorio, que es lo que hace que la barra entre deslizándose
+  // desde abajo en vez de aparecer de golpe.
+  useEffect(() => {
+    document.documentElement.dataset.sel = elegidas.size > 0 ? "on" : "";
+    return () => {
+      document.documentElement.dataset.sel = "";
+    };
+  }, [elegidas]);
+
+  // Escape cancela la selección, que es lo primero que prueba cualquiera.
+  useEffect(() => {
+    if (elegidas.size === 0) return;
+    const alTecla = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setElegidas(new Set());
+    };
+    window.addEventListener("keydown", alTecla);
+    return () => window.removeEventListener("keydown", alTecla);
+  }, [elegidas.size]);
+
+  // Al cambiar de solapa o de filtro la selección se cancela. Si no, quedaba la
+  // barra flotante diciendo "12 seleccionadas" sobre una grilla que ya
+  // muestra otras fotos, y Eliminar borraba doce que no estaban a la vista.
+  useEffect(() => {
+    setElegidas(new Set());
+  }, [solapa, filtro, buscado]);
 
   const cuentas = useMemo(() => {
     const c = { todas: fotos.length, sinrec: 0, sindor: 0, vend: 0 };
@@ -368,38 +421,104 @@ export function Pantalla({
                   />
                 </div>
               </div>
+
+              {/* "Todas" es LA PÁGINA, no las 2.162 del evento. Decir que
+                  seleccionaste dos mil fotos y después borrar veinte es una
+                  mentira, y al revés —creer que seleccionaste todas y borrar
+                  las dos mil— es peor. */}
+              <button
+                className="btn btn-ghost btn-sm"
+                type="button"
+                onClick={() => {
+                  const enPagina = trozo.map((f) => f.id);
+                  const faltan = enPagina.some((id) => !elegidas.has(id));
+                  setElegidas((prev) => {
+                    const s = new Set(prev);
+                    for (const id of enPagina) {
+                      if (faltan) s.add(id);
+                      else s.delete(id);
+                    }
+                    return s;
+                  });
+                }}
+              >
+                {trozo.every((f) => elegidas.has(f.id)) && trozo.length > 0
+                  ? "Quitar selección"
+                  : "Seleccionar todas"}
+              </button>
             </div>
 
             {trozo.length > 0 ? (
               <>
                 <div className="fg">
-                  {trozo.map((f) => (
-                    <div className="ft" key={f.id}>
+                  {trozo.map((f) => {
+                    const elegida = elegidas.has(f.id);
+                    return (
                       <div
-                        className="ft-i"
-                        style={f.url ? { backgroundImage: `url(${f.url})`, backgroundSize: "cover" } : undefined}
-                      />
-                      <div className="ft-v" />
-                      {!f.reconocida && (
-                        <span className="ft-f warn">
-                          <ScanFace />
-                        </span>
-                      )}
-                      {f.vendida && (
-                        <span className="ft-f sold">
+                        className={`ft ${elegida ? "sel" : ""}`}
+                        key={f.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={elegida}
+                        onClick={() => alternar(f.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            alternar(f.id);
+                          }
+                        }}
+                      >
+                        <div
+                          className="ft-i"
+                          style={
+                            f.url
+                              ? {
+                                  backgroundImage: `url(${f.url})`,
+                                  backgroundSize: "cover",
+                                  backgroundPosition: "center",
+                                }
+                              : undefined
+                          }
+                        />
+                        <div className="ft-v" />
+                        <span className="ft-c">
                           <Check />
                         </span>
-                      )}
-                      <div className="ft-d">
-                        {f.bib && (
-                          <span className="bib">
-                            <i>#</i>
-                            {f.bib.split(",")[0]}
+                        {!f.reconocida && (
+                          <span className="ft-f warn" title="Todavía procesando">
+                            <ScanFace />
                           </span>
                         )}
+                        {f.vendida && (
+                          <span className="ft-f sold" title="Vendida">
+                            <Check />
+                          </span>
+                        )}
+                        <div className="ft-d">
+                          {f.bib && (
+                            <span className="bib">
+                              <i>#</i>
+                              {f.bib.split(",")[0]}
+                            </span>
+                          )}
+                          {/* Aparece al pasar el mouse: cuántas caras se
+                              indexaron y, si se vendió, cuántas veces. Las
+                              caras son lo que decide si esa foto va a aparecer
+                              en una búsqueda por selfie, así que un cero acá
+                              explica por qué una foto no la encuentra nadie. */}
+                          <span className="ft-meta">
+                            <ScanFace /> {f.caras}
+                            {f.ventas > 0 && (
+                              <>
+                                {" "}
+                                <ShoppingBag /> {f.ventas}
+                              </>
+                            )}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="pag">
@@ -436,6 +555,65 @@ export function Pantalla({
                 </p>
               </div>
             )}
+            {/* Flotante y abajo, no arriba de la grilla: la selección se hace
+                mirando las fotos, y una barra pegada al encabezado obliga a
+                subir la vista para actuar. El CSS la desliza según data-sel. */}
+            <div className="lote">
+              <span className="lote-n">
+                {elegidas.size} {elegidas.size === 1 ? "seleccionada" : "seleccionadas"}
+              </span>
+              {errorLote && <span style={{ fontSize: 12.5 }}>{errorLote}</span>}
+              {/* Del laboratorio faltan acá "Reconocer" y "Descargar". No las
+                  puse porque no existe endpoint para ninguna de las dos: el
+                  reconocimiento no se puede volver a disparar a mano, y la
+                  descarga es de a una foto, así que en lote sería abrir treinta
+                  pestañas que el navegador bloquea. Van cuando exista con qué. */}
+              <button
+                className="btn btn-ghost btn-sm peligro"
+                type="button"
+                disabled={borrando}
+                onClick={() => {
+                  const ids = Array.from(elegidas);
+                  setBorrando(true);
+                  setErrorLote(null);
+                  void (async () => {
+                    try {
+                      // De a 500, que es el tope del endpoint.
+                      for (let i = 0; i < ids.length; i += 500) {
+                        const r = await fetch(
+                          `/api/dashboard/events/${evento.id}/photos/bulk-delete`,
+                          {
+                            method: "POST",
+                            headers: { "content-type": "application/json" },
+                            body: JSON.stringify({ photoIds: ids.slice(i, i + 500) }),
+                          },
+                        );
+                        if (!r.ok) {
+                          const d = (await r.json().catch(() => ({}))) as { error?: string };
+                          throw new Error(d.error ?? "No se pudieron borrar");
+                        }
+                      }
+                      setElegidas(new Set());
+                      router.refresh();
+                    } catch (e) {
+                      setErrorLote(e instanceof Error ? e.message : "No se pudieron borrar");
+                    } finally {
+                      setBorrando(false);
+                    }
+                  })();
+                }}
+              >
+                <Trash2 /> {borrando ? "Borrando" : `Eliminar ${elegidas.size}`}
+              </button>
+              <button
+                className="btn btn-ghost btn-icon lote-x"
+                type="button"
+                onClick={() => setElegidas(new Set())}
+                aria-label="Cancelar selección"
+              >
+                <X />
+              </button>
+            </div>
           </section>
         )}
 

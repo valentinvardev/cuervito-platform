@@ -52,7 +52,18 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
       where: { eventId: id, deletedAt: null, fileSize: { not: null } },
       orderBy: { createdAt: "desc" },
       take: TOPE,
-      select: { id: true, bibNumbers: true, previewKey: true, previewCleanKey: true, ocrProcessedAt: true },
+      select: {
+        id: true,
+        bibNumbers: true,
+        previewKey: true,
+        previewCleanKey: true,
+        ocrProcessedAt: true,
+        // Las caras indexadas de cada foto. Es lo que se muestra al pasar el
+        // mouse, y es el dato que dice si esa foto la va a encontrar alguien:
+        // una foto sin caras existe en la galería y no aparece en ninguna
+        // búsqueda por selfie.
+        _count: { select: { faceRecords: true } },
+      },
     }),
     // Con el mismo filtro que el resto. _count.photos de la relación incluye
     // las borradas, así que el total salía más alto que sus propias partes.
@@ -71,14 +82,21 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
     }),
   ]);
 
-  const vendidas = new Set(vendidasIds.map((v) => v.photoId));
+  // Cuántas veces se vendió cada foto, no sólo si se vendió: una foto que
+  // compraron seis personas es la que conviene mirar para saber qué funciona.
+  const ventasPorFoto = new Map<string, number>();
+  for (const v of vendidasIds) {
+    if (v.photoId) ventasPorFoto.set(v.photoId, (ventasPorFoto.get(v.photoId) ?? 0) + 1);
+  }
 
   const conUrl = await Promise.all(
     fotos.map(async (f) => ({
       id: f.id,
       url: await resolveMediaUrl(f.previewCleanKey ?? f.previewKey ?? "").catch(() => null),
       bib: f.bibNumbers,
-      vendida: vendidas.has(f.id),
+      vendida: (ventasPorFoto.get(f.id) ?? 0) > 0,
+      ventas: ventasPorFoto.get(f.id) ?? 0,
+      caras: f._count.faceRecords,
       reconocida: f.ocrProcessedAt !== null,
     })),
   );
