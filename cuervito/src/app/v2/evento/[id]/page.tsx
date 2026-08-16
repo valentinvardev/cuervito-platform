@@ -31,6 +31,8 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
       coverUrl: true,
       isPublished: true,
       pricePerPhoto: true,
+      platformFeePct: true,
+      recognition: true,
       ownerId: true,
       sales: { where: { status: "PAID" }, select: { sellerNetCents: true } },
       collaborators: {
@@ -143,7 +145,11 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
         publicado: e.isPublished,
         // pricePerPhoto es Decimal(10,2) en PESOS, no en centavos.
         precio: Number(e.pricePerPhoto),
-        comision: env.PLATFORM_FEE_PERCENT,
+        // La del evento. Los creados antes de que existiera la columna la
+        // tienen en null y siguen con la global.
+        comision: e.platformFeePct !== null ? Number(e.platformFeePct) : env.PLATFORM_FEE_PERCENT,
+        reconocimiento: e.recognition,
+        maxFoto: env.QUOTA_MAX_PHOTO_BYTES,
         descripcion: e.description,
         total,
         reconocidas,

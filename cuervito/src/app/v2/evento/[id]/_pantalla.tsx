@@ -90,6 +90,9 @@ export function Pantalla({
     publicado: boolean;
     precio: number;
     comision: number;
+    reconocimiento: boolean;
+    /** Tope por foto, para avisar antes de mandar y no después. */
+    maxFoto: number;
     descripcion: string | null;
     total: number;
     reconocidas: number;
@@ -375,7 +378,7 @@ export function Pantalla({
 
         {solapa === "fotos" && (
           <section className="panel-s" data-activo="1">
-            <Soltador eventId={evento.id} />
+            <Soltador eventId={evento.id} maxBytes={evento.maxFoto} />
 
             <div className="barra">
               <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center", flexWrap: "wrap" }}>

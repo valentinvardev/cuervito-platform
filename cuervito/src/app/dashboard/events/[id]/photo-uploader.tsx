@@ -9,6 +9,8 @@ import { ACEPTADOS as ACCEPT, useSubida } from "./usar-subida";
 // queda el dibujo, que es lo único distinto entre los dos paneles. El tope de
 // celdas visibles también se decide allá, con el campo `visible` de cada ítem.
 
+const MAX_VISIBLE_TILES = 11;
+
 function fmtSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -36,7 +38,7 @@ export function PhotoUploader({
     pct: aggPct,
     agregar: addFiles,
     limpiar,
-  } = useSubida(eventId);
+  } = useSubida(eventId, { miniaturas: MAX_VISIBLE_TILES, maxBytes: maxPhotoBytes });
 
   const allFailed = settled && failed === total;
   const someFailed = settled && failed > 0;

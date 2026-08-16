@@ -36,6 +36,12 @@ export async function POST(
   if (!photo || !access || photo.eventId !== eventId) {
     return NextResponse.json({ error: "Foto no encontrada" }, { status: 404 });
   }
+
+  const ev = await db.event.findUnique({
+    where: { id: eventId },
+    select: { recognition: true },
+  });
+  const reconoce = ev?.recognition ?? true;
   if (photo.fileSize !== null) {
     return NextResponse.json({ ok: true, already: true });
   }
@@ -75,12 +81,18 @@ export async function POST(
     } catch (err) {
       console.error("[commit bg] generatePreview:", err);
     }
-    void runOcr(photo.id, rekBytes).catch((err) =>
-      console.error("[commit bg] runOcr:", err),
-    );
-    void runFaceIndex(photo.id, eventId, rekBytes).catch((err) =>
-      console.error("[commit bg] runFaceIndex:", err),
-    );
+    // El reconocimiento corre sólo si el evento lo pidió. Un evento de galería
+    // simple paga 5% justamente porque no lo usa: procesarlo igual sería
+    // cobrarle la mitad y gastar lo mismo. La marca de agua sí se genera
+    // siempre, que es lo que hace vendible a la foto.
+    if (reconoce) {
+      void runOcr(photo.id, rekBytes).catch((err) =>
+        console.error("[commit bg] runOcr:", err),
+      );
+      void runFaceIndex(photo.id, eventId, rekBytes).catch((err) =>
+        console.error("[commit bg] runFaceIndex:", err),
+      );
+    }
   })();
 
   return NextResponse.json({ ok: true, photoId: photo.id, size });

@@ -21,16 +21,24 @@ import { ACEPTADOS, useSubida } from "~/app/dashboard/events/[id]/usar-subida";
  * justo cuando el navegador está ocupado subiendo. Una barra y tres números
  * dicen lo mismo: cuántas van, cuántas fallaron, cuánto falta.
  */
-export function Soltador({ eventId }: { eventId: string }) {
+export function Soltador({ eventId, maxBytes }: { eventId: string; maxBytes: number }) {
   const entrada = useRef<HTMLInputElement>(null);
   const [encima, setEncima] = useState(false);
   const [afuera, setAfuera] = useState(0);
+  const [grandes, setGrandes] = useState(0);
 
-  const { total, hechas, fallidas, cerrado, fase, pct, agregar, limpiar } = useSubida(eventId);
+  // Sin miniaturas: esta pantalla muestra una barra y tres números, no una
+  // celda por foto. Pedirlas sería leer cada archivo entero a base64 para
+  // tirarlo.
+  const { total, hechas, fallidas, cerrado, fase, pct, agregar, limpiar } = useSubida(eventId, {
+    miniaturas: 0,
+    maxBytes,
+  });
 
   async function recibir(lista: FileList | File[]) {
     const r = await agregar(lista);
     setAfuera(r?.afuera ?? 0);
+    setGrandes(r?.grandes ?? 0);
   }
 
   if (fase !== "idle") {
@@ -139,6 +147,20 @@ export function Soltador({ eventId }: { eventId: string }) {
             {afuera === 1 ? "Un archivo quedó" : `${afuera} archivos quedaron`} afuera por el
             formato. Se aceptan JPG, PNG y WebP; el HEIC del iPhone no, así que conviene exportarlas
             antes.
+          </span>
+        </div>
+      )}
+
+      {/* Se avisa acá y las demás suben igual. La API rechaza el pedido entero
+          si una sola foto se pasa del tope, así que antes una de 40 MB en el
+          medio se llevaba puestas a las otras cuarenta y nueve de su tanda. */}
+      {grandes > 0 && (
+        <div className="porque">
+          <CircleAlert />
+          <span>
+            {grandes === 1 ? "Una foto pesa" : `${grandes} fotos pesan`} más de{" "}
+            {Math.round(maxBytes / 1024 / 1024)} MB y {grandes === 1 ? "quedó" : "quedaron"} afuera.
+            El resto se está subiendo igual.
           </span>
         </div>
       )}
