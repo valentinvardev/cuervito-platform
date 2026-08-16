@@ -47,7 +47,7 @@ export default async function V2Eventos() {
                 const vendido = e.sales.reduce((a, s) => a + s.sellerNetCents, 0);
                 const portada = e.coverUrl?.startsWith("http") ? e.coverUrl : null;
                 return (
-                  <Link key={e.id} href={`/dashboard/events/${e.id}`} className="ec">
+                  <Link key={e.id} href={`/v2/evento/${e.id}`} className="ec">
                     <div
                       className="ec-cv"
                       style={portada ? { backgroundImage: `url(${portada})`, backgroundSize: "cover" } : undefined}

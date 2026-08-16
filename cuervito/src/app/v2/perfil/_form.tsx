@@ -46,23 +46,24 @@ export function FormPerfil({
           <p className="ayuda">Aparece en tu página y en cada evento que publicás.</p>
 
           <div className="blq-b">
-            <div className="par">
-              <div className="campo">
-                <label htmlFor="name">Nombre</label>
-                <input className="inp" id="name" name="name" autoComplete="name" {...campo("name")} />
-                {estado.fieldErrors?.name && <div className="pista">{estado.fieldErrors.name}</div>}
-              </div>
+            {/* La dirección NO se pide acá. Se genera sola a partir del
+                nombre al crear la cuenta, y si estaba tomada se le agrega un
+                sufijo. Pedirla en el alta del perfil es hacerle inventar un
+                identificador a alguien que sólo quería escribir su nombre.
 
-              <div className="campo">
-                <label htmlFor="slug">Tu dirección</label>
-                <div className="pegado">
-                  <span className="fijo">/</span>
-                  <input className="inp" id="slug" name="slug" {...campo("slug")} />
-                </div>
-                {estado.fieldErrors?.slug && <div className="pista">{estado.fieldErrors.slug}</div>}
-              </div>
+                Viaja igual como campo oculto porque el esquema de la acción la
+                exige: mandarla vacía la borraría. Cambiarla es una decisión
+                aparte y vive en Mi página, que es donde se ve el link. */}
+            <input type="hidden" name="slug" value={inicial.slug} />
+
+            <div className="campo">
+              <label htmlFor="name">Nombre</label>
+              <input className="inp" id="name" name="name" autoComplete="name" {...campo("name")} />
+              {estado.fieldErrors?.name && <div className="pista">{estado.fieldErrors.name}</div>}
+              {estado.fieldErrors?.slug && (
+                <div className="pista" style={{ color: "var(--bad)" }}>{estado.fieldErrors.slug}</div>
+              )}
             </div>
-            <div className="pista">Cambiar la dirección rompe los links que ya repartiste.</div>
 
             <div className="campo">
               <label htmlFor="bio">Bio</label>
@@ -133,7 +134,7 @@ export function FormPerfil({
             <span className="foto-av">{iniciales}</span>
             <b>{d.name || "Tu nombre"}</b>
             <div className="bio">{d.bio}</div>
-            <span className="link">encontrate.app/{d.slug || "tu-usuario"}</span>
+            <span className="link">encontrate.app/{inicial.slug || "tu-usuario"}</span>
             <div className="iconos">
               {d.instagramUrl && <AtSign />}
               {d.websiteUrl && <Globe />}

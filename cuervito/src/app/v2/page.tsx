@@ -349,7 +349,7 @@ export default async function V2Page() {
                   {eventos.map((e) => {
                     const vendido = e.sales.reduce((a, s) => a + s.sellerNetCents, 0);
                     return (
-                      <Link key={e.id} href={`/dashboard/events/${e.id}`} className="row ev">
+                      <Link key={e.id} href={`/v2/evento/${e.id}`} className="row ev">
                         <span
                           className="ev-cv"
                           style={

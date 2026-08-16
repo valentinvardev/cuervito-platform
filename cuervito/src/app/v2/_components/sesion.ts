@@ -56,3 +56,40 @@ export function hace(d: Date) {
   if (min < 1440) return `hace ${Math.round(min / 60)} h`;
   return `hace ${Math.round(min / 1440)} d`;
 }
+
+
+/**
+ * Dirección a partir del nombre, con sufijo si está tomada.
+ *
+ * Es el mismo criterio del alta (src/app/(auth)/signup/actions.ts): al
+ * fotógrafo no se le pide que invente un identificador, se le da uno y después
+ * puede cambiarlo si quiere desde Mi página.
+ *
+ * Se usa sólo como red: signup ya asigna slug a todos. Existe para las cuentas
+ * viejas que puedan haber quedado sin uno, que si no se caerían al guardar el
+ * perfil con un error de un campo que ni siquiera se muestra.
+ */
+export function slugDeNombre(nombre: string) {
+  return (
+    nombre
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "fotografo"
+  );
+}
+
+export async function asegurarSlug(userId: string, nombre: string, actual: string | null) {
+  if (actual) return actual;
+  const base = slugDeNombre(nombre);
+  let slug = base;
+  for (let i = 2; i < 50; i++) {
+    const tomado = await db.user.findUnique({ where: { slug }, select: { id: true } });
+    if (!tomado) break;
+    slug = `${base}-${i}`;
+  }
+  await db.user.update({ where: { id: userId }, data: { slug } });
+  return slug;
+}
