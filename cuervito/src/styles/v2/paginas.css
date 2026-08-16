@@ -1,0 +1,381 @@
+/* COPIADO DE lab/eventos/ y lab/ventas/. No editar acá: los cambios se hacen
+   en el laboratorio y se vuelven a copiar, si no las dos versiones divergen.
+   Van juntas en un archivo porque el layout de /v2 importa el CSS de todas
+   sus pantallas: son pocas y así no hay un import por página. */
+/* =============================================================================
+   encontrate · panel · eventos
+   -----------------------------------------------------------------------------
+   La lista vieja era una fila de texto con una miniatura de 44px al costado.
+   Para un producto que vende fotografía eso es raro: el fotógrafo reconoce sus
+   eventos por la imagen mucho antes que por el nombre, sobre todo cuando tiene
+   cuatro fechas del mismo torneo con títulos casi idénticos.
+
+   Hay dos vistas y sirven para cosas distintas. La grilla es para RECONOCER:
+   manda la portada y las cifras van al pie de cada tarjeta. La lista es para
+   COMPARAR: columnas alineadas, encabezado que ordena, y el mismo dato de
+   todos los eventos leyéndose en vertical.
+
+   Quedan dos cifras por evento, fotos y vendido. La conversión se fue: en una
+   grilla de seis eventos, un porcentaje sin el par de números que lo origina
+   se lee como una nota del colegio. Vive en la pantalla del evento, donde hay
+   lugar para mostrarlo junto a las visitas de las que sale.
+
+   El marcado es uno solo para las dos. Lo que cambia es la caja: en grilla la
+   tarjeta es una columna flex, en lista es una grilla de seis columnas y
+   .ec-st pasa a display:contents para que sus tres cifras se repartan como
+   celdas propias en vez de quedar apiladas adentro de un cajón.
+   ========================================================================== */
+
+/* Alternador de vista. */
+.vista { display: flex; gap: 1px; padding: 2px; background: var(--paper-3); border-radius: var(--r-2); }
+.vista button {
+  display: grid; place-items: center;
+  width: 28px; height: 26px; padding: 0;
+  border: 0; background: none; border-radius: 4px; cursor: pointer;
+  color: var(--ink-3);
+  transition: background 140ms ease, color 140ms ease;
+}
+.vista button:hover { color: var(--ink); }
+.vista button[aria-pressed="true"] {
+  background: var(--paper-2); color: var(--ink);
+  box-shadow: 0 1px 2px rgba(18, 17, 15, .07);
+}
+.vista svg { width: 15px; height: 15px; }
+
+/* ═══════════════════════════════ GRILLA ══════════════════════════════════ */
+.evs { display: grid; grid-template-columns: repeat(auto-fill, minmax(286px, 1fr)); gap: var(--s-3); }
+.evs .ec-h { display: none; }   /* el encabezado es sólo de la lista */
+
+.ec {
+  position: relative;
+  display: flex; flex-direction: column;
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  overflow: hidden;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms cubic-bezier(.2, .8, .3, 1);
+}
+.ec:hover { border-color: var(--line); box-shadow: var(--shadow-card); transform: translateY(-2px); }
+
+.ec-cv { position: relative; aspect-ratio: 16 / 10; background: var(--paper-3); overflow: hidden; }
+/* Marcadores: cada evento con su propia luz, para que la grilla no parezca
+   cuatro veces la misma foto. Van fotos reales. */
+.ec-cv[data-cv="1"] { background: radial-gradient(112% 80% at 68% 22%, #FFB25E, transparent 58%), linear-gradient(162deg, #35281C, #12100E); }
+.ec-cv[data-cv="2"] { background: radial-gradient(100% 74% at 26% 30%, #7FA8D8, transparent 60%), linear-gradient(160deg, #1E2836, #0E1116); }
+.ec-cv[data-cv="3"] { background: radial-gradient(108% 78% at 74% 68%, #8FD08A, transparent 58%), linear-gradient(158deg, #1D2A1C, #0E120D); }
+.ec-cv[data-cv="4"] { background: radial-gradient(104% 76% at 40% 24%, #E08C7A, transparent 58%), linear-gradient(164deg, #33201D, #14100F); }
+.ec-cv[data-cv="5"] { background: radial-gradient(110% 80% at 60% 34%, #C9A7E8, transparent 58%), linear-gradient(160deg, #261E33, #100E14); }
+
+/* La píldora es hija directa de la tarjeta, no de la portada. Cuando vivía
+   adentro de la portada había que esconderla en la vista lista, porque ahí la
+   portada es una miniatura de 64px: el resultado era que en lista no se podía
+   distinguir un borrador de uno publicado. Ahora en grilla se posiciona sobre
+   la portada y en lista es una columna más. */
+.ec > .pill { position: absolute; top: 9px; left: 9px; z-index: 1; }
+
+/* Sin portada: no se disimula con un gris, se dice y se ofrece el arreglo.
+   Un evento sin portada vende bastante menos, así que callarlo no ayuda. */
+.ec-none {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; justify-items: center; gap: 9px;
+  background: var(--paper-3); color: var(--ink-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+.ec-none svg { width: 20px; height: 20px; }
+.ec-none span { font-size: 12px; }
+
+.ec-b { padding: var(--s-4) var(--s-4) 0; display: grid; gap: 3px; align-content: start; }
+.ec-b h3 {
+  font-family: var(--sans); font-size: 15px; font-weight: 600;
+  letter-spacing: -0.02em; line-height: 1.28;
+}
+.ec-meta { font-size: 12.5px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.ec-meta i { width: 3px; height: 3px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+/* margin-top:auto pega el pie abajo aunque los títulos midan distinto: sin
+   esto las cifras quedan a alturas diferentes en cada tarjeta. */
+.ec-st {
+  margin-top: auto; padding: var(--s-4);
+  display: grid; grid-template-columns: repeat(2, 1fr);
+}
+.ec-st > div + div { border-left: 1px solid var(--line-soft); padding-left: var(--s-3); }
+.ec-st span {
+  display: block; font-size: 10.5px; color: var(--ink-3);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.ec-st b {
+  display: block; margin-top: 3px;
+  font-size: 17px; font-weight: 300; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.ec-st b.pale { color: var(--ink-3); }
+
+/* ═══════════════════════════════ LISTA ═══════════════════════════════════
+   Las columnas se definen UNA vez en la variable y las usan el encabezado y
+   las filas. Con dos plantillas separadas, cualquier retoque desalinea los
+   títulos de los números y el error se ve recién al mirar.
+   ══════════════════════════════════════════════════════════════════════ */
+.evs[data-vista="lista"] {
+  --cols: 64px minmax(0, 1fr) 96px 116px 104px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  overflow: hidden;
+}
+
+.evs[data-vista="lista"] .ec-h,
+.evs[data-vista="lista"] .ec {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+  gap: var(--s-4);
+  padding: 10px var(--s-4);
+}
+
+.evs[data-vista="lista"] .ec-h {
+  padding-top: 12px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--paper-3);
+}
+
+.evs[data-vista="lista"] .ec {
+  position: static;
+  background: none;
+  border: 0; border-bottom: 1px solid var(--line-soft);
+  border-radius: 0;
+  transform: none; box-shadow: none;
+}
+.evs[data-vista="lista"] .ec:last-child { border-bottom: 0; }
+.evs[data-vista="lista"] .ec:hover { background: var(--paper-3); }
+
+.evs[data-vista="lista"] .ec-cv {
+  width: 64px; aspect-ratio: 16 / 10; border-radius: 5px;
+  border: 1px solid var(--line-soft);
+}
+.evs[data-vista="lista"] .ec-none { border: 0; }
+.evs[data-vista="lista"] .ec-none span { display: none; }
+.evs[data-vista="lista"] .ec-none svg { width: 15px; height: 15px; }
+
+.evs[data-vista="lista"] .ec-b { padding: 0; gap: 1px; }
+.evs[data-vista="lista"] .ec-b h3 {
+  font-size: 14px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.evs[data-vista="lista"] .ec-meta { font-size: 12px; }
+
+/* display:contents disuelve el cajón de las cifras y deja que sus tres hijos
+   se coloquen como celdas de la fila. Sin esto habría que duplicar el marcado
+   para tener columnas de verdad. */
+.evs[data-vista="lista"] .ec-st { display: contents; }
+.evs[data-vista="lista"] .ec-st > div {
+  border-left: 0; padding-left: 0;
+  text-align: right;
+}
+.evs[data-vista="lista"] .ec-st span { display: none; }   /* la etiqueta vive en el encabezado */
+.evs[data-vista="lista"] .ec-st b { margin-top: 0; font-size: 14px; font-weight: 400; }
+
+/* Sin grid-column forzada: la píldora es el último hijo del marcado, así que
+   la autocolocación la manda sola a la última columna. Cuando SÍ tenía columna
+   fija, adelantaba el cursor de autocolocación y empujaba a .ec-b a una
+   segunda fila: la fila entera se partía en dos renglones. */
+.evs[data-vista="lista"] .ec > .pill {
+  position: static; justify-self: end;
+  backdrop-filter: none;
+}
+
+/* Encabezado ordenable. La flecha aparece sólo en la columna activa: tres
+   flechas simultáneas no dicen por cuál está ordenado. */
+.ec-h .et {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font-family: var(--sans); font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-3);
+  transition: color 140ms ease;
+}
+.ec-h .et:hover { color: var(--ink); }
+.ec-h .et svg { width: 12px; height: 12px; opacity: 0; transition: opacity 140ms ease, transform 220ms ease; }
+.ec-h .et[data-ord] { color: var(--ink); }
+.ec-h .et[data-ord] svg { opacity: 1; }
+.ec-h .et[data-ord="asc"] svg { transform: rotate(180deg); }
+.ec-h .et.num { justify-content: flex-end; width: 100%; }
+
+@media (max-width: 900px) {
+  .evs[data-vista="lista"] { --cols: 56px minmax(0, 1fr) 104px 96px; }
+  .evs[data-vista="lista"] .ec-cv { width: 56px; }
+  /* Se caen fotos y conversión, se quedan el dinero y el estado: con poco
+     ancho, lo que hay que poder comparar es cuánto entró y si está publicado. */
+  .evs[data-vista="lista"] .c-fotos { display: none; }
+}
+@media (max-width: 560px) {
+  .evs[data-vista="lista"] { --cols: 44px minmax(0, 1fr) 104px; }
+  .evs[data-vista="lista"] .ec-cv { width: 44px; }
+  .evs[data-vista="lista"] .c-estado { display: none; }
+  .evs[data-vista="lista"] .ec > .pill { display: none; }
+}
+/* =============================================================================
+   encontrate · panel · ventas
+   -----------------------------------------------------------------------------
+   La pantalla vieja listaba las ventas y nada más. Le faltaba lo primero que
+   uno mira al entrar: cuánto ganó. Ese total estaba sólo en la pantalla de
+   cobros, o sea a un
+   click de distancia de la pantalla donde naturalmente se lo busca.
+
+   La resta de la comisión NO se muestra acá. Recordarle en cada pantalla
+   cuánto se lleva la plataforma no lo ayuda a vender, y el número que le
+   importa es el que le queda. El desglose vive en Métodos de pago, para el
+   que lo busque.
+   ========================================================================== */
+
+.sum { display: grid; gap: var(--s-3); }
+.sum .k-lab { font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.sum .k-n {
+  margin-top: var(--s-3);
+  font-size: 30px; font-weight: 200; letter-spacing: -0.035em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.sum .k-sub { margin-top: 8px; font-size: 12px; color: var(--ink-3); }
+/* Acento lleno: es el único número de la pantalla y tiene que pesar como tal.
+   Blanco casi pleno en los secundarios, no translúcido: sobre color saturado
+   la transparencia acerca el texto al fondo en vez de alejarlo. */
+.sum .neto {
+  background: var(--acento-lleno); color: #FFFFFF;
+  border-color: var(--acento-lleno); padding: var(--s-5);
+}
+.sum .neto .k-lab { color: rgba(255, 255, 255, .9); }
+.sum .neto .k-sub { color: rgba(255, 255, 255, .9); }
+.sum .neto .k-n { font-size: 44px; }
+
+.filtros { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.filtros .sp { margin-left: auto; }
+
+
+/* ── Tabla ───────────────────────────────────────────────────────────────── */
+.vt { grid-template-columns: 30px minmax(0, 1.5fr) minmax(0, 1.2fr) 60px 108px 96px 88px; }
+.vt.row-h { cursor: default; }
+
+/* Encabezado ordenable. La flecha aparece sólo en la columna activa: seis
+   flechas simultáneas no dicen por cuál está ordenado. */
+.th {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.th:hover { color: var(--ink); }
+.th svg { width: 12px; height: 12px; opacity: 0; transition: opacity 140ms ease, transform 220ms ease; }
+.th[data-ord] { color: var(--ink); }
+.th[data-ord] svg { opacity: 1; }
+.th[data-ord="asc"] svg { transform: rotate(180deg); }
+.th.num { justify-content: flex-end; width: 100%; }
+
+.v-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  font-size: 11px; font-weight: 600;
+}
+.v-who { min-width: 0; line-height: 1.3; }
+.v-who b { display: block; font-size: 13.5px; font-weight: 500; }
+.v-who span { display: block; font-size: 11.5px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v-ev { font-size: 13px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vt .num { font-size: 13px; }
+.vt .neto { font-weight: 500; }
+.vt .pill { justify-self: end; }
+
+/* ── Cajón de detalle ────────────────────────────────────────────────────────
+   Cajón y no página aparte: revisar ventas es una tarea de barrido, se miran
+   ocho seguidas. Con navegación completa cada vuelta cuesta dos cargas y se
+   pierde el lugar en la lista. ──────────────────────────────────────────── */
+.dscrim {
+  position: fixed; inset: 0; z-index: 80;
+  background: color-mix(in srgb, var(--ink) 26%, transparent);
+  opacity: 0; pointer-events: none;
+  transition: opacity 240ms ease;
+}
+:root[data-venta="open"] .dscrim { opacity: 1; pointer-events: auto; }
+
+.drw {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 81;
+  width: min(430px, 92vw);
+  display: flex; flex-direction: column;
+  background: var(--paper-2);
+  border-left: 1px solid var(--line);
+  box-shadow: -30px 0 60px rgba(18, 17, 15, .14);
+  transform: translateX(100%);
+  transition: transform 340ms cubic-bezier(.2, .8, .3, 1);
+}
+:root[data-venta="open"] .drw { transform: none; }
+
+.drw-h {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--s-5) var(--s-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+.drw-h h2 { font-family: var(--sans); font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+.drw-h .sub { margin-top: 3px; font-size: 12.5px; color: var(--ink-3); }
+.drw-b { flex: 1; overflow-y: auto; padding: var(--s-5); display: grid; gap: var(--s-5); }
+.drw-f { padding: var(--s-4) var(--s-5); border-top: 1px solid var(--line-soft); display: flex; gap: var(--s-2); }
+
+.dl { display: grid; gap: 9px; }
+.dl > div { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-4); font-size: 13.5px; }
+.dl dt { color: var(--ink-3); }
+.dl dd { font-variant-numeric: tabular-nums; text-align: right; }
+
+/* El monto de la venta, solo y sin cuentas al lado. */
+.desg { padding: var(--s-4); background: var(--paper-3); border-radius: var(--r-2); }
+.desg .tot { font-size: 15px; font-weight: 500; }
+.desg .tot dt { color: var(--ink); }
+.desg .tot dd { font-size: 19px; font-weight: 300; }
+
+.minis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.mini {
+  aspect-ratio: 3 / 2; border-radius: 5px;
+  background: radial-gradient(110% 80% at 62% 26%, #FFB25E, transparent 58%), linear-gradient(160deg, #35281C, #12100E);
+}
+.mini.mas {
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-3);
+  font-size: 12px; font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1080px) {
+  .vt { grid-template-columns: 30px minmax(0, 1.4fr) 100px 96px 88px; }
+  .vt .v-ev, .vt .c-fotos { display: none; }
+}
+@media (max-width: 640px) {
+  .sum .neto .k-n { font-size: 36px; }
+  .vt { grid-template-columns: 30px minmax(0, 1fr) 96px; }
+  .vt .c-fecha, .vt .pill, .vt .c-estado { display: none; }
+}
+
+/* Esqueleto de la tabla. Las filas son JS: hasta que corre, este bloque está
+   vacío de verdad, no es teatro. Se van solas cuando pintar() reemplaza el
+   innerHTML de #filas. */
+.sk-fila { pointer-events: none; }
+.sk-fila:hover { background: none; }
+
+
+/* ── Pantallas todavía no rediseñadas ────────────────────────────────────────
+   Existen como ruta /v2 para que el riel no te expulse de la versión nueva a
+   mitad de camino. Muestran el armazón y dicen la verdad, con el enlace a la
+   pantalla actual. */
+.pendiente { text-align: center; padding: var(--s-9) var(--s-4); }
+.pendiente-i {
+  width: 52px; height: 52px; margin: 0 auto var(--s-5);
+  border-radius: var(--r-3);
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-3);
+}
+.pendiente-i svg { width: 24px; height: 24px; }
+.pendiente h2 {
+  font-family: var(--sans); font-size: 18px; font-weight: 600;
+  letter-spacing: -0.02em; text-transform: none;
+}
+.pendiente p {
+  margin: 10px auto var(--s-5); max-width: 44ch;
+  font-size: var(--t-small); color: var(--ink-3); line-height: 1.6;
+}

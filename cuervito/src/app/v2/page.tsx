@@ -161,7 +161,7 @@ export default async function V2Page() {
       icono: <Wallet />,
       titulo: "No podés cobrar todavía",
       detalle: "Sin Mercado Pago conectado, el atleta encuentra sus fotos y no las puede comprar",
-      href: "/dashboard/cobros",
+      href: "/v2/pagos",
       urgente: true,
     });
   }
@@ -192,7 +192,7 @@ export default async function V2Page() {
       icono: <UserRound />,
       titulo: "Te falta la foto de perfil",
       detalle: "Tu página se ve vacía arriba de todo",
-      href: "/dashboard/perfil",
+      href: "/v2/perfil",
     });
   }
   const visibles = avisos.slice(0, 4);
@@ -201,7 +201,7 @@ export default async function V2Page() {
   const saludo = hora < 13 ? "Buen día" : hora < 20 ? "Buenas tardes" : "Buenas noches";
 
   return (
-    <Shell nombre={nombre} slug={yo?.slug ?? "tu-usuario"} iniciales={iniciales(nombre)}>
+    <Shell nombre={nombre} slug={yo?.slug ?? "tu-usuario"} iniciales={iniciales(nombre)} activo="inicio">
       <main className="canvas">
         <div className="canvas-in">
           <div className="head">
@@ -334,7 +334,7 @@ export default async function V2Page() {
                 <div>
                   <h2>Tus eventos</h2>
                 </div>
-                <Link href="/dashboard/events" className="btn btn-ghost btn-sm">
+                <Link href="/v2/eventos" className="btn btn-ghost btn-sm">
                   Ver todos <ArrowRight className="go" />
                 </Link>
               </div>
@@ -402,7 +402,7 @@ export default async function V2Page() {
                 <div>
                   <h2>Últimas ventas</h2>
                 </div>
-                <Link href="/dashboard/ventas" className="btn btn-ghost btn-sm">
+                <Link href="/v2/ventas" className="btn btn-ghost btn-sm">
                   Ver todas <ArrowRight className="go" />
                 </Link>
               </div>

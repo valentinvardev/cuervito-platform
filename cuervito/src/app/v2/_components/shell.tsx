@@ -21,49 +21,60 @@ import { useEffect, useState } from "react";
 /**
  * Riel y barra superior de la vista previa.
  *
- * En el laboratorio esto lo inyecta panel.js sobre el DOM; acá es un componente
- * de cliente, que es lo mismo con otra herramienta: una sola definición del
- * menú para todas las pantallas que cuelguen de /v2.
+ * Todos los destinos son rutas /v2. Antes apuntaban al panel actual, y el
+ * resultado era que cualquier click te sacaba de la versión nueva y ya no se
+ * podía recorrer: para comparar dos diseños hay que poder quedarse adentro de
+ * uno el tiempo suficiente.
  *
- * Los destinos del riel apuntan al panel ACTUAL, no a rutas /v2 que todavía no
- * existen. Es a propósito: así se puede comparar lado a lado sin quedar en
- * pantallas rotas, y queda claro qué está rediseñado y qué no.
+ * Las pantallas que todavía no están rediseñadas existen igual como ruta /v2 y
+ * muestran el armazón nuevo con un aviso y el enlace a la actual. Es preferible
+ * a un enlace que te expulsa sin avisar.
  */
 const NAV = [
-  { href: "/v2", icono: LayoutGrid, texto: "Inicio", aqui: true },
-  { href: "/dashboard/events", icono: CalendarDays, texto: "Eventos" },
-  { href: "/dashboard/ventas", icono: ReceiptText, texto: "Ventas" },
-  { href: "/dashboard/tienda", icono: Store, texto: "Mi página" },
+  { id: "inicio", href: "/v2", icono: LayoutGrid, texto: "Inicio" },
+  { id: "eventos", href: "/v2/eventos", icono: CalendarDays, texto: "Eventos" },
+  { id: "ventas", href: "/v2/ventas", icono: ReceiptText, texto: "Ventas" },
+  { id: "pagina", href: "/v2/pagina", icono: Store, texto: "Mi página" },
 ];
 
 const CUENTA = [
-  { href: "/dashboard/cobros", icono: Wallet, texto: "Métodos de pago" },
-  { href: "/dashboard/perfil", icono: UserRound, texto: "Perfil" },
-  { href: "/dashboard/ayuda", icono: LifeBuoy, texto: "Ayuda" },
+  { id: "pagos", href: "/v2/pagos", icono: Wallet, texto: "Métodos de pago" },
+  { id: "perfil", href: "/v2/perfil", icono: UserRound, texto: "Perfil" },
+  { id: "ayuda", href: "/v2/ayuda", icono: LifeBuoy, texto: "Ayuda" },
 ];
 
 export function Shell({
   nombre,
   slug,
   iniciales,
+  activo,
+  buscar = "Buscar evento, dorsal o venta",
   children,
 }: {
   nombre: string;
   slug: string;
   iniciales: string;
+  activo: string;
+  buscar?: string;
   children: React.ReactNode;
 }) {
   const [cajon, setCajon] = useState(false);
 
-  // El tema se resuelve con la misma clave que usa el panel actual, así que
-  // pasar de una versión a la otra no cambia de tema en el camino.
+  // Misma clave de tema que el panel actual, así pasar de una versión a la
+  // otra no cambia de tema en el camino.
   useEffect(() => {
     const raiz = document.documentElement;
-    if (raiz.dataset.theme === undefined || raiz.dataset.theme === "") {
+    if (!raiz.dataset.theme) {
       const guardado = localStorage.getItem("cuervito-theme");
       const hora = new Date().getHours();
       raiz.dataset.theme =
-        guardado === "light" ? "" : guardado === "dark" ? "dark" : hora >= 7 && hora < 19 ? "" : "dark";
+        guardado === "light"
+          ? ""
+          : guardado === "dark"
+            ? "dark"
+            : hora >= 7 && hora < 19
+              ? ""
+              : "dark";
     }
     raiz.dataset.listo = "1";
   }, []);
@@ -83,6 +94,18 @@ export function Shell({
     }
   }
 
+  const item = (i: (typeof NAV)[number]) => (
+    <Link
+      key={i.id}
+      href={i.href}
+      className="rl"
+      aria-current={i.id === activo ? "page" : undefined}
+      onClick={() => setCajon(false)}
+    >
+      <i.icono /> {i.texto}
+    </Link>
+  );
+
   return (
     <div className="app">
       <aside className="rail">
@@ -92,34 +115,16 @@ export function Shell({
           </Link>
         </div>
 
-        <nav className="rail-nav">
-          {NAV.map((i) => (
-            <Link
-              key={i.href}
-              href={i.href}
-              className="rl"
-              aria-current={i.aqui ? "page" : undefined}
-              onClick={() => setCajon(false)}
-            >
-              <i.icono /> {i.texto}
-            </Link>
-          ))}
-        </nav>
+        <nav className="rail-nav">{NAV.map(item)}</nav>
 
         <div>
           <div className="rail-sep" />
           <div className="rail-cap">Cuenta</div>
-          <nav className="rail-nav">
-            {CUENTA.map((i) => (
-              <Link key={i.href} href={i.href} className="rl" onClick={() => setCajon(false)}>
-                <i.icono /> {i.texto}
-              </Link>
-            ))}
-          </nav>
+          <nav className="rail-nav">{CUENTA.map(item)}</nav>
         </div>
 
         <div className="rail-bot">
-          <Link href="/dashboard/perfil" className="me">
+          <Link href="/v2/perfil" className="me">
             <span className="me-av">{iniciales}</span>
             <span className="me-txt">
               <b>{nombre}</b>
@@ -142,7 +147,7 @@ export function Shell({
 
           <div className="search">
             <Search className="lupa" />
-            <input type="search" placeholder="Buscar evento, dorsal o venta" disabled />
+            <input type="search" placeholder={buscar} disabled />
           </div>
 
           <div className="top-r">
