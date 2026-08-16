@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { env } from "~/env";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 
@@ -31,7 +32,6 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
       isPublished: true,
       pricePerPhoto: true,
       ownerId: true,
-      _count: { select: { photos: true } },
       sales: { where: { status: "PAID" }, select: { sellerNetCents: true } },
       collaborators: {
         select: {
@@ -44,14 +44,27 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
   });
   if (e?.ownerId !== userId) notFound();
 
-  const [fotos, reconocidas, vendidasIds] = await Promise.all([
+  // Los tres conteos van al servidor y no se sacan del arreglo de fotos: ese
+  // está topeado en TOPE, así que en un evento grande contar sobre él daría
+  // "580 de 580" cuando hay 3.000.
+  const [fotos, total, reconocidas, conDorsal, vendidasIds] = await Promise.all([
     db.photo.findMany({
       where: { eventId: id, deletedAt: null, fileSize: { not: null } },
       orderBy: { createdAt: "desc" },
       take: TOPE,
       select: { id: true, bibNumbers: true, previewKey: true, previewCleanKey: true, ocrProcessedAt: true },
     }),
+    // Con el mismo filtro que el resto. _count.photos de la relación incluye
+    // las borradas, así que el total salía más alto que sus propias partes.
+    db.photo.count({ where: { eventId: id, deletedAt: null } }),
     db.photo.count({ where: { eventId: id, deletedAt: null, ocrProcessedAt: { not: null } } }),
+    db.photo.count({
+      where: {
+        eventId: id,
+        deletedAt: null,
+        AND: [{ bibNumbers: { not: null } }, { bibNumbers: { not: "" } }],
+      },
+    }),
     db.saleItem.findMany({
       where: { sale: { eventId: id, status: "PAID" } },
       select: { photoId: true },
@@ -100,10 +113,13 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
         disciplina: e.discipline,
         portada: cover,
         publicado: e.isPublished,
+        // pricePerPhoto es Decimal(10,2) en PESOS, no en centavos.
         precio: Number(e.pricePerPhoto),
+        comision: env.PLATFORM_FEE_PERCENT,
         descripcion: e.description,
-        total: e._count.photos,
+        total,
         reconocidas,
+        conDorsal,
         ventas: e.sales.length,
         recaudado: pesos(e.sales.reduce((a, s) => a + s.sellerNetCents, 0)),
       }}

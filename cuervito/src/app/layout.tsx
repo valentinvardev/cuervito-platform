@@ -3,6 +3,7 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
+import { display, sans } from "~/styles/v2/fuentes";
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
@@ -61,7 +62,14 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={`${geist.variable}`} suppressHydrationWarning>
+    <html
+      lang="es"
+      // Unbounded y Outfit se declaran acá aunque hoy sólo las use /v2: es la
+      // única forma de que sus @font-face viajen en un chunk que está siempre
+      // presente. Ver el porqué en styles/v2/fuentes.ts.
+      className={`${geist.variable} ${display.variable} ${sans.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>

@@ -16,7 +16,10 @@ import {
   Tag,
   Users,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+
+import { guardarPrecioAction } from "./acciones";
+import { Soltador } from "./_soltador";
 
 type Foto = { id: string; url: string | null; bib: string | null; vendida: boolean; reconocida: boolean };
 type Colaborador = { nombre: string; email: string; estado: string; fotos: number; cobra: boolean };
@@ -56,9 +59,11 @@ export function Pantalla({
     portada: string | null;
     publicado: boolean;
     precio: number;
+    comision: number;
     descripcion: string | null;
     total: number;
     reconocidas: number;
+    conDorsal: number;
     ventas: number;
     recaudado: string;
   };
@@ -66,7 +71,7 @@ export function Pantalla({
   colaboradores: Colaborador[];
   publico: string | null;
 }) {
-  const [solapa, setSolapa] = useState<"fotos" | "equipo" | "info">("fotos");
+  const [solapa, setSolapa] = useState<"fotos" | "precio" | "equipo" | "info">("fotos");
   const [filtro, setFiltro] = useState<string>("todas");
   const [buscado, setBuscado] = useState("");
   const [pagina, setPagina] = useState(1);
@@ -246,6 +251,14 @@ export function Pantalla({
           <button
             className="solapa"
             role="tab"
+            aria-selected={solapa === "precio"}
+            onClick={() => setSolapa("precio")}
+          >
+            <Tag /> Precio
+          </button>
+          <button
+            className="solapa"
+            role="tab"
             aria-selected={solapa === "equipo"}
             onClick={() => setSolapa("equipo")}
           >
@@ -263,6 +276,8 @@ export function Pantalla({
 
         {solapa === "fotos" && (
           <section className="panel-s" data-activo="1">
+            <Soltador eventId={evento.id} />
+
             <div className="barra">
               <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center", flexWrap: "wrap" }}>
                 {/* Los cuatro estados plegados: en fila comían todo el ancho y
@@ -384,6 +399,60 @@ export function Pantalla({
           </section>
         )}
 
+        {solapa === "precio" && (
+          <section className="panel-s" data-activo="1">
+            <Precio eventoId={evento.id} inicial={evento.precio} comision={evento.comision} />
+
+            {/* En el laboratorio esto eran tres interruptores: por cara, por
+                dorsal y marca de agua. No los porté porque no hay ninguna
+                columna atrás: el reconocimiento corre igual para todos los
+                eventos y la marca de agua también. Un interruptor que se mueve
+                y no cambia nada es peor que no tenerlo, porque el fotógrafo lo
+                apaga creyendo que apagó algo.
+
+                Lo que sí se puede decir es qué encontró el reconocimiento en
+                ESTE evento, que es la pregunta de abajo: si mis fotos se van a
+                poder encontrar. */}
+            <div className="card blq">
+              <h2>Cómo se buscan tus fotos</h2>
+              <p className="ayuda">
+                Se hace solo cuando subís. Hoy no es algo que se configure por evento.
+              </p>
+              <div className="blq-b" style={{ gap: 0 }}>
+                <div className="aj">
+                  <div className="aj-t">
+                    <b>Por cara</b>
+                    <span>El atleta se saca una selfie y aparecen sus fotos</span>
+                  </div>
+                  <span className="pill live">
+                    <i /> {evento.reconocidas.toLocaleString("es-AR")} de{" "}
+                    {evento.total.toLocaleString("es-AR")}
+                  </span>
+                </div>
+                <div className="aj">
+                  <div className="aj-t">
+                    <b>Por dorsal</b>
+                    <span>Leemos el número de la camiseta o del dorsal</span>
+                  </div>
+                  <span className="pill live">
+                    <i /> {evento.conDorsal.toLocaleString("es-AR")} de{" "}
+                    {evento.total.toLocaleString("es-AR")}
+                  </span>
+                </div>
+              </div>
+              {evento.total > 0 && evento.reconocidas < evento.total && (
+                <div className="porque">
+                  <Info />
+                  <span>
+                    Las que faltan pueden estar todavía procesando, o ser fotos donde no se ve
+                    ninguna cara. Igual se venden: aparecen en tu galería.
+                  </span>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         {solapa === "equipo" && (
           <section className="panel-s" data-activo="1">
             <div className="card">
@@ -496,5 +565,112 @@ export function Pantalla({
         )}
       </div>
     </main>
+  );
+}
+
+/**
+ * Cuánto sale una foto de este evento.
+ *
+ * La versión actual manda a editar el evento entero para tocar el precio, que
+ * es un formulario con nombre, fecha, lugar y descripción, y termina en otra
+ * pantalla. Cambiar un número no debería costar eso.
+ *
+ * Debajo del campo va lo que el fotógrafo realmente quiere saber, que no es el
+ * precio sino cuánto le queda. Calcularlo mentalmente con una comisión de dos
+ * dígitos es justo la fricción que hace que nadie ajuste precios nunca.
+ */
+function Precio({
+  eventoId,
+  inicial,
+  comision,
+}: {
+  eventoId: string;
+  inicial: number;
+  comision: number;
+}) {
+  const [texto, setTexto] = useState(String(Math.round(inicial)));
+  const [guardando, empezar] = useTransition();
+  const [aviso, setAviso] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  const n = Number(texto);
+  const valido = texto.trim() !== "" && Number.isFinite(n) && n >= 0;
+  const cambiado = valido && Math.round(n * 100) !== Math.round(inicial * 100);
+  const neto = valido ? Math.round(n * (1 - comision / 100)) : 0;
+
+  function guardar() {
+    if (!valido || !cambiado) return;
+    empezar(async () => {
+      const r = await guardarPrecioAction(eventoId, n);
+      setError(!!r.error);
+      setAviso(r.error ?? "Precio actualizado");
+      setTimeout(() => setAviso(null), 2400);
+    });
+  }
+
+  return (
+    <div className="card blq">
+      <h2>Cuánto sale</h2>
+      <p className="ayuda">
+        Podés cambiarlo cuando quieras. El precio nuevo rige de acá en adelante; las ventas hechas no
+        se tocan.
+      </p>
+      <div className="blq-b">
+        <div className="precios">
+          <div className="campo">
+            <label htmlFor="p1">Una foto</label>
+            <div className="pegado">
+              <span className="fijo">$</span>
+              <input
+                className="inp tnum"
+                id="p1"
+                inputMode="numeric"
+                value={texto}
+                onChange={(e) => setTexto(e.target.value.replace(/[^\d]/g, ""))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    guardar();
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="campo" style={{ justifyContent: "flex-end" }}>
+            <button
+              type="button"
+              className="btn btn-pri"
+              onClick={guardar}
+              disabled={guardando || !valido || !cambiado}
+            >
+              {guardando ? "Guardando" : cambiado ? "Guardar precio" : "Guardado"}
+            </button>
+          </div>
+        </div>
+
+        <div className="cuenta-p">
+          {valido ? (
+            n === 0 ? (
+              <>
+                A <b>$0</b> las fotos se descargan gratis. Sirve para un evento de muestra, pero no
+                vas a cobrar nada.
+              </>
+            ) : (
+              <>
+                Por cada foto vendida te quedan <b>${neto.toLocaleString("es-AR")}</b>, con la
+                comisión de {comision}% ya descontada. Cae en tu Mercado Pago en el momento.
+              </>
+            )
+          ) : (
+            <>Poné un número.</>
+          )}
+        </div>
+
+        {aviso && (
+          <div style={{ fontSize: 13, color: error ? "var(--bad)" : "var(--ok)" }}>{aviso}</div>
+        )}
+      </div>
+    </div>
   );
 }

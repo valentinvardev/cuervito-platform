@@ -79,27 +79,36 @@ export function Shell({
     setPedido(null);
   }, [ruta]);
 
+  // El tema ya lo eligió el script bloqueante del layout raíz, antes del primer
+  // pintado y con esta misma política (guardado → hora → oscuro). Repetirla acá
+  // era además de más: corría después de la hidratación, así que sólo podía
+  // llegar tarde. Lo único que falta es avisar que el armazón ya está montado,
+  // que es lo que apaga los esqueletos de panel.css.
   useEffect(() => {
-    const raiz = document.documentElement;
-    if (!raiz.dataset.theme) {
-      const guardado = localStorage.getItem("cuervito-theme");
-      const hora = new Date().getHours();
-      raiz.dataset.theme =
-        guardado === "light" ? "" : guardado === "dark" ? "dark" : hora >= 7 && hora < 19 ? "" : "dark";
-    }
-    raiz.dataset.listo = "1";
+    document.documentElement.dataset.listo = "1";
   }, []);
 
   useEffect(() => {
     document.documentElement.dataset.rail = cajon ? "open" : "";
   }, [cajon]);
 
+  /**
+   * data-theme vale "light" o "dark", nunca otra cosa.
+   *
+   * Antes esta función escribía "" para el modo claro. Adentro de /v2 se veía
+   * bien, porque el CSS pregunta por [data-theme="dark"] y cualquier otro valor
+   * es claro. El daño estaba afuera: el interruptor del panel viejo lee
+   * `dataset.theme === "light" ? "light" : "dark"`, así que con "" se convencía
+   * de estar en oscuro estando en claro, mostraba el ícono equivocado y el
+   * primer click no hacía nada visible. Alcanzaba con pasar una vez por /v2
+   * para dejarlo así.
+   */
   function cambiarTema() {
     const raiz = document.documentElement;
-    const oscuro = raiz.dataset.theme === "dark";
-    raiz.dataset.theme = oscuro ? "" : "dark";
+    const proximo = raiz.dataset.theme === "dark" ? "light" : "dark";
+    raiz.dataset.theme = proximo;
     try {
-      localStorage.setItem("cuervito-theme", oscuro ? "light" : "dark");
+      localStorage.setItem("cuervito-theme", proximo);
     } catch {
       // almacenamiento bloqueado: el tema dura lo que dure la pestaña
     }

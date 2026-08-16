@@ -1,24 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 
-type UpItem = {
-  localId: string;
-  file: File;
-  thumbDataUrl?: string;
-  photoId?: string;
-  state: "pending" | "uploading" | "complete" | "failed";
-  pct: number;
-  error?: string;
-  visible: boolean; // shown as a tile in the grid (not in the "+X" overflow)
-};
+import { ACEPTADOS as ACCEPT, useSubida } from "./usar-subida";
 
-// S3 is a different host so PUTs don't share the browser's per-origin
-// connection budget with our own API calls. 10 matches the reference project.
-const MAX_PARALLEL = 10;
-const MAX_VISIBLE_TILES = 11; // grid shows up to 11 tiles + 1 "+X" tile
-const ACCEPT = "image/jpeg,image/png,image/webp";
+// El firmado, la cola de subida y el commit viven en useSubida: el panel nuevo
+// necesita exactamente lo mismo y dos copias de eso se despegan solas. Acá
+// queda el dibujo, que es lo único distinto entre los dos paneles. El tope de
+// celdas visibles también se decide allá, con el campo `visible` de cada ítem.
 
 function fmtSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -33,19 +22,22 @@ export function PhotoUploader({
   eventId: string;
   maxPhotoBytes: number;
 }) {
-  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
-  const [items, setItems] = useState<UpItem[]>([]);
   const [filesModalOpen, setFilesModalOpen] = useState(false);
 
-  const total = items.length;
-  const done = items.filter((i) => i.state === "complete").length;
-  const failed = items.filter((i) => i.state === "failed").length;
-  const settled = total > 0 && done + failed === total;
-  const phase: "idle" | "uploading" | "done" =
-    total === 0 ? "idle" : settled ? "done" : "uploading";
-  const aggPct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const {
+    items,
+    total,
+    hechas: done,
+    fallidas: failed,
+    cerrado: settled,
+    fase: phase,
+    pct: aggPct,
+    agregar: addFiles,
+    limpiar,
+  } = useSubida(eventId);
+
   const allFailed = settled && failed === total;
   const someFailed = settled && failed > 0;
 
@@ -53,157 +45,8 @@ export function PhotoUploader({
     fileInputRef.current?.click();
   }
 
-  async function readThumb(f: File): Promise<string | undefined> {
-    if (!f.type.startsWith("image/")) return undefined;
-    return new Promise((resolve) => {
-      const r = new FileReader();
-      r.onload = () => resolve(r.result as string);
-      r.onerror = () => resolve(undefined);
-      r.readAsDataURL(f);
-    });
-  }
-
-  async function addFiles(list: FileList | File[]) {
-    const arr = Array.from(list).filter((f) => ACCEPT.split(",").includes(f.type));
-    if (arr.length === 0) return;
-
-    // Generate thumbnails up-front (small files, ~ms)
-    const fresh: UpItem[] = await Promise.all(
-      arr.map(async (file, idx) => ({
-        localId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${idx}`,
-        file,
-        thumbDataUrl: await readThumb(file),
-        state: "pending" as const,
-        pct: 0,
-        visible: items.length + idx < MAX_VISIBLE_TILES,
-      })),
-    );
-
-    setItems((prev) => {
-      const next = [...prev, ...fresh];
-      // Recompute visibility cap across the whole list
-      return next.map((it, i) => ({ ...it, visible: i < MAX_VISIBLE_TILES }));
-    });
-
-    void processBatches(fresh);
-  }
-
-  function setOne(localId: string, patch: Partial<UpItem>) {
-    setItems((prev) => prev.map((p) => (p.localId === localId ? { ...p, ...patch } : p)));
-  }
-
-  async function processBatches(toProcess: UpItem[]) {
-    // Presign in chunks of 50 (API limit per request). Collect all results
-    // before starting uploads so the worker pool can drain the full queue.
-    const PRESIGN_CHUNK = 50;
-    const presigned: Array<{ photoId: string; uploadUrl: string; contentType: string }> = [];
-    try {
-      for (let i = 0; i < toProcess.length; i += PRESIGN_CHUNK) {
-        const chunk = toProcess.slice(i, i + PRESIGN_CHUNK);
-        const res = await fetch(`/api/dashboard/events/${eventId}/photos/presign`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            files: chunk.map((b) => ({
-              name: b.file.name,
-              size: b.file.size,
-              mimeType: b.file.type,
-            })),
-          }),
-        });
-        if (!res.ok) {
-          const data = (await res.json().catch(() => ({}))) as { error?: string };
-          const msg = data.error ?? "Error al iniciar la subida";
-          toProcess.forEach((b) => setOne(b.localId, { state: "failed", error: msg }));
-          return;
-        }
-        const data = (await res.json()) as {
-          items: Array<{ photoId: string; uploadUrl: string; contentType: string }>;
-        };
-        presigned.push(...data.items);
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Red caída";
-      toProcess.forEach((b) => setOne(b.localId, { state: "failed", error: msg }));
-      return;
-    }
-
-    // Worker pool: kick off MAX_PARALLEL uploads, and as each finishes, pull
-    // the next one. A slow upload doesn't stall the rest — every worker
-    // independently drains the queue. Net effect: ~Nx faster on large batches
-    // with mixed file sizes.
-    const queue = toProcess.map((b, i) => ({ b, p: presigned[i]! }));
-    let cursor = 0;
-    async function worker() {
-      while (true) {
-        const idx = cursor++;
-        if (idx >= queue.length) return;
-        const { b, p } = queue[idx]!;
-        if (!p) {
-          setOne(b.localId, { state: "failed", error: "Sin URL" });
-          continue;
-        }
-        setOne(b.localId, { state: "uploading", photoId: p.photoId, pct: 0 });
-        try {
-          await putWithProgress({
-            url: p.uploadUrl,
-            file: b.file,
-            contentType: p.contentType,
-            onProgress: (pct) => setOne(b.localId, { pct: Math.min(99, pct) }),
-          });
-          const cm = await fetch(
-            `/api/dashboard/events/${eventId}/photos/${p.photoId}/commit`,
-            { method: "POST" },
-          );
-          if (!cm.ok) {
-            const data = (await cm.json().catch(() => ({}))) as { error?: string };
-            throw new Error(data.error ?? "Commit falló");
-          }
-          setOne(b.localId, { state: "complete", pct: 100 });
-        } catch (err) {
-          setOne(b.localId, {
-            state: "failed",
-            error: err instanceof Error ? err.message : "Error",
-          });
-        }
-      }
-    }
-
-    await Promise.all(
-      Array.from({ length: Math.min(MAX_PARALLEL, queue.length) }, () => worker()),
-    );
-
-    // Refresh server-rendered grid so the photos appear below
-    router.refresh();
-  }
-
-  function putWithProgress(opts: {
-    url: string;
-    file: File;
-    contentType: string;
-    onProgress: (pct: number) => void;
-  }): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          opts.onProgress(Math.round((e.loaded / e.total) * 100));
-        }
-      };
-      xhr.onerror = () => reject(new Error("Network error"));
-      xhr.ontimeout = () => reject(new Error("Timeout"));
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) resolve();
-        else reject(new Error(`S3 PUT failed (${xhr.status})`));
-      };
-      xhr.open("PUT", opts.url);
-      xhr.setRequestHeader("Content-Type", opts.contentType);
-      xhr.send(opts.file);
-    });
-  }
-
   function reset() {
-    setItems([]);
+    limpiar();
     setFilesModalOpen(false);
   }
 
