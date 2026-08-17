@@ -52,7 +52,9 @@
   position: relative;
   width: 76px; height: 76px;
 }
-.eg-anillo svg { width: 76px; height: 76px; transform: rotate(-90deg); }
+/* El > importa: sin él, este selector también agarra el <svg> del tilde que
+   está adentro del anillo, y el tilde salía acostado. */
+.eg-anillo > svg { width: 76px; height: 76px; transform: rotate(-90deg); }
 .eg-anillo circle {
   fill: none;
   stroke-width: 3;

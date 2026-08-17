@@ -75,6 +75,12 @@ export function Carrito({
       }
       const d = (await r.json()) as { saleId: string; initPoint: string };
       if (d.initPoint.startsWith("/")) {
+        // La marca también acá, y no sólo en el script del layout de descarga.
+        // Ese script corre en la carga completa del documento; esto es una
+        // navegación del lado del cliente, así que no vuelve a correr y sin
+        // esto se ve un instante el esqueleto viejo de la entrega entre que se
+        // aprieta pagar y aparece la animación.
+        document.documentElement.dataset.pago = "confirmando";
         router.prefetch(d.initPoint);
         router.push(d.initPoint);
       } else {
