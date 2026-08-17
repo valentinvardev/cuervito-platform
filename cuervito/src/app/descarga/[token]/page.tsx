@@ -31,7 +31,15 @@ export default async function DescargaPage(props: {
       // La plantilla del vendedor decide qué entrega se dibuja, igual que en
       // la tienda: el comprador acaba de estar en su página y tiene que
       // reconocer el mismo lugar diez segundos después.
-      seller: { select: { storefrontTemplate: true, storefrontBrandColor: true } },
+      seller: {
+        select: {
+          storefrontTemplate: true,
+          storefrontBrandColor: true,
+          name: true,
+          slug: true,
+          image: true,
+        },
+      },
       event: { select: { name: true, slug: true } },
       items: {
         select: {
@@ -94,6 +102,18 @@ export default async function DescargaPage(props: {
           token={token}
           comprador={sale.buyerName ?? "Comprador"}
           evento={sale.event.name}
+          fotografo={{
+            nombre: sale.seller.name ?? "El fotógrafo",
+            slug: sale.seller.slug ?? "",
+            avatar: sale.seller.image,
+            iniciales:
+              (sale.seller.name ?? "?")
+                .split(" ")
+                .map((p) => p[0]?.toUpperCase() ?? "")
+                .filter(Boolean)
+                .slice(0, 2)
+                .join("") || "?",
+          }}
           fotos={photos}
           vence={
             sale.downloadTokenExpires

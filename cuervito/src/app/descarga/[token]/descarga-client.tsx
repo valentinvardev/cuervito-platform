@@ -1,5 +1,7 @@
 "use client";
 
+import { guardarConHojaDeCompartir } from "./guardar-ios";
+
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -40,60 +42,15 @@ function triggerDownload(url: string, filename: string) {
  * supports this and it's the only way to get "Guardar foto → Fotos" instead
  * of dropping the file in the Files app.
  */
-function canShareFiles(): boolean {
-  if (typeof navigator === "undefined") return false;
-  if (!("share" in navigator) || !("canShare" in navigator)) return false;
-  try {
-    const probe = new File([""], "probe.jpg", { type: "image/jpeg" });
-    return (
-      navigator as Navigator & { canShare: (d: ShareData) => boolean }
-    ).canShare({ files: [probe] });
-  } catch {
-    return false;
-  }
-}
-
+/* canShareFiles y saveViaShareSheet se mudaron a guardar-ios.ts, compartido con
+   la entrega nueva. Adentro hay una rareza de iOS —tira AbortError incluso
+   después de que el usuario tocó "Guardar foto"— que copiada mal deja al
+   comprador creyendo que falló cuando en realidad guardó bien. */
 type ShareResult = "shared" | "long-press" | "error";
 
-/**
- * iOS save flow ported from sinchi. Fetches the original image, wraps it
- * in a File, and opens the Web Share sheet so the user can pick
- * "Guardar imagen" (which lands in Photos, not Files).
- *
- * Returns:
- *   "shared"      — the iOS share sheet opened. We treat any rejection from
- *                   navigator.share as success because iOS has a known bug
- *                   where it throws AbortError even after "Guardar foto" is
- *                   tapped.
- *   "long-press"  — Web Share API isn't available (older iOS / non-Safari).
- *                   Caller should show the long-press instruction.
- *   "error"       — fetch failed or something else broke.
- */
-async function saveViaShareSheet(
-  url: string,
-  filename: string,
-): Promise<ShareResult> {
-  if (!canShareFiles()) return "long-press";
-  let sheetOpened = false;
-  try {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const mime = blob.type || "image/jpeg";
-    const file = new File([blob], filename, { type: mime });
-    sheetOpened = true;
-    await (
-      navigator as Navigator & {
-        share: (d: ShareData) => Promise<void>;
-      }
-    ).share({ files: [file] });
-    return "shared";
-  } catch {
-    if (sheetOpened) {
-      // iOS AbortError quirk — treat as success
-      return "shared";
-    }
-    return "error";
-  }
+async function saveViaShareSheet(url: string, filename: string): Promise<ShareResult> {
+  const r = await guardarConHojaDeCompartir(url, filename);
+  return r === "guardada" ? "shared" : r === "mantener-apretado" ? "long-press" : "error";
 }
 
 export function DescargaClient({
