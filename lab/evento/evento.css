@@ -592,3 +592,57 @@
 @media (max-width: 560px) {
   .opc-com { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ── Descuentos ─────────────────────────────────────────────────────────────
+   La lista arriba y el formulario abajo, en la misma tarjeta. Separarlos en
+   dos bloques haría creer que crear uno es otra pantalla, y en un evento uno
+   típicamente crea dos o tres seguidos. */
+.dsc-lista { display: grid; gap: 1px; }
+.dsc-fila {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.dsc-fila:last-child { border-bottom: 0; }
+.dsc-i {
+  width: 34px; height: 34px; border-radius: var(--r-2);
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--paper-3); color: var(--ink-2);
+}
+.dsc-i svg { width: 16px; height: 16px; }
+.dsc-t { flex: 1; min-width: 0; line-height: 1.3; }
+.dsc-t b { display: block; font-size: 13.5px; font-weight: 500; }
+.dsc-t span { display: block; font-size: 12px; color: var(--ink-3); }
+.dsc-vacio { font-size: 13px; color: var(--ink-3); padding: 4px 0; }
+
+.dsc-nuevo {
+  display: grid; gap: var(--s-3);
+  margin-top: var(--s-3); padding-top: var(--s-4);
+  border-top: 1px solid var(--line-soft);
+}
+
+/* El tipo primero, porque cambia qué campos hacen falta. Tres botones y no un
+   desplegable: son tres y se eligen mirando, no leyendo una lista cerrada. */
+.dsc-tipos { display: flex; gap: 6px; flex-wrap: wrap; }
+.dsc-tipo {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 34px; padding: 0 13px;
+  border: 1px solid var(--line); border-radius: 100px;
+  background: transparent; cursor: pointer;
+  font-family: var(--sans); font-size: 13px; color: var(--ink-2);
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+.dsc-tipo:hover { border-color: var(--line-strong); color: var(--ink); }
+.dsc-tipo svg { width: 14px; height: 14px; }
+.dsc-tipo[aria-pressed="true"] {
+  background: var(--cta-bg); border-color: var(--cta-bg); color: var(--cta-fg);
+}
+
+/* El sufijo del código es un botón: alterna entre % y $. Un desplegable al
+   lado de un campo de dos dígitos ocupa más que el campo. */
+.dsc-kind {
+  border: 0; background: none; cursor: pointer;
+  font-family: inherit; font-size: inherit; color: var(--ink-2);
+  padding: 0 4px;
+}
+.dsc-kind:hover { color: var(--ink); }

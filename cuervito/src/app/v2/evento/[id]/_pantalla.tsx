@@ -33,6 +33,7 @@ import {
   guardarPrecioAction,
   publicarAction,
 } from "./acciones";
+import { Descuentos } from "./_descuentos";
 import { Invitar } from "./_invitar";
 import { Soltador } from "./_soltador";
 import { Visor } from "./_visor";
@@ -679,6 +680,8 @@ export function Pantalla({
         {solapa === "precio" && (
           <section className="panel-s" data-activo="1">
             <Precio eventoId={evento.id} inicial={evento.precio} comision={evento.comision} />
+
+            <Descuentos eventId={evento.id} precio={evento.precio} />
 
             {/* En el laboratorio esto eran tres interruptores: por cara, por
                 dorsal y marca de agua. No los porté porque no hay ninguna
