@@ -1,57 +1,55 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Check, UserPlus, X } from "lucide-react";
+import { Check, Info, UserPlus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+
+type Alcance = "NONE" | "OWN" | "ALL";
 
 /**
  * Invitar a un fotógrafo a cubrir el evento.
  *
- * Dice las condiciones ANTES de mandar el mail, no después. Quien invita
- * necesita poder contestar "¿qué va a poder ver de lo mío?" y "¿cuánto me
- * queda?" en el momento en que el otro se lo pregunta por teléfono, sin tener
- * que ir a averiguarlo a otra pantalla.
+ * Dice las condiciones ANTES de mandar el mail. Quien invita necesita poder
+ * contestar "¿qué va a poder ver de lo mío?" y "¿cuánto le queda?" en el
+ * momento en que el otro se lo pregunta por teléfono.
  *
- * La comisión NO se elige por colaborador. La define el evento: si usa
- * reconocimiento, todos venden al mismo porcentaje, incluido el que se sumó
- * después. Enterarse de eso al cobrar es la peor manera. Por eso el formulario
- * pide un mail y nada más, y el resto lo explica.
+ * Sobre la comisión, y esto importa porque es plata de otro: la venta entra
+ * entera en el Mercado Pago del DUEÑO del evento, no en el del colaborador. Lo
+ * que se elige acá es qué porcentaje le queda al invitado, y el sistema lo deja
+ * registrado como una deuda del dueño hacia él. No lo transfiere: eso se
+ * arregla entre ellos.
+ *
+ * La primera versión de esta pantalla decía "cobra sus propias ventas, directo
+ * a su Mercado Pago" y mandaba la comisión en cero. Era el modelo del
+ * laboratorio, no el que está programado: le habría prometido a un tercero una
+ * plata que el sistema no le iba a devengar nunca.
  */
 export function Invitar({
   eventId,
   precio,
-  comision,
-  reconocimiento,
 }: {
   eventId: string;
   precio: number;
-  comision: number;
-  reconocimiento: boolean;
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [email, setEmail] = useState("");
+  const [alcance, setAlcance] = useState<Alcance>("OWN");
+  const [pct, setPct] = useState(70);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [listo, setListo] = useState(false);
   const campo = useRef<HTMLInputElement>(null);
 
-  const neto = Math.round(precio * (1 - comision / 100));
+  const porFoto = Math.round((precio * pct) / 100);
 
   useEffect(() => {
     if (!abierto) return;
     setEmail("");
     setError(null);
     setListo(false);
-    // Un cuadro que se abre con el foco afuera obliga a un click de más.
     setTimeout(() => campo.current?.focus(), 60);
-
-    // El CSS del laboratorio muestra el cuadro con :root[data-modal="open"], no
-    // con una clase propia. Se pone en un efecto y no al renderizar para que el
-    // atributo cambie DESPUÉS del primer pintado: si el elemento aparece con el
-    // valor final ya puesto, la transición de entrada no llega a correr.
     document.documentElement.dataset.modal = "open";
-
     const alTecla = (e: KeyboardEvent) => {
       if (e.key === "Escape") setAbierto(false);
     };
@@ -76,11 +74,8 @@ export function Invitar({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           email: mail,
-          // Cada uno cobra lo suyo y no hay comisión entre fotógrafos: la
-          // plata se reparte por autoría. Es el mismo criterio que ya explica
-          // la tarjeta "Cómo se reparte" de la solapa Equipo.
-          commissionScope: "OWN",
-          commissionPct: 0,
+          commissionScope: alcance,
+          commissionPct: alcance === "NONE" ? 0 : pct,
         }),
       });
       const d = (await r.json().catch(() => ({}))) as { error?: string };
@@ -118,9 +113,7 @@ export function Invitar({
             <div className="modal-h">
               <div>
                 <h2>Invitar a un fotógrafo</h2>
-                <div className="sub">
-                  Va a poder subir sus fotos a este evento y cobrar sus propias ventas.
-                </div>
+                <div className="sub">Va a poder subir sus fotos a este evento.</div>
               </div>
               <button
                 className="btn btn-ghost btn-icon"
@@ -155,14 +148,64 @@ export function Invitar({
                 </div>
               </div>
 
-              {/* Lo que va a poder y lo que no, en la misma lista. Sólo los
-                  permisos suena a que ve todo; sólo los límites, a desconfianza. */}
+              {/* Qué le queda. Es la pregunta que el otro va a hacer primero y
+                  la que decide si acepta, así que va en la misma pantalla y no
+                  en un ajuste posterior. */}
+              <div className="campo">
+                <label>Qué le queda de cada venta</label>
+                <div className="opc-com">
+                  {(
+                    [
+                      ["OWN", "De sus fotos", "Cobra por las fotos que suba él"],
+                      ["ALL", "De todas", "Cobra por toda venta del evento"],
+                      ["NONE", "Nada", "Sube fotos, no cobra comisión"],
+                    ] as const
+                  ).map(([v, t, d]) => (
+                    <button
+                      type="button"
+                      key={v}
+                      className="opc-c"
+                      aria-pressed={alcance === v}
+                      onClick={() => setAlcance(v)}
+                    >
+                      <b>{t}</b>
+                      <span>{d}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {alcance !== "NONE" && (
+                <div className="campo">
+                  <label htmlFor="pct-inv">Porcentaje</label>
+                  <div className="pct-fila">
+                    <input
+                      id="pct-inv"
+                      type="range"
+                      min={5}
+                      max={95}
+                      step={5}
+                      value={pct}
+                      onChange={(e) => setPct(Number(e.target.value))}
+                    />
+                    <b className="tnum">{pct}%</b>
+                  </div>
+                  {/* El porcentaje traducido a pesos por foto. Nadie decide
+                      bien entre 60% y 70% mirando dos números abstractos. */}
+                  <div className="pista">
+                    Sobre una foto de ${precio.toLocaleString("es-AR")}, le quedan{" "}
+                    <b>${porFoto.toLocaleString("es-AR")}</b>. Se calcula sobre lo que te queda a
+                    vos, después de la comisión de encontrate.
+                  </div>
+                </div>
+              )}
+
               <ul className="permisos">
                 <li className="si">
                   <Check /> Sube sus fotos y las ve en la grilla
                 </li>
                 <li className="si">
-                  <Check /> Ve y cobra las ventas de sus fotos
+                  <Check /> Ve cuánto vendieron sus fotos
                 </li>
                 <li className="no">
                   <X /> No ve tus ventas ni las de los demás
@@ -172,18 +215,15 @@ export function Invitar({
                 </li>
               </ul>
 
-              <div className="queda-inv">
-                <div>
-                  <span>De cada foto que venda, le quedan</span>
-                  <b className="tnum">${neto.toLocaleString("es-AR")}</b>
-                </div>
-                <p>
-                  Precio del evento ${precio.toLocaleString("es-AR")}, menos el {comision}% de
-                  comisión. <b>La comisión la define este evento</b>, no cada fotógrafo:{" "}
-                  {reconocimiento
-                    ? `como usa reconocimiento, todos venden al ${comision}%.`
-                    : `como es galería simple, todos venden al ${comision}%.`}
-                </p>
+              {/* Lo que el sistema NO hace, dicho acá y no descubierto al
+                  cobrar: la plata entra toda en TU Mercado Pago. Lo de arriba
+                  queda anotado como lo que le debés. */}
+              <div className="porque">
+                <Info />
+                <span>
+                  Las ventas entran en <b>tu</b> Mercado Pago, también las de sus fotos. Lo que le
+                  corresponde queda registrado como lo que le debés, y se lo pasás vos.
+                </span>
               </div>
             </div>
 

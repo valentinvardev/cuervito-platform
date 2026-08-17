@@ -3,7 +3,6 @@
 import Link from "next/link";
 import {
   Check,
-  Copy,
   ImageOff,
   Plus,
   ScanFace,
@@ -146,7 +145,6 @@ function Adentro({
   const [errorSelfie, setErrorSelfie] = useState<string | null>(null);
   const [visibles, setVisibles] = useState(TANDA);
   const [viendo, setViendo] = useState<number | null>(null);
-  const [copiado, setCopiado] = useState(false);
 
   const {
     inputRef: selfieRef,
@@ -365,6 +363,9 @@ function Adentro({
           </div>
         )}
 
+        {/* Sólo descuentos automáticos. Los de código no se anuncian acá: un
+            código publicado en la misma página donde se compra no es un código,
+            es un descuento con un paso de más para todos. */}
         {promo && (
           <div className="et-promo">
             <span className="et-promo-i">
@@ -373,27 +374,13 @@ function Adentro({
             <span className="et-promo-t">
               <b>{promo.texto}</b>
               <span>
-                {promo.codigo
-                  ? "Poné el código al pagar y se descuenta solo."
+                {items.length > 0 && items.length < promo.desde
+                  ? `Te faltan ${promo.desde - items.length} ${
+                      promo.desde - items.length === 1 ? "foto" : "fotos"
+                    } para que se aplique.`
                   : "Se aplica solo al pagar, no hace falta hacer nada."}
               </span>
             </span>
-            {promo.codigo && (
-              // Se copia con un click. Un código que hay que seleccionar con el
-              // mouse y transcribir se transcribe mal, y un cupón mal tipeado se
-              // lee como que el descuento era mentira.
-              <button
-                className="et-promo-cod"
-                onClick={() => {
-                  void navigator.clipboard.writeText(promo.codigo!);
-                  setCopiado(true);
-                  setTimeout(() => setCopiado(false), 1800);
-                }}
-              >
-                {promo.codigo}
-                {copiado ? <Check /> : <Copy />}
-              </button>
-            )}
           </div>
         )}
 

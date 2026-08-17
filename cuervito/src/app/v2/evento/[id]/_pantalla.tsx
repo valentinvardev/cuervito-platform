@@ -762,12 +762,7 @@ export function Pantalla({
                   <h2>Quiénes cubren este evento</h2>
                   <div className="sub">{colaboradores.length + 1} fotógrafos</div>
                 </div>
-                <Invitar
-                  eventId={evento.id}
-                  precio={evento.precio}
-                  comision={evento.comision}
-                  reconocimiento={evento.reconocimiento}
-                />
+                <Invitar eventId={evento.id} precio={evento.precio} />
               </div>
 
               {/* El dueño va en la tabla y no sólo en la cuenta del encabezado.
@@ -836,9 +831,15 @@ export function Pantalla({
                 </div>
               )}
 
+              {/* Lo que pasa de verdad, no lo que decía el laboratorio. La
+                  venta entra entera en el Mercado Pago del dueño; la comisión
+                  del colaborador queda anotada como deuda y se la pasa él.
+                  Decirlo al revés le prometía a un tercero una plata que el
+                  sistema no le iba a devengar nunca. */}
               <div className="reparto">
-                Cada uno cobra <b>las ventas de sus propias fotos</b>, directo a su Mercado Pago. No hay
-                plata que pasarse entre ustedes.
+                Todas las ventas entran en <b>tu</b> Mercado Pago, también las de las fotos que
+                suban ellos. Lo que le toca a cada uno queda registrado como lo que les debés, y se
+                lo pasás vos.
               </div>
             </div>
           </section>

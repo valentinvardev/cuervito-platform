@@ -189,12 +189,11 @@ export function Carrito({
             {/* Falta poco para la promoción: es el momento en que el descuento
                 de verdad mueve la aguja. Antes de elegir la primera foto el
                 mismo cartel es información; acá es una decisión. */}
-            {paso === "lista" && promo?.desde && items.length < promo.desde && (
+            {paso === "lista" && promo && items.length < promo.desde && (
               <div style={{ fontSize: 13, color: "var(--accent, #F0410F)" }}>
                 Agregá {promo.desde - items.length}{" "}
-                {promo.desde - items.length === 1 ? "foto más" : "fotos más"} y {promo.texto
-                  .charAt(0)
-                  .toLowerCase() + promo.texto.slice(1)}
+                {promo.desde - items.length === 1 ? "foto más" : "fotos más"} y se aplica el
+                descuento.
               </div>
             )}
 
