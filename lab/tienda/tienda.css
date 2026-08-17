@@ -416,15 +416,34 @@
 @keyframes et-visor-entra { from { opacity: 0; } to { opacity: 1; } }
 @keyframes et-visor-sale { to { opacity: 0; } }
 
+/* La caja se achica hasta el ancho de la foto.
+
+   Con un ancho fijo, una foto vertical se dibuja angosta y centrada adentro
+   de una caja de 860, y el pie queda como una barra larguísima abajo de una
+   foto flaca. fit-content la ajusta a lo que la foto realmente ocupa, y el
+   min-width evita que con una foto muy angosta el pie quede impracticable.
+
+   El alto máximo va en unidades de ventana y no en porcentaje: en
+   porcentaje depende del alto de la caja, que a su vez depende del alto de
+   la foto, y el navegador resuelve ese círculo dejando la foto en su tamaño
+   original. */
 .et-visor-caja {
   display: grid; grid-template-rows: minmax(0, 1fr) auto;
   gap: 12px;
-  width: min(100%, 860px);
-  max-height: min(100%, 84vh);
+  width: fit-content;
+  max-width: min(100%, 900px);
+  min-width: min(100%, 300px);
+  /* En unidades de ventana y no 100%: el padre centra sin estirar, así que
+     el 100% se resuelve contra el alto del propio contenido y el navegador
+     lo trata como sin tope. Con eso, una foto vertical en un teléfono se
+     pasaba 52px abajo del borde. El 32 son los dos paddings del visor. */
+  max-height: calc(100dvh - 32px);
 }
 .et-visor-marco { display: grid; place-items: center; min-height: 0; }
 .et-visor-marco img {
-  max-width: 100%; max-height: 100%;
+  max-width: 100%;
+  /* Deja lugar para el pie y los márgenes: 100dvh menos lo que ocupan. */
+  max-height: min(78dvh, 100%);
   object-fit: contain; border-radius: var(--et-radio-chico);
   animation: et-visor-foto 240ms cubic-bezier(.2, .8, .3, 1);
 }
@@ -463,7 +482,11 @@
 .et-visor-x svg { width: 17px; height: 17px; }
 
 @media (max-width: 720px) {
-  .et-visor-caja { width: 100%; max-height: 100%; }
+  /* Sin volver a poner max-height: el tope de ventana de arriba es el que evita
+     que una foto vertical se pase del borde, y pisarlo acá con 100% era
+     exactamente el bug. Tampoco width: 100%: la caja sigue al ancho de la foto
+     también en el teléfono. */
+  .et-visor-caja { max-width: 100%; }
   .et-visor-nav { width: 36px; height: 36px; }
   .et-visor-nav.izq { left: 6px; }
   .et-visor-nav.der { right: 6px; }
@@ -583,3 +606,29 @@
 }
 .et-pie a { color: inherit; text-decoration: none; }
 .et-pie a:hover { color: var(--text-primary, #12110F); }
+
+/* ── Esqueleto de carga ─────────────────────────────────────────────────────
+   El color sale de --text-primary con poca opacidad, no de un gris fijo: así
+   funciona igual sobre fondo claro y sobre fondo oscuro, que es lo que hace
+   falta porque el esqueleto se dibuja antes de saber qué plantilla usa el
+   fotógrafo.
+
+   El latido es de opacidad y no de un degradé que se desliza: el degradé pide
+   pintar en cada cuadro y esto aparece en el momento en que el navegador está
+   ocupado bajando las fotos. */
+.et-sk {
+  background: color-mix(in srgb, var(--text-primary, #12110F) 8%, transparent);
+  animation: et-latido 1.5s ease-in-out infinite;
+}
+@keyframes et-latido {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .45; }
+}
+/* La celda de la grilla ya trae su relación 3/2 y su radio, así que sólo hay
+   que sumarle el latido. */
+.et-foto.et-sk { cursor: default; }
+.et-foto.et-sk::after { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .et-sk { animation: none; }
+}

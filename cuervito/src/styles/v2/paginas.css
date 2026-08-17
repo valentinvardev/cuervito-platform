@@ -691,11 +691,28 @@
 
 /* El tope de ancho es el que manda; el de alto existe para las fotos
    verticales, que si no se van más abajo del pie. */
+/* La caja se achica hasta el ancho de la foto.
+
+   Con un ancho fijo, una foto vertical se dibuja angosta y centrada adentro
+   de una caja de 860, y el pie queda como una barra larguísima abajo de una
+   foto flaca. fit-content la ajusta a lo que la foto realmente ocupa, y el
+   min-width evita que con una foto muy angosta el pie quede impracticable.
+
+   El alto máximo va en unidades de ventana y no en porcentaje: en
+   porcentaje depende del alto de la caja, que a su vez depende del alto de
+   la foto, y el navegador resuelve ese círculo dejando la foto en su tamaño
+   original. */
 .visor-caja {
   display: grid; grid-template-rows: minmax(0, 1fr) auto;
   gap: var(--s-3);
-  width: min(100%, 860px);
-  max-height: min(100%, 82vh);
+  width: fit-content;
+  max-width: min(100%, 900px);
+  min-width: min(100%, 300px);
+  /* En unidades de ventana y no 100%: el padre centra sin estirar, así que
+     el 100% se resuelve contra el alto del propio contenido y el navegador
+     lo trata como sin tope. Con eso, una foto vertical en un teléfono se
+     pasaba 52px abajo del borde. El 32 son los dos paddings del visor. */
+  max-height: calc(100dvh - 32px);
 }
 
 .visor-marco {
@@ -704,7 +721,9 @@
   min-height: 0;
 }
 .visor-marco img {
-  max-width: 100%; max-height: 100%;
+  max-width: 100%;
+  /* Deja lugar para el pie y los márgenes: 100dvh menos lo que ocupan. */
+  max-height: min(78dvh, 100%);
   object-fit: contain;
   border-radius: var(--r-2);
   animation: visor-foto 260ms cubic-bezier(.2, .8, .3, 1);
@@ -771,7 +790,12 @@
    no gana nada, porque la pantalla ya es el tope. */
 @media (max-width: 720px) {
   .visor { padding: var(--s-3); }
-  .visor-caja { width: 100%; max-height: 100%; gap: var(--s-2); }
+  /* Sin volver a poner max-height: el tope de ventana de arriba es el que
+     evita que una foto vertical se pase del borde, y pisarlo acá con 100% era
+     exactamente el bug. Tampoco width: 100%: la caja sigue al ancho de la foto
+     también en el teléfono, si no una foto muy alta queda flaca en el medio de
+     un pie que ocupa toda la pantalla. */
+  .visor-caja { max-width: 100%; gap: var(--s-2); }
   /* Pegadas a los bordes de la foto y más chicas: al costado no hay lugar. */
   .visor-nav { width: 34px; height: 34px; }
   .visor-nav.izq { left: 6px; }
