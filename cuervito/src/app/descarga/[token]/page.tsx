@@ -4,7 +4,10 @@ import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
 import { resolveMediaUrl } from "~/server/media";
 
+import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
+
 import { DescargaClient } from "./descarga-client";
+import { Entrega } from "./encontrate/entrega";
 
 export default async function DescargaPage(props: {
   params: Promise<{ token: string }>;
@@ -25,6 +28,10 @@ export default async function DescargaPage(props: {
       buyerName: true,
       status: true,
       downloadTokenExpires: true,
+      // La plantilla del vendedor decide qué entrega se dibuja, igual que en
+      // la tienda: el comprador acaba de estar en su página y tiene que
+      // reconocer el mismo lugar diez segundos después.
+      seller: { select: { storefrontTemplate: true, storefrontBrandColor: true } },
       event: { select: { name: true, slug: true } },
       items: {
         select: {
@@ -74,6 +81,34 @@ export default async function DescargaPage(props: {
           : await getPresignedDownloadUrl(p.storageKey, { expiresIn: 60 * 30 }),
       })),
   );
+
+  if (getTemplate(sale.seller.storefrontTemplate).layout === "encontrate") {
+    return (
+      <div
+        style={buildTemplateStyle(
+          sale.seller.storefrontTemplate,
+          sale.seller.storefrontBrandColor,
+        )}
+      >
+        <Entrega
+          token={token}
+          comprador={sale.buyerName ?? "Comprador"}
+          evento={sale.event.name}
+          fotos={photos}
+          vence={
+            sale.downloadTokenExpires
+              ? sale.downloadTokenExpires.toLocaleDateString("es-AR", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })
+              : null
+          }
+          recienPagado={fresh}
+        />
+      </div>
+    );
+  }
 
   return (
     <DescargaClient

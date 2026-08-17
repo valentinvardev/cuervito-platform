@@ -1,12 +1,19 @@
 /**
- * Skeleton for /descarga/[token]. Mirrors the final layout: top nav,
+ * Esqueleto de /descarga/[token].
+ *
+ * Va envuelto en .eg-esqueleto para que el CSS lo pueda esconder cuando el
+ * documento viene marcado como recién pagado. Sin eso, el comprador que llega
+ * de Mercado Pago ve armarse la galería de la entrega y DESPUÉS le preguntamos
+ * si el pago salió bien — el orden exactamente al revés.
+ *
+ * Original: Mirrors the final layout: top nav,
  * "Gracias por tu compra" hero, summary card (4 fields), photo grid.
  * Same DOM structure means no layout shift when the server component
  * resolves and Next swaps the skeleton out.
  */
 export default function DescargaLoading() {
   return (
-    <>
+    <div className="eg-esqueleto">
       <header className="nav">
         <span className="logo" aria-hidden="true">
           cuerv<span className="logo-dot"></span>to
@@ -78,6 +85,6 @@ export default function DescargaLoading() {
           ))}
         </div>
       </main>
-    </>
+    </div>
   );
 }
