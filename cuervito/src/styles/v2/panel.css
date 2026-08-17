@@ -1182,3 +1182,53 @@ body { overflow-x: hidden; }
 .razon svg { width: 13px; height: 13px; color: var(--ink-3); flex-shrink: 0; }
 .razon b { font-weight: 500; color: var(--ink-2); }
 .razon .pct { margin-left: auto; color: var(--ink-3); }
+
+/* ═══════════════════════════ GLOBITOS ════════════════════════════════════
+   Cualquier elemento con data-tip="texto" muestra uno. Lo dibuja el
+   TooltipProvider, que escucha en todo el árbol y lo pinta con un portal a
+   <body>: por eso las reglas no cuelgan de .app, no estaría adentro.
+
+   El color sale de var(--ink) sobre var(--paper), igual que la barra de
+   selección. Se invierte solo con el tema, y no hace falta una regla aparte
+   por tema como en el panel viejo, que definía el claro a mano y se
+   desincronizaba cada vez que se tocaba un token.
+
+   Aparecen recién a los 400 ms de dejar el mouse quieto —eso lo maneja el
+   provider—: instantáneos, cruzar una barra de herramientas dispara seis
+   globitos seguidos y molestan más de lo que explican. */
+.cs-tooltip {
+  position: fixed; z-index: 9998;
+  max-width: 240px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: var(--ink); color: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--paper) 12%, transparent);
+  box-shadow: 0 8px 24px rgba(18, 17, 15, .22);
+  font-family: var(--sans);
+  font-size: 12.5px; font-weight: 500; line-height: 1.35;
+  letter-spacing: -0.005em;
+  pointer-events: none;
+  animation: tip-entra 140ms ease-out;
+}
+@keyframes tip-entra {
+  from { opacity: 0; transform: translateY(3px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* La flecha hereda fondo y borde del globito, así que no hay que repetir el
+   color en cada lado ni volver a tocarlo al cambiar el tema. */
+.cs-tooltip-arrow {
+  position: absolute;
+  width: 8px; height: 8px;
+  transform: rotate(45deg);
+  background: inherit;
+  border: inherit;
+}
+.cs-tooltip-top .cs-tooltip-arrow    { bottom: -5px; left: 50%; margin-left: -4px; border-top: none; border-left: none; }
+.cs-tooltip-bottom .cs-tooltip-arrow { top: -5px; left: 50%; margin-left: -4px; border-bottom: none; border-right: none; }
+.cs-tooltip-left .cs-tooltip-arrow   { right: -5px; top: 50%; margin-top: -4px; border-bottom: none; border-left: none; }
+.cs-tooltip-right .cs-tooltip-arrow  { left: -5px; top: 50%; margin-top: -4px; border-top: none; border-right: none; }
+
+/* En pantallas táctiles no hay hover: el globito aparecería recién al tocar,
+   justo cuando el botón ya hizo lo suyo, y taparía el resultado. */
+@media (hover: none) { .cs-tooltip { display: none; } }

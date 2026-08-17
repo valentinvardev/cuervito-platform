@@ -444,16 +444,17 @@
    el tiempo en esta pantalla; seleccionar es lo que hace de vez en cuando,
    para borrar un lote. Que el gesto barato haga lo frecuente.
 
-   Entra y sale con animación a propósito: sin ella, una foto a pantalla
-   completa aparece de golpe y por un instante no se entiende de dónde salió.
-   La escala arranca apenas abajo del 100% para que se lea como que la foto
-   creció desde la grilla.
+   Es una caja acotada y centrada, no una toma de la pantalla entera. Sin tope,
+   en un monitor grande una foto apaisada se estira a mil ochocientos píxeles:
+   deja de leerse como una foto y pasa a ser un fondo, y hay que mover la
+   cabeza para recorrerla. Con tope se mira de una sola vez.
 
    El fondo no es negro puro: sobre negro absoluto, una foto con sombras
    profundas pierde el borde y parece recortada contra la nada. */
 .visor {
   position: fixed; inset: 0; z-index: 120;
-  display: grid; grid-template-rows: 1fr auto;
+  display: grid; place-items: center;
+  padding: var(--s-4);
   background: rgba(10, 9, 8, .92);
   backdrop-filter: blur(6px);
   animation: visor-entra 220ms cubic-bezier(.2, .8, .3, 1);
@@ -462,10 +463,19 @@
 @keyframes visor-entra { from { opacity: 0; } to { opacity: 1; } }
 @keyframes visor-sale  { to { opacity: 0; } }
 
+/* El tope de ancho es el que manda; el de alto existe para las fotos
+   verticales, que si no se van más abajo del pie. */
+.visor-caja {
+  display: grid; grid-template-rows: minmax(0, 1fr) auto;
+  gap: var(--s-3);
+  width: min(100%, 860px);
+  max-height: min(100%, 82vh);
+}
+
 .visor-marco {
   position: relative;
   display: grid; place-items: center;
-  min-height: 0; padding: var(--s-5);
+  min-height: 0;
 }
 .visor-marco img {
   max-width: 100%; max-height: 100%;
@@ -480,26 +490,28 @@
 }
 @keyframes visor-foto-sale { to { opacity: 0; transform: scale(.96); } }
 
-/* Las flechas quedan sobre la foto y no al costado: con la foto ocupando todo
-   el ancho útil, una columna propia a cada lado le come cien píxeles. */
+/* Las flechas van FUERA de la caja, contra los bordes de la pantalla: encima
+   de la foto tapan justo lo que se vino a mirar, y con la caja acotada hay
+   lugar de sobra al costado. En el teléfono no hay lugar, así que ahí sí van
+   encima, que es el mal menor. */
 .visor-nav {
-  position: absolute; top: 50%; transform: translateY(-50%);
+  position: fixed; top: 50%; transform: translateY(-50%);
   width: 40px; height: 40px; border-radius: 50%;
   display: grid; place-items: center;
   border: 0; cursor: pointer;
   background: rgba(255, 255, 255, .12);
   color: #FFF;
   backdrop-filter: blur(8px);
-  transition: background 140ms ease;
+  transition: background 140ms ease, opacity 140ms ease;
 }
 .visor-nav:hover { background: rgba(255, 255, 255, .24); }
-.visor-nav:disabled { opacity: .3; cursor: default; }
+.visor-nav:disabled { opacity: .25; cursor: default; }
 .visor-nav.izq { left: var(--s-4); }
 .visor-nav.der { right: var(--s-4); }
 .visor-nav svg { width: 18px; height: 18px; }
 
 .visor-x {
-  position: absolute; top: var(--s-4); right: var(--s-4);
+  position: fixed; top: var(--s-4); right: var(--s-4);
   width: 36px; height: 36px; border-radius: 50%;
   display: grid; place-items: center;
   border: 0; cursor: pointer;
@@ -509,16 +521,17 @@
 .visor-x:hover { background: rgba(255, 255, 255, .24); }
 .visor-x svg { width: 17px; height: 17px; }
 
-/* Las acciones abajo y no flotando encima de la foto: encima tapan justo la
+/* Las acciones abajo de la foto y no flotando encima: encima tapan justo la
    parte que se vino a mirar. */
 .visor-pie {
   display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap;
-  padding: var(--s-4) var(--s-5);
-  border-top: 1px solid rgba(255, 255, 255, .12);
+  padding: 11px var(--s-4);
+  border-radius: var(--r-2);
+  background: rgba(255, 255, 255, .07);
 }
 .visor-datos { margin-right: auto; min-width: 0; line-height: 1.35; }
-.visor-datos b { display: block; color: #FFF; font-size: 13.5px; font-weight: 500; }
-.visor-datos span { display: block; color: rgba(255, 255, 255, .6); font-size: 12px; }
+.visor-datos b { display: block; color: #FFF; font-size: 13px; font-weight: 500; }
+.visor-datos span { display: block; color: rgba(255, 255, 255, .6); font-size: 11.5px; }
 .visor-pie .btn {
   background: rgba(255, 255, 255, .12);
   border-color: rgba(255, 255, 255, .24);
@@ -528,11 +541,24 @@
 .visor-pie .btn.peligro { color: #FF8E8E; border-color: rgba(255, 142, 142, .34); }
 .visor-pie .btn.peligro:hover { background: rgba(255, 142, 142, .16); border-color: rgba(255, 142, 142, .55); }
 
-@media (max-width: 560px) {
-  .visor-marco { padding: var(--s-3); }
+/* En el teléfono la caja usa todo el ancho y el alto disponible: acotarla ahí
+   no gana nada, porque la pantalla ya es el tope. */
+@media (max-width: 720px) {
+  .visor { padding: var(--s-3); }
+  .visor-caja { width: 100%; max-height: 100%; gap: var(--s-2); }
+  /* Pegadas a los bordes de la foto y más chicas: al costado no hay lugar. */
+  .visor-nav { width: 34px; height: 34px; }
+  .visor-nav.izq { left: 6px; }
+  .visor-nav.der { right: 6px; }
+  .visor-nav svg { width: 16px; height: 16px; }
+  .visor-x { top: 8px; right: 8px; width: 32px; height: 32px; }
+  /* Los datos ocupan la fila entera y los botones la de abajo, cada uno
+     creciendo a la mitad: en 360px, tres cosas en una línea deja botones de
+     cuarenta píxeles que nadie acierta. */
+  .visor-pie { padding: 10px var(--s-3); gap: var(--s-2); }
   .visor-datos { width: 100%; margin-right: 0; }
+  .visor-pie .btn { flex: 1; justify-content: center; }
 }
-
 /* Con el modo selección apagado, el tilde de cada foto aparece igual al pasar
    el mouse: es la puerta de entrada al modo. Lo que cambia es qué hace tocar
    la FOTO, no si el tilde se ve. */

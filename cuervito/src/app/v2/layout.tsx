@@ -4,6 +4,8 @@ import "~/styles/v2/panel.css";
 import "~/styles/v2/dashboard.css";
 import "~/styles/v2/paginas.css";
 
+import { TooltipProvider } from "~/app/_components/tooltip-provider";
+
 import { Shell } from "./_components/shell";
 import { sesionV2 } from "./_components/sesion";
 
@@ -37,6 +39,11 @@ export default async function V2Layout({ children }: { children: React.ReactNode
       <Shell nombre={nombre} slug={slug} iniciales={iniciales}>
         {children}
       </Shell>
+      {/* Escucha data-tip en todo el árbol y pinta el globito con un portal a
+          <body>. Es el mismo provider del panel actual: el comportamiento
+          —retardo, volteo cuando no entra, lados— ya estaba resuelto y sólo
+          hacía falta vestirlo con los tokens de acá. */}
+      <TooltipProvider />
     </div>
   );
 }

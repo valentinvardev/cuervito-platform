@@ -217,7 +217,12 @@ export function Shell({
           <Buscador placeholder={BUSCAR[actual] ?? "Buscar evento, dorsal o venta"} />
 
           <div className="top-r">
-            <button className="btn btn-ghost btn-icon" onClick={cambiarTema} aria-label="Cambiar tema">
+            <button
+              className="btn btn-ghost btn-icon"
+              onClick={cambiarTema}
+              aria-label="Cambiar tema"
+              data-tip="Cambiar entre claro y oscuro"
+            >
               <span className="ico ico-moon">
                 <Moon />
               </span>

@@ -104,65 +104,74 @@ export function Visor({
         if (e.target === e.currentTarget) cerrar();
       }}
     >
-      <div className="visor-marco">
-        <button className="visor-x" onClick={cerrar} aria-label="Cerrar">
-          <X />
-        </button>
+      {/* Los tres botones cuelgan del visor y no de la caja: van fijos contra
+          los bordes de la pantalla, así que si vivieran adentro de la caja
+          acotada quedarían pegados a la foto. */}
+      <button className="visor-x" onClick={cerrar} aria-label="Cerrar">
+        <X />
+      </button>
+      <button
+        className="visor-nav izq"
+        onClick={() => alIr(indice - 1)}
+        disabled={indice === 0}
+        aria-label="Anterior"
+      >
+        <ChevronLeft />
+      </button>
+      <button
+        className="visor-nav der"
+        onClick={() => alIr(indice + 1)}
+        disabled={indice === fotos.length - 1}
+        aria-label="Siguiente"
+      >
+        <ChevronRight />
+      </button>
 
-        <button
-          className="visor-nav izq"
-          onClick={() => alIr(indice - 1)}
-          disabled={indice === 0}
-          aria-label="Anterior"
-        >
-          <ChevronLeft />
-        </button>
-
-        {foto.url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img key={foto.id} src={foto.url} alt={foto.bib ? `Dorsal ${foto.bib}` : "Foto"} />
-        ) : (
-          <span style={{ color: "rgba(255,255,255,.6)" }}>Esta foto ya no está disponible.</span>
-        )}
-
-        <button
-          className="visor-nav der"
-          onClick={() => alIr(indice + 1)}
-          disabled={indice === fotos.length - 1}
-          aria-label="Siguiente"
-        >
-          <ChevronRight />
-        </button>
-      </div>
-
-      <div className="visor-pie">
-        <div className="visor-datos">
-          <b>
-            {foto.bib ? `Dorsal ${foto.bib.split(",")[0]}` : "Sin dorsal"}
-            {" · "}
-            {indice + 1} de {fotos.length}
-          </b>
-          <span>
-            <ScanFace
-              style={{ width: 12, height: 12, verticalAlign: -1, marginRight: 4 }}
-            />
-            {foto.caras} {foto.caras === 1 ? "cara" : "caras"}
-            {foto.ventas > 0 && ` · vendida ${foto.ventas} ${foto.ventas === 1 ? "vez" : "veces"}`}
-          </span>
+      {/* La caja es lo que se toca: un click acá NO cierra. */}
+      <div className="visor-caja">
+        <div className="visor-marco">
+          {foto.url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={foto.id} src={foto.url} alt={foto.bib ? `Dorsal ${foto.bib}` : "Foto"} />
+          ) : (
+            <span style={{ color: "rgba(255,255,255,.6)" }}>Esta foto ya no está disponible.</span>
+          )}
         </div>
 
-        <button className="btn btn-sm" onClick={bajar} disabled={bajando}>
-          <Download /> {bajando ? "Preparando" : "Descargar"}
-        </button>
-        <button
-          className="btn btn-sm peligro"
-          onClick={() => {
-            alBorrar(foto.id);
-            cerrar();
-          }}
-        >
-          <Trash2 /> Eliminar
-        </button>
+        <div className="visor-pie">
+          <div className="visor-datos">
+            <b>
+              {foto.bib ? `Dorsal ${foto.bib.split(",")[0]}` : "Sin dorsal"}
+              {" · "}
+              {indice + 1} de {fotos.length}
+            </b>
+            <span>
+              <ScanFace style={{ width: 12, height: 12, verticalAlign: -1, marginRight: 4 }} />
+              {foto.caras} {foto.caras === 1 ? "cara" : "caras"}
+              {foto.ventas > 0 &&
+                ` · vendida ${foto.ventas} ${foto.ventas === 1 ? "vez" : "veces"}`}
+            </span>
+          </div>
+
+          <button
+            className="btn btn-sm"
+            onClick={bajar}
+            disabled={bajando}
+            data-tip="Baja el original, sin marca de agua"
+          >
+            <Download /> {bajando ? "Preparando" : "Descargar"}
+          </button>
+          <button
+            className="btn btn-sm peligro"
+            onClick={() => {
+              alBorrar(foto.id);
+              cerrar();
+            }}
+            data-tip="El comprador que ya la pagó la conserva"
+          >
+            <Trash2 /> Eliminar
+          </button>
+        </div>
       </div>
     </div>
   );

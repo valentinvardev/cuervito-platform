@@ -130,6 +130,7 @@ export function Soltador({ eventId, maxBytes }: { eventId: string; maxBytes: num
     <>
       <div
         className={`soltar ${encima ? "encima" : ""}`}
+        data-tip="JPG, PNG o WebP. Podés soltar una carpeta entera."
         role="button"
         tabIndex={0}
         onClick={() => entrada.current?.click()}
