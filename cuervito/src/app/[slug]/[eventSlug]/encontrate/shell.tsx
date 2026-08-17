@@ -210,19 +210,30 @@ function Adentro({
   return (
     <div className="et" data-carrito={open ? "1" : ""}>
       <header className="et-top">
+        {/* Si subió su logo, va SOLO el logo. El avatar con el nombre y la
+            dirección es un logo provisional —lo que ponemos mientras no tiene
+            el suyo— y mostrar los dos juntos son dos marcas de la misma persona
+            compitiendo, donde la de verdad pierde contra tres líneas de texto. */}
         <Link href={`/${photographer.slug}`} className="et-marca">
-          <span className="et-av">
-            {photographer.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={photographer.avatarUrl} alt="" />
-            ) : (
-              photographer.initials
-            )}
-          </span>
-          <span className="et-quien">
-            <b>{photographer.name}</b>
-            <span>encontrate.app/{photographer.slug}</span>
-          </span>
+          {photographer.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="et-logo" src={photographer.logoUrl} alt={photographer.name} />
+          ) : (
+            <>
+              <span className="et-av">
+                {photographer.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={photographer.avatarUrl} alt="" />
+                ) : (
+                  photographer.initials
+                )}
+              </span>
+              <span className="et-quien">
+                <b>{photographer.name}</b>
+                <span>encontrate.app/{photographer.slug}</span>
+              </span>
+            </>
+          )}
         </Link>
 
         <div className="et-carrito">

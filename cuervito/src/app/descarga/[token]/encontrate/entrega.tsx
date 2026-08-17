@@ -16,7 +16,14 @@ import { Velo } from "./velo";
 import { Visor } from "./visor";
 
 type Foto = { id: string; filename: string; bibNumbers: string | null; previewUrl: string };
-type Fotografo = { nombre: string; slug: string; avatar: string | null; iniciales: string };
+type Fotografo = {
+  nombre: string;
+  slug: string;
+  avatar: string | null;
+  /** Su logo, si lo subió. Cuando está, reemplaza al avatar y al nombre. */
+  logo: string | null;
+  iniciales: string;
+};
 
 /**
  * La entrega: lo que ve el atleta después de pagar.
@@ -117,22 +124,32 @@ export function Entrega({
           una persona: si acá no está, la entrega se lee como de un sistema. */}
       <header className="et-top">
         <Link href={`/${fotografo.slug}`} className="et-marca">
-          <span className="et-av">
-            {fotografo.avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={fotografo.avatar} alt="" />
-            ) : (
-              fotografo.iniciales
-            )}
-          </span>
-          <span className="et-quien">
-            <b>{fotografo.nombre}</b>
-            <span>encontrate.app/{fotografo.slug}</span>
-          </span>
+          {/* Con logo propio va sólo el logo: el avatar con el nombre y la
+              dirección es el logo provisional, el que ponemos mientras no tiene
+              el suyo. */}
+          {fotografo.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="et-logo" src={fotografo.logo} alt={fotografo.nombre} />
+          ) : (
+            <>
+              <span className="et-av">
+                {fotografo.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={fotografo.avatar} alt="" />
+                ) : (
+                  fotografo.iniciales
+                )}
+              </span>
+              <span className="et-quien">
+                <b>{fotografo.nombre}</b>
+                <span>encontrate.app/{fotografo.slug}</span>
+              </span>
+            </>
+          )}
         </Link>
 
-        <Link href={`/${fotografo.slug}`} className="et-btn et-btn-sm eg-volver">
-          <ArrowLeft /> Ver más fotos
+        <Link href={`/${fotografo.slug}`} className="et-btn eg-volver">
+          <ArrowLeft /> Ver más
         </Link>
       </header>
 

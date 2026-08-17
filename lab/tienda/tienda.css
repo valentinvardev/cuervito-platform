@@ -24,10 +24,32 @@
   --et-radio: 14px;
   --et-radio-chico: 10px;
 
+  /* Las mismas dos tipografías del panel. Las variables las define el layout
+     raíz sobre el <html>, así que llegan a cualquier ruta sin importar nada
+     acá; el respaldo del sistema está para el rato en que la fuente todavía
+     no bajó, porque van con display:swap y sin precarga.
+
+     Que la tienda y la entrega usen la misma que el panel importa por una
+     razón concreta: son la misma marca vista por dos personas distintas, y el
+     fotógrafo manda el link de su propia página. Si su panel y su tienda no
+     se parecen, la tienda no parece suya. */
+  --et-sans: var(--fuente-sans), system-ui, sans-serif;
+  --et-display: var(--fuente-display), var(--et-sans);
+
   min-height: 100dvh;
   background: var(--bg-base, #FBFAF8);
   color: var(--text-primary, #12110F);
+  font-family: var(--et-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Unbounded en los títulos grandes y en ningún otro lado. Es una tipografía de
+   cartel: en un párrafo cansa, y en un botón de 13px se ensucia. El interlineado
+   y el tracking van más ajustados que en el cuerpo porque el peso 800 a este
+   tamaño abre demasiado por defecto. */
+.et-hero h1 {
+  font-family: var(--et-display);
+  letter-spacing: -0.045em;
 }
 
 /* ── Barra ───────────────────────────────────────────────────────────────────
@@ -56,6 +78,24 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .et-quien span { display: block; font-size: 11.5px; color: var(--et-tenue); }
+
+/* El logo del fotógrafo, cuando lo subió.
+
+   Cuando está, reemplaza al trío de avatar + nombre + dirección, que no es un
+   adorno: es un logo provisional, lo que ponemos mientras el fotógrafo no tiene
+   el suyo. Mostrar los dos juntos sería poner dos marcas de la misma persona
+   una al lado de la otra, y la de verdad pierde contra tres líneas de texto.
+
+   Se acota por ALTO y no por ancho: los logos vienen apaisados, cuadrados y a
+   veces verticales, y el alto es lo único que la barra no puede ceder. */
+.et-logo {
+  display: block;
+  max-height: 34px; max-width: min(200px, 45vw);
+  width: auto; object-fit: contain;
+}
+@media (max-width: 480px) {
+  .et-logo { max-height: 30px; max-width: 40vw; }
+}
 
 /* ── Botones ─────────────────────────────────────────────────────────────────
    Rectangulares con las esquinas redondeadas, no cápsulas. La cápsula funciona

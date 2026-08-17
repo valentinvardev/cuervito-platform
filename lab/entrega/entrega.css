@@ -94,8 +94,9 @@
 .eg-tilde svg { width: 30px; height: 30px; }
 
 .eg-velo h1 {
-  font-size: clamp(22px, 4vw, 30px);
-  font-weight: 800; letter-spacing: -0.03em; line-height: 1.1;
+  font-family: var(--et-display);
+  font-size: clamp(20px, 3.6vw, 27px);
+  font-weight: 800; letter-spacing: -0.045em; line-height: 1.12;
 }
 .eg-velo p { font-size: 14px; color: var(--et-tenue, rgba(18,17,15,.55)); line-height: 1.5; }
 
@@ -109,9 +110,13 @@
   color: var(--ok-fuerte, #1E7A4D);
 }
 .eg-hero-i svg { width: 26px; height: 26px; }
+/* Un punto más chico que el de la tienda: Unbounded en 800 ocupa bastante más
+   que la del sistema, y "Listo, Lucía. Son tuyas." con el nombre largo de
+   alguien se iba a tres renglones en el teléfono. */
 .eg-hero h1 {
-  font-size: clamp(28px, 4.8vw, 46px);
-  font-weight: 800; letter-spacing: -0.035em; line-height: 1.04;
+  font-family: var(--et-display);
+  font-size: clamp(25px, 4.2vw, 40px);
+  font-weight: 800; letter-spacing: -0.045em; line-height: 1.06;
   text-wrap: balance; max-width: 18ch;
 }
 .eg-hero p {
@@ -137,21 +142,23 @@
 
 /* Volver a la página del fotógrafo.
 
-   Va con el alto normal del botón y no con el chico: al lado de un avatar de
-   32 y dos renglones de texto, un botón de 36 se lee como un detalle y no
-   como la salida.
+   Alto 44 en todos lados, que es el mínimo que se acierta con el pulgar sin
+   apuntar. Lo tenía en 36 primero y en 42 después, y en el teléfono seguía
+   siendo chico: al lado de un avatar y dos renglones de texto, un botón por
+   debajo de 44 se lee como un adorno.
 
-   En pantalla angosta se queda sólo la flecha. El gap del botón se apaga: con
-   el texto escondido pero el gap puesto, el ícono queda corrido a la
-   izquierda dentro de un botón cuadrado, que es lo que se veía mal. */
+   Y conserva el texto en pantalla angosta. Lo había dejado como ícono suelto
+   de 42x42 para ahorrar ancho, pero una flecha sola arriba a la derecha no
+   dice a dónde lleva: hay que adivinar que vuelve a la página del fotógrafo.
+   El nombre de al lado se recorta con puntos suspensivos, que es lo que
+   conviene sacrificar. */
 .eg-volver {
   flex-shrink: 0; margin-left: auto;
-  height: 42px; padding: 0 16px;
+  height: 44px; padding: 0 16px;
 }
 
 @media (max-width: 620px) {
-  .eg-volver { width: 42px; padding: 0; gap: 0; }
-  .eg-volver span { display: none; }
+  .eg-volver { padding: 0 13px; font-size: 13.5px; }
 }
 
 @media (max-width: 560px) {

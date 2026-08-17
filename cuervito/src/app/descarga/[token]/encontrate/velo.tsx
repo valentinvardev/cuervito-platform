@@ -29,6 +29,23 @@ export function Velo({ alTerminar }: { alTerminar: () => void }) {
   const [saliendo, setSaliendo] = useState(false);
 
   useEffect(() => {
+    // El ?fresh=1 se saca de la URL apenas arranca, con replaceState para no
+    // agregar una entrada al historial.
+    //
+    // Sin esto, la animación se repetía cada vez que el comprador recargaba o
+    // volvía con el botón de atrás. La primera vez es una confirmación; la
+    // segunda es una pantalla que tapa las fotos durante tres segundos por
+    // nada, y encima vuelve a preguntar algo que ya está contestado.
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has("fresh")) {
+        url.searchParams.delete("fresh");
+        window.history.replaceState(null, "", url.toString());
+      }
+    } catch {
+      // Si el historial está bloqueado, la animación se repite: molesto, no roto.
+    }
+
     const relojes: ReturnType<typeof setTimeout>[] = [];
     relojes.push(setTimeout(() => setEstado("ok"), CONFIRMANDO_MS));
     relojes.push(setTimeout(() => setSaliendo(true), CONFIRMANDO_MS + APROBADO_MS));

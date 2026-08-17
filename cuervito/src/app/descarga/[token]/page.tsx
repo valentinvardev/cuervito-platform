@@ -39,6 +39,7 @@ export default async function DescargaPage(props: {
           name: true,
           slug: true,
           image: true,
+          logoKey: true,
         },
       },
       event: { select: { name: true, slug: true } },
@@ -113,6 +114,7 @@ export default async function DescargaPage(props: {
             nombre: sale.seller.name ?? "El fotógrafo",
             slug: sale.seller.slug ?? "",
             avatar: await resolveAvatarUrl(sale.seller.image),
+            logo: sale.seller.logoKey ? await resolveMediaUrl(sale.seller.logoKey) : null,
             iniciales:
               (sale.seller.name ?? "?")
                 .split(" ")
