@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
+import { resolveAvatarUrl } from "~/server/avatar";
 import { resolveMediaUrl } from "~/server/media";
 
 import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
@@ -49,6 +50,7 @@ export default async function DescargaPage(props: {
               filename: true,
               storageKey: true,
               previewKey: true,
+              previewCleanKey: true,
               bibNumbers: true,
             },
           },
@@ -84,9 +86,14 @@ export default async function DescargaPage(props: {
         id: p.id,
         filename: p.filename,
         bibNumbers: p.bibNumbers,
-        previewUrl: p.previewKey
-          ? await resolveMediaUrl(p.previewKey)
-          : await getPresignedDownloadUrl(p.storageKey, { expiresIn: 60 * 30 }),
+        // La LIMPIA primero. previewKey es la que lleva marca de agua, que es
+        // para la vitrina; acá el comprador ya pagó y estaba viendo su compra
+        // marcada como si todavía tuviera que decidir.
+        previewUrl: p.previewCleanKey
+          ? await resolveMediaUrl(p.previewCleanKey)
+          : p.previewKey
+            ? await resolveMediaUrl(p.previewKey)
+            : await getPresignedDownloadUrl(p.storageKey, { expiresIn: 60 * 30 }),
       })),
   );
 
@@ -105,7 +112,7 @@ export default async function DescargaPage(props: {
           fotografo={{
             nombre: sale.seller.name ?? "El fotógrafo",
             slug: sale.seller.slug ?? "",
-            avatar: sale.seller.image,
+            avatar: await resolveAvatarUrl(sale.seller.image),
             iniciales:
               (sale.seller.name ?? "?")
                 .split(" ")
@@ -115,15 +122,6 @@ export default async function DescargaPage(props: {
                 .join("") || "?",
           }}
           fotos={photos}
-          vence={
-            sale.downloadTokenExpires
-              ? sale.downloadTokenExpires.toLocaleDateString("es-AR", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })
-              : null
-          }
           recienPagado={fresh}
         />
       </div>

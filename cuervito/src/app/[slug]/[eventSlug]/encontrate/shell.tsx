@@ -475,9 +475,9 @@ function Adentro({
         </a>
       </footer>
 
-      {viendo !== null && trozo[viendo] && (
+      {viendo !== null && filtradas[viendo] && (
         <Visor
-          fotos={trozo}
+          fotos={filtradas}
           indice={viendo}
           enCarrito={isInCart}
           precio={pesos(precioCent)}
@@ -487,7 +487,20 @@ function Adentro({
         />
       )}
 
-      <Carrito eventId={event.id} promo={promo} hayCodigos={hayCodigos} />
+      <Carrito
+        eventId={event.id}
+        promo={promo}
+        hayCodigos={hayCodigos}
+        alVer={(id) => {
+          // El visor trabaja sobre la página visible de la grilla, así que si la
+          // foto quedó fuera de esa tanda hay que estirarla hasta alcanzarla:
+          // si no, tocar una miniatura del carrito no haría nada.
+          const i = filtradas.findIndex((f) => f.id === id);
+          if (i < 0) return;
+          if (i >= visibles) setVisibles(Math.ceil((i + 1) / TANDA) * TANDA);
+          setViendo(i);
+        }}
+      />
     </div>
   );
 }

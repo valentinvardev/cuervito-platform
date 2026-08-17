@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   Check,
   CircleCheck,
-  Clock,
   Download,
   FileArchive,
   Share2,
@@ -14,6 +13,7 @@ import { useEffect, useState } from "react";
 
 import { compartirLink, esIos, guardarConHojaDeCompartir } from "../guardar-ios";
 import { Velo } from "./velo";
+import { Visor } from "./visor";
 
 type Foto = { id: string; filename: string; bibNumbers: string | null; previewUrl: string };
 type Fotografo = { nombre: string; slug: string; avatar: string | null; iniciales: string };
@@ -37,7 +37,6 @@ export function Entrega({
   evento,
   fotografo,
   fotos,
-  vence,
   recienPagado,
 }: {
   token: string;
@@ -45,7 +44,6 @@ export function Entrega({
   evento: string;
   fotografo: Fotografo;
   fotos: Foto[];
-  vence: string | null;
   recienPagado: boolean;
 }) {
   const [velo, setVelo] = useState(recienPagado);
@@ -54,6 +52,8 @@ export function Entrega({
   const [ios, setIos] = useState(false);
   const [avisoCompartir, setAvisoCompartir] = useState<string | null>(null);
   const [manteneApretado, setManteneApretado] = useState(false);
+  const [avisoZip, setAvisoZip] = useState(false);
+  const [viendo, setViendo] = useState<number | null>(null);
 
   // En un efecto y no al renderizar: el servidor no tiene navigator, y decidirlo
   // durante el render dejaría el HTML del servidor distinto al del cliente.
@@ -90,6 +90,10 @@ export function Entrega({
   }
 
   function descargarTodo() {
+    // El aviso del .zip se muestra ACÁ y no de entrada. Puesto siempre, es una
+    // advertencia sobre algo que el comprador todavía no hizo y que quizás no
+    // vaya a hacer; puesto al apretar, llega justo cuando le sirve.
+    if (ios) setAvisoZip(true);
     setZipEnCurso(true);
     // El zip lo arma el servidor y puede tardar: se navega y el navegador se
     // encarga. Con fetch + blob habría que tener los 80 MB en memoria antes de
@@ -159,14 +163,12 @@ export function Entrega({
           </button>
         </section>
 
-        {/* En iOS el .zip cae en Archivos y no en Fotos. Decirlo antes evita el
-            "lo descargué y no lo encuentro". */}
-        {ios && (
+        {avisoZip && (
           <div className="eg-vence">
             <Download />
             <span>
-              En iPhone, el <b>.zip</b> se guarda en la app Archivos. Para que queden en tu carrete,
-              descargalas de a una desde abajo.
+              En iPhone el <b>.zip</b> se guarda en la app Archivos, no en tu carrete. Si las
+              querés en Fotos, descargalas de a una desde abajo.
             </span>
           </div>
         )}
@@ -181,20 +183,23 @@ export function Entrega({
           </div>
         )}
 
-        {vence && (
-          <div className="eg-vence">
-            <Clock />
-            <span>
-              Este link funciona hasta el <b>{vence}</b>. Después escribinos y te damos uno nuevo.
-            </span>
-          </div>
-        )}
-
         <section className="et-grilla">
-          {fotos.map((f) => {
+          {fotos.map((f, i) => {
             const lista = bajadas.has(f.id);
             return (
-              <div className="et-foto" key={f.id}>
+              <div
+                className="et-foto"
+                key={f.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => setViendo(i)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setViendo(i);
+                  }
+                }}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={f.previewUrl} alt="" loading="lazy" />
                 {f.bibNumbers && (
@@ -203,7 +208,11 @@ export function Entrega({
                 <button
                   className="eg-baja"
                   data-listo={lista ? "1" : ""}
-                  onClick={() => void descargarUna(f)}
+                  onClick={(e) => {
+                    // Sin esto, descargar abre además la foto en grande.
+                    e.stopPropagation();
+                    void descargarUna(f);
+                  }}
                   aria-label={`Descargar ${f.filename}`}
                 >
                   {lista ? <Check /> : <Download />}
@@ -214,6 +223,17 @@ export function Entrega({
           })}
         </section>
       </div>
+
+      {viendo !== null && (
+        <Visor
+          fotos={fotos}
+          indice={viendo}
+          descargadas={bajadas}
+          alCerrar={() => setViendo(null)}
+          alIr={setViendo}
+          alDescargar={descargarUna}
+        />
+      )}
 
       <footer className="et-pie">
         <span>Guardá este link: podés volver a descargarlas mientras esté vigente.</span>

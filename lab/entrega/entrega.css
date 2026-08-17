@@ -135,13 +135,23 @@
 .eg-acciones-t b { display: block; font-size: 14.5px; font-weight: 600; letter-spacing: -0.015em; }
 .eg-acciones-t span { display: block; font-size: 12.5px; color: var(--et-tenue, rgba(18,17,15,.55)); }
 
-/* Volver a la página del fotógrafo. En pantalla angosta se queda sólo la
-   flecha: el nombre de arriba ya dice a dónde vuelve. */
-.eg-volver { flex-shrink: 0; margin-left: auto; }
+/* Volver a la página del fotógrafo.
+
+   Va con el alto normal del botón y no con el chico: al lado de un avatar de
+   32 y dos renglones de texto, un botón de 36 se lee como un detalle y no
+   como la salida.
+
+   En pantalla angosta se queda sólo la flecha. El gap del botón se apaga: con
+   el texto escondido pero el gap puesto, el ícono queda corrido a la
+   izquierda dentro de un botón cuadrado, que es lo que se veía mal. */
+.eg-volver {
+  flex-shrink: 0; margin-left: auto;
+  height: 42px; padding: 0 16px;
+}
 
 @media (max-width: 620px) {
+  .eg-volver { width: 42px; padding: 0; gap: 0; }
   .eg-volver span { display: none; }
-  .eg-volver { width: 36px; padding: 0; }
 }
 
 @media (max-width: 560px) {

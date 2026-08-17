@@ -28,10 +28,13 @@ export function Carrito({
   eventId,
   promo,
   hayCodigos,
+  alVer,
 }: {
   eventId: string;
   promo: Promo | null;
   hayCodigos: boolean;
+  /** Abre la foto en grande. La pasa la tienda, que es la que tiene el visor. */
+  alVer?: (photoId: string) => void;
 }) {
   const router = useRouter();
   const { items, remove, closeCart, subtotalCents } = useCart();
@@ -124,10 +127,17 @@ export function Carrito({
           ) : paso === "lista" ? (
             items.map((i) => (
               <div className="et-linea" key={i.photoId}>
-                <div className="et-linea-mini">
+                {/* La miniatura abre la foto: en el carrito es donde uno duda
+                    si eligió la que quería, y 58px no alcanzan para saberlo. */}
+                <button
+                  type="button"
+                  className="et-linea-mini"
+                  onClick={() => alVer?.(i.photoId)}
+                  aria-label="Ver la foto en grande"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={i.previewUrl} alt="" />
-                </div>
+                </button>
                 <div className="et-linea-t">
                   <b>Foto digital</b>
                   <span>{pesos(i.priceCents)}</span>
