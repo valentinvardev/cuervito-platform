@@ -22,7 +22,7 @@
   --et-linea-fuerte: rgba(18, 17, 15, .18);
   --et-tenue: rgba(18, 17, 15, .55);
   --et-radio: 14px;
-  --et-radio-chico: 9px;
+  --et-radio-chico: 10px;
 
   min-height: 100dvh;
   background: var(--bg-base, #FBFAF8);
@@ -43,7 +43,7 @@
 }
 .et-marca { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .et-av {
-  width: 32px; height: 32px; border-radius: 50%;
+  width: 32px; height: 32px; border-radius: 9px;
   flex-shrink: 0; overflow: hidden;
   display: grid; place-items: center;
   background: var(--text-primary, #12110F); color: var(--bg-base, #FBFAF8);
@@ -58,12 +58,16 @@
 .et-quien span { display: block; font-size: 11.5px; color: var(--et-tenue); }
 
 /* ── Botones ─────────────────────────────────────────────────────────────────
+   Rectangulares con las esquinas redondeadas, no cápsulas. La cápsula funciona
+   para una etiqueta de estado, que es un dato; para una acción, el rectángulo
+   se lee como una superficie que se aprieta.
+
    Un solo botón lleno por pantalla: el que cierra la compra. El resto es
    contorno. Con tres botones llenos ninguno es el importante. */
 .et-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  height: 40px; padding: 0 18px;
-  border-radius: 100px;
+  height: 42px; padding: 0 18px;
+  border-radius: 11px;
   border: 1px solid var(--et-linea-fuerte);
   background: transparent;
   color: var(--text-primary, #12110F);
@@ -90,16 +94,16 @@
   color: #FFFFFF;
 }
 
-.et-btn-sm { height: 34px; padding: 0 14px; font-size: 13px; }
-.et-btn-icono { width: 40px; padding: 0; }
+.et-btn-sm { height: 36px; padding: 0 14px; font-size: 13px; border-radius: 9px; }
+.et-btn-icono { width: 42px; padding: 0; }
 
 /* El contador va ENCIMA del botón del carrito y no al lado: al lado se lee
    como otro elemento y en el teléfono no entra. */
 .et-carrito { position: relative; margin-left: auto; flex-shrink: 0; }
 .et-carrito-n {
-  position: absolute; top: -5px; right: -5px;
-  min-width: 19px; height: 19px; padding: 0 5px;
-  border-radius: 100px;
+  position: absolute; top: -6px; right: -6px;
+  min-width: 20px; height: 20px; padding: 0 5px;
+  border-radius: 7px;
   display: grid; place-items: center;
   background: var(--accent, #F0410F); color: #FFFFFF;
   font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
@@ -113,7 +117,7 @@
 /* ── Encabezado del evento ───────────────────────────────────────────────── */
 .et-in { max-width: 1180px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); }
 
-.et-hero { padding: clamp(28px, 5vw, 56px) 0 clamp(20px, 3vw, 32px); }
+.et-hero { padding: clamp(28px, 5vw, 52px) 0 clamp(18px, 3vw, 28px); }
 .et-hero h1 {
   font-size: clamp(30px, 5.4vw, 56px);
   font-weight: 800;
@@ -140,90 +144,163 @@
   font-size: 17px; font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+.et-hero-pie i {
+  width: 3px; height: 3px; border-radius: 50%;
+  background: currentColor; align-self: center;
+}
 
 /* ── Buscar ──────────────────────────────────────────────────────────────────
-   Las dos formas de encontrarse, una al lado de la otra y con el mismo peso.
-   Esconder la selfie atrás de un botón chico es esconder lo único que
-   distingue a esto de una carpeta compartida. */
+   El dorsal es un CAMPO, no un botón que revela un campo. Es lo primero que
+   prueba el que llega con su número en la mano, y esconderlo atrás de un click
+   convierte la acción más común en dos pasos. La selfie va abajo, como segunda
+   vía y con su propio peso.
+
+   Cuando el evento no lee dorsales —porque nadie llevaba— el campo no existe:
+   ofrecerlo sería mandar a escribir un número que no va a encontrar nada
+   nunca. Ahí la selfie ocupa el bloque entero y deja de ser la alternativa. */
 .et-buscar {
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  padding: 14px;
+  display: grid; gap: 13px;
+  padding: clamp(16px, 3vw, 22px);
   border: 1px solid var(--et-linea);
   border-radius: var(--et-radio);
   background: var(--bg-surface, #FFFFFF);
 }
-.et-buscar-op {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px;
-  border: 1px solid transparent;
-  border-radius: var(--et-radio-chico);
-  background: transparent;
-  cursor: pointer; text-align: left;
-  font-family: inherit; color: inherit;
-  transition: background 140ms ease, border-color 140ms ease;
-}
-.et-buscar-op:hover {
-  background: color-mix(in srgb, var(--text-primary, #12110F) 4%, transparent);
-  border-color: var(--et-linea);
-}
-.et-buscar-i {
-  width: 40px; height: 40px; border-radius: 50%;
-  display: grid; place-items: center; flex-shrink: 0;
-  background: color-mix(in srgb, var(--text-primary, #12110F) 7%, transparent);
-}
-.et-buscar-i svg { width: 19px; height: 19px; }
-.et-buscar-op b { display: block; font-size: 14.5px; font-weight: 600; letter-spacing: -0.015em; }
-.et-buscar-op span { display: block; font-size: 12.5px; color: var(--et-tenue); margin-top: 2px; }
+.et-buscar-tit { display: grid; gap: 3px; }
+.et-buscar-tit b { font-size: 15.5px; font-weight: 600; letter-spacing: -0.02em; }
+.et-buscar-tit span { font-size: 13px; color: var(--et-tenue); }
+
+/* El campo y su botón, pegados: son una sola acción. */
+.et-dorsal { display: flex; gap: 8px; }
+.et-dorsal .et-campo { flex: 1; }
+.et-dorsal .et-campo input { font-size: 16.5px; font-weight: 500; }
 
 .et-campo {
-  display: flex; align-items: center; gap: 4px;
-  height: 44px; padding: 0 14px;
+  display: flex; align-items: center; gap: 6px;
+  height: 46px; padding: 0 15px;
   border: 1px solid var(--et-linea-fuerte);
-  border-radius: 100px;
+  border-radius: 11px;
   background: var(--bg-base, #FBFAF8);
 }
 .et-campo:focus-within {
   border-color: var(--text-primary, #12110F);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-primary, #12110F) 8%, transparent);
 }
-.et-campo > span { color: var(--et-tenue); font-size: 15px; }
+.et-campo > span { color: var(--et-tenue); font-size: 15px; flex-shrink: 0; }
 .et-campo input {
   flex: 1; min-width: 0;
   border: 0; background: none; outline: none;
   font-family: inherit; font-size: 15px; color: inherit;
   font-variant-numeric: tabular-nums;
 }
-.et-dorsal { display: flex; align-items: center; gap: 8px; padding: 8px; }
-.et-dorsal .et-campo { flex: 1; }
 
-@media (max-width: 620px) {
-  .et-buscar { grid-template-columns: minmax(0, 1fr); }
+/* La línea con el separador encima. Sin ella las dos vías quedan apiladas y la
+   segunda se lee como un paso siguiente, no como otra opción. */
+.et-o {
+  display: flex; align-items: center; gap: 12px;
+  color: var(--et-tenue); font-size: 11.5px;
+  text-transform: uppercase; letter-spacing: 0.12em;
+}
+.et-o::before, .et-o::after {
+  content: ""; flex: 1; height: 1px; background: var(--et-linea);
+}
+
+/* La selfie: bloque tocable entero, no un botón chico al lado de un ícono. */
+.et-selfie {
+  display: flex; align-items: center; gap: 14px;
+  width: 100%; padding: 13px;
+  border: 1px solid var(--et-linea);
+  border-radius: var(--et-radio-chico);
+  background: transparent;
+  cursor: pointer; text-align: left;
+  font-family: inherit; color: inherit;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.et-selfie:hover {
+  background: color-mix(in srgb, var(--text-primary, #12110F) 4%, transparent);
+  border-color: var(--et-linea-fuerte);
+}
+.et-selfie:disabled { opacity: .6; cursor: default; }
+.et-selfie-i {
+  width: 44px; height: 44px; border-radius: 11px;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: color-mix(in srgb, var(--text-primary, #12110F) 7%, transparent);
+}
+.et-selfie-i svg { width: 21px; height: 21px; }
+.et-selfie-t { flex: 1; min-width: 0; }
+.et-selfie-t b { display: block; font-size: 14.5px; font-weight: 600; letter-spacing: -0.015em; }
+.et-selfie-t span { display: block; font-size: 12.5px; color: var(--et-tenue); margin-top: 2px; }
+
+/* Qué está filtrando ahora mismo, y cómo salir. Sin esto, alguien que buscó su
+   dorsal y encontró tres fotos cree que el evento tiene tres fotos. */
+.et-filtrando {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-top: 14px; padding: 11px 14px;
+  border-radius: var(--et-radio-chico);
+  background: color-mix(in srgb, var(--text-primary, #12110F) 5%, transparent);
+  font-size: 13.5px;
+}
+.et-filtrando b { font-weight: 600; }
+.et-filtrando .et-btn { margin-left: auto; }
+@media (max-width: 560px) {
+  .et-filtrando .et-btn { margin-left: 0; width: 100%; }
 }
 
 /* ── Aviso de descuento ──────────────────────────────────────────────────────
    Arriba de la grilla y no adentro del carrito: enterarse de que llevando
-   cinco salen más baratas DESPUÉS de haber elegido tres no sirve de nada. */
+   cinco salen más baratas DESPUÉS de haber elegido tres no sirve de nada.
+
+   El código va en su propia caja y se copia con un click. Un código que hay
+   que seleccionar con el mouse y transcribir se transcribe mal, y un cupón mal
+   tipeado se lee como que el descuento era mentira. */
 .et-promo {
-  display: flex; align-items: center; gap: 12px;
-  margin-top: 14px; padding: 13px 16px;
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; gap: 16px;
+  margin-top: 16px; padding: 16px 18px;
   border-radius: var(--et-radio);
-  border: 1px dashed color-mix(in srgb, var(--accent, #F0410F) 45%, transparent);
-  background: color-mix(in srgb, var(--accent, #F0410F) 6%, transparent);
-  font-size: 13.5px; line-height: 1.45;
+  background: var(--text-primary, #12110F);
+  color: var(--bg-base, #FBFAF8);
 }
-.et-promo svg { width: 17px; height: 17px; color: var(--accent, #F0410F); flex-shrink: 0; }
-.et-promo b { font-weight: 600; }
+/* Un resplandor del color de marca en la esquina. Es lo único con color de la
+   página fuera de las fotos, y por eso funciona: marca lo que hay que mirar. */
+.et-promo::before {
+  content: ""; position: absolute; right: -60px; top: -90px;
+  width: 260px; height: 260px; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent, #F0410F) 55%, transparent), transparent 68%);
+  pointer-events: none;
+}
+.et-promo-i {
+  position: relative;
+  width: 40px; height: 40px; border-radius: 11px;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--accent, #F0410F); color: #FFFFFF;
+}
+.et-promo-i svg { width: 19px; height: 19px; }
+.et-promo-t { position: relative; flex: 1; min-width: 0; line-height: 1.35; }
+.et-promo-t b { display: block; font-size: 15px; font-weight: 600; letter-spacing: -0.015em; }
+.et-promo-t span { display: block; font-size: 12.5px; opacity: .68; margin-top: 2px; }
+
 .et-promo-cod {
-  margin-left: auto; flex-shrink: 0;
-  padding: 5px 11px; border-radius: 7px;
-  background: var(--text-primary, #12110F); color: var(--bg-base, #FBFAF8);
-  font-size: 12.5px; font-weight: 600; letter-spacing: 0.06em;
-  font-family: ui-monospace, monospace;
+  position: relative;
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  border: 1px dashed color-mix(in srgb, var(--bg-base, #FBFAF8) 42%, transparent);
+  background: color-mix(in srgb, var(--bg-base, #FBFAF8) 10%, transparent);
+  color: inherit; cursor: pointer;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13.5px; font-weight: 600; letter-spacing: 0.08em;
+  transition: background 140ms ease, border-color 140ms ease;
 }
-@media (max-width: 560px) {
-  .et-promo { flex-wrap: wrap; }
-  .et-promo-cod { margin-left: 0; }
+.et-promo-cod:hover {
+  background: color-mix(in srgb, var(--bg-base, #FBFAF8) 18%, transparent);
+  border-color: var(--bg-base, #FBFAF8);
+}
+.et-promo-cod svg { width: 14px; height: 14px; opacity: .7; }
+
+@media (max-width: 620px) {
+  .et-promo { flex-wrap: wrap; gap: 12px; }
+  .et-promo-t { flex-basis: calc(100% - 56px); }
+  .et-promo-cod { width: 100%; justify-content: center; }
 }
 
 /* ── Grilla ──────────────────────────────────────────────────────────────────
@@ -254,19 +331,18 @@
 }
 .et-foto:hover img { transform: scale(1.035); }
 
-/* El velo aparece con los controles y no antes: la foto tiene que verse limpia
-   mientras se recorre. */
+/* El velo va siempre, no en hover: el botón de comprar también va siempre y
+   necesita fondo donde apoyarse. Sobre una foto clara, un botón blanco sin
+   velo desaparece. */
 .et-foto::after {
   content: ""; position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(8, 7, 6, .55), transparent 42%);
-  opacity: 0; transition: opacity 200ms ease;
+  background: linear-gradient(to top, rgba(8, 7, 6, .5), transparent 40%);
   pointer-events: none;
 }
-.et-foto:hover::after, .et-foto.et-elegida::after { opacity: 1; }
 
 .et-foto-dorsal {
   position: absolute; top: 8px; left: 8px; z-index: 2;
-  padding: 4px 9px; border-radius: 100px;
+  padding: 4px 9px; border-radius: 7px;
   background: rgba(250, 250, 248, .92);
   backdrop-filter: blur(6px);
   color: #12110F;
@@ -274,32 +350,38 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Siempre visible, no en hover.
+
+   Escondido hasta pasar el mouse se pierden dos cosas: en el teléfono no hay
+   hover y hay que descubrirlo tocando, y en escritorio el que recorre la
+   grilla no tiene forma de saber que las fotos se compran de a una sin abrir
+   ninguna. Es el botón que hace la venta: no puede depender de un gesto. */
 .et-mas {
   position: absolute; right: 8px; bottom: 8px; z-index: 2;
-  width: 36px; height: 36px; border-radius: 50%;
-  display: grid; place-items: center;
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 12px;
+  border-radius: 9px;
   border: 0; cursor: pointer;
   background: rgba(250, 250, 248, .94);
   color: #12110F;
   backdrop-filter: blur(8px);
-  opacity: 0; transform: translateY(6px) scale(.9);
-  transition: opacity 180ms ease, transform 240ms cubic-bezier(.2, .8, .3, 1), background 140ms ease;
+  font-family: inherit; font-size: 12.5px; font-weight: 600;
+  letter-spacing: -0.01em;
+  box-shadow: 0 2px 10px rgba(8, 7, 6, .18);
+  transition: background 140ms ease, transform 140ms ease;
 }
-.et-foto:hover .et-mas { opacity: 1; transform: none; }
-.et-mas:hover { background: #FFFFFF; }
-.et-mas svg { width: 17px; height: 17px; }
+.et-mas:hover { background: #FFFFFF; transform: translateY(-1px); }
+.et-mas:active { transform: none; }
+.et-mas svg { width: 14px; height: 14px; }
 
 .et-foto.et-elegida { outline: 2px solid var(--accent, #F0410F); outline-offset: -2px; }
-.et-foto.et-elegida .et-mas {
-  opacity: 1; transform: none;
-  background: var(--accent, #F0410F); color: #FFFFFF;
-}
+.et-foto.et-elegida .et-mas { background: var(--accent, #F0410F); color: #FFFFFF; }
 
-/* Sin hover no hay forma de descubrir el botón, así que en táctil va siempre.
-   Es la diferencia entre poder comprar y no. */
-@media (hover: none) {
-  .et-mas { opacity: 1; transform: none; }
-  .et-foto::after { opacity: 1; }
+/* En pantallas angostas la etiqueta no entra al lado del dorsal: queda el
+   ícono, que con el recuadro de elegida ya se entiende. */
+@media (max-width: 420px) {
+  .et-mas { padding: 0; width: 32px; justify-content: center; }
+  .et-mas span { display: none; }
 }
 
 /* ── Vacío ───────────────────────────────────────────────────────────────── */
@@ -309,7 +391,7 @@
   padding: 64px 20px; text-align: center;
 }
 .et-vacio-i {
-  width: 46px; height: 46px; border-radius: 50%;
+  width: 46px; height: 46px; border-radius: 12px;
   display: grid; place-items: center;
   background: color-mix(in srgb, var(--text-primary, #12110F) 6%, transparent);
 }
@@ -366,26 +448,26 @@
 .et-visor-nav, .et-visor-x {
   position: fixed;
   display: grid; place-items: center;
-  border: 0; cursor: pointer; border-radius: 50%;
+  border: 0; cursor: pointer; border-radius: 11px;
   background: rgba(255, 255, 255, .12); color: #FFFFFF;
   backdrop-filter: blur(8px);
   transition: background 140ms ease;
 }
 .et-visor-nav:hover, .et-visor-x:hover { background: rgba(255, 255, 255, .24); }
-.et-visor-nav { top: 50%; transform: translateY(-50%); width: 40px; height: 40px; }
+.et-visor-nav { top: 50%; transform: translateY(-50%); width: 42px; height: 42px; }
 .et-visor-nav:disabled { opacity: .25; cursor: default; }
 .et-visor-nav.izq { left: 16px; }
 .et-visor-nav.der { right: 16px; }
-.et-visor-x { top: 16px; right: 16px; width: 36px; height: 36px; }
+.et-visor-x { top: 16px; right: 16px; width: 38px; height: 38px; }
 .et-visor-nav svg { width: 18px; height: 18px; }
 .et-visor-x svg { width: 17px; height: 17px; }
 
 @media (max-width: 720px) {
   .et-visor-caja { width: 100%; max-height: 100%; }
-  .et-visor-nav { width: 34px; height: 34px; }
+  .et-visor-nav { width: 36px; height: 36px; }
   .et-visor-nav.izq { left: 6px; }
   .et-visor-nav.der { right: 6px; }
-  .et-visor-x { top: 8px; right: 8px; width: 32px; height: 32px; }
+  .et-visor-x { top: 8px; right: 8px; width: 34px; height: 34px; }
   .et-visor-datos { width: 100%; margin-right: 0; }
   .et-visor-pie .et-btn { flex: 1; }
 }
@@ -433,7 +515,7 @@
 .et-linea { display: flex; align-items: center; gap: 12px; }
 .et-linea-mini {
   width: 58px; aspect-ratio: 3 / 2;
-  border-radius: 7px; overflow: hidden; flex-shrink: 0;
+  border-radius: 8px; overflow: hidden; flex-shrink: 0;
   background: color-mix(in srgb, var(--text-primary, #12110F) 6%, transparent);
 }
 .et-linea-mini img { width: 100%; height: 100%; object-fit: cover; }
@@ -441,7 +523,7 @@
 .et-linea-t b { display: block; font-size: 13.5px; font-weight: 500; }
 .et-linea-t span { display: block; font-size: 12px; color: var(--et-tenue); }
 .et-quitar {
-  width: 30px; height: 30px; border-radius: 50%;
+  width: 32px; height: 32px; border-radius: 9px;
   display: grid; place-items: center; flex-shrink: 0;
   border: 0; background: none; cursor: pointer;
   color: var(--et-tenue);

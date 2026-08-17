@@ -1,12 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Hash, ImageOff, Plus, ScanSearch, ShoppingBag, Tag, X } from "lucide-react";
+import {
+  Check,
+  Copy,
+  ImageOff,
+  Plus,
+  ScanFace,
+  ScanSearch,
+  ShoppingBag,
+  Tag,
+  X,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { CartProvider, useCart } from "../cart-context";
 import type { PublicDiscount } from "../event-coverage-shell";
-import { SelfieSearchButton } from "../selfie-search";
+import { useBusquedaSelfie } from "../selfie-search";
 import { Carrito } from "./carrito";
 import { elegirPromo } from "./promo";
 import { Visor } from "./visor";
@@ -48,6 +58,25 @@ type Photo = {
 /** Cuántas fotos se dibujan por tanda. */
 const TANDA = 24;
 
+/**
+ * La fecha como la diría una persona: 27 de julio de 2026.
+ *
+ * Llega como ISO desde el servidor. toLocaleDateString con la zona horaria del
+ * navegador correría un día para atrás en Argentina, porque el evento se guarda
+ * a medianoche UTC: se formatea en UTC, que es la fecha que el fotógrafo cargó.
+ */
+function fechaLarga(iso: string | null) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("es-AR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 function pesos(centavos: number) {
   return "$" + Math.round(centavos / 100).toLocaleString("es-AR");
 }
@@ -78,6 +107,8 @@ export function EncontrateShell(props: {
   photos: Photo[];
   discounts?: PublicDiscount[];
   testMode?: boolean;
+  /** Si el evento lee dorsales. Sale de Event.bibDetection. */
+  buscaPorDorsal?: boolean;
 }) {
   return (
     <CartProvider
@@ -96,25 +127,56 @@ function Adentro({
   photos,
   discounts = [],
   testMode,
+  buscaPorDorsal = true,
 }: {
   photographer: Photographer;
   event: EventInfo;
   photos: Photo[];
   discounts?: PublicDiscount[];
   testMode?: boolean;
+  buscaPorDorsal?: boolean;
 }) {
   const { items, add, remove, isInCart, open, openCart } = useCart();
 
-  const [via, setVia] = useState<"nada" | "dorsal">("nada");
   const [dorsal, setDorsal] = useState("");
-  // Sólo se guarda la búsqueda que encontró algo. Las otras variantes
-  // (sin cara, error, cancelada) las informa el propio botón; guardarlas acá
-  // dejaría la grilla filtrada a cero sin que nadie lo haya pedido.
+  // Sólo se guarda la búsqueda que encontró algo. Las otras variantes viajan al
+  // aviso de error: guardar un "no se detectó cara" acá dejaría la grilla en
+  // cero sin que nadie lo haya pedido.
   const [selfie, setSelfie] = useState<string[] | null>(null);
+  const [errorSelfie, setErrorSelfie] = useState<string | null>(null);
   const [visibles, setVisibles] = useState(TANDA);
   const [viendo, setViendo] = useState<number | null>(null);
+  const [copiado, setCopiado] = useState(false);
+
+  const {
+    inputRef: selfieRef,
+    pending: buscandoSelfie,
+    onPick: buscarSelfie,
+    abrir: abrirSelfie,
+  } = useBusquedaSelfie(event.id, (r) => {
+    setVisibles(TANDA);
+    if (r.kind === "ok") {
+      setSelfie(r.photoIds);
+      setDorsal("");
+      setErrorSelfie(
+        r.photoIds.length === 0 ? "No encontramos fotos con tu cara en este evento." : null,
+      );
+    } else if (r.kind === "no-face") {
+      setErrorSelfie("No se ve una cara en esa foto. Probá con una de frente y con buena luz.");
+    } else if (r.kind === "error") {
+      setErrorSelfie(r.message);
+    }
+  });
+
+  function limpiarBusqueda() {
+    setSelfie(null);
+    setDorsal("");
+    setErrorSelfie(null);
+    setVisibles(TANDA);
+  }
 
   const precioCent = Math.round(event.pricePerPhoto * 100);
+  const fecha = fechaLarga(event.eventDate);
   const promo = useMemo(
     () => elegirPromo(discounts, event.pricePerPhoto),
     [discounts, event.pricePerPhoto],
@@ -184,8 +246,8 @@ function Adentro({
       <div className="et-in">
         <section className="et-hero">
           <div className="et-hero-meta">
-            {event.eventDate && <span>{event.eventDate}</span>}
-            {event.eventDate && event.location && <i />}
+            {fecha && <span>{fecha}</span>}
+            {fecha && event.location && <i />}
             {event.location && <span>{event.location}</span>}
             {testMode && (
               <>
@@ -204,65 +266,134 @@ function Adentro({
           </div>
         </section>
 
-        {/* Las dos vías, al mismo nivel. */}
         <section className="et-buscar">
-          <SelfieSearchButton
-            eventId={event.id}
-            onResult={(r) => {
-              setSelfie(r.kind === "ok" ? r.photoIds : null);
-              setVisibles(TANDA);
-              setVia("nada");
-              setDorsal("");
+          <div className="et-buscar-tit">
+            <b>Encontrá tus fotos</b>
+            <span>
+              {buscaPorDorsal
+                ? "Poné tu número de dorsal, o sacate una selfie."
+                : "Sacate una selfie y te mostramos en cuáles saliste."}
+            </span>
+          </div>
+
+          {/* El dorsal es un CAMPO y va primero: es lo que prueba el que llega
+              con su número en la mano. Cuando el evento no lee dorsales el
+              campo no existe, porque mandarlo a escribir un número que no va a
+              encontrar nada es peor que no ofrecerlo. */}
+          {buscaPorDorsal && (
+            <>
+              <div className="et-dorsal">
+                <div className="et-campo">
+                  <span>#</span>
+                  <input
+                    inputMode="numeric"
+                    placeholder="Tu dorsal"
+                    aria-label="Buscar por número de dorsal"
+                    value={dorsal}
+                    onChange={(e) => {
+                      setDorsal(e.target.value.replace(/\D/g, "").slice(0, 6));
+                      setVisibles(TANDA);
+                      setSelfie(null);
+                    }}
+                  />
+                </div>
+                {dorsal && (
+                  <button
+                    className="et-btn et-btn-icono"
+                    onClick={() => setDorsal("")}
+                    aria-label="Borrar el dorsal"
+                  >
+                    <X />
+                  </button>
+                )}
+              </div>
+
+              <div className="et-o">o</div>
+            </>
+          )}
+
+          <input
+            ref={selfieRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (f) void buscarSelfie(f);
             }}
           />
-
-          {via === "dorsal" ? (
-            <div className="et-dorsal">
-              <div className="et-campo">
-                <span>#</span>
-                <input
-                  autoFocus
-                  inputMode="numeric"
-                  placeholder="Tu dorsal"
-                  value={dorsal}
-                  onChange={(e) => {
-                    setDorsal(e.target.value.replace(/\D/g, "").slice(0, 6));
-                    setVisibles(TANDA);
-                    setSelfie(null);
-                  }}
-                />
-              </div>
-              <button
-                className="et-btn et-btn-icono"
-                onClick={() => {
-                  setVia("nada");
-                  setDorsal("");
-                }}
-                aria-label="Cancelar"
-              >
-                <X />
-              </button>
-            </div>
-          ) : (
-            <button className="et-buscar-op" onClick={() => setVia("dorsal")}>
-              <span className="et-buscar-i">
-                <Hash />
-              </span>
+          <button className="et-selfie" onClick={abrirSelfie} disabled={buscandoSelfie}>
+            <span className="et-selfie-i">
+              <ScanFace />
+            </span>
+            <span className="et-selfie-t">
+              <b>{buscandoSelfie ? "Buscando tu cara…" : "Buscar con una selfie"}</b>
               <span>
-                <b>Buscar por dorsal</b>
-                <span>Escribí tu número y aparecen las tuyas</span>
+                {buscandoSelfie
+                  ? "Puede tardar unos segundos"
+                  : "Sacate una foto y encontramos todas en las que estás"}
               </span>
-            </button>
+            </span>
+          </button>
+
+          {errorSelfie && (
+            <div style={{ fontSize: 13, color: "var(--accent, #F0410F)" }}>{errorSelfie}</div>
           )}
         </section>
 
+        {/* Qué se está filtrando ahora mismo. Sin esto, alguien que buscó su
+            dorsal y encontró tres fotos cree que el evento tiene tres fotos. */}
+        {buscando && (
+          <div className="et-filtrando">
+            <span>
+              {selfie ? (
+                <>
+                  Mostrando <b>{filtradas.length}</b>{" "}
+                  {filtradas.length === 1 ? "foto tuya" : "fotos tuyas"}
+                </>
+              ) : (
+                <>
+                  Mostrando <b>{filtradas.length}</b>{" "}
+                  {filtradas.length === 1 ? "foto" : "fotos"} del dorsal <b>#{dorsal}</b>
+                </>
+              )}
+            </span>
+            <button className="et-btn et-btn-sm" onClick={limpiarBusqueda}>
+              Ver todas
+            </button>
+          </div>
+        )}
+
         {promo && (
           <div className="et-promo">
-            <Tag />
-            <span>
-              <b>{promo.texto}</b>
+            <span className="et-promo-i">
+              <Tag />
             </span>
-            {promo.codigo && <span className="et-promo-cod">{promo.codigo}</span>}
+            <span className="et-promo-t">
+              <b>{promo.texto}</b>
+              <span>
+                {promo.codigo
+                  ? "Poné el código al pagar y se descuenta solo."
+                  : "Se aplica solo al pagar, no hace falta hacer nada."}
+              </span>
+            </span>
+            {promo.codigo && (
+              // Se copia con un click. Un código que hay que seleccionar con el
+              // mouse y transcribir se transcribe mal, y un cupón mal tipeado se
+              // lee como que el descuento era mentira.
+              <button
+                className="et-promo-cod"
+                onClick={() => {
+                  void navigator.clipboard.writeText(promo.codigo!);
+                  setCopiado(true);
+                  setTimeout(() => setCopiado(false), 1800);
+                }}
+              >
+                {promo.codigo}
+                {copiado ? <Check /> : <Copy />}
+              </button>
+            )}
           </div>
         )}
 
@@ -298,6 +429,7 @@ function Adentro({
                   aria-label={puesta ? "Quitar del carrito" : "Agregar al carrito"}
                 >
                   {puesta ? <Check /> : <Plus />}
+                  <span>{puesta ? "Agregada" : "Agregar"}</span>
                 </button>
               </div>
             );
@@ -329,14 +461,7 @@ function Adentro({
                 )}
               </p>
               {buscando && (
-                <button
-                  className="et-btn"
-                  onClick={() => {
-                    setSelfie(null);
-                    setDorsal("");
-                    setVia("nada");
-                  }}
-                >
+                <button className="et-btn" onClick={limpiarBusqueda}>
                   Ver todas las fotos
                 </button>
               )}

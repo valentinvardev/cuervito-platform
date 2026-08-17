@@ -53,13 +53,16 @@ export type SelfieResult =
   | { kind: "error"; message: string }
   | { kind: "cancelled" };
 
-export function SelfieSearchButton({
-  eventId,
-  onResult,
-}: {
-  eventId: string;
-  onResult: (r: SelfieResult) => void;
-}) {
+/**
+ * La búsqueda por selfie, sin nada de cómo se dibuja.
+ *
+ * Salió del botón cuando la plantilla nueva necesitó su propio bloque. Comprimir
+ * la imagen, mandarla y traducir las cuatro respuestas posibles es igual en las
+ * dos, y copiarlo habría dejado dos versiones de la parte delicada: la de "no se
+ * detectó cara", que es la que decide si el atleta cree que no salió en ninguna
+ * foto o que la búsqueda se rompió.
+ */
+export function useBusquedaSelfie(eventId: string, onResult: (r: SelfieResult) => void) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState(false);
 
@@ -103,6 +106,18 @@ export function SelfieSearchButton({
       setPending(false);
     }
   }
+
+  return { inputRef, pending, onPick, abrir: () => inputRef.current?.click() };
+}
+
+export function SelfieSearchButton({
+  eventId,
+  onResult,
+}: {
+  eventId: string;
+  onResult: (r: SelfieResult) => void;
+}) {
+  const { inputRef, pending, onPick } = useBusquedaSelfie(eventId, onResult);
 
   return (
     <>

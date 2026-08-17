@@ -60,6 +60,10 @@ export default async function PublicEventPage(props: {
       coverUrl: true,
       pricePerPhoto: true,
       currency: true,
+      // Si el evento no lee dorsales, la tienda no ofrece buscar por dorsal:
+      // mandar a escribir un número que no va a encontrar nada es peor que no
+      // ofrecerlo.
+      bibDetection: true,
     },
   });
   if (!event) notFound();
@@ -186,7 +190,7 @@ export default async function PublicEventPage(props: {
   return (
     <div style={pageStyle}>
       {layout === "encontrate" ? (
-        <EncontrateShell {...shellProps} />
+        <EncontrateShell {...shellProps} buscaPorDorsal={event.bibDetection} />
       ) : layout === "feed" ? (
         <EventFeedShell {...shellProps} />
       ) : (
