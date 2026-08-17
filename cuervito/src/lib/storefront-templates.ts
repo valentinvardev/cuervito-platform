@@ -1,11 +1,11 @@
-export type TemplateId = "dark" | "light" | "sport" | "feed";
+export type TemplateId = "encontrate" | "dark" | "light" | "sport" | "feed";
 
 /**
  * Layout family: templates with the same layout share the same React shell
  * and differ only in CSS variables. A different layout requires its own shell
  * component on the public storefront.
  */
-export type TemplateLayout = "coverage" | "feed";
+export type TemplateLayout = "encontrate" | "coverage" | "feed";
 
 export interface StorefrontTemplate {
   id: TemplateId;
@@ -15,6 +15,13 @@ export interface StorefrontTemplate {
   cssVars: Record<string, string>;
 }
 
+/**
+ * OJO con el orden: getTemplate() devuelve TEMPLATES[0] cuando no encuentra el
+ * id, y esa es la plantilla que ven las cuentas sin elegir. NO se puede poner
+ * la nueva primera sin cambiarle la página a todos los que nunca eligieron.
+ * La oscura sigue siendo el respaldo; la nueva se asigna explícitamente al
+ * crear la cuenta, así que la traen las nuevas y sólo las nuevas.
+ */
 export const TEMPLATES: readonly StorefrontTemplate[] = [
   {
     id: "dark",
@@ -63,6 +70,26 @@ export const TEMPLATES: readonly StorefrontTemplate[] = [
       "--border-default": "rgba(255,255,255,0.12)",
       "--border-strong":  "rgba(255,255,255,0.22)",
       "--nav-bg":         "rgba(0,0,0,0.92)",
+    },
+  },
+  {
+    id: "encontrate",
+    name: "encontrate",
+    description: "Claro y minimalista — la foto es lo único con color",
+    layout: "encontrate",
+    cssVars: {
+      "--bg-base": "#FBFAF8",
+      "--bg-surface": "#FFFFFF",
+      "--bg-elevated": "#F2F0EC",
+      "--bg-subtle": "#EAE7E2",
+      "--text-primary": "#12110F",
+      "--text-secondary": "#4A453F",
+      "--text-tertiary": "#8B857D",
+      "--text-on-accent": "#FFFFFF",
+      "--border-subtle": "rgba(18,17,15,0.07)",
+      "--border-default": "rgba(18,17,15,0.12)",
+      "--border-strong": "rgba(18,17,15,0.2)",
+      "--nav-bg": "rgba(251,250,248,0.88)",
     },
   },
   {

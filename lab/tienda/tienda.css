@@ -1,0 +1,503 @@
+/* =============================================================================
+   encontrate · página de venta
+   -----------------------------------------------------------------------------
+   La plantilla nueva, y la que trae de fábrica toda cuenta creada de acá en
+   adelante. A quien ya eligió una no se le toca, y a las cuentas viejas
+   tampoco: tienen la columna en null y el catálogo les sigue devolviendo la
+   oscura, así que nadie se despierta con otra página.
+
+   Lo que la diferencia de las tres que había: acá la foto es lo único que
+   tiene color. Todo lo demás —fondo, tipografía, botones, carrito— es blanco,
+   negro y una línea gris. Una galería de fotos deportivas ya trae dorsales
+   fluorescentes, remeras de sponsors y cielo; si la página encima pone
+   gradientes y bloques de color, compite con lo que vino a vender.
+
+   Los tokens tienen los mismos nombres que usan las otras plantillas
+   (--bg-base, --text-primary, --accent…) para que el color de marca del
+   fotógrafo siga funcionando sin tocar nada.
+   ========================================================================== */
+
+.et {
+  --et-linea: rgba(18, 17, 15, .1);
+  --et-linea-fuerte: rgba(18, 17, 15, .18);
+  --et-tenue: rgba(18, 17, 15, .55);
+  --et-radio: 14px;
+  --et-radio-chico: 9px;
+
+  min-height: 100dvh;
+  background: var(--bg-base, #FBFAF8);
+  color: var(--text-primary, #12110F);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Barra ───────────────────────────────────────────────────────────────────
+   Fina y pegada arriba. En una página donde se recorre mucho, una barra alta
+   se lleva una franja de la pantalla en cada scroll. */
+.et-top {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px clamp(16px, 4vw, 40px);
+  background: color-mix(in srgb, var(--bg-base, #FBFAF8) 88%, transparent);
+  backdrop-filter: blur(12px) saturate(1.4);
+  border-bottom: 1px solid var(--et-linea);
+}
+.et-marca { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.et-av {
+  width: 32px; height: 32px; border-radius: 50%;
+  flex-shrink: 0; overflow: hidden;
+  display: grid; place-items: center;
+  background: var(--text-primary, #12110F); color: var(--bg-base, #FBFAF8);
+  font-size: 12px; font-weight: 600;
+}
+.et-av img { width: 100%; height: 100%; object-fit: cover; }
+.et-quien { min-width: 0; line-height: 1.25; }
+.et-quien b {
+  display: block; font-size: 14px; font-weight: 600; letter-spacing: -0.015em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.et-quien span { display: block; font-size: 11.5px; color: var(--et-tenue); }
+
+/* ── Botones ─────────────────────────────────────────────────────────────────
+   Un solo botón lleno por pantalla: el que cierra la compra. El resto es
+   contorno. Con tres botones llenos ninguno es el importante. */
+.et-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding: 0 18px;
+  border-radius: 100px;
+  border: 1px solid var(--et-linea-fuerte);
+  background: transparent;
+  color: var(--text-primary, #12110F);
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+.et-btn:hover { border-color: var(--text-primary, #12110F); }
+.et-btn:active { transform: scale(.98); }
+.et-btn:disabled { opacity: .45; cursor: default; transform: none; }
+.et-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+.et-btn-lleno {
+  background: var(--text-primary, #12110F);
+  border-color: var(--text-primary, #12110F);
+  color: var(--bg-base, #FBFAF8);
+}
+.et-btn-lleno:hover { background: color-mix(in srgb, var(--text-primary, #12110F) 84%, transparent); }
+
+.et-btn-acento {
+  background: var(--accent, #F0410F);
+  border-color: var(--accent, #F0410F);
+  color: #FFFFFF;
+}
+
+.et-btn-sm { height: 34px; padding: 0 14px; font-size: 13px; }
+.et-btn-icono { width: 40px; padding: 0; }
+
+/* El contador va ENCIMA del botón del carrito y no al lado: al lado se lee
+   como otro elemento y en el teléfono no entra. */
+.et-carrito { position: relative; margin-left: auto; flex-shrink: 0; }
+.et-carrito-n {
+  position: absolute; top: -5px; right: -5px;
+  min-width: 19px; height: 19px; padding: 0 5px;
+  border-radius: 100px;
+  display: grid; place-items: center;
+  background: var(--accent, #F0410F); color: #FFFFFF;
+  font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
+  animation: et-late 300ms cubic-bezier(.3, 1.4, .5, 1);
+}
+@keyframes et-late {
+  from { transform: scale(.4); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+/* ── Encabezado del evento ───────────────────────────────────────────────── */
+.et-in { max-width: 1180px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); }
+
+.et-hero { padding: clamp(28px, 5vw, 56px) 0 clamp(20px, 3vw, 32px); }
+.et-hero h1 {
+  font-size: clamp(30px, 5.4vw, 56px);
+  font-weight: 800;
+  letter-spacing: -0.035em; line-height: 1.02;
+  text-wrap: balance;
+  max-width: 16ch;
+}
+.et-hero-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 14px;
+  font-size: 13px; color: var(--et-tenue);
+}
+.et-hero-meta i {
+  width: 3px; height: 3px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0;
+}
+.et-hero-pie {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin-top: 18px;
+  font-size: 14px; color: var(--et-tenue);
+}
+.et-hero-pie b {
+  color: var(--text-primary, #12110F);
+  font-size: 17px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Buscar ──────────────────────────────────────────────────────────────────
+   Las dos formas de encontrarse, una al lado de la otra y con el mismo peso.
+   Esconder la selfie atrás de un botón chico es esconder lo único que
+   distingue a esto de una carpeta compartida. */
+.et-buscar {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--et-linea);
+  border-radius: var(--et-radio);
+  background: var(--bg-surface, #FFFFFF);
+}
+.et-buscar-op {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px;
+  border: 1px solid transparent;
+  border-radius: var(--et-radio-chico);
+  background: transparent;
+  cursor: pointer; text-align: left;
+  font-family: inherit; color: inherit;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.et-buscar-op:hover {
+  background: color-mix(in srgb, var(--text-primary, #12110F) 4%, transparent);
+  border-color: var(--et-linea);
+}
+.et-buscar-i {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: color-mix(in srgb, var(--text-primary, #12110F) 7%, transparent);
+}
+.et-buscar-i svg { width: 19px; height: 19px; }
+.et-buscar-op b { display: block; font-size: 14.5px; font-weight: 600; letter-spacing: -0.015em; }
+.et-buscar-op span { display: block; font-size: 12.5px; color: var(--et-tenue); margin-top: 2px; }
+
+.et-campo {
+  display: flex; align-items: center; gap: 4px;
+  height: 44px; padding: 0 14px;
+  border: 1px solid var(--et-linea-fuerte);
+  border-radius: 100px;
+  background: var(--bg-base, #FBFAF8);
+}
+.et-campo:focus-within {
+  border-color: var(--text-primary, #12110F);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-primary, #12110F) 8%, transparent);
+}
+.et-campo > span { color: var(--et-tenue); font-size: 15px; }
+.et-campo input {
+  flex: 1; min-width: 0;
+  border: 0; background: none; outline: none;
+  font-family: inherit; font-size: 15px; color: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.et-dorsal { display: flex; align-items: center; gap: 8px; padding: 8px; }
+.et-dorsal .et-campo { flex: 1; }
+
+@media (max-width: 620px) {
+  .et-buscar { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ── Aviso de descuento ──────────────────────────────────────────────────────
+   Arriba de la grilla y no adentro del carrito: enterarse de que llevando
+   cinco salen más baratas DESPUÉS de haber elegido tres no sirve de nada. */
+.et-promo {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 14px; padding: 13px 16px;
+  border-radius: var(--et-radio);
+  border: 1px dashed color-mix(in srgb, var(--accent, #F0410F) 45%, transparent);
+  background: color-mix(in srgb, var(--accent, #F0410F) 6%, transparent);
+  font-size: 13.5px; line-height: 1.45;
+}
+.et-promo svg { width: 17px; height: 17px; color: var(--accent, #F0410F); flex-shrink: 0; }
+.et-promo b { font-weight: 600; }
+.et-promo-cod {
+  margin-left: auto; flex-shrink: 0;
+  padding: 5px 11px; border-radius: 7px;
+  background: var(--text-primary, #12110F); color: var(--bg-base, #FBFAF8);
+  font-size: 12.5px; font-weight: 600; letter-spacing: 0.06em;
+  font-family: ui-monospace, monospace;
+}
+@media (max-width: 560px) {
+  .et-promo { flex-wrap: wrap; }
+  .et-promo-cod { margin-left: 0; }
+}
+
+/* ── Grilla ──────────────────────────────────────────────────────────────────
+   Huecos chicos: el aire entre fotos es aire que no muestra fotos, y acá la
+   grilla ES el producto. */
+.et-grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
+  gap: 10px;
+  margin: 22px 0 40px;
+}
+@media (max-width: 620px) {
+  .et-grilla { grid-template-columns: repeat(2, 1fr); gap: 7px; }
+}
+
+.et-foto {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--et-radio-chico);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--text-primary, #12110F) 6%, transparent);
+  cursor: pointer;
+  border: 0; padding: 0;
+}
+.et-foto img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 420ms cubic-bezier(.2, .8, .3, 1);
+}
+.et-foto:hover img { transform: scale(1.035); }
+
+/* El velo aparece con los controles y no antes: la foto tiene que verse limpia
+   mientras se recorre. */
+.et-foto::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(8, 7, 6, .55), transparent 42%);
+  opacity: 0; transition: opacity 200ms ease;
+  pointer-events: none;
+}
+.et-foto:hover::after, .et-foto.et-elegida::after { opacity: 1; }
+
+.et-foto-dorsal {
+  position: absolute; top: 8px; left: 8px; z-index: 2;
+  padding: 4px 9px; border-radius: 100px;
+  background: rgba(250, 250, 248, .92);
+  backdrop-filter: blur(6px);
+  color: #12110F;
+  font-size: 11.5px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.et-mas {
+  position: absolute; right: 8px; bottom: 8px; z-index: 2;
+  width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 0; cursor: pointer;
+  background: rgba(250, 250, 248, .94);
+  color: #12110F;
+  backdrop-filter: blur(8px);
+  opacity: 0; transform: translateY(6px) scale(.9);
+  transition: opacity 180ms ease, transform 240ms cubic-bezier(.2, .8, .3, 1), background 140ms ease;
+}
+.et-foto:hover .et-mas { opacity: 1; transform: none; }
+.et-mas:hover { background: #FFFFFF; }
+.et-mas svg { width: 17px; height: 17px; }
+
+.et-foto.et-elegida { outline: 2px solid var(--accent, #F0410F); outline-offset: -2px; }
+.et-foto.et-elegida .et-mas {
+  opacity: 1; transform: none;
+  background: var(--accent, #F0410F); color: #FFFFFF;
+}
+
+/* Sin hover no hay forma de descubrir el botón, así que en táctil va siempre.
+   Es la diferencia entre poder comprar y no. */
+@media (hover: none) {
+  .et-mas { opacity: 1; transform: none; }
+  .et-foto::after { opacity: 1; }
+}
+
+/* ── Vacío ───────────────────────────────────────────────────────────────── */
+.et-vacio {
+  grid-column: 1 / -1;
+  display: grid; justify-items: center; gap: 10px;
+  padding: 64px 20px; text-align: center;
+}
+.et-vacio-i {
+  width: 46px; height: 46px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--text-primary, #12110F) 6%, transparent);
+}
+.et-vacio-i svg { width: 21px; height: 21px; color: var(--et-tenue); }
+.et-vacio h3 { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+.et-vacio p { font-size: 13.5px; color: var(--et-tenue); max-width: 40ch; }
+
+.et-mas-fotos { display: grid; justify-items: center; padding-bottom: 48px; }
+
+/* ── Visor ───────────────────────────────────────────────────────────────────
+   Acotado, igual que el del panel: a pantalla completa una foto apaisada se
+   estira y deja de leerse como una foto. */
+.et-visor {
+  position: fixed; inset: 0; z-index: 90;
+  display: grid; place-items: center;
+  padding: 16px;
+  background: rgba(10, 9, 8, .93);
+  backdrop-filter: blur(6px);
+  animation: et-visor-entra 200ms ease;
+}
+.et-visor[data-cerrando="1"] { animation: et-visor-sale 150ms ease forwards; }
+@keyframes et-visor-entra { from { opacity: 0; } to { opacity: 1; } }
+@keyframes et-visor-sale { to { opacity: 0; } }
+
+.et-visor-caja {
+  display: grid; grid-template-rows: minmax(0, 1fr) auto;
+  gap: 12px;
+  width: min(100%, 860px);
+  max-height: min(100%, 84vh);
+}
+.et-visor-marco { display: grid; place-items: center; min-height: 0; }
+.et-visor-marco img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain; border-radius: var(--et-radio-chico);
+  animation: et-visor-foto 240ms cubic-bezier(.2, .8, .3, 1);
+}
+@keyframes et-visor-foto {
+  from { opacity: 0; transform: scale(.95); }
+  to   { opacity: 1; transform: none; }
+}
+.et-visor-pie {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 11px 14px;
+  border-radius: var(--et-radio-chico);
+  background: rgba(255, 255, 255, .08);
+  color: #FFFFFF;
+}
+.et-visor-datos { margin-right: auto; font-size: 13px; }
+.et-visor-datos span { display: block; font-size: 11.5px; color: rgba(255, 255, 255, .6); }
+.et-visor .et-btn { border-color: rgba(255, 255, 255, .26); color: #FFFFFF; }
+.et-visor .et-btn:hover { background: rgba(255, 255, 255, .14); border-color: #FFFFFF; }
+.et-visor .et-btn-acento { border-color: var(--accent, #F0410F); }
+
+.et-visor-nav, .et-visor-x {
+  position: fixed;
+  display: grid; place-items: center;
+  border: 0; cursor: pointer; border-radius: 50%;
+  background: rgba(255, 255, 255, .12); color: #FFFFFF;
+  backdrop-filter: blur(8px);
+  transition: background 140ms ease;
+}
+.et-visor-nav:hover, .et-visor-x:hover { background: rgba(255, 255, 255, .24); }
+.et-visor-nav { top: 50%; transform: translateY(-50%); width: 40px; height: 40px; }
+.et-visor-nav:disabled { opacity: .25; cursor: default; }
+.et-visor-nav.izq { left: 16px; }
+.et-visor-nav.der { right: 16px; }
+.et-visor-x { top: 16px; right: 16px; width: 36px; height: 36px; }
+.et-visor-nav svg { width: 18px; height: 18px; }
+.et-visor-x svg { width: 17px; height: 17px; }
+
+@media (max-width: 720px) {
+  .et-visor-caja { width: 100%; max-height: 100%; }
+  .et-visor-nav { width: 34px; height: 34px; }
+  .et-visor-nav.izq { left: 6px; }
+  .et-visor-nav.der { right: 6px; }
+  .et-visor-x { top: 8px; right: 8px; width: 32px; height: 32px; }
+  .et-visor-datos { width: 100%; margin-right: 0; }
+  .et-visor-pie .et-btn { flex: 1; }
+}
+
+/* ── Carrito ─────────────────────────────────────────────────────────────────
+   Cajón lateral en escritorio, hoja desde abajo en el teléfono, que es donde
+   está el pulgar. Un cajón lateral en un teléfono deja el botón de pagar
+   arriba a la derecha, el punto más lejos del dedo. */
+.et-scrim {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(10, 9, 8, .4);
+  backdrop-filter: blur(3px);
+  opacity: 0; pointer-events: none;
+  transition: opacity 240ms ease;
+}
+.et[data-carrito="1"] .et-scrim { opacity: 1; pointer-events: auto; }
+
+.et-cajon {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 61;
+  width: min(420px, 92vw);
+  display: flex; flex-direction: column;
+  background: var(--bg-surface, #FFFFFF);
+  border-left: 1px solid var(--et-linea);
+  box-shadow: -30px 0 60px rgba(18, 17, 15, .16);
+  transform: translateX(100%);
+  transition: transform 320ms cubic-bezier(.2, .8, .3, 1);
+}
+.et[data-carrito="1"] .et-cajon { transform: none; }
+
+.et-cajon-h {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--et-linea);
+}
+.et-cajon-h h2 { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+.et-cajon-h .sub { font-size: 12.5px; color: var(--et-tenue); }
+.et-cajon-b {
+  flex: 1; overflow-y: auto;
+  padding: 14px 20px;
+  display: grid; gap: 10px; align-content: start;
+}
+.et-cajon-f { padding: 16px 20px; border-top: 1px solid var(--et-linea); display: grid; gap: 12px; }
+
+.et-linea { display: flex; align-items: center; gap: 12px; }
+.et-linea-mini {
+  width: 58px; aspect-ratio: 3 / 2;
+  border-radius: 7px; overflow: hidden; flex-shrink: 0;
+  background: color-mix(in srgb, var(--text-primary, #12110F) 6%, transparent);
+}
+.et-linea-mini img { width: 100%; height: 100%; object-fit: cover; }
+.et-linea-t { flex: 1; min-width: 0; line-height: 1.3; }
+.et-linea-t b { display: block; font-size: 13.5px; font-weight: 500; }
+.et-linea-t span { display: block; font-size: 12px; color: var(--et-tenue); }
+.et-quitar {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+  border: 0; background: none; cursor: pointer;
+  color: var(--et-tenue);
+  transition: background 140ms ease, color 140ms ease;
+}
+.et-quitar:hover {
+  background: color-mix(in srgb, var(--text-primary, #12110F) 7%, transparent);
+  color: var(--text-primary, #12110F);
+}
+.et-quitar svg { width: 15px; height: 15px; }
+
+.et-cuenta { display: grid; gap: 7px; font-size: 13.5px; }
+.et-cuenta > div { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
+.et-cuenta .tnum { font-variant-numeric: tabular-nums; }
+.et-cuenta .et-ahorro { color: var(--accent, #F0410F); }
+.et-cuenta .et-total {
+  padding-top: 9px; margin-top: 2px;
+  border-top: 1px solid var(--et-linea);
+  font-size: 15px; font-weight: 600;
+}
+.et-cuenta .et-total b { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
+
+.et-cajon-vacio {
+  display: grid; justify-items: center; gap: 10px;
+  padding: 56px 20px; text-align: center;
+}
+.et-cajon-vacio svg { width: 26px; height: 26px; color: var(--et-tenue); }
+.et-cajon-vacio p { font-size: 13.5px; color: var(--et-tenue); max-width: 30ch; }
+
+@media (max-width: 560px) {
+  .et-cajon {
+    top: auto; left: 0; right: 0;
+    width: auto; max-height: 88dvh;
+    border-left: 0; border-top: 1px solid var(--et-linea);
+    border-radius: 18px 18px 0 0;
+    transform: translateY(100%);
+    box-shadow: 0 -20px 50px rgba(18, 17, 15, .18);
+  }
+  .et[data-carrito="1"] .et-cajon { transform: none; }
+  /* Un tirador: dice que se arrastra sin escribirlo. */
+  .et-cajon-h { position: relative; padding-top: 22px; }
+  .et-cajon-h::before {
+    content: ""; position: absolute; top: 7px; left: 50%;
+    width: 34px; height: 4px; margin-left: -17px;
+    border-radius: 100px; background: var(--et-linea-fuerte);
+  }
+}
+
+/* ── Pie ─────────────────────────────────────────────────────────────────── */
+.et-pie {
+  border-top: 1px solid var(--et-linea);
+  margin-top: 40px;
+  padding: 22px clamp(16px, 4vw, 40px);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap;
+  font-size: 12.5px; color: var(--et-tenue);
+}
+.et-pie a { color: inherit; text-decoration: none; }
+.et-pie a:hover { color: var(--text-primary, #12110F); }

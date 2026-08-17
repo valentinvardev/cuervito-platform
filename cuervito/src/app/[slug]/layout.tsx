@@ -2,6 +2,10 @@ import "~/styles/prototype/styles.css";
 import "~/styles/prototype/panel-anim.css";
 import "~/styles/prototype/public-event.css";
 import "~/styles/prototype/lightbox.css";
+// La plantilla nueva. Va acá y no en la página porque el <html> de la tienda lo
+// arma este layout, y las clases .et- las usa también el carrito, que se monta
+// por fuera del árbol de la grilla.
+import "~/styles/tienda-encontrate.css";
 
 import { Suspense } from "react";
 

@@ -25,7 +25,7 @@ import { saveBrandColorAction, saveTemplateAction } from "~/app/dashboard/tienda
  * el control de que no esté tomada.
  */
 const PLANTILLAS = [
-  { id: "light", nombre: "Claro", muestra: "claro" },
+  { id: "encontrate", nombre: "encontrate", muestra: "claro" },
   { id: "dark", nombre: "Oscuro", muestra: "oscuro" },
   { id: "feed", nombre: "Editorial", muestra: "editorial" },
 ] as const;

@@ -8,6 +8,7 @@ import { resolveMediaUrl } from "~/server/media";
 import { getMpTestMode } from "~/server/settings";
 
 import { EventCoverageShell } from "./event-coverage-shell";
+import { EncontrateShell } from "./encontrate/shell";
 import { EventFeedShell } from "./event-feed-shell";
 
 const RESERVED = new Set([
@@ -184,7 +185,9 @@ export default async function PublicEventPage(props: {
 
   return (
     <div style={pageStyle}>
-      {layout === "feed" ? (
+      {layout === "encontrate" ? (
+        <EncontrateShell {...shellProps} />
+      ) : layout === "feed" ? (
         <EventFeedShell {...shellProps} />
       ) : (
         <EventCoverageShell {...shellProps} />
