@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { env } from "~/env";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
+import { evaluarDorsales } from "~/server/dorsales";
 import { canUploadToEvent } from "~/server/event-access";
 import { runFaceIndex, runOcr } from "~/server/rekognition";
 import { deleteS3Objects, getObjectSize } from "~/server/s3";
@@ -37,14 +38,18 @@ export async function POST(
     return NextResponse.json({ error: "Foto no encontrada" }, { status: 404 });
   }
 
-  const ev = await db.event.findUnique({
-    where: { id: eventId },
-    select: { recognition: true },
-  });
-  const reconoce = ev?.recognition ?? true;
   if (photo.fileSize !== null) {
     return NextResponse.json({ ok: true, already: true });
   }
+
+  // Después del corte por idempotencia: en el camino "ya estaba" no hace falta
+  // saber nada del evento y sería una consulta al pedo por cada reintento.
+  const ev = await db.event.findUnique({
+    where: { id: eventId },
+    select: { recognition: true, bibDetection: true },
+  });
+  const reconoce = ev?.recognition ?? true;
+  const leeDorsales = ev?.bibDetection ?? true;
 
   // Verify the object actually landed in S3 with a HEAD request
   const size = await getObjectSize(photo.storageKey);
@@ -86,9 +91,15 @@ export async function POST(
     // cobrarle la mitad y gastar lo mismo. La marca de agua sí se genera
     // siempre, que es lo que hace vendible a la foto.
     if (reconoce) {
-      void runOcr(photo.id, rekBytes).catch((err) =>
-        console.error("[commit bg] runOcr:", err),
-      );
+      // La búsqueda por cara va siempre: es la que hace que el atleta encuentre
+      // sus fotos. La lectura de dorsales puede estar apagada porque este
+      // evento no tiene dorsales — un trail, una salida de ciclismo— y ahí cada
+      // llamada es paga y no va a devolver nada nunca.
+      if (leeDorsales) {
+        void runOcr(photo.id, rekBytes)
+          .then(() => evaluarDorsales(eventId))
+          .catch((err) => console.error("[commit bg] runOcr:", err));
+      }
       void runFaceIndex(photo.id, eventId, rekBytes).catch((err) =>
         console.error("[commit bg] runFaceIndex:", err),
       );

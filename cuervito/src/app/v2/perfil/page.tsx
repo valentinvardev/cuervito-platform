@@ -10,7 +10,14 @@ export default async function V2Perfil() {
 
   const u = await db.user.findUnique({
     where: { id: userId },
-    select: { name: true, slug: true, bio: true, instagramUrl: true, websiteUrl: true },
+    select: {
+      name: true,
+      slug: true,
+      bio: true,
+      instagramUrl: true,
+      websiteUrl: true,
+      image: true,
+    },
   });
 
   // Red para cuentas viejas sin dirección: se genera una antes de dibujar el
@@ -36,6 +43,7 @@ export default async function V2Perfil() {
             instagramUrl: u?.instagramUrl ?? "",
             websiteUrl: u?.websiteUrl ?? "",
           }}
+          fotoInicial={u?.image ?? null}
         />
       </div>
     </main>

@@ -33,6 +33,7 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
       pricePerPhoto: true,
       platformFeePct: true,
       recognition: true,
+      bibDetection: true,
       ownerId: true,
       sales: { where: { status: "PAID" }, select: { sellerNetCents: true } },
       collaborators: {
@@ -160,6 +161,7 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
         // tienen en null y siguen con la global.
         comision: e.platformFeePct !== null ? Number(e.platformFeePct) : env.PLATFORM_FEE_PERCENT,
         reconocimiento: e.recognition,
+        leeDorsales: e.bibDetection,
         maxFoto: env.QUOTA_MAX_PHOTO_BYTES,
         descripcion: e.description,
         total,

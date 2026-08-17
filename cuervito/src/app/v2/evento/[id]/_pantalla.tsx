@@ -93,6 +93,7 @@ export function Pantalla({
     precio: number;
     comision: number;
     reconocimiento: boolean;
+    leeDorsales: boolean;
     /** Tope por foto, para avisar antes de mandar y no después. */
     maxFoto: number;
     descripcion: string | null;
@@ -708,14 +709,38 @@ export function Pantalla({
                 <div className="aj">
                   <div className="aj-t">
                     <b>Por dorsal</b>
-                    <span>Leemos el número de la camiseta o del dorsal</span>
+                    <span>
+                      {evento.leeDorsales
+                        ? "Leemos el número de la camiseta o del dorsal"
+                        : "Apagado: en las primeras fotos no apareció ningún dorsal"}
+                    </span>
                   </div>
-                  <span className="pill live">
-                    <i /> {evento.conDorsal.toLocaleString("es-AR")} de{" "}
-                    {evento.total.toLocaleString("es-AR")}
-                  </span>
+                  {evento.leeDorsales ? (
+                    <span className="pill live">
+                      <i /> {evento.conDorsal.toLocaleString("es-AR")} de{" "}
+                      {evento.total.toLocaleString("es-AR")}
+                    </span>
+                  ) : (
+                    <span className="pill draft">
+                      <i /> Apagado
+                    </span>
+                  )}
                 </div>
               </div>
+              {/* Dicho acá y no en un log del servidor: el fotógrafo ve el
+                  contador de dorsales quieto y sin esto no tiene forma de saber
+                  que fue una decisión y no una falla. */}
+              {!evento.leeDorsales && (
+                <div className="porque">
+                  <Info />
+                  <span>
+                    La lectura de dorsales se apagó sola: en las primeras diez fotos procesadas no
+                    apareció ningún número. Pasa en trail, ciclismo o entrenamientos, donde nadie
+                    lleva dorsal. La búsqueda por cara sigue funcionando igual.
+                  </span>
+                </div>
+              )}
+
               {evento.total > 0 && evento.reconocidas < evento.total && (
                 <div className="porque">
                   <Info />

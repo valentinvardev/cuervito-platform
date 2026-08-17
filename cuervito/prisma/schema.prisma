@@ -194,6 +194,16 @@ model Event {
     /// modificar el trato de ventas ya en curso.
     platformFeePct Decimal? @db.Decimal(5, 2)
 
+    /// Si se sigue leyendo el dorsal de cada foto. Se apaga solo cuando la
+    /// muestra inicial no encuentra ninguno: hay eventos —una carrera de
+    /// montaña, una salida de ciclismo— donde nadie lleva número, y ahí el OCR
+    /// es una llamada paga por foto que nunca va a devolver nada.
+    bibDetection Boolean @default(true)
+
+    /// Cuándo se evaluó la muestra. Null = todavía no se miró. Existe para que
+    /// la evaluación corra UNA vez y no en cada foto que termina.
+    bibCheckedAt DateTime?
+
     // AWS Rekognition collection for this event (created on first photo)
     rekCollectionId String?
 

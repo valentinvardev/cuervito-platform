@@ -1,7 +1,8 @@
 "use client";
 
-import { AtSign, Globe } from "lucide-react";
-import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
+import { AtSign, Camera, Globe } from "lucide-react";
+import { useActionState, useRef, useState } from "react";
 
 import { savePerfilAction } from "~/app/dashboard/perfil/actions";
 
@@ -18,11 +19,43 @@ import { savePerfilAction } from "~/app/dashboard/perfil/actions";
  */
 export function FormPerfil({
   inicial,
+  fotoInicial,
 }: {
   inicial: { name: string; slug: string; bio: string; instagramUrl: string; websiteUrl: string };
+  fotoInicial: string | null;
 }) {
+  const router = useRouter();
   const [estado, accion, enviando] = useActionState(savePerfilAction, { error: null });
   const [d, setD] = useState(inicial);
+
+  const avatar = useRef<HTMLInputElement>(null);
+  const [foto, setFoto] = useState(fotoInicial);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [errorFoto, setErrorFoto] = useState<string | null>(null);
+
+  async function subirFoto(f: File) {
+    setSubiendoFoto(true);
+    setErrorFoto(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", f);
+      const r = await fetch("/api/profile/avatar", { method: "POST", body: fd });
+      // El endpoint contesta previewUrl, no url.
+      const data = (await r.json().catch(() => ({}))) as { previewUrl?: string; error?: string };
+      if (!r.ok || !data.previewUrl) {
+        setErrorFoto(data.error ?? "No se pudo subir la foto.");
+        return;
+      }
+      setFoto(data.previewUrl);
+      // La foto también sale en el riel, que lo arma el layout: sin esto sigue
+      // mostrando las iniciales hasta la próxima navegación completa.
+      router.refresh();
+    } catch {
+      setErrorFoto("No se pudo subir la foto.");
+    } finally {
+      setSubiendoFoto(false);
+    }
+  }
 
   const iniciales =
     d.name
@@ -131,7 +164,42 @@ export function FormPerfil({
             </div>
           </div>
           <div className="tarjeta-pub">
-            <span className="foto-av">{iniciales}</span>
+            {/* La foto se cambia desde la previa y no desde un campo aparte:
+                es el único lugar de la pantalla donde se ve cómo va a quedar,
+                así que es donde tiene sentido tocarla. */}
+            <button
+              type="button"
+              className="foto-av editable"
+              onClick={() => avatar.current?.click()}
+              aria-label="Cambiar tu foto"
+              disabled={subiendoFoto}
+            >
+              {foto ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={foto} alt="" />
+              ) : (
+                iniciales
+              )}
+              <span className="foto-av-tapa">
+                <Camera />
+              </span>
+            </button>
+            <input
+              ref={avatar}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (f) void subirFoto(f);
+              }}
+            />
+            {errorFoto && (
+              <div className="pista" style={{ color: "var(--bad)", textAlign: "center" }}>
+                {errorFoto}
+              </div>
+            )}
             <b>{d.name || "Tu nombre"}</b>
             <div className="bio">{d.bio}</div>
             <span className="link">encontrate.app/{inicial.slug || "tu-usuario"}</span>
