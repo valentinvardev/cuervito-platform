@@ -67,14 +67,25 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
         _count: { select: { faceRecords: true } },
       },
     }),
-    // Con el mismo filtro que el resto. _count.photos de la relación incluye
-    // las borradas, así que el total salía más alto que sus propias partes.
-    db.photo.count({ where: { eventId: id, deletedAt: null } }),
-    db.photo.count({ where: { eventId: id, deletedAt: null, ocrProcessedAt: { not: null } } }),
+    // Los tres con EXACTAMENTE el mismo filtro que la grilla, incluido
+    // fileSize: una fila sin tamaño es una subida que se firmó y nunca llegó, y
+    // no es una foto: no se ve, no se puede vender y no se va a reconocer
+    // nunca. Contándolas, un evento de 12 fotos decía "12 de 15 reconocidas" y
+    // se quedaba ahí para siempre, porque esas tres no existen.
+    db.photo.count({ where: { eventId: id, deletedAt: null, fileSize: { not: null } } }),
     db.photo.count({
       where: {
         eventId: id,
         deletedAt: null,
+        fileSize: { not: null },
+        ocrProcessedAt: { not: null },
+      },
+    }),
+    db.photo.count({
+      where: {
+        eventId: id,
+        deletedAt: null,
+        fileSize: { not: null },
         AND: [{ bibNumbers: { not: null } }, { bibNumbers: { not: "" } }],
       },
     }),

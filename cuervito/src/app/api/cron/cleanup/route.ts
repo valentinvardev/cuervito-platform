@@ -75,6 +75,21 @@ export async function POST(req: NextRequest) {
     photosDeleted = result.count;
   }
 
+  // ── 1b) Barrer las subidas que se firmaron y nunca llegaron ─────────────
+  //
+  // presign crea la fila de Photo antes de que el archivo exista; commit le
+  // pone fileSize cuando confirma que llegó a S3. Si la subida se corta en el
+  // medio —conexión caída, pestaña cerrada— la fila queda sin tamaño para
+  // siempre. No ocupa nada en S3, pero ensucia los conteos: un evento de 12
+  // fotos mostraba "12 de 15 reconocidas" y nunca terminaba, porque esas tres
+  // no son fotos y no se van a reconocer jamás.
+  //
+  // Un día de gracia es de sobra: una subida en curso se mide en minutos.
+  const pendientesCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const { count: pendientesBorradas } = await db.photo.deleteMany({
+    where: { fileSize: null, deletedAt: null, createdAt: { lt: pendientesCutoff } },
+  });
+
   // ── 2) Expire stale download tokens ─────────────────────────────────────
   // Once expired we clear the token so /descarga 404s the link cleanly.
   // The expiry timestamp itself is also nulled so the row stops appearing
@@ -89,6 +104,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     photosDeleted,
+    pendientesBorradas,
     tokensExpired: expiredTokens.count,
     photoBacklogRemaining: stalePhotos.length === BATCH_SIZE,
   });

@@ -33,7 +33,9 @@ import {
   guardarPrecioAction,
   publicarAction,
 } from "./acciones";
+import { Invitar } from "./_invitar";
 import { Soltador } from "./_soltador";
+import { Visor } from "./_visor";
 
 type Foto = {
   id: string;
@@ -123,6 +125,15 @@ export function Pantalla({
   const [borrando, setBorrando] = useState(false);
   const [errorLote, setErrorLote] = useState<string | null>(null);
 
+  // Índice dentro de la página que se está viendo en grande, o null.
+  const [viendo, setViendo] = useState<number | null>(null);
+
+  // El modo selección se prende tocando un tilde y se apaga cuando no queda
+  // ninguna elegida. No es un estado aparte: si hubiera un interruptor propio,
+  // se podría quedar prendido sin nada seleccionado y las fotos dejarían de
+  // abrirse sin motivo visible.
+  const modoSel = elegidas.size > 0;
+
   function alternar(id: string) {
     setElegidas((prev) => {
       const s = new Set(prev);
@@ -130,6 +141,33 @@ export function Pantalla({
       else s.add(id);
       return s;
     });
+  }
+
+  /** Borrar fotos. La usan la barra de selección y el visor. */
+  async function borrarFotos(ids: string[]) {
+    if (ids.length === 0) return;
+    setBorrando(true);
+    setErrorLote(null);
+    try {
+      // De a 500, que es el tope del endpoint.
+      for (let i = 0; i < ids.length; i += 500) {
+        const r = await fetch(`/api/dashboard/events/${evento.id}/photos/bulk-delete`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ photoIds: ids.slice(i, i + 500) }),
+        });
+        if (!r.ok) {
+          const d = (await r.json().catch(() => ({}))) as { error?: string };
+          throw new Error(d.error ?? "No se pudieron borrar");
+        }
+      }
+      setElegidas(new Set());
+      router.refresh();
+    } catch (e) {
+      setErrorLote(e instanceof Error ? e.message : "No se pudieron borrar");
+    } finally {
+      setBorrando(false);
+    }
   }
 
   // La barra flotante y el recuadro de cada foto cuelgan de :root[data-sel] en
@@ -157,7 +195,11 @@ export function Pantalla({
   // muestra otras fotos, y Eliminar borraba doce que no estaban a la vista.
   useEffect(() => {
     setElegidas(new Set());
-  }, [solapa, filtro, buscado]);
+    // Y se cierra el visor: si no, queda mirando una foto que ya no está en la
+    // lista, y las flechas se mueven sobre otro conjunto. La página va como
+    // `pagina` y no como `pag`, que se calcula más abajo.
+    setViendo(null);
+  }, [solapa, filtro, buscado, pagina]);
 
   const cuentas = useMemo(() => {
     const c = { todas: fotos.length, sinrec: 0, sindor: 0, vend: 0 };
@@ -460,7 +502,7 @@ export function Pantalla({
             {trozo.length > 0 ? (
               <>
                 <div className="fg">
-                  {trozo.map((f) => {
+                  {trozo.map((f, i) => {
                     const elegida = elegidas.has(f.id);
                     return (
                       <div
@@ -468,12 +510,17 @@ export function Pantalla({
                         key={f.id}
                         role="button"
                         tabIndex={0}
-                        aria-pressed={elegida}
-                        onClick={() => alternar(f.id)}
+                        aria-pressed={modoSel ? elegida : undefined}
+                        // Tocar la foto la abre; sólo selecciona si YA se entró
+                        // al modo selección tocando un tilde. Mirar es lo que se
+                        // hace todo el tiempo acá y seleccionar es ocasional:
+                        // el gesto barato tiene que hacer lo frecuente.
+                        onClick={() => (modoSel ? alternar(f.id) : setViendo(i))}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            alternar(f.id);
+                            if (modoSel) alternar(f.id);
+                            else setViendo(i);
                           }
                         }}
                       >
@@ -490,7 +537,27 @@ export function Pantalla({
                           }
                         />
                         <div className="ft-v" />
-                        <span className="ft-c">
+                        {/* El tilde es la puerta de entrada al modo selección:
+                            tocarlo elige esa foto y a partir de ahí cualquier
+                            toque sobre una foto elige, sin abrir nada. */}
+                        <span
+                          className="ft-c"
+                          role="checkbox"
+                          aria-checked={elegida}
+                          aria-label={elegida ? "Quitar de la selección" : "Seleccionar"}
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            alternar(f.id);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              alternar(f.id);
+                            }
+                          }}
+                        >
                           <Check />
                         </span>
                         {!f.reconocida && (
@@ -564,6 +631,17 @@ export function Pantalla({
                 </p>
               </div>
             )}
+            {viendo !== null && (
+              <Visor
+                fotos={trozo}
+                indice={viendo}
+                eventId={evento.id}
+                alCerrar={() => setViendo(null)}
+                alIr={setViendo}
+                alBorrar={(id) => void borrarFotos([id])}
+              />
+            )}
+
             {/* Flotante y abajo, no arriba de la grilla: la selección se hace
                 mirando las fotos, y una barra pegada al encabezado obliga a
                 subir la vista para actuar. El CSS la desliza según data-sel. */}
@@ -581,36 +659,7 @@ export function Pantalla({
                 className="btn btn-ghost btn-sm peligro"
                 type="button"
                 disabled={borrando}
-                onClick={() => {
-                  const ids = Array.from(elegidas);
-                  setBorrando(true);
-                  setErrorLote(null);
-                  void (async () => {
-                    try {
-                      // De a 500, que es el tope del endpoint.
-                      for (let i = 0; i < ids.length; i += 500) {
-                        const r = await fetch(
-                          `/api/dashboard/events/${evento.id}/photos/bulk-delete`,
-                          {
-                            method: "POST",
-                            headers: { "content-type": "application/json" },
-                            body: JSON.stringify({ photoIds: ids.slice(i, i + 500) }),
-                          },
-                        );
-                        if (!r.ok) {
-                          const d = (await r.json().catch(() => ({}))) as { error?: string };
-                          throw new Error(d.error ?? "No se pudieron borrar");
-                        }
-                      }
-                      setElegidas(new Set());
-                      router.refresh();
-                    } catch (e) {
-                      setErrorLote(e instanceof Error ? e.message : "No se pudieron borrar");
-                    } finally {
-                      setBorrando(false);
-                    }
-                  })();
-                }}
+                onClick={() => void borrarFotos(Array.from(elegidas))}
               >
                 <Trash2 /> {borrando ? "Borrando" : `Eliminar ${elegidas.size}`}
               </button>
@@ -688,9 +737,12 @@ export function Pantalla({
                   <h2>Quiénes cubren este evento</h2>
                   <div className="sub">{colaboradores.length + 1} fotógrafos</div>
                 </div>
-                <Link href={`/dashboard/events/${evento.id}`} className="btn btn-pri btn-sm">
-                  Invitar
-                </Link>
+                <Invitar
+                  eventId={evento.id}
+                  precio={evento.precio}
+                  comision={evento.comision}
+                  reconocimiento={evento.reconocimiento}
+                />
               </div>
 
               {/* El dueño va en la tabla y no sólo en la cuenta del encabezado.

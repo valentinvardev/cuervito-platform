@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert, CircleCheck, CloudUpload } from "lucide-react";
+import { CircleAlert, CircleCheck, CloudUpload, RotateCcw, X } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { ACEPTADOS, useSubida } from "~/app/dashboard/events/[id]/usar-subida";
@@ -105,11 +105,19 @@ export function Soltador({ eventId, maxBytes }: { eventId: string; maxBytes: num
             <div style={{ display: "flex", gap: "var(--s-2)" }}>
               {fallidas > 0 && (
                 <button type="button" className="btn btn-pri btn-sm" onClick={reintentar}>
-                  Reintentar {fallidas === 1 ? "la que falló" : `las ${fallidas}`}
+                  <RotateCcw /> Reintentar {fallidas === 1 ? "la que falló" : `las ${fallidas}`}
                 </button>
               )}
               <button type="button" className="btn btn-ghost btn-sm" onClick={limpiar}>
-                {fallidas > 0 ? "Descartar" : "Subir más fotos"}
+                {fallidas > 0 ? (
+                  <>
+                    <X /> Descartar
+                  </>
+                ) : (
+                  <>
+                    <CloudUpload /> Subir más fotos
+                  </>
+                )}
               </button>
             </div>
           )}

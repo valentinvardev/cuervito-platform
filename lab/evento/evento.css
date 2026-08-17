@@ -438,3 +438,102 @@
   /* ── Diálogo ── */
   .queda-inv > div { flex-wrap: wrap; row-gap: 2px; }
 }
+
+/* ── Visor de una foto ───────────────────────────────────────────────────────
+   Tocar una foto la abre acá, no la selecciona. Mirar es lo que uno hace todo
+   el tiempo en esta pantalla; seleccionar es lo que hace de vez en cuando,
+   para borrar un lote. Que el gesto barato haga lo frecuente.
+
+   Entra y sale con animación a propósito: sin ella, una foto a pantalla
+   completa aparece de golpe y por un instante no se entiende de dónde salió.
+   La escala arranca apenas abajo del 100% para que se lea como que la foto
+   creció desde la grilla.
+
+   El fondo no es negro puro: sobre negro absoluto, una foto con sombras
+   profundas pierde el borde y parece recortada contra la nada. */
+.visor {
+  position: fixed; inset: 0; z-index: 120;
+  display: grid; grid-template-rows: 1fr auto;
+  background: rgba(10, 9, 8, .92);
+  backdrop-filter: blur(6px);
+  animation: visor-entra 220ms cubic-bezier(.2, .8, .3, 1);
+}
+.visor[data-cerrando="1"] { animation: visor-sale 160ms ease forwards; }
+@keyframes visor-entra { from { opacity: 0; } to { opacity: 1; } }
+@keyframes visor-sale  { to { opacity: 0; } }
+
+.visor-marco {
+  position: relative;
+  display: grid; place-items: center;
+  min-height: 0; padding: var(--s-5);
+}
+.visor-marco img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--r-2);
+  animation: visor-foto 260ms cubic-bezier(.2, .8, .3, 1);
+}
+.visor[data-cerrando="1"] .visor-marco img { animation: visor-foto-sale 160ms ease forwards; }
+@keyframes visor-foto {
+  from { opacity: 0; transform: scale(.94); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes visor-foto-sale { to { opacity: 0; transform: scale(.96); } }
+
+/* Las flechas quedan sobre la foto y no al costado: con la foto ocupando todo
+   el ancho útil, una columna propia a cada lado le come cien píxeles. */
+.visor-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 0; cursor: pointer;
+  background: rgba(255, 255, 255, .12);
+  color: #FFF;
+  backdrop-filter: blur(8px);
+  transition: background 140ms ease;
+}
+.visor-nav:hover { background: rgba(255, 255, 255, .24); }
+.visor-nav:disabled { opacity: .3; cursor: default; }
+.visor-nav.izq { left: var(--s-4); }
+.visor-nav.der { right: var(--s-4); }
+.visor-nav svg { width: 18px; height: 18px; }
+
+.visor-x {
+  position: absolute; top: var(--s-4); right: var(--s-4);
+  width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 0; cursor: pointer;
+  background: rgba(255, 255, 255, .12); color: #FFF;
+  backdrop-filter: blur(8px);
+}
+.visor-x:hover { background: rgba(255, 255, 255, .24); }
+.visor-x svg { width: 17px; height: 17px; }
+
+/* Las acciones abajo y no flotando encima de la foto: encima tapan justo la
+   parte que se vino a mirar. */
+.visor-pie {
+  display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap;
+  padding: var(--s-4) var(--s-5);
+  border-top: 1px solid rgba(255, 255, 255, .12);
+}
+.visor-datos { margin-right: auto; min-width: 0; line-height: 1.35; }
+.visor-datos b { display: block; color: #FFF; font-size: 13.5px; font-weight: 500; }
+.visor-datos span { display: block; color: rgba(255, 255, 255, .6); font-size: 12px; }
+.visor-pie .btn {
+  background: rgba(255, 255, 255, .12);
+  border-color: rgba(255, 255, 255, .24);
+  color: #FFF;
+}
+.visor-pie .btn:hover { background: rgba(255, 255, 255, .22); border-color: rgba(255, 255, 255, .45); }
+.visor-pie .btn.peligro { color: #FF8E8E; border-color: rgba(255, 142, 142, .34); }
+.visor-pie .btn.peligro:hover { background: rgba(255, 142, 142, .16); border-color: rgba(255, 142, 142, .55); }
+
+@media (max-width: 560px) {
+  .visor-marco { padding: var(--s-3); }
+  .visor-datos { width: 100%; margin-right: 0; }
+}
+
+/* Con el modo selección apagado, el tilde de cada foto aparece igual al pasar
+   el mouse: es la puerta de entrada al modo. Lo que cambia es qué hace tocar
+   la FOTO, no si el tilde se ve. */
+.ft-c { cursor: pointer; }
