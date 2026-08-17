@@ -2,12 +2,10 @@ import "server-only";
 
 import { db } from "~/server/db";
 import {
-  saleEmailBigBatchHtml,
-  saleEmailSingleHtml,
-  saleEmailSmallBatchHtml,
   sendEmail,
   type SaleItemSummary,
 } from "~/server/email";
+import { mailsDe } from "~/server/email-marca";
 
 /**
  * Progressive seller notification policy. Per seller, per AR day (UTC-3):
@@ -106,7 +104,7 @@ export async function flushPending(
   const [seller, sales] = await Promise.all([
     db.user.findUnique({
       where: { id: sellerId },
-      select: { name: true, email: true },
+      select: { name: true, email: true, storefrontTemplate: true },
     }),
     db.sale.findMany({
       where: { id: { in: saleIds } },
@@ -136,16 +134,19 @@ export async function flushPending(
   const photographerName = seller.name ?? "Hola";
 
   let html: string;
+  // El aviso de venta sigue la plantilla del fotógrafo: es su marca la que le
+  // está avisando que vendió.
+  const mails = mailsDe(seller.storefrontTemplate);
   let subject: string;
   if (summaries.length === 1) {
     const only = summaries[0]!;
-    html = saleEmailSingleHtml({ photographerName, sale: only });
+    html = mails.saleEmailSingleHtml({ photographerName, sale: only });
     subject = `Venta nueva · $${(only.sellerNetCents / 100).toLocaleString("es-AR")}`;
   } else if (summaries.length <= 4) {
-    html = saleEmailSmallBatchHtml({ photographerName, sales: summaries });
+    html = mails.saleEmailSmallBatchHtml({ photographerName, sales: summaries });
     subject = `${summaries.length} ventas nuevas en cuervito`;
   } else {
-    html = saleEmailBigBatchHtml({ photographerName, sales: summaries });
+    html = mails.saleEmailBigBatchHtml({ photographerName, sales: summaries });
     subject = `${summaries.length} ventas seguidas — estás en racha`;
   }
 

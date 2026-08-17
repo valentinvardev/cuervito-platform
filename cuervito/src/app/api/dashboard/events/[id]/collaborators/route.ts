@@ -4,7 +4,8 @@ import { z } from "zod";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { resolveAvatarUrl } from "~/server/avatar";
-import { collaboratorInviteHtml, sendEmail } from "~/server/email";
+import { sendEmail } from "~/server/email";
+import { mailsDe } from "~/server/email-marca";
 import { env } from "~/env";
 
 const inviteSchema = z.object({
@@ -94,7 +95,7 @@ export async function POST(
   // No dejar que el owner se invite a sí mismo.
   const owner = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { email: true, name: true },
+    select: { email: true, name: true, storefrontTemplate: true },
   });
   const ownerEmail = owner?.email?.toLowerCase();
   if (parsed.data.email === ownerEmail) {
@@ -136,7 +137,7 @@ export async function POST(
     void sendEmail({
       to: created.invitedEmail,
       subject: `Te invitaron a colaborar en ${event.name}`,
-      html: collaboratorInviteHtml({
+      html: mailsDe(owner?.storefrontTemplate).collaboratorInviteHtml({
         inviterName: owner?.name ?? "Un fotógrafo",
         eventName: event.name,
         acceptUrl,

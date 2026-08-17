@@ -5,7 +5,8 @@ import { z } from "zod";
 
 import { env } from "~/env";
 import { db } from "~/server/db";
-import { passwordResetEmailHtml, sendEmail } from "~/server/email";
+import { sendEmail } from "~/server/email";
+import { mailsDe } from "~/server/email-marca";
 
 export type ForgotPasswordState = {
   error: string | null;
@@ -26,7 +27,7 @@ export async function requestPasswordResetAction(
   // Always respond the same to avoid leaking which emails exist.
   const user = await db.user.findUnique({
     where: { email: parsed.data.email },
-    select: { id: true, name: true, email: true },
+    select: { id: true, name: true, email: true, storefrontTemplate: true },
   });
 
   if (user?.email) {
@@ -42,8 +43,11 @@ export async function requestPasswordResetAction(
 
     void sendEmail({
       to: user.email,
-      subject: "Reset de contraseña · cuervito",
-      html: passwordResetEmailHtml({ name: user.name ?? "Hola", resetUrl }),
+      subject: "Cambiá tu contraseña",
+      html: mailsDe(user.storefrontTemplate).passwordResetEmailHtml({
+        name: user.name ?? "Hola",
+        resetUrl,
+      }),
     }).catch((err: unknown) =>
       console.error("[forgot-password] email failed:", err),
     );

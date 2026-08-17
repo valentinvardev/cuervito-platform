@@ -6,7 +6,10 @@ import { z } from "zod";
 
 import { db } from "~/server/db";
 import { signIn } from "~/server/auth";
-import { sendEmail, welcomeEmailHtml } from "~/server/email";
+import { sendEmail } from "~/server/email";
+// La cuenta se crea con storefrontTemplate "encontrate" unas líneas más abajo,
+// así que la bienvenida va siempre con la marca nueva.
+import { welcomeEmailHtml } from "~/server/email-encontrate";
 
 export type SignupState = { error: string | null };
 

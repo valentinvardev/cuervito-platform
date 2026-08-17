@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import { env } from "~/env";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
-import { downloadEmailHtml, sendEmail } from "~/server/email";
+import { sendEmail } from "~/server/email";
+import { mailsDe } from "~/server/email-marca";
 
 export async function POST(
   _req: Request,
@@ -25,6 +26,7 @@ export async function POST(
       downloadToken: true,
       downloadTokenExpires: true,
       event: { select: { name: true } },
+      seller: { select: { storefrontTemplate: true } },
       _count: { select: { items: true } },
     },
   });
@@ -45,7 +47,7 @@ export async function POST(
     await sendEmail({
       to: sale.buyerEmail,
       subject: `Tus fotos · ${sale.event.name}`,
-      html: downloadEmailHtml({
+      html: mailsDe(sale.seller.storefrontTemplate).deliveryEmailHtml({
         buyerName: sale.buyerName ?? "Hola",
         eventName: sale.event.name,
         photoCount: sale._count.items,

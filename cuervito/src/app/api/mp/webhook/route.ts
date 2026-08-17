@@ -5,7 +5,8 @@ import { randomBytes } from "node:crypto";
 import { env } from "~/env";
 import { db } from "~/server/db";
 import { accrueCommissionsForSale } from "~/server/commissions";
-import { deliveryEmailHtml, sendEmail } from "~/server/email";
+import { sendEmail } from "~/server/email";
+import { mailsDe } from "~/server/email-marca";
 import { fetchPayment } from "~/server/mp";
 import { recordPendingAndMaybeNotify } from "~/server/sale-notifier";
 import { publishSale } from "~/server/sales-bus";
@@ -19,6 +20,9 @@ async function sendDeliveryEmailForSale(saleId: string): Promise<void> {
       downloadToken: true,
       event: { select: { name: true } },
       _count: { select: { items: true } },
+      // Para elegir el juego de plantillas: el mail se tiene que parecer a la
+      // página donde compró.
+      seller: { select: { storefrontTemplate: true } },
     },
   });
   if (!sale?.downloadToken) return;
@@ -27,7 +31,7 @@ async function sendDeliveryEmailForSale(saleId: string): Promise<void> {
   await sendEmail({
     to: sale.buyerEmail,
     subject: `Tus fotos · ${sale.event.name}`,
-    html: deliveryEmailHtml({
+    html: mailsDe(sale.seller.storefrontTemplate).deliveryEmailHtml({
       buyerName: sale.buyerName ?? "Hola",
       eventName: sale.event.name,
       photoCount: sale._count.items,

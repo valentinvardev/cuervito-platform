@@ -2,6 +2,10 @@ import "server-only";
 
 import { env } from "~/env";
 
+// El resumen de venta se comparte con email.ts en vez de redefinirlo: es el
+// mismo dato, y dos formas del mismo resumen divergen sin que nadie se entere.
+import type { SaleItemSummary } from "./email";
+
 /* ============================================================================
  * Los mails de encontrate.app
  * ----------------------------------------------------------------------------
@@ -229,25 +233,27 @@ export function deliveryEmailHtml(i: DeliveryEmailInput): string {
   });
 }
 
-/* ── 3) Aviso de venta al fotógrafo ──────────────────────────────────────── */
+/* ── 3) Aviso de venta al fotógrafo ──────────────────────────────────────────
+   Las tres firmas son EXACTAMENTE las de email.ts, incluido SaleItemSummary,
+   que se importa en vez de redefinirse.
+
+   Las había escrito por mi cuenta con otros parámetros —eventName suelto,
+   netCents, buyerEmail— y no servían. El selector de plantillas promete que los
+   dos módulos son intercambiables, y con firmas distintas esa promesa se rompe
+   justo en el lugar donde importa: al mandar el mail. */
 
 export function saleEmailSingleHtml(i: {
   photographerName: string;
-  eventName: string;
-  photoCount: number;
-  netCents: number;
-  buyerEmail: string;
+  sale: SaleItemSummary;
 }): string {
+  const nombre = i.photographerName.split(" ")[0] ?? "Hola";
+  const comprador = i.sale.buyerName ?? "Alguien";
   return armar({
-    preheader: `Vendiste ${i.photoCount} ${i.photoCount === 1 ? "foto" : "fotos"} — te quedan ${pesos(i.netCents)}`,
+    preheader: `Vendiste ${i.sale.itemCount} ${i.sale.itemCount === 1 ? "foto" : "fotos"} — te quedan ${pesos(i.sale.sellerNetCents)}`,
     cuerpo: `
-      ${titulo("Vendiste")}
-      ${parrafo(`Alguien compró ${i.photoCount === 1 ? "una foto" : `${i.photoCount} fotos`} de <strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(i.eventName)}</strong>.`)}
-      ${cifra("Te quedan", pesos(i.netCents), "Ya está en tu Mercado Pago, con la comisión descontada")}
-      ${datos([
-        ["Comprador", i.buyerEmail],
-        ["Fotos", String(i.photoCount)],
-      ])}
+      ${titulo(`${nombre}, vendiste`)}
+      ${parrafo(`<strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(comprador)}</strong> compró ${i.sale.itemCount === 1 ? "una foto" : `${i.sale.itemCount} fotos`} de <strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(i.sale.eventName)}</strong>.`)}
+      ${cifra("Te quedan", pesos(i.sale.sellerNetCents), "Ya está en tu Mercado Pago, con la comisión descontada")}
       ${botonSuave("Ver la venta", `${BASE}/v2/ventas`)}
     `,
   });
@@ -255,18 +261,22 @@ export function saleEmailSingleHtml(i: {
 
 export function saleEmailSmallBatchHtml(i: {
   photographerName: string;
-  eventName: string;
-  sales: { photoCount: number; netCents: number; buyerEmail: string }[];
-  totalNetCents: number;
+  sales: SaleItemSummary[];
 }): string {
-  const fotos = i.sales.reduce((a, s) => a + s.photoCount, 0);
+  const nombre = i.photographerName.split(" ")[0] ?? "Hola";
+  const neto = i.sales.reduce((a, s) => a + s.sellerNetCents, 0);
+  const fotos = i.sales.reduce((a, s) => a + s.itemCount, 0);
   return armar({
-    preheader: `${i.sales.length} ventas — te quedan ${pesos(i.totalNetCents)}`,
+    preheader: `${i.sales.length} ventas — te quedan ${pesos(neto)}`,
     cuerpo: `
-      ${titulo(`${i.sales.length} ventas nuevas`)}
-      ${parrafo(`En <strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(i.eventName)}</strong>.`)}
-      ${cifra("Te quedan", pesos(i.totalNetCents), `${fotos} ${fotos === 1 ? "foto" : "fotos"} en total`)}
-      ${datos(i.sales.map((s) => [s.buyerEmail, `${s.photoCount} · ${pesos(s.netCents)}`]))}
+      ${titulo(`${nombre}, ${i.sales.length} ventas nuevas`)}
+      ${cifra("Te quedan", pesos(neto), `${fotos} ${fotos === 1 ? "foto" : "fotos"} en total`)}
+      ${datos(
+        i.sales.map((s) => [
+          s.buyerName ?? "Alguien",
+          `${s.itemCount} · ${pesos(s.sellerNetCents)}`,
+        ]),
+      )}
       ${botonSuave("Ver mis ventas", `${BASE}/v2/ventas`)}
     `,
   });
@@ -274,17 +284,18 @@ export function saleEmailSmallBatchHtml(i: {
 
 export function saleEmailBigBatchHtml(i: {
   photographerName: string;
-  eventName: string;
-  saleCount: number;
-  photoCount: number;
-  totalNetCents: number;
+  sales: SaleItemSummary[];
 }): string {
+  const nombre = i.photographerName.split(" ")[0] ?? "Hola";
+  const neto = i.sales.reduce((a, s) => a + s.sellerNetCents, 0);
+  const fotos = i.sales.reduce((a, s) => a + s.itemCount, 0);
+  const evento = i.sales[0]?.eventName ?? "tus eventos";
   return armar({
-    preheader: `${i.saleCount} ventas — te quedan ${pesos(i.totalNetCents)}`,
+    preheader: `${i.sales.length} ventas — te quedan ${pesos(neto)}`,
     cuerpo: `
-      ${titulo("Se está vendiendo")}
-      ${parrafo(`<strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(i.eventName)}</strong> tuvo ${i.saleCount} ventas.`)}
-      ${cifra("Te quedan", pesos(i.totalNetCents), `${i.photoCount} fotos en ${i.saleCount} ventas`)}
+      ${titulo(`${nombre}, se está vendiendo`)}
+      ${parrafo(`<strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(evento)}</strong> tuvo ${i.sales.length} ventas.`)}
+      ${cifra("Te quedan", pesos(neto), `${fotos} fotos en ${i.sales.length} ventas`)}
       ${botonSuave("Ver el detalle", `${BASE}/v2/ventas`)}
     `,
   });
@@ -312,7 +323,9 @@ export type CollaboratorInviteInput = {
   inviterName: string;
   eventName: string;
   acceptUrl: string;
-  commissionText?: string;
+  /** Mismo nombre que en email.ts: los dos módulos se llaman desde el mismo
+   *  lugar, así que las firmas tienen que ser intercambiables. */
+  commissionLine?: string;
 };
 
 export function collaboratorInviteHtml(i: CollaboratorInviteInput): string {
@@ -324,8 +337,8 @@ export function collaboratorInviteHtml(i: CollaboratorInviteInput): string {
       ${datos([
         ["Podés", "Subir tus fotos y ver cuánto vendieron"],
         ["No podés", "Ver las ventas de los demás ni cambiar el precio"],
-        ...(i.commissionText
-          ? ([["Te queda", i.commissionText]] as [string, string][])
+        ...(i.commissionLine
+          ? ([["Te queda", i.commissionLine]] as [string, string][])
           : []),
       ])}
       ${parrafo(`<span style="color:${C.texto3};font-size:13px;">Las ventas entran en la cuenta de Mercado Pago de quien organiza el evento. Lo que te corresponde queda registrado y te lo pasa esa persona.</span>`)}
@@ -351,11 +364,15 @@ export const PLANTILLAS_ENCONTRATE = {
     }),
   venta: () =>
     saleEmailSingleHtml({
-      photographerName: "Germán",
-      eventName: "Duatlón Club Ciclista Chivilcoy",
-      photoCount: 3,
-      netCents: 486000,
-      buyerEmail: "lucia@gmail.com",
+      photographerName: "Germán Sosa",
+      sale: {
+        eventName: "Duatlón Club Ciclista Chivilcoy",
+        itemCount: 3,
+        totalCents: 540000,
+        sellerNetCents: 486000,
+        buyerName: "Lucía Fernández",
+        paidAt: new Date().toISOString(),
+      },
     }),
   contrasena: () =>
     passwordResetEmailHtml({ name: "Germán", resetUrl: `${BASE}/reset/demo` }),
@@ -364,6 +381,6 @@ export const PLANTILLAS_ENCONTRATE = {
       inviterName: "Germán Sosa",
       eventName: "Duatlón Club Ciclista Chivilcoy",
       acceptUrl: `${BASE}/invitacion/demo`,
-      commissionText: "70% de las ventas de tus fotos",
+      commissionLine: "70% de las ventas de tus fotos",
     }),
 } as const;

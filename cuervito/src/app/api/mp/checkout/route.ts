@@ -6,7 +6,8 @@ import { z } from "zod";
 import { env } from "~/env";
 import { db } from "~/server/db";
 import { accrueCommissionsForSale } from "~/server/commissions";
-import { deliveryEmailHtml, sendEmail } from "~/server/email";
+import { sendEmail } from "~/server/email";
+import { mailsDe } from "~/server/email-marca";
 import { createPreference, isMpConfigured } from "~/server/mp";
 import { recordPendingAndMaybeNotify } from "~/server/sale-notifier";
 import { publishSale } from "~/server/sales-bus";
@@ -60,6 +61,7 @@ export async function POST(req: NextRequest) {
           id: true,
           mpAccessToken: true,
           mpConnectedAt: true,
+          storefrontTemplate: true,
           status: true,
           role: true,
           testModeEnabled: true,
@@ -250,7 +252,7 @@ export async function POST(req: NextRequest) {
     void sendEmail({
       to: parsed.data.buyerEmail,
       subject: `Tus fotos · ${event.name}`,
-      html: deliveryEmailHtml({
+      html: mailsDe(event.owner.storefrontTemplate).deliveryEmailHtml({
         buyerName: parsed.data.buyerName ?? "Hola",
         eventName: event.name,
         photoCount: items.length,
