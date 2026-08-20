@@ -214,3 +214,35 @@
    Sin esto, el comprador ve la galería armándose y DESPUÉS le preguntamos si el
    pago salió bien, que es el orden exactamente al revés. */
 :root[data-pago="confirmando"] .eg-esqueleto { visibility: hidden; }
+
+/* Señal de que la descarga está en curso.
+
+   Hace falta sobre todo en iPhone: ahí no se puede usar <a download> porque
+   el archivo cae en la app Archivos y no en el carrete, así que primero hay
+   que bajar el original entero y recién después abrir la hoja de compartir.
+   Con una foto de 20 MB por datos móviles son varios segundos con el botón
+   idéntico a antes de tocarlo, y el comprador lo vuelve a tocar.
+
+   Un anillo girando y no una barra: no sabemos cuánto falta —el fetch a S3 no
+   da progreso útil acá— y una barra que avanza inventando es peor que no
+   tener ninguna. */
+.eg-giro {
+  /* border-box para que mida 14 como los íconos y no 18: sin esto el botón
+     crece 7px al cambiar de flecha a anillo, y salta bajo el dedo. */
+  box-sizing: border-box;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: eg-girar 700ms linear infinite;
+  flex-shrink: 0;
+}
+@keyframes eg-girar { to { transform: rotate(360deg); } }
+
+/* Mientras baja no se apaga como un botón deshabilitado cualquiera: sigue
+   legible, porque es la única parte de la pantalla que está diciendo algo. */
+.eg-baja[data-bajando="1"] { opacity: 1; cursor: default; }
+
+@media (prefers-reduced-motion: reduce) {
+  .eg-giro { animation-duration: 2s; }
+}

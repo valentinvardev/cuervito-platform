@@ -61,16 +61,57 @@ export function Entrega({
   const [manteneApretado, setManteneApretado] = useState(false);
   const [avisoZip, setAvisoZip] = useState(false);
   const [viendo, setViendo] = useState<number | null>(null);
+  const [bajando, setBajando] = useState<Set<string>>(new Set());
 
   // En un efecto y no al renderizar: el servidor no tiene navigator, y decidirlo
   // durante el render dejaría el HTML del servidor distinto al del cliente.
   useEffect(() => setIos(esIos()), []);
 
+  /**
+   * Descargar una foto, con señal de que algo está pasando.
+   *
+   * El indicador importa sobre todo en iOS: ahí no se puede usar <a download>
+   * —el archivo cae en la app Archivos y no en el carrete— así que primero hay
+   * que bajar el original ENTERO y recién después abrir la hoja de compartir.
+   * Con fotos de 15 o 20 MB por datos móviles son varios segundos en los que el
+   * botón se veía igual que antes de tocarlo, y el comprador lo vuelve a tocar
+   * creyendo que no pasó nada. En escritorio se nota menos porque el navegador
+   * pone su propia barra de descarga, pero la señal no molesta.
+   *
+   * El try/finally no es adorno: hay tres salidas distintas —guardada, iPhone
+   * viejo sin Web Share, y error— y el indicador tiene que apagarse en las
+   * tres. Sobre todo en la rareza de iOS que hace que navigator.share tire
+   * AbortError incluso cuando el usuario ya guardó la foto.
+   */
   async function descargarUna(f: Foto) {
+    if (bajando.has(f.id)) return;
+
     // Mismo origen siempre: el fetch de Safari contra otro origen sin CORS tira
     // excepción y la descarga muere sin decir nada.
     const url = `/api/download/${token}/${f.id}/blob`;
 
+    // El indicador aparece recién a los 150 ms. Hay caminos que vuelven al
+    // instante —un iPhone viejo sin Web Share ni siquiera intenta bajar nada, y
+    // una foto ya cacheada resuelve en un cuadro— y ahí un anillo que aparece y
+    // desaparece se lee como un parpadeo raro, no como "está trabajando".
+    const reloj = setTimeout(() => {
+      setBajando((s) => new Set(s).add(f.id));
+    }, 150);
+
+    try {
+      await bajar(f, url);
+    } finally {
+      clearTimeout(reloj);
+      setBajando((s) => {
+        if (!s.has(f.id)) return s;
+        const n = new Set(s);
+        n.delete(f.id);
+        return n;
+      });
+    }
+  }
+
+  async function bajar(f: Foto, url: string) {
     if (ios) {
       const r = await guardarConHojaDeCompartir(url, f.filename);
       if (r === "guardada") setBajadas((s) => new Set(s).add(f.id));
@@ -203,6 +244,7 @@ export function Entrega({
         <section className="et-grilla">
           {fotos.map((f, i) => {
             const lista = bajadas.has(f.id);
+            const enCurso = bajando.has(f.id);
             return (
               <div
                 className="et-foto"
@@ -225,6 +267,8 @@ export function Entrega({
                 <button
                   className="eg-baja"
                   data-listo={lista ? "1" : ""}
+                  data-bajando={enCurso ? "1" : ""}
+                  disabled={enCurso}
                   onClick={(e) => {
                     // Sin esto, descargar abre además la foto en grande.
                     e.stopPropagation();
@@ -232,8 +276,14 @@ export function Entrega({
                   }}
                   aria-label={`Descargar ${f.filename}`}
                 >
-                  {lista ? <Check /> : <Download />}
-                  <span>{lista ? "Descargada" : "Descargar"}</span>
+                  {enCurso ? (
+                    <i className="eg-giro" aria-hidden />
+                  ) : lista ? (
+                    <Check />
+                  ) : (
+                    <Download />
+                  )}
+                  <span>{enCurso ? "Bajando…" : lista ? "Descargada" : "Descargar"}</span>
                 </button>
               </div>
             );
