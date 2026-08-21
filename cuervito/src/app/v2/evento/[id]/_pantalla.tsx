@@ -80,6 +80,7 @@ export function Pantalla({
   publico,
   yo,
   fotosDelDueno,
+  simulado = false,
 }: {
   evento: {
     id: string;
@@ -109,6 +110,11 @@ export function Pantalla({
   publico: string | null;
   yo: string;
   fotosDelDueno: number;
+  /**
+   * Modo demo. Lo usa /demo/subida para grabar esta misma pantalla subiendo
+   * un álbum sin tocar la red ni crear fotos de verdad.
+   */
+  simulado?: boolean;
 }) {
   const sinCobrar = colaboradores.filter((c) => c.estado !== "PENDING" && !c.cobra);
   const [publicando, empezarPub] = useTransition();
@@ -422,7 +428,7 @@ export function Pantalla({
 
         {solapa === "fotos" && (
           <section className="panel-s" data-activo="1">
-            <Soltador eventId={evento.id} maxBytes={evento.maxFoto} />
+            <Soltador eventId={evento.id} maxBytes={evento.maxFoto} simulado={simulado} />
 
             <div className="barra">
               <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center", flexWrap: "wrap" }}>
@@ -625,11 +631,23 @@ export function Pantalla({
                 <div className="empty-i">
                   <ScanSearch />
                 </div>
-                <h3>{buscado ? "Ninguna foto con ese dorsal" : "No hay fotos con ese filtro"}</h3>
+                {/* Un evento sin NINGUNA foto no es lo mismo que un filtro sin
+                    resultados. Recién creado mostraba “Probá con otro filtro”
+                    estando en Todas, que no lleva a ninguna parte: lo que hay
+                    que hacer ahí es subir fotos, y el soltador está arriba. */}
+                <h3>
+                  {fotos.length === 0
+                    ? "Todavía no hay fotos en este evento"
+                    : buscado
+                      ? "Ninguna foto con ese dorsal"
+                      : "No hay fotos con ese filtro"}
+                </h3>
                 <p>
-                  {buscado
-                    ? "Puede que el dorsal no se haya leído bien, o que esa foto todavía esté procesando."
-                    : "Probá con otro filtro."}
+                  {fotos.length === 0
+                    ? "Subilas desde el recuadro de arriba. Podés soltar la carpeta entera del evento."
+                    : buscado
+                      ? "Puede que el dorsal no se haya leído bien, o que esa foto todavía esté procesando."
+                      : "Probá con otro filtro."}
                 </p>
               </div>
             )}

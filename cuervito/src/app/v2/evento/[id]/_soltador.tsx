@@ -1,7 +1,7 @@
 "use client";
 
 import { CircleAlert, CircleCheck, CloudUpload, RotateCcw, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ACEPTADOS, useSubida } from "~/app/dashboard/events/[id]/usar-subida";
 
@@ -21,7 +21,16 @@ import { ACEPTADOS, useSubida } from "~/app/dashboard/events/[id]/usar-subida";
  * justo cuando el navegador está ocupado subiendo. Una barra y tres números
  * dicen lo mismo: cuántas van, cuántas fallaron, cuánto falta.
  */
-export function Soltador({ eventId, maxBytes }: { eventId: string; maxBytes: number }) {
+export function Soltador({
+  eventId,
+  maxBytes,
+  simulado = false,
+}: {
+  eventId: string;
+  maxBytes: number;
+  /** Modo demo: la subida recorre sus estados sin tocar la red. Ver /demo/subida. */
+  simulado?: boolean;
+}) {
   const entrada = useRef<HTMLInputElement>(null);
   const [encima, setEncima] = useState(false);
   const [afuera, setAfuera] = useState(0);
@@ -31,13 +40,30 @@ export function Soltador({ eventId, maxBytes }: { eventId: string; maxBytes: num
   // celda por foto. Pedirlas sería leer cada archivo entero a base64 para
   // tirarlo.
   const { total, hechas, fallidas, cerrado, fase, pct, agregar, reintentar, conFallo, limpiar } =
-    useSubida(eventId, { miniaturas: 0, maxBytes });
+    useSubida(eventId, { miniaturas: 0, maxBytes, simulado });
 
   async function recibir(lista: FileList | File[]) {
     const r = await agregar(lista);
     setAfuera(r?.afuera ?? 0);
     setGrandes(r?.grandes ?? 0);
   }
+
+  /**
+   * En la demo, los archivos entran por un evento en vez de por el soltador.
+   *
+   * No es capricho: desde un script no hay manera de meterle archivos a un
+   * <input type=file> sin armar un DataTransfer, y eso además de ser una
+   * rareza depende del navegador justo en el aparato con el que se graba. El
+   * halo del toque igual se dibuja sobre el recuadro, así que en el video se
+   * ve soltando la carpeta como lo haría cualquiera.
+   */
+  useEffect(() => {
+    if (!simulado) return;
+    const al = (e: Event) => void recibir((e as CustomEvent<File[]>).detail);
+    window.addEventListener("demo:soltar", al);
+    return () => window.removeEventListener("demo:soltar", al);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [simulado]);
 
   if (fase !== "idle") {
     const todoMal = cerrado && fallidas === total;

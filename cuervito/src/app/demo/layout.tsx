@@ -1,17 +1,14 @@
-import "~/styles/tienda-encontrate.css";
-import "~/styles/entrega-encontrate.css";
 import "~/styles/demo.css";
 
 /**
- * Layout de la demo.
+ * Layout de las demos grabables.
  *
- * Trae el CSS de la tienda y el de la entrega —los mismos archivos que sirven a
- * los usuarios, sin copias— más una hoja chiquita con lo único que existe para
- * grabar: el halo de qué se está tocando, el rótulo del paso y la barra de
- * avance.
+ * Sólo trae la hoja chiquita con lo único que existe para grabar: el halo de
+ * qué se está tocando, el rótulo del paso y la barra de avance.
  *
- * No trae el prototipo viejo, que sí carga el layout de /descarga: acá no hace
- * falta y son 100 KB de CSS que no se usan.
+ * El CSS de cada pantalla lo trae la demo que lo necesita —/demo/compra el de
+ * la tienda, /demo/subida el del panel— porque son megas de estilos y ninguna
+ * de las dos usa los de la otra.
  */
 export default function DemoLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;

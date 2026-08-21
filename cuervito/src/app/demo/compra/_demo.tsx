@@ -57,6 +57,14 @@ export function Demo({
   const [rotulo, setRotulo] = useState<string | null>(null);
   const [vuelta, setVuelta] = useState(0);
   const cancelado = useRef(false);
+
+  // Se puede apagar con ?rotulos=no si en la edición molestan. Se lee en un
+  // efecto porque en el servidor no hay location, y decidirlo al renderizar
+  // dejaría el HTML del servidor distinto al del cliente.
+  const [conRotulos, setConRotulos] = useState(true);
+  useEffect(() => {
+    setConRotulos(new URLSearchParams(window.location.search).get("rotulos") !== "no");
+  }, []);
   const pasos = guion(dorsal);
 
   useEffect(() => {
@@ -179,7 +187,7 @@ export function Demo({
       {/* El rótulo de lo que está pasando. Se puede apagar con ?rotulos=no si en
           la edición molesta; por defecto está porque ayuda a que el paso se
           entienda sin narración. */}
-      {rotulo && <div className="demo-rotulo">{rotulo}</div>}
+      {conRotulos && rotulo && <div className="demo-rotulo">{rotulo}</div>}
 
       <div className="demo-barra" style={{ width: `${(paso / pasos.length) * 100}%` }} />
     </div>

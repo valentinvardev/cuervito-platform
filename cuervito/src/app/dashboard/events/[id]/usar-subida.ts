@@ -65,8 +65,18 @@ export function useSubida(
     miniaturas?: number;
     /** Tope por foto. Los que se pasan no entran, en vez de voltear su tanda. */
     maxBytes?: number;
+    /**
+     * Modo demo: recorre los mismos estados sin tocar la red.
+     *
+     * Lo usa /demo/subida, que muestra este mismo soltador operándose solo para
+     * poder grabarlo. Va acá y no en el componente porque la máquina de estados
+     * —pendiente, subiendo con su porcentaje, lista— vive en este hook: fingirla
+     * desde afuera daría una animación parecida pero no las mismas pantallas.
+     */
+    simulado?: boolean;
   },
 ) {
+  const simulado = opciones?.simulado ?? false;
   const miniaturasHasta = opciones?.miniaturas ?? 0;
   const maxBytes = opciones?.maxBytes ?? Infinity;
   const router = useRouter();
@@ -134,6 +144,7 @@ export function useSubida(
   }
 
   async function procesar(aProcesar: ItemSubida[]) {
+    if (simulado) return procesarFingido(aProcesar);
     type Firmada = { photoId: string; uploadUrl: string; contentType: string };
 
     // La cola se llena mientras se sube, no antes.
@@ -289,6 +300,34 @@ export function useSubida(
     if (archivos.length === 0) return;
     setItems((prev) => prev.filter((i) => i.state !== "failed"));
     void agregar(archivos);
+  }
+
+  /**
+   * La misma subida, sin red.
+   *
+   * Sube de a MAX_PARALELO como la de verdad y con porcentajes que avanzan, para
+   * que en el video se vea el mismo comportamiento: varias fotos a la vez, la
+   * barra general moviéndose, y el contador de "N de M" subiendo.
+   */
+  async function procesarFingido(aProcesar: ItemSubida[]) {
+    let cursor = 0;
+    async function obrero() {
+      while (cursor < aProcesar.length) {
+        const b = aProcesar[cursor++]!;
+        uno(b.localId, { state: "uploading", pct: 0, intentos: 1 });
+        for (let pct = 10; pct <= 99; pct += 15) {
+          await new Promise((r) => setTimeout(r, 70));
+          uno(b.localId, { pct });
+        }
+        await new Promise((r) => setTimeout(r, 90));
+        uno(b.localId, { state: "complete", pct: 100 });
+      }
+    }
+    await Promise.all(
+      Array.from({ length: Math.min(MAX_PARALELO, aProcesar.length) }, () => obrero()),
+    );
+    // Sin router.refresh(): en la demo las fotos las revela el guion, no el
+    // servidor, y refrescar tiraría abajo el estado de la pantalla.
   }
 
   return {

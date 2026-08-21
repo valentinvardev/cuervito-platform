@@ -10,16 +10,19 @@ import { getPresignedDownloadUrl } from "~/server/s3";
 import { Demo } from "./_demo";
 
 /**
- * La demo grabable de un evento real.
+ * La demo grabable de la compra.
  *
- * Apunta a un evento publicado y usa SUS fotos: una demo con rectángulos grises
- * no sirve para mostrar un producto que vende fotos. Se abre en
- * /demo/<fotógrafo>/<evento> y se opera sola, de punta a punta, para poder
- * grabar la pantalla del teléfono.
+ * Se abre en /demo/compra y listo: la dirección no lleva parámetros para poder
+ * tipearla en el teléfono sin errores en medio de una grabación. El evento lo
+ * elige la propia página — el publicado más reciente que tenga fotos
+ * procesadas.
  *
- * No pide sesión: no muestra nada que no esté ya público en la tienda del
- * fotógrafo. Sí lleva noindex, porque es una pantalla de trabajo y no algo que
- * tenga que aparecer en una búsqueda.
+ * Usa un evento REAL y sus fotos: una demo con rectángulos grises no sirve para
+ * mostrar un producto que vende fotos.
+ *
+ * No pide sesión porque no muestra nada que no esté ya público en la tienda del
+ * fotógrafo. Sí lleva noindex: es una pantalla de trabajo, no algo que tenga
+ * que aparecer en una búsqueda.
  */
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -30,29 +33,18 @@ export const dynamic = "force-dynamic";
 
 const TOPE = 24;
 
-export default async function DemoPage(props: {
-  params: Promise<{ slug: string; eventSlug: string }>;
-}) {
-  const { slug, eventSlug } = await props.params;
-
-  const fotografo = await db.user.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      name: true,
-      bio: true,
-      location: true,
-      instagramUrl: true,
-      image: true,
-      logoKey: true,
-      storefrontBrandColor: true,
-      storefrontTemplate: true,
-    },
-  });
-  if (!fotografo) notFound();
-
+export default async function DemoCompra() {
+  // El evento más reciente que esté publicado y tenga fotos listas para mostrar.
+  // Buscarlo así y no fijarlo por id evita que la demo se rompa el día que ese
+  // evento se archive.
   const evento = await db.event.findFirst({
-    where: { slug: eventSlug, ownerId: fotografo.id, isPublished: true },
+    where: {
+      isPublished: true,
+      NOT: { status: "ARCHIVED" },
+      owner: { status: "ACTIVE" },
+      photos: { some: { deletedAt: null, previewGeneratedAt: { not: null } } },
+    },
+    orderBy: { createdAt: "desc" },
     select: {
       id: true,
       slug: true,
@@ -65,9 +57,25 @@ export default async function DemoPage(props: {
       pricePerPhoto: true,
       currency: true,
       bibDetection: true,
+      owner: {
+        select: {
+      id: true,
+      name: true,
+      bio: true,
+      location: true,
+      instagramUrl: true,
+      image: true,
+      logoKey: true,
+          storefrontBrandColor: true,
+          slug: true,
+        },
+      },
     },
   });
   if (!evento) notFound();
+
+  const fotografo = evento.owner;
+  const slug = fotografo.slug ?? "";
 
   const crudas = await db.photo.findMany({
     where: {
