@@ -111,7 +111,17 @@ section { position: relative; }
 .rule { border-top: 1px solid var(--line-soft); }
 
 /* ── HERO ────────────────────────────────────────────────────────────────── */
-.hero { padding: var(--s-9) 0 var(--s-8); overflow: hidden; }
+/* El aire de arriba es la mitad del de abajo a propósito: la barra ya ocupa
+   74px y tiene su propio filete, así que arriba del titular hay más espacio
+   visual del que dice el número. Con los 120 de antes quedaban 128px de nada
+   entre el filete y el volanta, y en un titular que es LO primero que hay que
+   leer eso es scroll gratis. */
+.hero { padding: var(--s-7) 0 var(--s-8); overflow: hidden; }
+@media (max-width: 760px) {
+  /* En un teléfono 60px arriba siguen siendo un octavo de la pantalla antes de
+     que empiece a decir algo. */
+  .hero { padding-top: var(--s-6); }
+}
 .hero-grid {
   display: grid; grid-template-columns: 1.24fr 0.76fr;
   gap: var(--s-7); align-items: center;
