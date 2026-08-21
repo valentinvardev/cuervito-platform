@@ -196,147 +196,147 @@ section { position: relative; }
 .trust span::after { content: "/"; margin-left: var(--s-4); color: var(--line-strong); }
 .trust span:last-child::after { content: ""; }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   ESCENA DEL HERO · hoja de contactos siendo reconocida
-   Un solo ciclo de 9s compartido por todo: el escaneo baja, los dorsales
-   aparecen fila por fila a medida que pasa, una cara queda enganchada y al
-   final entra la venta. Cada elemento usa el MISMO keyframe con distinto
-   retraso, así la coreografía no se desincroniza nunca.
-   Sólo se animan transform y opacity: todo corre en el compositor.
-   ═══════════════════════════════════════════════════════════════════════════ */
-.scene { position: relative; aspect-ratio: 1 / 1; }
-.rig { position: absolute; inset: 6% 4% 8% 4%; display: flex; flex-direction: column; }
+/* ── El panel del fotógrafo, con las ventas cayendo ──────────────────────────
+   Antes acá había una hoja de contactos animada: entraban las fotos, pasaba un
+   barrido, aparecían los dorsales. Explicaba el reconocimiento, que es CÓMO
+   funciona. Pero el titular no promete reconocimiento, promete plata —"cobrás
+   en tu Mercado Pago"—, así que la imagen que va al lado tiene que ser esa: el
+   panel con la guita adentro y las ventas entrando solas.
 
-.sheet {
-  position: relative; flex: 1;
-  display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr;
-  gap: 10px; padding: 14px;
-  background: var(--paper-2);
+   Es una captura de verdad del panel, no un dibujo: se renderiza la pantalla
+   real a 390px y se corta donde arranca la segunda sección, que da 390×652 y
+   es casi exactamente 9:16. Por eso se lee como un teléfono sin necesitar un
+   marco de teléfono dibujado: la página ya tiene dos más abajo y un tercero
+   sería repetir el mismo truco tres veces.
+
+   Los números están inflados a propósito y no son de nadie: es una captura de
+   demostración, no el mes de un cliente.
+   ------------------------------------------------------------------------- */
+.panelazo {
+  position: relative;
+  width: 100%;
+  max-width: 390px;
+  margin-inline: auto;
+  aspect-ratio: 390 / 652;
   border-radius: var(--r-4);
-  box-shadow: var(--shadow-card);
   overflow: hidden;
-}
-.tile {
-  position: relative; border-radius: 6px; overflow: hidden;
   background: var(--paper-3);
+  box-shadow: var(--shadow-obj);
+  /* El filete claro despega la captura del fondo cuando el tema y la captura
+     son los dos oscuros, que si no se funden en una sola mancha. */
+  outline: 1px solid var(--line);
+  outline-offset: -1px;
 }
-/* Marcadores: cada baldosa con una inclinación distinta para que no se lea
-   como un patrón. Van fotos reales. */
-.t1 { background: linear-gradient(150deg, #DFDCD4, #EFEDE8); }
-.t2 { background: linear-gradient(200deg, #E6E3DB, #F3F2EE); }
-.t3 { background: linear-gradient(120deg, #D9D6CD, #ECEAE4); }
-.t4 { background: linear-gradient(165deg, #E9E6DE, #F5F4F0); }
-.t5 { background: linear-gradient(140deg, #D3CFC5, #E7E4DC); }
-.t6 { background: linear-gradient(185deg, #E2DFD7, #F0EEE9); }
-.t7 { background: linear-gradient(155deg, #DBD8CF, #EDEBE5); }
-.t8 { background: linear-gradient(210deg, #E7E4DC, #F4F3EF); }
-.t9 { background: linear-gradient(130deg, #D6D2C9, #E9E7E0); }
-
-/* Barrido. Una banda de luz con un filo marcado abajo, que es lo que da la
-   sensación de lectura y no de degradé decorativo. */
-.scan {
-  position: absolute; left: 0; right: 0; top: 0; height: 34%;
-  background: linear-gradient(to bottom,
-    transparent 0%,
-    color-mix(in srgb, var(--accent) 8%, transparent) 62%,
-    color-mix(in srgb, var(--accent) 20%, transparent) 97%,
-    var(--accent) 100%);
-  animation: sweep 9s cubic-bezier(.45,.05,.55,.95) infinite;
-  pointer-events: none;
-}
-@keyframes sweep {
-  0%          { transform: translateY(-105%); opacity: 0; }
-  5%          { opacity: 1; }
-  38%         { transform: translateY(295%); opacity: 1; }
-  44%, 100%   { transform: translateY(295%); opacity: 0; }
+.panelazo > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
 }
 
-/* Dorsal detectado. Aparece cuando el barrido pasa por su fila. */
-.bib {
-  position: absolute; left: 6px; bottom: 6px;
-  font-family: var(--meta); font-weight: 500; font-size: 9.5px;
-  letter-spacing: 0.06em;
-  color: var(--paper-2); background: var(--accent);
-  padding: 2px 6px; border-radius: 3px;
-  opacity: 0;
-  animation: chip 9s ease infinite;
-}
-.d1 { animation-delay: .55s; }
-.d2 { animation-delay: 1.5s; }
-.d3 { animation-delay: 2.45s; }
-@keyframes chip {
-  0%, 4%     { opacity: 0; transform: scale(.8) translateY(3px); }
-  9%, 72%    { opacity: 1; transform: none; }
-  80%, 100%  { opacity: 0; transform: scale(.96); }
-}
-
-/* Enganche de cara: cuatro esquinas que se cierran sobre el rostro. */
-.face { position: absolute; inset: 22%; opacity: 0; animation: lock 9s ease infinite; animation-delay: 2.1s; }
-.face i { position: absolute; width: 9px; height: 9px; border: 1.5px solid var(--accent); }
-.face i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; }
-.face i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; }
-.face i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; }
-.face i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; }
-@keyframes lock {
-  0%, 3%     { opacity: 0; transform: scale(1.4); }
-  10%, 70%   { opacity: 1; transform: scale(1); }
-  78%, 100%  { opacity: 0; transform: scale(1.06); }
-}
-
-/* Pie: la barra de indexado avanza al ritmo del barrido. */
-.sheet-foot { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4) 4px 0; }
-.prog { flex: 1; height: 2px; background: var(--paper-3); border-radius: 2px; overflow: hidden; }
-.prog i { display: block; height: 100%; width: 0; background: var(--accent); animation: fill 9s cubic-bezier(.45,.05,.55,.95) infinite; }
-@keyframes fill { 0%,2% { width: 0; } 40%,86% { width: 100%; } 94%,100% { width: 0; opacity: 0; } }
-.pct { font-variant-numeric: tabular-nums; }
-
-/* La venta entra cuando el barrido terminó. */
-.frag.sale {
-  left: -6%; bottom: 4%; width: 214px;
-  opacity: 0;
-  animation: cash 9s cubic-bezier(.2,.8,.3,1) infinite;
-  animation-delay: .2s;
-}
-@keyframes cash {
-  0%, 44%    { opacity: 0; transform: translateY(16px) scale(.97); }
-  52%, 84%   { opacity: 1; transform: none; }
-  92%, 100%  { opacity: 0; transform: translateY(-6px); }
-}
-
-/* Sin movimiento: se muestra el estado final, que es el que cuenta la historia. */
-@media (prefers-reduced-motion: reduce) {
-  .scan { display: none; }
-  .bib, .face, .frag.sale { opacity: 1; animation: none; transform: none; }
-  .prog i { width: 100%; animation: none; }
-}
-
-.frag {
+/* El corte de abajo se desvanece en vez de terminar en un filo. Cortada seca,
+   la captura parece rota; con el degradé parece que sigue y no entra. */
+.panelazo::after {
+  content: "";
   position: absolute;
+  inset: auto 0 0 0;
+  height: 96px;
+  background: linear-gradient(to bottom, transparent, var(--paper));
+  pointer-events: none;
+  /* Debajo de los avisos: el degradé es para difuminar el CORTE, no la venta
+     que está entrando. Sin esto la tarjeta caía adentro del velo y se veía
+     lavada, que es justo lo contrario de lo que tiene que transmitir. */
+  z-index: 1;
+}
+
+/* ── Las ventas entrando ─────────────────────────────────────────────────────
+   De a una y no apiladas: una sola tarjeta que aparece, se queda un rato y se
+   va se lee como "acaba de entrar una venta". Tres apiladas se leen como una
+   lista, que es lo que ya muestra el panel de más abajo.
+
+   Todo en CSS y sin JavaScript: son tres tarjetas con el mismo ciclo de doce
+   segundos y el arranque corrido cuatro segundos cada una, así que se turnan
+   solas y la landing no paga un componente de cliente por un adorno. */
+.avisos {
+  position: absolute;
+  left: var(--s-4);
+  right: var(--s-4);
+  bottom: var(--s-6);
+  display: grid;
+  pointer-events: none;
+  z-index: 2;
+}
+.aviso {
+  grid-area: 1 / 1;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 13px;
+  border-radius: var(--r-3);
   background: var(--paper-2);
   border: 1px solid var(--line-soft);
-  border-radius: var(--r-3);
   box-shadow: var(--shadow-card);
-  padding: var(--s-4);
+  opacity: 0;
+  animation: aviso-turno 12s linear infinite;
+  animation-delay: calc(var(--i, 0) * 4s);
 }
-@media (max-width: 540px) { .frag.sale { width: 172px; padding: var(--s-3); left: 0; } }
-.frag-amount {
-  font-family: var(--sans); font-weight: 200; font-size: 38px;
-  letter-spacing: -0.04em; font-variant-numeric: tabular-nums;
-  line-height: 1; margin: 8px 0;
+@keyframes aviso-turno {
+  0%   { opacity: 0; transform: translateY(14px) scale(.96); }
+  /* Entra con un pelo de rebote: es plata que llega, no un cartel de sistema. */
+  4%   { opacity: 1; transform: translateY(-2px) scale(1.01); }
+  7%   { opacity: 1; transform: none; }
+  28%  { opacity: 1; transform: none; }
+  33%  { opacity: 0; transform: translateY(-8px) scale(.98); }
+  100% { opacity: 0; transform: translateY(14px) scale(.96); }
 }
-.frag-amount small { font-size: 15px; color: var(--ink-3); letter-spacing: 0; }
 
-/* Parallax nativo. Poco, lento, en un eje. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .par { animation: drift linear both; animation-timeline: view(); animation-range: entry 0% exit 100%; }
-    .par-slow { --dy: 24px; }
-    .par-fast { --dy: -44px; }
-    @keyframes drift {
-      from { transform: translateY(calc(var(--dy) * -1)); }
-      to   { transform: translateY(var(--dy)); }
-    }
-  }
+.aviso-i {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  color: var(--ok);
+}
+.aviso-i svg { width: 17px; height: 17px; stroke-width: 1.9; }
+
+.aviso-txt { flex: 1; min-width: 0; }
+.aviso-txt b {
+  display: block;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.aviso-txt span {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* El monto es lo único que alguien va a leer si mira medio segundo. */
+.aviso-m {
+  font-family: var(--sans);
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--ok);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* Sin movimiento: queda la primera, quieta. La captura sola ya cuenta la
+   historia; las otras dos sólo agregan repetición. */
+@media (prefers-reduced-motion: reduce) {
+  .aviso { animation: none; opacity: 0; transform: none; }
+  .aviso:first-child { opacity: 1; }
 }
 
 /* ── Tira de prueba ──────────────────────────────────────────────────────── */

@@ -103,53 +103,6 @@ const INCLUIDO = [
   "Soporte por WhatsApp las 24 horas",
 ];
 
-/**
- * Las nueve baldosas del hero, con foto y número de verdad.
- *
- * Una por evento, y no las nueve fotos más nuevas. Pidiéndolas por fecha salían
- * las nueve de la misma carrera —el mismo ciclista cruzando el mismo charco,
- * con el mismo dorsal repetido dos veces en la grilla— y lo que la hoja tiene
- * que decir es que acá entra todo tipo de evento.
- *
- * Van con marca de agua a propósito: son las previews públicas de las tiendas,
- * las mismas que ya ve cualquiera. Las limpias son del fotógrafo y del que
- * pagó.
- */
-async function baldosasDelHero() {
-  const eventos = await db.event.findMany({
-    where: {
-      isPublished: true,
-      NOT: { status: "ARCHIVED" },
-      photos: {
-        some: { deletedAt: null, fileSize: { not: null }, previewKey: { not: null } },
-      },
-    },
-    orderBy: [{ eventDate: "desc" }, { createdAt: "desc" }],
-    take: 9,
-    select: {
-      id: true,
-      photos: {
-        where: { deletedAt: null, fileSize: { not: null }, previewKey: { not: null } },
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: { id: true, previewKey: true, bibNumbers: true },
-      },
-    },
-  });
-
-  return Promise.all(
-    eventos.flatMap((e) =>
-      e.photos.map(async (f) => ({
-        id: f.id,
-        url: await resolveMediaUrl(f.previewKey!).catch(() => null),
-        // Sólo el primero: una foto con seis dorsales leídos no entra en la
-        // esquina de una baldosa de noventa píxeles.
-        bib: f.bibNumbers?.split(",")[0]?.trim() ?? null,
-      })),
-    ),
-  );
-}
-
 /** La tira de eventos publicados, con su portada. */
 async function tiraDeEventos() {
   const eventos = await db.event.findMany({
@@ -253,11 +206,10 @@ async function eventoDemo() {
 export default async function LandingNueva() {
   // Cada una cae por su cuenta: que no haya portadas cargadas no puede dejar
   // la landing entera en blanco.
-  const [sesion, eventos, fotos, baldosas, tira, demo, miniaturas] = await Promise.all([
+  const [sesion, eventos, fotos, tira, demo, miniaturas] = await Promise.all([
     auth().catch(() => null),
     db.event.count({ where: { isPublished: true, NOT: { status: "ARCHIVED" } } }).catch(() => 0),
     db.photo.count({ where: { fileSize: { not: null }, deletedAt: null } }).catch(() => 0),
-    baldosasDelHero().catch(() => []),
     tiraDeEventos().catch(() => []),
     eventoDemo().catch(() => null),
     miniaturasDeVentas().catch(() => [] as string[]),
@@ -266,12 +218,6 @@ export default async function LandingNueva() {
   const hayNumeros = eventos >= MIN_EVENTOS && fotos >= MIN_FOTOS;
   const n = (x: number) => x.toLocaleString("es-AR");
 
-  // Qué baldosa lleva el marco de cara. La primera sin número, así el marco no
-  // le tapa un dato que la foto sí tiene; si todas tienen, va la del medio,
-  // porque el reconocimiento facial es la mitad del producto y tiene que verse
-  // aunque el evento sea de los que leen dorsal.
-  const sinBib = baldosas.findIndex((b) => !b.bib);
-  const caraEn = sinBib >= 0 ? sinBib : 4;
 
   return (
     <>
@@ -314,49 +260,50 @@ export default async function LandingNueva() {
             </div>
           </div>
 
-          {/* La hoja de contactos siendo reconocida. Muestra el producto, no
-              una metáfora: entran las fotos, pasa el escaneo, aparecen los
-              números y cae la venta. */}
-          <div className="scene" aria-hidden="true">
-            <div className="rig par par-slow">
-              <div className="sheet">
-                {baldosas.map((b, i) => (
-                  <div className={`tile t${i + 1}`} key={b.id}>
-                    {b.url && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={b.url} alt="" loading="eager" />
-                    )}
-                    {/* El marco de cara y el número no conviven en la misma
-                        baldosa: encimados no se lee ninguno de los dos. */}
-                    {i === caraEn ? (
-                      <span className="face">
-                        <i />
-                        <i />
-                        <i />
-                        <i />
-                      </span>
-                    ) : (
-                      b.bib && <span className={`bib d${(i % 3) + 1}`}>{b.bib}</span>
-                    )}
-                  </div>
-                ))}
-                <div className="scan" />
-              </div>
+          {/* El panel de verdad, con las ventas cayendo encima. El titular
+              promete plata, así que al lado va la plata y no el reconocimiento.
 
-              <div className="sheet-foot">
-                <span className="label">Indexando</span>
-                <span className="prog">
-                  <i />
+              Es una captura de la pantalla real renderizada a 390px y cortada
+              donde arranca la segunda sección, lo que da 390×652: casi
+              exactamente 9:16, así que se lee como un teléfono sin necesitar un
+              marco dibujado. La página ya tiene dos teléfonos más abajo.
+
+              Los números están inflados a propósito y no son de nadie: es una
+              captura de demostración, no el mes de un cliente. */}
+          <div className="panelazo" aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/hero/panel.png" alt="" width={390} height={652} />
+
+            <div className="avisos">
+              <div className="aviso" style={{ ["--i" as string]: 0 }}>
+                <span className="aviso-i">
+                  <Banknote />
                 </span>
-                <span className="label pct">{hayNumeros ? n(fotos) : "—"}</span>
-              </div>
-
-              <div className="frag sale par par-fast" style={{ ["--dy" as string]: "26px" }}>
-                <span className="label">Venta acreditada</span>
-                <div className="frag-amount">
-                  $9.600<small> ARS</small>
+                <div className="aviso-txt">
+                  <b>Venta acreditada</b>
+                  <span>Maratón del Litoral · 4 fotos</span>
                 </div>
-                <div className="label">En tu Mercado Pago</div>
+                <span className="aviso-m">+$9.600</span>
+              </div>
+              <div className="aviso" style={{ ["--i" as string]: 1 }}>
+                <span className="aviso-i">
+                  <Banknote />
+                </span>
+                <div className="aviso-txt">
+                  <b>Venta acreditada</b>
+                  <span>Gran Fondo Sierras · pack</span>
+                </div>
+                <span className="aviso-m">+$12.600</span>
+              </div>
+              <div className="aviso" style={{ ["--i" as string]: 2 }}>
+                <span className="aviso-i">
+                  <Banknote />
+                </span>
+                <div className="aviso-txt">
+                  <b>Venta acreditada</b>
+                  <span>Copa Río Salado · 3 fotos</span>
+                </div>
+                <span className="aviso-m">+$7.200</span>
               </div>
             </div>
           </div>
