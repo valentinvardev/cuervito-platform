@@ -111,12 +111,22 @@ export default async function DemoCompra() {
       bibNumbers: p.bibNumbers,
       width: p.width,
       height: p.height,
-      // Con marca de agua para la tienda; la entrega de la demo reusa la misma
-      // lista, que es una diferencia con la entrega de verdad y no se nota en
-      // el video.
+      // Dos URLs por foto, porque la demo pasa por las dos pantallas y cada una
+      // muestra una versión distinta de la misma foto.
+      //
+      // La vitrina va MARCADA: es lo que ve alguien que todavía no pagó.
       previewUrl: p.previewKey
         ? await resolveMediaUrl(p.previewKey)
         : await getPresignedDownloadUrl(p.storageKey, { expiresIn: 60 * 30 }),
+      // La entrega va LIMPIA. Antes reusaba la de la vitrina y en el video el
+      // comprador terminaba mirando su propia compra con la marca de agua
+      // encima, que es exactamente lo que acababa de pagar por sacarse. Misma
+      // cascada que la entrega de verdad: limpia, marcada, y el original.
+      limpiaUrl: p.previewCleanKey
+        ? await resolveMediaUrl(p.previewCleanKey)
+        : p.previewKey
+          ? await resolveMediaUrl(p.previewKey)
+          : await getPresignedDownloadUrl(p.storageKey, { expiresIn: 60 * 30 }),
     })),
   );
 

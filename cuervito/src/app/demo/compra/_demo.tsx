@@ -8,7 +8,10 @@ import { guion, type Paso } from "./guion";
 
 type Foto = {
   id: string;
+  /** Con marca de agua. Es la de la vitrina, antes de pagar. */
   previewUrl: string;
+  /** Sin marca de agua. Es la de la entrega, después de pagar. */
+  limpiaUrl: string;
   bibNumbers: string | null;
   width: number | null;
   height: number | null;
@@ -177,7 +180,9 @@ export function Demo({
             id: f.id,
             filename: f.filename,
             bibNumbers: f.bibNumbers,
-            previewUrl: f.previewUrl,
+            // La limpia: acá ya pagó. Con la de la vitrina, el cierre del video
+            // mostraba la compra todavía marcada.
+            previewUrl: f.limpiaUrl,
           }))}
           recienPagado
           simulado
