@@ -7,12 +7,12 @@ import {
   LayoutDashboard,
   LogIn,
   Menu as IconoMenu,
-  Moon,
-  Sun,
   TrendingUp,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+
+import { BotonTema } from "~/app/_components/boton-tema";
 
 /**
  * Las partes de la landing que necesitan al navegador.
@@ -22,52 +22,6 @@ import { useEffect, useRef, useState } from "react";
  * mobile, el acordeón que anima su altura, el video que se carga tarde— para
  * que el resto llegue como HTML y se vea antes de que cargue nada.
  */
-
-/**
- * Cambiar entre claro y oscuro.
- *
- * `js-tema` no es un gancho de JavaScript acá —el click se engancha por
- * props— pero la clase NO se puede sacar: el CSS la usa como excepción
- * (`.solo-ancho:not(.js-tema)`) para que entre 700 y 920px se escondan las
- * cosas de pantalla ancha menos este botón. Sin ella, el interruptor de tema
- * desaparece 220px antes de lo que corresponde.
- */
-function BotonTema({ className = "" }: { className?: string }) {
-  /**
-   * data-theme vale "light" o "dark", nunca otra cosa.
-   *
-   * Es la misma política que el script del layout raíz, que ya resolvió el
-   * tema antes de pintar. Escribir "" acá rompería el interruptor del panel
-   * viejo, que lee `dataset.theme === "light" ? "light" : "dark"` y con ""
-   * se convence de estar en oscuro estando en claro.
-   */
-  function cambiar() {
-    const raiz = document.documentElement;
-    const proximo = raiz.dataset.theme === "dark" ? "light" : "dark";
-    raiz.dataset.theme = proximo;
-    try {
-      localStorage.setItem("cuervito-theme", proximo);
-    } catch {
-      // almacenamiento bloqueado: el tema dura lo que dure la pestaña
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      className={`btn btn-ghost btn-icon js-tema ${className}`.trim()}
-      onClick={cambiar}
-      aria-label="Cambiar tema"
-    >
-      <span className="ico ico-moon">
-        <Moon />
-      </span>
-      <span className="ico ico-sun">
-        <Sun />
-      </span>
-    </button>
-  );
-}
 
 const ENLACES = [
   { href: "#como", txt: "Cómo funciona" },

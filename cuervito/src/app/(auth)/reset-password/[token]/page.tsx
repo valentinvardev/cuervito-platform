@@ -1,9 +1,28 @@
 import Link from "next/link";
+import { ArrowRight, Clock } from "lucide-react";
 
 import { db } from "~/server/db";
 
+import { Estado, Marco } from "../../_piezas";
 import { ResetPasswordForm } from "./reset-form";
 
+const LADO = {
+  texto:
+    "Tus eventos, tus fotos y tus ventas te esperan del otro lado. Recuperar la clave son dos minutos.",
+  datos: [
+    ["1 h", "dura el link"],
+    ["24 hs", "de soporte"],
+  ] as [string, string][],
+};
+
+/**
+ * Poner la contraseña nueva.
+ *
+ * El token se valida ACÁ, en el servidor, antes de dibujar el formulario: si
+ * venció o ya se usó, no tiene sentido dejar que alguien escriba una clave para
+ * después decirle que no. La validación es la misma de siempre; sólo cambió lo
+ * que se ve cuando falla.
+ */
 export default async function ResetPasswordPage(props: {
   params: Promise<{ token: string }>;
 }) {
@@ -14,51 +33,40 @@ export default async function ResetPasswordPage(props: {
     select: { expiresAt: true, usedAt: true },
   });
 
-  const isValid = !!row && !row.usedAt && row.expiresAt > new Date();
+  const sirve = !!row && !row.usedAt && row.expiresAt > new Date();
 
-  if (!isValid) {
+  if (!sirve) {
     return (
-      <div className="auth-card">
-        <Link href="/" className="logo">
-          cuerv<span className="logo-dot"></span>to
-        </Link>
-
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: "50%",
-            background: "rgba(224,85,85,0.12)",
-            border: "1px solid rgba(224,85,85,0.4)",
-            color: "var(--error)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 18px",
-            fontSize: 26,
-          }}
+      <Marco volverA="/login" lado={LADO}>
+        <Estado
+          icono={<Clock />}
+          tono="mal"
+          titulo={
+            <>
+              Este link
+              <br />
+              ya no sirve
+            </>
+          }
+          bajada="Los links para cambiar la contraseña duran una hora, y este ya pasó —o alguien lo usó antes."
         >
-          <i className="ti ti-alert-circle" />
-        </div>
+          {/* No es un callejón: el botón grande pide otro. */}
+          <div className="estado-nota">
+            No es nada raro: si el mail quedó abierto de ayer, el link de adentro ya venció. Pedí
+            uno nuevo y llega en el momento.
+          </div>
 
-        <h1 style={{ textAlign: "center" }}>Link inválido</h1>
-        <p className="sub" style={{ textAlign: "center" }}>
-          Este link de reset venció o ya fue usado. Pedí uno nuevo y revisá tu
-          correo.
-        </p>
+          <div className="estado-acc">
+            <Link className="btn btn-pri btn-lg btn-block" href="/forgot-password">
+              Pedir un link nuevo <ArrowRight className="go" />
+            </Link>
+          </div>
 
-        <Link
-          href="/forgot-password"
-          className="btn btn-primary auth-submit"
-          style={{ marginTop: 22 }}
-        >
-          Pedir nuevo link
-        </Link>
-
-        <p className="auth-foot">
-          <Link href="/login">Volver al login</Link>
-        </p>
-      </div>
+          <p className="auth-alt">
+            <Link href="/login">Volver al ingreso</Link>
+          </p>
+        </Estado>
+      </Marco>
     );
   }
 

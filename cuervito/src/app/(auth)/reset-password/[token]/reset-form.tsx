@@ -1,10 +1,28 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight, Check } from "lucide-react";
 import { useActionState } from "react";
 
+import { Aviso, CampoClave, Estado, Marco } from "../../_piezas";
 import { resetPasswordAction, type ResetPasswordState } from "./actions";
 
+const LADO = {
+  texto:
+    "Tus eventos, tus fotos y tus ventas te esperan del otro lado. Recuperar la clave son dos minutos.",
+  datos: [
+    ["1 h", "dura el link"],
+    ["24 hs", "de soporte"],
+  ] as [string, string][],
+};
+
+/**
+ * El formulario de la contraseña nueva.
+ *
+ * Va aparte de la página porque la página valida el token en el servidor y esto
+ * necesita estado del navegador. El token viaja como campo oculto: la acción lo
+ * vuelve a validar antes de guardar nada, así que no alcanza con editarlo acá.
+ */
 export function ResetPasswordForm({ token }: { token: string }) {
   const [state, formAction, pending] = useActionState<ResetPasswordState, FormData>(
     resetPasswordAction,
@@ -13,87 +31,58 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
   if (state.done) {
     return (
-      <div className="auth-card">
-        <Link href="/" className="logo">
-          cuerv<span className="logo-dot"></span>to
-        </Link>
-
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: "50%",
-            background: "rgba(76,175,125,0.15)",
-            border: "1px solid rgba(76,175,125,0.4)",
-            color: "var(--success)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 18px",
-            fontSize: 26,
-          }}
+      <Marco volverA="/login" lado={LADO}>
+        <Estado
+          icono={<Check />}
+          titulo={
+            <>
+              Contraseña
+              <br />
+              cambiada
+            </>
+          }
+          bajada="Ya podés entrar con la nueva. Si no fuiste vos quien la cambió, escribinos ahora."
         >
-          <i className="ti ti-check" />
-        </div>
-
-        <h1 style={{ textAlign: "center" }}>Listo</h1>
-        <p className="sub" style={{ textAlign: "center" }}>
-          Tu contraseña fue actualizada. Ya podés iniciar sesión.
-        </p>
-
-        <Link
-          href="/login"
-          className="btn btn-primary auth-submit"
-          style={{ marginTop: 22 }}
-        >
-          Iniciar sesión
-        </Link>
-      </div>
+          <div className="estado-acc">
+            <Link className="btn btn-pri btn-lg btn-block" href="/login">
+              Entrar al panel <ArrowRight className="go" />
+            </Link>
+          </div>
+        </Estado>
+      </Marco>
     );
   }
 
   return (
-    <div className="auth-card">
-      <Link href="/" className="logo">
-        cuerv<span className="logo-dot"></span>to
-      </Link>
+    <Marco volverA="/login" lado={LADO}>
+      <h1>
+        Elegí una
+        <br />
+        contraseña
+      </h1>
+      <p className="auth-sub">
+        Es la última vez que la escribís por hoy. Después entrás derecho al panel.
+      </p>
 
-      <h1>Nueva contraseña</h1>
-      <p className="sub">Elegí una contraseña nueva para tu cuenta.</p>
+      <div style={{ height: "var(--s-6)" }} />
 
-      <form action={formAction} className="auth-form">
+      {state.error && <Aviso>{state.error}</Aviso>}
+
+      <form action={formAction} className="form">
         <input type="hidden" name="token" value={token} />
 
-        <div className="auth-field">
-          <label htmlFor="rp-pass">Nueva contraseña</label>
-          <input
-            id="rp-pass"
-            className="input"
-            type="password"
-            name="password"
-            autoComplete="new-password"
-            placeholder="••••••••"
-            required
-            minLength={8}
-            autoFocus
-          />
-        </div>
+        <CampoClave
+          nombre="password"
+          etiqueta="Nueva contraseña"
+          autoComplete="new-password"
+          reglas
+        />
 
-        {state.error && (
-          <div className="auth-error">
-            <i className="ti ti-alert-circle" />
-            {state.error}
-          </div>
-        )}
-
-        <button type="submit" className="btn btn-primary auth-submit" disabled={pending}>
-          {pending ? "Guardando…" : "Guardar contraseña"}
+        <button className="btn btn-pri btn-lg btn-block" type="submit" disabled={pending}>
+          {pending ? "Guardando…" : "Guardar y entrar"}
+          {!pending && <ArrowRight className="go" />}
         </button>
       </form>
-
-      <p className="auth-foot">
-        <Link href="/login">Volver al login</Link>
-      </p>
-    </div>
+    </Marco>
   );
 }

@@ -1,13 +1,29 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowLeft, ArrowRight, Mail } from "lucide-react";
 import { useActionState } from "react";
 
-import {
-  requestPasswordResetAction,
-  type ForgotPasswordState,
-} from "./actions";
+import { Aviso, Estado, Marco } from "../_piezas";
+import { requestPasswordResetAction, type ForgotPasswordState } from "./actions";
 
+const LADO = {
+  texto:
+    "Tus eventos, tus fotos y tus ventas te esperan del otro lado. Recuperar la clave son dos minutos.",
+  datos: [
+    ["1 h", "dura el link"],
+    ["24 hs", "de soporte"],
+  ] as [string, string][],
+};
+
+/**
+ * Pedir el link para cambiar la contraseña.
+ *
+ * La pantalla de "ya salió el mail" NO dice si esa dirección tiene cuenta o no,
+ * y la acción del servidor tampoco: contestar distinto según eso convierte esto
+ * en un detector de qué mails están registrados, que es justo lo que quiere el
+ * que está probando direcciones.
+ */
 export default function ForgotPasswordPage() {
   const [state, formAction, pending] = useActionState<ForgotPasswordState, FormData>(
     requestPasswordResetAction,
@@ -16,81 +32,82 @@ export default function ForgotPasswordPage() {
 
   if (state.sent) {
     return (
-      <div className="auth-card">
-        <Link href="/" className="logo">
-          cuerv<span className="logo-dot"></span>to
-        </Link>
-
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: "50%",
-            background: "rgba(76,175,125,0.15)",
-            border: "1px solid rgba(76,175,125,0.4)",
-            color: "var(--success)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 18px",
-            fontSize: 26,
-          }}
+      <Marco volverA="/login" lado={LADO}>
+        <Estado
+          icono={<Mail />}
+          titulo={
+            <>
+              Revisá
+              <br />
+              tu email
+            </>
+          }
+          bajada="Si esa dirección tiene una cuenta, ya salió el link para crear una contraseña nueva."
         >
-          <i className="ti ti-mail-check" />
-        </div>
+          {/* Contesta acá la pregunta que sigue SIEMPRE. Si no está, se
+              convierte en un mensaje al WhatsApp. */}
+          <div className="estado-nota">
+            ¿No llegó? Mirá en <b>spam</b> o en <b>promociones</b>: es un mail automático y a veces
+            cae ahí. El link vale por <b>una hora</b>.
+          </div>
 
-        <h1 style={{ textAlign: "center" }}>Revisá tu email</h1>
-        <p className="sub" style={{ textAlign: "center" }}>
-          Si esa dirección está registrada en cuervito, te llegó un link para
-          crear una nueva contraseña. El link es válido por 1 hora.
-        </p>
+          <div className="estado-acc">
+            <Link className="btn btn-ghost btn-lg btn-block" href="/forgot-password">
+              <ArrowLeft /> Probar con otro email
+            </Link>
+          </div>
 
-        <p className="auth-foot" style={{ marginTop: 24 }}>
-          <Link href="/login">Volver al login</Link>
-        </p>
-      </div>
+          <p className="auth-alt">
+            <Link href="/login">Volver al ingreso</Link>
+          </p>
+        </Estado>
+      </Marco>
     );
   }
 
   return (
-    <div className="auth-card">
-      <Link href="/" className="logo">
-        cuerv<span className="logo-dot"></span>to
-      </Link>
+    <Marco volverA="/login" lado={LADO}>
+      <h1>
+        Recuperá
+        <br />
+        tu cuenta
+      </h1>
+      <p className="auth-sub">
+        Poné el email con el que te registraste y te mandamos un link para crear una contraseña
+        nueva.
+      </p>
 
-      <h1>Olvidé mi contraseña</h1>
-      <p className="sub">Te mandamos un link para crear una nueva.</p>
+      <div style={{ height: "var(--s-6)" }} />
 
-      <form action={formAction} className="auth-form">
-        <div className="auth-field">
-          <label htmlFor="fp-email">Email</label>
+      {state.error && <Aviso>{state.error}</Aviso>}
+
+      <form action={formAction} className="form">
+        <div className="field">
+          <div className="field-top">
+            <label htmlFor="mail">Email</label>
+          </div>
           <input
-            id="fp-email"
-            className="input"
-            type="email"
+            className="inp"
+            id="mail"
             name="email"
+            type="email"
+            inputMode="email"
             autoComplete="email"
-            placeholder="ana@ejemplo.com"
+            placeholder="vos@estudio.com"
             required
             autoFocus
           />
         </div>
 
-        {state.error && (
-          <div className="auth-error">
-            <i className="ti ti-alert-circle" />
-            {state.error}
-          </div>
-        )}
-
-        <button type="submit" className="btn btn-primary auth-submit" disabled={pending}>
-          {pending ? "Mandando…" : "Mandar link"}
+        <button className="btn btn-pri btn-lg btn-block" type="submit" disabled={pending}>
+          {pending ? "Mandando…" : "Mandame el link"}
+          {!pending && <ArrowRight className="go" />}
         </button>
       </form>
 
-      <p className="auth-foot">
-        ¿La recordaste? <Link href="/login">Volver al login</Link>
+      <p className="auth-alt">
+        ¿Te acordaste? <Link href="/login">Volver al ingreso</Link>
       </p>
-    </div>
+    </Marco>
   );
 }

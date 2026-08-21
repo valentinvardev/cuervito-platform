@@ -1,0 +1,367 @@
+/* COPIADO DE lab/login/login.css. No editar acá: los cambios se hacen en el
+   laboratorio y se vuelven a copiar, si no las dos versiones divergen y la del
+   laboratorio deja de servir para decidir. */
+/* =============================================================================
+   encontrate · ingreso (laboratorio)
+   -----------------------------------------------------------------------------
+   Dos columnas: el formulario sobre papel y una sola masa oscura al costado,
+   que es una foto. Es la misma regla de la landing, y acá cae todavía mejor:
+   la pantalla donde un fotógrafo entra a trabajar tiene que mostrar una foto,
+   no un dibujo de una cámara.
+
+   En teléfono la columna oscura desaparece entera. No se apila arriba del
+   formulario: en una pantalla de ingreso lo único que importa son los dos
+   campos, y todo lo que se ponga antes es un obstáculo entre el pulgar y el
+   teclado.
+   ========================================================================== */
+
+.auth {
+  display: grid;
+  grid-template-columns: 1fr 0.94fr;
+  min-height: 100dvh;   /* dvh y no vh: con la barra de Safari, vh se pasa de largo */
+}
+
+/* ═══════════════════════════ COLUMNA DEL FORMULARIO ═══════════════════════ */
+.auth-col {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: var(--s-5) var(--s-7);
+  gap: var(--s-6);
+}
+
+.auth-top { display: flex; align-items: center; justify-content: space-between; }
+.volver {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--t-small); color: var(--ink-3);
+  transition: color 150ms ease;
+}
+.volver:hover { color: var(--ink); }
+.volver svg { width: 14px; height: 14px; }
+
+/* El formulario no se centra en la columna entera: se centra ópticamente un
+   poco por encima del medio. Un bloque centrado matemáticamente en una
+   pantalla alta se ve caído. */
+.auth-mid { display: grid; align-content: center; justify-items: stretch; }
+.auth-box { width: 100%; max-width: 396px; margin: 0 auto; }
+
+.auth h1 {
+  font-size: clamp(30px, 3.4vw, 40px);
+  font-weight: var(--display-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--display-track);
+  line-height: 1.04;
+}
+.auth-sub {
+  margin-top: var(--s-3);
+  color: var(--ink-2);
+  font-size: var(--t-small);
+  font-weight: 300;
+  max-width: 34ch;
+}
+
+/* ── Google. Va arriba de todo y no abajo, porque es por donde entra la
+   mayoría: casi todo fotógrafo en Argentina ya tiene la cuenta de Google
+   abierta en el mismo navegador. Enterrarlo debajo del formulario obliga a
+   leer dos veces para descubrir el camino corto. ────────────────────────── */
+.g-logo { width: 17px; height: 17px; flex-shrink: 0; }
+
+.sep {
+  display: flex; align-items: center; gap: var(--s-3);
+  margin: var(--s-5) 0;
+  color: var(--ink-3); font-size: 12px;
+  letter-spacing: 0.06em;
+}
+.sep::before, .sep::after {
+  content: ""; flex: 1; height: 1px; background: var(--line);
+}
+
+/* ── Campos ──────────────────────────────────────────────────────────────── */
+.form { display: grid; gap: var(--s-4); }
+
+.field { display: grid; gap: 7px; }
+.field-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); }
+.field label {
+  font-size: 13.5px; font-weight: 500; color: var(--ink-2);
+  letter-spacing: -0.005em;
+}
+.field-top a { font-size: 13px; color: var(--ink-3); transition: color 150ms ease; }
+.field-top a:hover { color: var(--accent); }
+
+.inp {
+  width: 100%; height: 44px;
+  padding: 0 13px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  font-family: var(--sans); font-size: 15px; font-weight: 400;
+  color: var(--ink);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.inp::placeholder { color: var(--ink-3); }
+
+/* El foco no usa el outline global de tokens: en un campo de texto el anillo
+   pegado al borde se lee mejor que un outline separado, y el borde se
+   oscurece a tinta en vez de teñirse de acento, que a esta escala grita. */
+.inp:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 9%, transparent);
+}
+.inp[aria-invalid="true"] { border-color: var(--bad); }
+.inp[aria-invalid="true"]:focus {
+  border-color: var(--bad);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 15%, transparent);
+}
+
+.err {
+  font-size: 12.5px; color: var(--bad); line-height: 1.4;
+  height: 0; overflow: hidden; opacity: 0;
+  transition: height 180ms ease, opacity 180ms ease;
+}
+.field[data-err="1"] .err { height: 17px; opacity: 1; }
+
+/* Ojo para revelar la contraseña. Dentro del campo, alineado a la derecha, y
+   con la misma mecánica de íconos apilados del conmutador de tema. */
+.pw { position: relative; }
+.pw .inp { padding-right: 44px; }
+.pw-eye {
+  position: absolute; right: 4px; top: 4px;
+  width: 36px; height: 36px; padding: 0;
+  display: grid; place-items: center;
+  background: transparent; border: 0; border-radius: var(--r-1);
+  color: var(--ink-3); cursor: pointer;
+  transition: color 150ms ease, background 150ms ease;
+}
+.pw-eye:hover { color: var(--ink); background: var(--ghost-hov); }
+.pw-eye svg { width: 16px; height: 16px; }
+.pw-eye .ico { grid-area: 1 / 1; display: grid; transition: opacity 160ms ease, transform 300ms cubic-bezier(.34,1.2,.4,1); }
+.pw-eye .ico-off { opacity: 0; transform: scale(.6); }
+.pw[data-ver="1"] .ico-on  { opacity: 0; transform: scale(.6); }
+.pw[data-ver="1"] .ico-off { opacity: 1; transform: none; }
+
+/* Las reglas de la contraseña, debajo del campo. Se muestran ANTES de que el
+   usuario falle: un mínimo que se descubre recién al enviar es el que hace que
+   se pruebe tres veces la misma clave. */
+.reglas {
+  display: grid;
+  gap: 5px;
+  margin-top: 9px;
+}
+.regla {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  transition: color 180ms ease;
+}
+.regla i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+.regla i::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.regla[data-ok="1"] {
+  color: var(--ok);
+}
+.regla[data-ok="1"] i::after {
+  opacity: 1;
+}
+
+/* ── Aviso de error de credenciales ──────────────────────────────────────── */
+.alert {
+  display: none;
+  align-items: flex-start; gap: 9px;
+  margin-bottom: var(--s-4);
+  padding: 11px 13px;
+  border: 1px solid color-mix(in srgb, var(--bad) 32%, transparent);
+  background: color-mix(in srgb, var(--bad) 6%, transparent);
+  border-radius: var(--r-2);
+  font-size: 13.5px; line-height: 1.45; color: var(--ink);
+}
+.alert[data-on="1"] { display: flex; animation: alerta 300ms cubic-bezier(.2,.8,.3,1); }
+.alert svg { width: 16px; height: 16px; color: var(--bad); flex-shrink: 0; margin-top: 2px; }
+@keyframes alerta {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Pie del formulario ──────────────────────────────────────────────────── */
+/* La letra chica de los términos. Va DEBAJO del botón y no arriba: arriba es
+   un obstáculo antes de empezar, abajo es la letra chica de algo que ya se
+   decidió. Más chica que el pie pero no ilegible: 12,5px sobre --ink-3 da
+   4,6:1 contra el papel, que pasa AA para texto normal. */
+.auth-legal {
+  margin-top: var(--s-4);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.auth-legal a { color: var(--ink-2); border-bottom: 1px solid var(--line); }
+.auth-legal a:hover { color: var(--accent); border-color: var(--accent); }
+
+.auth-alt {
+  margin-top: var(--s-5);
+  font-size: var(--t-small); color: var(--ink-2);
+}
+.auth-alt a { font-weight: 500; color: var(--ink); border-bottom: 1px solid var(--line-strong); }
+.auth-alt a:hover { color: var(--accent); border-color: var(--accent); }
+
+
+/* ── Carril del atleta ───────────────────────────────────────────────────────
+   El que compró fotos NO tiene cuenta: compra buscándose por cara o dorsal y
+   recibe el link por mail. Si esta pantalla no lo dice, se crea una cuenta
+   vacía, no encuentra nada adentro y termina escribiendo al WhatsApp. Es la
+   consulta de soporte más barata de evitar que hay. ───────────────────────── */
+.auth-bot { border-top: 1px solid var(--line-soft); padding-top: var(--s-4); }
+.atleta { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.atleta p { font-size: 13.5px; color: var(--ink-3); }
+.atleta a {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 13.5px; font-weight: 500; color: var(--ink);
+}
+.atleta a:hover { color: var(--accent); }
+.atleta a:hover .go { transform: translateX(3px); }
+.atleta .go { transition: transform 180ms cubic-bezier(.2,.8,.3,1); }
+.atleta svg { width: 14px; height: 14px; }
+
+/* ═══════════════════════════ COLUMNA DE LA FOTO ═══════════════════════════ */
+.auth-side {
+  position: relative; overflow: hidden;
+  background: #0C0B0A;
+  color: #F4F3EF;
+  display: grid; align-content: center; justify-items: center;
+  padding: var(--s-7);
+  gap: var(--s-6);
+}
+
+/* Marcador de posición. Va una foto real de evento: fútbol amateur a las 18,
+   a contraluz, que es el caso que rompe todo. El degradé imita esa luz para
+   que la maqueta no mienta con una foto de stock perfecta. */
+.shot {
+  position: relative;
+  width: 100%; max-width: 380px;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--r-3);
+  overflow: hidden;
+  background:
+    radial-gradient(120% 78% at 64% 20%, rgba(255, 186, 102, .58), transparent 56%),
+    radial-gradient(96% 70% at 18% 88%, rgba(240, 65, 15, .26), transparent 62%),
+    linear-gradient(168deg, #2C2118 0%, #171310 46%, #0E0C0B 100%);
+  box-shadow: 0 40px 90px rgba(0, 0, 0, .55);
+}
+/* Grano. Sin esto un degradé grande se banda en pantallas de 8 bits. */
+.shot::after {
+  content: ""; position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  opacity: .5;
+  pointer-events: none;
+}
+
+/* Silueta: dos formas borroneadas que insinúan un cuerpo a contraluz. No
+   pretende ser una foto, pretende dar la masa oscura que la foto va a tener. */
+.shot i.sil {
+  position: absolute; left: 50%; bottom: -8%;
+  width: 46%; height: 74%;
+  transform: translateX(-46%);
+  background: linear-gradient(to top, #0A0908 12%, rgba(10, 9, 8, .74) 62%, transparent);
+  border-radius: 46% 46% 22% 22% / 34% 34% 8% 8%;
+  filter: blur(9px);
+}
+
+/* Lo que hace el producto, sobre la foto y en el momento justo: el ciclo
+   corre solo mientras mirás la pantalla de ingreso. 7 s, y todo vuelve al
+   principio para que no haya un estado final muerto. */
+.lock {
+  position: absolute; left: 50%; top: 24%;
+  width: 92px; height: 92px;
+  transform: translateX(-50%) scale(1.5);
+  opacity: 0;
+  animation: lockin 7s cubic-bezier(.2, .8, .3, 1) infinite;
+}
+.lock span {
+  position: absolute; width: 15px; height: 15px;
+  border: 2px solid #FFF; opacity: .93;
+}
+.lock span:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.lock span:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.lock span:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.lock span:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+@keyframes lockin {
+  0%, 8%    { opacity: 0; transform: translateX(-50%) scale(1.5); }
+  22%, 74%  { opacity: 1; transform: translateX(-50%) scale(1); }
+  86%, 100% { opacity: 0; transform: translateX(-50%) scale(1); }
+}
+
+.chip {
+  position: absolute; left: 50%; top: calc(24% + 104px);
+  transform: translateX(-50%) translateY(6px);
+  padding: 5px 11px;
+  background: rgba(250, 250, 248, .95);
+  color: #12110F;
+  border-radius: 100px;
+  font-family: var(--sans);
+  font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+  animation: chipin 7s cubic-bezier(.2, .8, .3, 1) infinite;
+}
+@keyframes chipin {
+  0%, 26%   { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  38%, 74%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  86%, 100% { opacity: 0; transform: translateX(-50%) translateY(0); }
+}
+
+/* Barrido del análisis. Una sola pasada por ciclo, tenue. */
+.sweep {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, .13) 48%, transparent);
+  height: 42%;
+  animation: barrer 7s cubic-bezier(.4, 0, .3, 1) infinite;
+}
+@keyframes barrer {
+  0%   { transform: translateY(-110%); opacity: 0; }
+  6%   { opacity: 1; }
+  30%  { transform: translateY(260%); opacity: 0; }
+  100% { transform: translateY(260%); opacity: 0; }
+}
+
+.side-txt { text-align: center; max-width: 380px; }
+.side-txt p {
+  font-size: 17px; font-weight: 300; line-height: 1.5;
+  color: rgba(244, 243, 239, .92);
+  letter-spacing: -0.01em;
+}
+.side-num {
+  margin-top: var(--s-4);
+  display: flex; justify-content: center; gap: var(--s-5);
+  color: rgba(244, 243, 239, .5);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.side-num b { color: rgba(244, 243, 239, .92); font-weight: 500; }
+
+/* ═══════════════════════════════ TELÉFONO ════════════════════════════════ */
+@media (max-width: 900px) {
+  .auth { grid-template-columns: 1fr; }
+  .auth-side { display: none; }
+  .auth-col { padding: var(--s-4) var(--s-4) var(--s-5); }
+}
+@media (max-width: 420px) {
+  .auth h1 { font-size: 27px; }
+  .atleta { gap: var(--s-1); }
+}

@@ -1,138 +1,111 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { useActionState } from "react";
 
+import { Aviso, CampoClave, GoogleG, Marco } from "../_piezas";
 import { loginWithGoogleAction } from "../login/actions";
 import { signupAction, type SignupState } from "./actions";
 
+/**
+ * Crear la cuenta.
+ *
+ * Es la misma pantalla que entrar, con un campo más. Si se vieran distintas, el
+ * que se equivoca de link sentiría que se fue a otro producto.
+ *
+ * Google manda a /onboarding y no al tablero: la cuenta recién creada todavía
+ * no tiene perfil ni Mercado Pago, y el panel sin eso es una pantalla vacía con
+ * un botón de subir fotos que no se pueden vender.
+ */
 export default function SignupPage() {
-  const [state, formAction, pending] = useActionState<SignupState, FormData>(
-    signupAction,
-    { error: null },
-  );
+  const [state, formAction, pending] = useActionState<SignupState, FormData>(signupAction, {
+    error: null,
+  });
 
   return (
-    <div className="auth-card">
-      <Link href="/" className="logo">
-        cuerv<span className="logo-dot"></span>to
-      </Link>
+    <Marco
+      lado={{
+        texto:
+          "Subís las fotos del sábado y el domingo ya se están vendiendo solas, con tu marca arriba.",
+        datos: [
+          ["10%", "por venta"],
+          ["0", "de cuota"],
+        ],
+      }}
+    >
+      <h1>
+        Creá tu
+        <br />
+        cuenta
+      </h1>
+      <p className="auth-sub">Gratis y sin tarjeta. Te cobramos sólo cuando cobrás vos.</p>
 
-      <h1>Crear cuenta</h1>
-      <p className="sub">Sumate como fotógrafo y empezá a vender.</p>
+      <div style={{ height: "var(--s-6)" }} />
 
-      <form action={loginWithGoogleAction} className="auth-google-form">
+      <form action={loginWithGoogleAction}>
         <input type="hidden" name="callbackUrl" value="/onboarding" />
-        <button type="submit" className="btn btn-google">
+        <button className="btn btn-ghost btn-lg btn-block" type="submit">
           <GoogleG />
-          Continuar con Google
+          Registrarme con Google
         </button>
       </form>
 
-      <div className="auth-divider">
-        <span>o con email</span>
-      </div>
+      <div className="sep">o con tu email</div>
 
-      <form action={formAction} className="auth-form">
-        <div className="auth-field">
-          <label htmlFor="signup-name">Nombre</label>
+      {state.error && <Aviso>{state.error}</Aviso>}
+
+      <form action={formAction} className="form">
+        <div className="field">
+          <div className="field-top">
+            <label htmlFor="nom">Nombre y apellido</label>
+          </div>
           <input
-            id="signup-name"
-            className="input"
+            className="inp"
+            id="nom"
             name="name"
+            type="text"
             autoComplete="name"
-            placeholder="Ana Liotta"
+            placeholder="Germán Sosa"
             required
             autoFocus
           />
         </div>
 
-        <div className="auth-field">
-          <label htmlFor="signup-email">Email</label>
-          <input
-            id="signup-email"
-            className="input"
-            type="email"
-            name="email"
-            autoComplete="email"
-            placeholder="ana@ejemplo.com"
-            required
-          />
-        </div>
-
-        <div className="auth-field">
-          <label htmlFor="signup-pass">Contraseña</label>
-          <input
-            id="signup-pass"
-            className="input"
-            type="password"
-            name="password"
-            autoComplete="new-password"
-            placeholder="Mínimo 8 caracteres"
-            minLength={8}
-            required
-          />
-          <span className="hint">8 caracteres mínimo · mezclá letras y números.</span>
-        </div>
-
-        {state.error && (
-          <div className="auth-error">
-            <i className="ti ti-alert-circle" />
-            {state.error}
+        <div className="field">
+          <div className="field-top">
+            <label htmlFor="mail">Email</label>
           </div>
-        )}
+          <input
+            className="inp"
+            id="mail"
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder="vos@estudio.com"
+            required
+          />
+        </div>
 
-        <button type="submit" className="btn btn-primary auth-submit" disabled={pending}>
-          {pending ? (
-            <>
-              <span
-                className="up-spinner"
-                style={{
-                  width: 14,
-                  height: 14,
-                  border: "2px solid currentColor",
-                  borderTopColor: "transparent",
-                  borderRadius: "50%",
-                  display: "inline-block",
-                  marginRight: 6,
-                  animation: "spin 0.8s linear infinite",
-                }}
-              />
-              Creando cuenta…
-            </>
-          ) : (
-            <>
-              Crear cuenta
-              <i className="ti ti-arrow-right" style={{ marginLeft: 4 }} />
-            </>
-          )}
+        <CampoClave nombre="password" etiqueta="Contraseña" autoComplete="new-password" reglas />
+
+        <button className="btn btn-pri btn-lg btn-block" type="submit" disabled={pending}>
+          {pending ? "Creando…" : "Crear mi cuenta"}
+          {!pending && <ArrowRight className="go" />}
         </button>
       </form>
 
-      <p className="auth-foot">
-        ¿Ya tenés cuenta?{" "}
-        <Link href="/login">Iniciar sesión</Link>
+      {/* Los términos van DEBAJO del botón y no arriba: arriba son un obstáculo
+          antes de empezar, abajo son la letra chica de algo que ya decidiste. */}
+      <p className="auth-legal">
+        Al crear la cuenta aceptás los <Link href="/terminos">Términos</Link> y la{" "}
+        <Link href="/privacidad">Política de privacidad</Link>.
       </p>
 
-      <p
-        className="auth-foot"
-        style={{ fontSize: 11.5, color: "var(--text-tertiary)", marginTop: 12 }}
-      >
-        Al crear una cuenta aceptás nuestros{" "}
-        <Link href="/terminos">Términos</Link> y la{" "}
-        <Link href="/privacidad">Política de Privacidad</Link>.
+      <p className="auth-alt">
+        ¿Ya tenés cuenta? <Link href="/login">Entrá</Link>
       </p>
-    </div>
-  );
-}
-
-function GoogleG() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84a4.14 4.14 0 01-1.8 2.71v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.61z" fill="#4285F4" />
-      <path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.8.54-1.83.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 009 18z" fill="#34A853" />
-      <path d="M3.96 10.71A5.41 5.41 0 013.68 9c0-.59.1-1.17.28-1.71V4.96H.96A9 9 0 000 9c0 1.45.35 2.83.96 4.04l3-2.33z" fill="#FBBC05" />
-      <path d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 009 0 9 9 0 00.96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z" fill="#EA4335" />
-    </svg>
+    </Marco>
   );
 }
