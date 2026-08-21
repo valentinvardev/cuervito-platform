@@ -136,6 +136,48 @@
 .pw[data-ver="1"] .ico-on  { opacity: 0; transform: scale(.6); }
 .pw[data-ver="1"] .ico-off { opacity: 1; transform: none; }
 
+/* Las reglas de la contraseña, debajo del campo. Se muestran ANTES de que el
+   usuario falle: un mínimo que se descubre recién al enviar es el que hace que
+   se pruebe tres veces la misma clave. */
+.reglas {
+  display: grid;
+  gap: 5px;
+  margin-top: 9px;
+}
+.regla {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  transition: color 180ms ease;
+}
+.regla i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+.regla i::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.regla[data-ok="1"] {
+  color: var(--ok);
+}
+.regla[data-ok="1"] i::after {
+  opacity: 1;
+}
+
 /* ── Aviso de error de credenciales ──────────────────────────────────────── */
 .alert {
   display: none;
@@ -155,6 +197,19 @@
 }
 
 /* ── Pie del formulario ──────────────────────────────────────────────────── */
+/* La letra chica de los términos. Va DEBAJO del botón y no arriba: arriba es
+   un obstáculo antes de empezar, abajo es la letra chica de algo que ya se
+   decidió. Más chica que el pie pero no ilegible: 12,5px sobre --ink-3 da
+   4,6:1 contra el papel, que pasa AA para texto normal. */
+.auth-legal {
+  margin-top: var(--s-4);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.auth-legal a { color: var(--ink-2); border-bottom: 1px solid var(--line); }
+.auth-legal a:hover { color: var(--accent); border-color: var(--accent); }
+
 .auth-alt {
   margin-top: var(--s-5);
   font-size: var(--t-small); color: var(--ink-2);
