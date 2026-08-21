@@ -45,6 +45,7 @@ export function Entrega({
   fotografo,
   fotos,
   recienPagado,
+  simulado = false,
 }: {
   token: string;
   comprador: string;
@@ -52,6 +53,15 @@ export function Entrega({
   fotografo: Fotografo;
   fotos: Foto[];
   recienPagado: boolean;
+  /**
+   * Modo demo: finge las descargas en vez de pedirlas.
+   *
+   * Lo usa /demo, que muestra este mismo componente operándose solo para poder
+   * grabarlo. Sin esto, la demo pediría archivos con un token que no existe y
+   * la grabación mostraría errores; con esto se ve exactamente el mismo
+   * recorrido, que es el punto del video.
+   */
+  simulado?: boolean;
 }) {
   const [velo, setVelo] = useState(recienPagado);
   const [bajadas, setBajadas] = useState<Set<string>>(new Set());
@@ -112,6 +122,12 @@ export function Entrega({
   }
 
   async function bajar(f: Foto, url: string) {
+    if (simulado) {
+      await new Promise((r) => setTimeout(r, 1100));
+      setBajadas((s) => new Set(s).add(f.id));
+      return;
+    }
+
     if (ios) {
       const r = await guardarConHojaDeCompartir(url, f.filename);
       if (r === "guardada") setBajadas((s) => new Set(s).add(f.id));
@@ -143,6 +159,9 @@ export function Entrega({
     // vaya a hacer; puesto al apretar, llega justo cuando le sirve.
     if (ios) setAvisoZip(true);
     setZipEnCurso(true);
+    // En la demo no se navega a ningún lado: se queda mostrando "Preparando…"
+    // el rato que dura la toma y vuelve solo.
+    if (simulado) return;
     // El zip lo arma el servidor y puede tardar: se navega y el navegador se
     // encarga. Con fetch + blob habría que tener los 80 MB en memoria antes de
     // escribir el archivo.

@@ -1,0 +1,76 @@
+/* =============================================================================
+   encontrate · demo grabable
+   -----------------------------------------------------------------------------
+   Lo único que agrega esta hoja es lo que hace falta para GRABAR: la marca de
+   qué se está tocando, el rótulo del paso y una barra de avance. Todo lo demás
+   —la tienda, el visor, el carrito, la entrega— es el CSS de producción sin
+   tocar, porque el punto del video es mostrar el producto y no una maqueta.
+
+   Se carga sólo en /demo, así que nada de esto llega a un usuario.
+   ========================================================================== */
+
+/* ── Qué se está tocando ─────────────────────────────────────────────────────
+   En un video no hay mano ni cursor, así que sin esto las cosas cambian solas y
+   no se entiende qué las cambió. Un halo que crece desde el elemento durante un
+   cuarto de segundo antes del click resuelve eso sin tapar nada.
+
+   Va con outline y no con box-shadow: el shadow lo recorta el overflow:hidden
+   de las fotos de la grilla, que es justo donde más se necesita. */
+[data-demo-toque="1"] {
+  position: relative;
+  outline: 2px solid var(--accent, #F0410F);
+  outline-offset: 2px;
+  border-radius: inherit;
+  animation: demo-latido 260ms ease-out;
+}
+@keyframes demo-latido {
+  from { outline-color: transparent; outline-offset: 10px; }
+  to   { outline-color: var(--accent, #F0410F); outline-offset: 2px; }
+}
+
+/* El botón de pagar cuando el guion lo "aprieta". No se llama al checkout —eso
+   crearía una venta real cada vez que se ensaya la toma— pero en el video tiene
+   que verse que alguien lo tocó. */
+[data-demo-apretado="1"] {
+  transform: scale(.96);
+  filter: brightness(.9);
+}
+
+/* ── Rótulo del paso ─────────────────────────────────────────────────────────
+   Abajo y centrado, donde no tapa ni la grilla ni el carrito. Sirve para que el
+   paso se entienda sin narración; si en la edición molesta, se saca de un lugar
+   solo. */
+.demo-rotulo {
+  position: fixed; left: 50%; bottom: 22px; z-index: 300;
+  transform: translateX(-50%);
+  padding: 9px 16px;
+  border-radius: 100px;
+  background: rgba(18, 17, 15, .88);
+  color: #FBFAF8;
+  font-size: 13.5px; font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  animation: demo-rotulo-entra 220ms cubic-bezier(.2, .8, .3, 1);
+  pointer-events: none;
+}
+@keyframes demo-rotulo-entra {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to   { opacity: 1; transform: translateX(-50%); }
+}
+
+/* ── Avance ──────────────────────────────────────────────────────────────────
+   Una línea finita arriba de todo. Al grabar sirve para saber cuánto falta sin
+   contar los pasos, y en el corte final se recorta o se tapa. */
+.demo-barra {
+  position: fixed; top: 0; left: 0; z-index: 300;
+  height: 2px;
+  background: var(--accent, #F0410F);
+  transition: width 400ms ease;
+  pointer-events: none;
+}
+
+/* Mientras la demo corre, nadie tiene que poder tocar nada: un toque de más en
+   medio de la toma la descarrila y hay que empezar de nuevo. El guion sí puede,
+   porque .click() no pasa por el puntero. */
+.demo { pointer-events: none; }
