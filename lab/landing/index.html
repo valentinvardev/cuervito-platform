@@ -183,7 +183,7 @@
         <span class="tel-b tel-b-der tel-b-camara"></span>
         <div class="tel-vidrio">
           <video class="js-video-deco" poster="../assets/demo/subida.jpg"
-                 muted loop playsinline preload="none"
+                 muted playsinline preload="none"
                  aria-label="El panel del fotógrafo subiendo un álbum de fotos"
                  data-src="../assets/demo/subida.mp4"></video>
         </div>
@@ -352,7 +352,7 @@
       <span class="tel-b tel-b-der tel-b-camara"></span>
       <div class="tel-vidrio">
         <video class="js-video-deco" poster="../assets/demo/compra.jpg"
-               muted loop playsinline preload="none"
+               muted playsinline preload="none"
                aria-label="Un atleta buscando sus fotos, comprándolas y descargándolas"
                data-src="../assets/demo/compra.mp4"></video>
       </div>
@@ -582,6 +582,10 @@
     // entre los dos y viven a dos scrolls de la portada: cargarlos al abrir
     // retrasa todo lo demás por algo que todavía no se ve.
     //
+    // Cada uno se reproduce UNA vez y se queda en su última pantalla, la de
+    // confirmación. En bucle, el remate se perdía: el que llegaba a mirar veía
+    // el arranque de la toma siguiente en vez de "¡Subiste tus fotos!".
+    //
     // Con "reducir movimiento" prendido no se cargan nunca y queda el poster.
     // Un video que arranca solo y se repite es exactamente lo que esa
     // preferencia pide que no pase, y además ahorra la descarga.
@@ -592,6 +596,10 @@
           entradas.forEach(function (e) {
             var v = e.target;
             if (!e.isIntersecting) { v.pause(); return; }
+            // Ya terminó: se queda congelado en la confirmación, que es el
+            // remate del video. Llamar a play() acá lo rebobinaría, que es
+            // justo lo que se sacó al quitarle el loop.
+            if (v.ended) return;
             if (!v.getAttribute("src")) v.src = v.dataset.src;
             // El play puede rebotar (batería baja, ahorro de datos). No es un
             // error: queda el poster, que es una captura del mismo video.

@@ -288,13 +288,17 @@ function Qa({ pregunta, abierta }: { pregunta: Pregunta; abierta: boolean }) {
 /**
  * El teléfono con la captura del producto adentro.
  *
- * El video se pide recién cuando está por entrar en pantalla. Son cinco megas
- * entre los dos y viven a dos scrolls de la portada: cargarlos al abrir
+ * El video se pide recién cuando está por entrar en pantalla. Pesan casi tres
+ * megas entre los dos y viven a dos scrolls de la portada: cargarlos al abrir
  * retrasa todo lo demás por algo que todavía no se ve.
  *
+ * Se reproduce UNA vez y se queda en su última pantalla, la de confirmación.
+ * En bucle el remate se perdía: el que llegaba a mirar se encontraba con el
+ * arranque de la toma siguiente en vez de "¡Subiste tus fotos!".
+ *
  * Con "reducir movimiento" prendido no se carga nunca y queda el poster, que
- * es un cuadro del mismo video. Un video que arranca solo y se repite es
- * exactamente lo que esa preferencia pide que no pase.
+ * es un cuadro del mismo video. Un video que arranca solo es exactamente lo
+ * que esa preferencia pide que no pase.
  */
 export function Telefono({ nombre, alt }: { nombre: "compra" | "subida"; alt: string }) {
   const video = useRef<HTMLVideoElement>(null);
@@ -312,6 +316,9 @@ export function Telefono({ nombre, alt }: { nombre: "compra" | "subida"; alt: st
             v.pause();
             continue;
           }
+          // Ya terminó: se queda congelado en la confirmación. Llamar a play()
+          // acá lo rebobinaría, que es justo lo que se sacó al quitar el loop.
+          if (v.ended) continue;
           if (!v.getAttribute("src")) v.src = `/demo/${nombre}.mp4`;
           // El play puede rebotar (batería baja, ahorro de datos). No es un
           // error: queda el poster, que es una captura del mismo video.
@@ -336,7 +343,6 @@ export function Telefono({ nombre, alt }: { nombre: "compra" | "subida"; alt: st
           ref={video}
           poster={`/demo/${nombre}.jpg`}
           muted
-          loop
           playsInline
           preload="none"
           aria-label={alt}
