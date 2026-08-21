@@ -494,6 +494,88 @@ section { position: relative; }
 .tx .s { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .tx .a { font-size: 13.5px; color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 500; }
 
+/* ── El panel, entrando ──────────────────────────────────────────────────────
+   La tarjeta cuenta una historia —entra plata, el gráfico sube, caen ventas—
+   y quieta no la cuenta: es una captura de algo que en el producto se mueve.
+
+   Arranca cuando la tarjeta entra en pantalla y no al cargar la página: vive a
+   dos scrolls de la portada, así que animándola al cargar el que llega ya se
+   la perdió.
+
+   Todo cuelga de dos atributos que pone el JS:
+
+     data-anim="1"     hay JavaScript, se puede esconder para revelar después
+     data-visible="1"  la tarjeta está en pantalla, arranca
+
+   El primero existe para no romper nada sin JS: sin él no se esconde nada y la
+   tarjeta se ve completa y quieta, que es un final perfectamente bueno.
+   ------------------------------------------------------------------------- */
+
+/* El gráfico se dibuja de izquierda a derecha. Con clip y no con dasharray:
+   el SVG se estira en X (preserveAspectRatio=none), así que las unidades del
+   trazo no coinciden con lo que se ve, y encima revelando por clip se dibujan
+   juntos el área y la línea, que es como se lee un gráfico creciendo. */
+.panel[data-anim="1"] .spark svg { clip-path: inset(0 100% 0 0); }
+.panel[data-anim="1"][data-visible="1"] .spark svg {
+  animation: panel-traza 900ms cubic-bezier(.3, .7, .3, 1) 160ms forwards;
+}
+@keyframes panel-traza {
+  to { clip-path: inset(0 0 0 0); }
+}
+
+/* El punto final aparece recién cuando el trazo llegó hasta él: marca el dato
+   que está escrito arriba, y llegando antes marcaría un lugar vacío.
+   El translate va repetido en los keyframes porque el transform es uno solo:
+   si lo omitiera, el punto se iría a su esquina al animar. */
+.panel[data-anim="1"] .spark-dot { opacity: 0; }
+.panel[data-anim="1"][data-visible="1"] .spark-dot {
+  animation: panel-punto 320ms cubic-bezier(.2, .8, .3, 1) 980ms forwards;
+}
+@keyframes panel-punto {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(.2); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Las ventas caen de a una, de arriba abajo, después de que el número terminó
+   de contar. En bloque parecen una lista; de a una parecen ventas entrando. */
+.panel[data-anim="1"] .tx { opacity: 0; }
+.panel[data-anim="1"][data-visible="1"] .tx {
+  animation: panel-fila 460ms cubic-bezier(.2, .8, .3, 1) forwards;
+  animation-delay: calc(1100ms + var(--i, 0) * 200ms);
+}
+@keyframes panel-fila {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* La más reciente se enciende un segundo al llegar. Es la única que dice
+   "ahora", y sin esto las tres entran iguales y ninguna se lee como nueva. */
+.panel[data-anim="1"][data-visible="1"] .tx.nueva .a {
+  animation: panel-plata 1400ms ease-out 1560ms both;
+}
+@keyframes panel-plata {
+  0%, 18% { color: var(--accent); }
+  100%    { color: var(--ink); }
+}
+
+/* La foto de la venta. Antes era un rectángulo gris, que en una plataforma que
+   vende fotos es el peor relleno posible. */
+.tx-thumb { overflow: hidden; }
+.tx-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Sin movimiento: la tarjeta completa y quieta. El número lo deja el JS en su
+   valor final, así que no hace falta tocarlo acá. */
+@media (prefers-reduced-motion: reduce) {
+  .panel[data-anim="1"] .spark svg,
+  .panel[data-anim="1"] .spark-dot,
+  .panel[data-anim="1"] .tx {
+    clip-path: none;
+    opacity: 1;
+    animation: none;
+    transform: none;
+  }
+}
+
 /* ── Demo ────────────────────────────────────────────────────────────────── */
 .demo-card { display: grid; grid-template-columns: 1fr 0.8fr; gap: var(--s-8); align-items: center; }
 @media (max-width: 880px) { .demo-card { grid-template-columns: 1fr; } }

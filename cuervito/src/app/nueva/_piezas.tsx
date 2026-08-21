@@ -9,6 +9,7 @@ import {
   Menu as IconoMenu,
   Moon,
   Sun,
+  TrendingUp,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -22,8 +23,16 @@ import { useEffect, useRef, useState } from "react";
  * que el resto llegue como HTML y se vea antes de que cargue nada.
  */
 
-/** Cambiar entre claro y oscuro. */
-function BotonTema() {
+/**
+ * Cambiar entre claro y oscuro.
+ *
+ * `js-tema` no es un gancho de JavaScript acá —el click se engancha por
+ * props— pero la clase NO se puede sacar: el CSS la usa como excepción
+ * (`.solo-ancho:not(.js-tema)`) para que entre 700 y 920px se escondan las
+ * cosas de pantalla ancha menos este botón. Sin ella, el interruptor de tema
+ * desaparece 220px antes de lo que corresponde.
+ */
+function BotonTema({ className = "" }: { className?: string }) {
   /**
    * data-theme vale "light" o "dark", nunca otra cosa.
    *
@@ -46,7 +55,7 @@ function BotonTema() {
   return (
     <button
       type="button"
-      className="btn btn-ghost btn-icon"
+      className={`btn btn-ghost btn-icon js-tema ${className}`.trim()}
       onClick={cambiar}
       aria-label="Cambiar tema"
     >
@@ -116,9 +125,7 @@ export function Encabezado({ logueado }: { logueado: boolean }) {
           </div>
 
           <div className="nav-cta">
-            <span className="solo-ancho">
-              <BotonTema />
-            </span>
+            <BotonTema className="solo-ancho" />
 
             {logueado ? (
               <Link href="/dashboard" className="btn btn-pri">
@@ -349,5 +356,167 @@ export function Telefono({ nombre, alt }: { nombre: "compra" | "subida"; alt: st
         />
       </div>
     </figure>
+  );
+}
+
+type Venta = {
+  /** Nombre de evento inventado. Ver el porqué en page.tsx. */
+  evento: string;
+  detalle: string;
+  monto: string;
+  foto: string | null;
+};
+
+/**
+ * El panel de ventas, entrando.
+ *
+ * La tarjeta cuenta una historia —entra plata, el gráfico sube, caen ventas— y
+ * quieta no la cuenta: se lee como una captura de algo que en el producto se
+ * mueve. Acá se mueve.
+ *
+ * Arranca cuando la tarjeta entra en pantalla y no al cargar: vive a dos
+ * scrolls de la portada, así que animándola al cargar el que llega ya se la
+ * perdió. Y arranca UNA vez: repetirla en cada scroll la convierte en un
+ * cartel parpadeante.
+ *
+ * El grueso lo hace el CSS a partir de dos atributos. Lo único que necesita
+ * JavaScript de verdad es el número subiendo, que no se puede interpolar en
+ * CSS sin trucos que dependen del navegador.
+ */
+export function PanelVentas({
+  total,
+  comparacion,
+  ventas,
+}: {
+  /** El total de arriba, en pesos y sin símbolo. */
+  total: number;
+  comparacion: string;
+  ventas: Venta[];
+}) {
+  const caja = useRef<HTMLElement>(null);
+  const cifra = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const el = caja.current;
+    const num = cifra.current;
+    if (!el || !num) return;
+
+    // Sin JavaScript nada de esto corre y la tarjeta se ve completa y quieta,
+    // que es un final perfectamente bueno. Este atributo es el que habilita al
+    // CSS a esconder cosas para revelarlas después.
+    el.dataset.anim = "1";
+
+    const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (quieto || !("IntersectionObserver" in window)) {
+      el.dataset.visible = "1";
+      return;
+    }
+
+    num.textContent = "0";
+    let cuadro = 0;
+
+    const mirón = new IntersectionObserver(
+      (entradas) => {
+        for (const e of entradas) {
+          if (!e.isIntersecting) continue;
+          mirón.disconnect();
+          el.dataset.visible = "1";
+
+          const desde = performance.now();
+          const dura = 1000;
+          const paso = (ahora: number) => {
+            const t = Math.min(1, (ahora - desde) / dura);
+            // Desacelera al final: el número frena antes de llegar, que es lo
+            // que hace que se lea el valor en vez de verse un borrón.
+            const suave = 1 - Math.pow(1 - t, 3);
+            num.textContent = Math.round(total * suave).toLocaleString("es-AR");
+            if (t < 1) cuadro = requestAnimationFrame(paso);
+          };
+          cuadro = requestAnimationFrame(paso);
+        }
+      },
+      { threshold: 0.35 },
+    );
+    mirón.observe(el);
+
+    return () => {
+      mirón.disconnect();
+      cancelAnimationFrame(cuadro);
+    };
+  }, [total]);
+
+  return (
+    <aside className="panel" ref={caja}>
+      <header className="panel-head">
+        <div>
+          <span className="label">Ventas</span>
+          <div className="panel-when">Hoy</div>
+        </div>
+        {/* Los números son inventados y la tarjeta lo dice. */}
+        <span className="tag">Ejemplo</span>
+      </header>
+
+      <div className="panel-figure">
+        <div className="panel-amount">
+          <span className="cur">$</span>
+          <span ref={cifra}>{total.toLocaleString("es-AR")}</span>
+        </div>
+        <div className="panel-cmp">
+          <span className="delta up">
+            <TrendingUp />
+            18%
+          </span>
+          <span>{comparacion}</span>
+        </div>
+      </div>
+
+      {/* Sparkline de 7 días. Segmentos rectos, no curva suavizada: la curva
+          inventa valores entre puntos y esto se lee como un dato. */}
+      <figure className="spark">
+        <svg viewBox="0 0 280 64" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+              <stop className="s0" offset="0%" />
+              <stop className="s1" offset="100%" />
+            </linearGradient>
+          </defs>
+          <path
+            className="area"
+            d="M8 49.8L52 40.2L96 54L140 32.3L184 43.4L228 21L272 10L272 64L8 64Z"
+          />
+          <path className="line" d="M8 49.8L52 40.2L96 54L140 32.3L184 43.4L228 21L272 10" />
+        </svg>
+        <span className="spark-dot" />
+        <figcaption>
+          {["L", "M", "M", "J", "V", "S", "D"].map((d, i) => (
+            <span key={i}>{d}</span>
+          ))}
+        </figcaption>
+      </figure>
+
+      <div className="panel-sec">
+        <span className="label">Últimas ventas</span>
+      </div>
+
+      {ventas.map((v, i) => (
+        <div
+          className={`tx${i === 0 ? " nueva" : ""}`}
+          key={v.evento}
+          style={{ ["--i" as string]: i }}
+        >
+          <span className="tx-thumb">
+            {v.foto && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={v.foto} alt="" loading="lazy" />
+            )}
+          </span>
+          <div className="info">
+            <div className="t">{v.evento}</div>
+            <div className="s">{v.detalle}</div>
+          </div>
+          <div className="a">{v.monto}</div>
+        </div>
+      ))}
+    </aside>
   );
 }

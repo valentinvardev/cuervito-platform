@@ -13,7 +13,6 @@ import {
   ScanFace,
   ScanSearch,
   ShoppingBag,
-  TrendingUp,
   Zap,
 } from "lucide-react";
 
@@ -22,7 +21,7 @@ import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 
-import { Encabezado, Preguntas, Telefono, VerEvento } from "./_piezas";
+import { Encabezado, PanelVentas, Preguntas, Telefono, VerEvento } from "./_piezas";
 
 /**
  * La landing de encontrate.app.
@@ -162,6 +161,41 @@ async function tiraDeEventos() {
   );
 }
 
+/**
+ * Las tres miniaturas de la lista de ventas.
+ *
+ * Saltea los nueve eventos que ya está usando el hero: con los mismos, la
+ * misma foto aparecía dos veces en la misma pantalla y la página se leía como
+ * si tuviéramos nueve fotos en total.
+ */
+async function miniaturasDeVentas() {
+  const eventos = await db.event.findMany({
+    where: {
+      isPublished: true,
+      NOT: { status: "ARCHIVED" },
+      photos: {
+        some: { deletedAt: null, fileSize: { not: null }, previewKey: { not: null } },
+      },
+    },
+    orderBy: [{ eventDate: "desc" }, { createdAt: "desc" }],
+    skip: 9,
+    take: 3,
+    select: {
+      photos: {
+        where: { deletedAt: null, fileSize: { not: null }, previewKey: { not: null } },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { previewKey: true },
+      },
+    },
+  });
+
+  const urls = await Promise.all(
+    eventos.flatMap((e) => e.photos.map((f) => resolveMediaUrl(f.previewKey!).catch(() => null))),
+  );
+  return urls.filter((u): u is string => !!u);
+}
+
 /** El evento que se ofrece para probar, con caída si ése se despublica. */
 async function eventoDemo() {
   const buscar = (slug?: string) =>
@@ -210,13 +244,14 @@ async function eventoDemo() {
 export default async function LandingNueva() {
   // Cada una cae por su cuenta: que no haya portadas cargadas no puede dejar
   // la landing entera en blanco.
-  const [sesion, eventos, fotos, baldosas, tira, demo] = await Promise.all([
+  const [sesion, eventos, fotos, baldosas, tira, demo, miniaturas] = await Promise.all([
     auth().catch(() => null),
     db.event.count({ where: { isPublished: true, NOT: { status: "ARCHIVED" } } }).catch(() => 0),
     db.photo.count({ where: { fileSize: { not: null }, deletedAt: null } }).catch(() => 0),
     baldosasDelHero().catch(() => []),
     tiraDeEventos().catch(() => []),
     eventoDemo().catch(() => null),
+    miniaturasDeVentas().catch(() => [] as string[]),
   ]);
 
   const hayNumeros = eventos >= MIN_EVENTOS && fotos >= MIN_FOTOS;
@@ -442,76 +477,38 @@ export default async function LandingNueva() {
             </ul>
           </div>
 
-          {/* El panel de ventas. Va rotulado como ejemplo porque los números
-              son inventados: son de un fotógrafo que no existe. */}
-          <aside className="panel">
-            <header className="panel-head">
-              <div>
-                <span className="label">Ventas</span>
-                <div className="panel-when">Hoy</div>
-              </div>
-              <span className="tag">Ejemplo</span>
-            </header>
-
-            <div className="panel-figure">
-              <div className="panel-amount">
-                <span className="cur">$</span>48.200
-              </div>
-              <div className="panel-cmp">
-                <span className="delta up">
-                  <TrendingUp />
-                  18%
-                </span>
-                <span>ayer $40.800</span>
-              </div>
-            </div>
-
-            {/* Sparkline de 7 días. Segmentos rectos, no curva suavizada: la
-                curva inventa valores entre puntos y esto es un dato. */}
-            <figure className="spark">
-              <svg viewBox="0 0 280 64" preserveAspectRatio="none" aria-hidden="true">
-                <defs>
-                  <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-                    <stop className="s0" offset="0%" />
-                    <stop className="s1" offset="100%" />
-                  </linearGradient>
-                </defs>
-                <path
-                  className="area"
-                  d="M8 49.8L52 40.2L96 54L140 32.3L184 43.4L228 21L272 10L272 64L8 64Z"
-                />
-                <path
-                  className="line"
-                  d="M8 49.8L52 40.2L96 54L140 32.3L184 43.4L228 21L272 10"
-                />
-              </svg>
-              <span className="spark-dot" />
-              <figcaption>
-                {["L", "M", "M", "J", "V", "S", "D"].map((d, i) => (
-                  <span key={i}>{d}</span>
-                ))}
-              </figcaption>
-            </figure>
-
-            <div className="panel-sec">
-              <span className="label">Últimas ventas</span>
-            </div>
-
-            {[
-              { t: "Duatlón Chivilcoy", s: "Dorsal 4218 · 4 fotos · ahora", a: "+$9.600" },
-              { t: "Colón vs Gimnasia", s: "Dorsal 1842 · pack · hace 2 min", a: "+$12.600" },
-              { t: "Hockey Racing", s: "Dorsal 892 · 3 fotos · hace 14 min", a: "+$7.200" },
-            ].map((tx) => (
-              <div className="tx" key={tx.t}>
-                <span className="tx-thumb" />
-                <div className="info">
-                  <div className="t">{tx.t}</div>
-                  <div className="s">{tx.s}</div>
-                </div>
-                <div className="a">{tx.a}</div>
-              </div>
-            ))}
-          </aside>
+          {/* Los nombres de los eventos son INVENTADOS. Antes eran los de tres
+              eventos reales de la base —Duatlón Chivilcoy, Colón vs Gimnasia,
+              Hockey Racing— en una tarjeta rotulada Ejemplo: o el ejemplo era
+              falso y usaba el evento de un cliente para inventarle ventas, o
+              parecía que estábamos publicando lo que factura un cliente. Las
+              fotos sí son reales, y son las previews públicas de las tiendas. */}
+          <PanelVentas
+            total={48200}
+            comparacion="ayer $40.800"
+            ventas={[
+              {
+                evento: "Maratón del Litoral",
+                detalle: "Dorsal 4218 · 4 fotos · ahora",
+                monto: "+$9.600",
+                foto: miniaturas[0] ?? null,
+              },
+              {
+                evento: "Gran Fondo Sierras",
+                detalle: "Dorsal 1842 · pack · hace 2 min",
+                monto: "+$12.600",
+                foto: miniaturas[1] ?? null,
+              },
+              {
+                // Ésta por selfie: las dos búsquedas conviven en el producto y
+                // en una lista de tres, poner las dos cuesta cero.
+                evento: "Copa Río Salado",
+                detalle: "Selfie · 3 fotos · hace 14 min",
+                monto: "+$7.200",
+                foto: miniaturas[2] ?? null,
+              },
+            ]}
+          />
         </div>
       </section>
 
