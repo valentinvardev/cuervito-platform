@@ -138,9 +138,17 @@ body {
 .btn-icon .ico {
   grid-area: 1 / 1;
   display: grid; place-items: center;
+  /* Los dos tiempos tienen que terminar casi juntos. Antes la opacidad
+     tardaba 200ms y el transform 420 con rebote: el ícono que entraba quedaba
+     220ms A LA VISTA pero todavía girando y más chico de lo que va, y encima
+     el rebote lo pasaba de largo y lo traía de vuelta. Eso es lo que se ve
+     como un ícono torcido y descentrado por un instante.
+
+     Sin rebote: sobre una ROTACIÓN, pasarse y volver no se lee como
+     elasticidad, se lee como que quedó mal puesto. */
   transition:
-    opacity 200ms ease,
-    transform 420ms cubic-bezier(.34, 1.2, .4, 1);
+    opacity 180ms ease,
+    transform 280ms cubic-bezier(.2, .8, .3, 1);
 }
 /* Claro: se ve la luna, que es lo que vas a activar. */
 .btn-icon .ico-moon { opacity: 1; transform: rotate(0) scale(1); }
