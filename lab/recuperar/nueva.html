@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>encontrate · nueva contraseña</title>
+
+<link rel="icon" href="../assets/icono-tinta.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" type="image/png" href="../assets/icono-tinta-32.png" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/png" href="../assets/icono-papel-32.png" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="../assets/apple-touch.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../base.css">
+<link rel="stylesheet" href="../login/login.css">
+<link rel="stylesheet" href="recuperar.css">
+
+<script>
+  (function () {
+    var elegido = null;
+    try { elegido = localStorage.getItem("tema"); } catch (e) {}
+    var h = new Date().getHours();
+    document.documentElement.dataset.theme =
+      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
+  })();
+</script>
+<script src="../vendor/iconos.js" defer></script>
+
+<style>
+  /* SÓLO LABORATORIO: mirar los tres estados sin tener que vencer un token. */
+  .lab-estados {
+    position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+    z-index: 99; display: flex; gap: 2px; padding: 3px;
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-radius: 100px; box-shadow: var(--shadow-card);
+    font-family: var(--meta); font-size: 11px;
+  }
+  .lab-estados a { padding: 6px 13px; border-radius: 100px; color: var(--ink-3); }
+  .lab-estados a[data-on] { background: var(--ink); color: var(--paper); }
+</style>
+</head>
+
+<body>
+
+<main class="auth">
+
+  <div class="auth-col">
+
+    <div class="auth-top">
+      <a href="../landing/" class="mark">encontrate<i></i>app</a>
+      <div style="display:flex;gap:var(--s-3);align-items:center">
+        <a href="../login/" class="volver"><i data-lucide="arrow-left"></i> Volver</a>
+        <button class="btn btn-ghost btn-icon js-tema" aria-label="Cambiar tema">
+          <span class="ico ico-moon"><i data-lucide="moon"></i></span>
+          <span class="ico ico-sun"><i data-lucide="sun"></i></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="auth-mid">
+      <div class="auth-box">
+
+        <!-- ═══════════ PONER LA NUEVA ═══════════ -->
+        <section id="poner">
+
+          <h1>Elegí una<br>contraseña</h1>
+          <p class="auth-sub">Es la última vez que la escribís por hoy. Después entrás derecho al
+             panel.</p>
+
+          <div style="height:var(--s-6)"></div>
+
+          <div class="alert" id="alerta" role="alert">
+            <i data-lucide="alert-circle"></i>
+            <span>No se pudo guardar. Pedí un link nuevo y probá otra vez.</span>
+          </div>
+
+          <form class="form" id="form" novalidate>
+
+            <div class="field" id="f-pass">
+              <div class="field-top"><label for="pass">Nueva contraseña</label></div>
+              <div class="pw" id="pw">
+                <input class="inp" id="pass" name="password" type="password"
+                       autocomplete="new-password" placeholder="••••••••"
+                       aria-describedby="reglas e-pass">
+                <button class="pw-eye" type="button" id="ojo" aria-label="Mostrar contraseña">
+                  <span class="ico ico-on"><i data-lucide="eye"></i></span>
+                  <span class="ico ico-off"><i data-lucide="eye-off"></i></span>
+                </button>
+              </div>
+
+              <!-- Las reglas se ven desde el principio y se van marcando solas.
+                   Un mínimo que aparece recién al fallar es el que hace que
+                   alguien pruebe tres veces la misma clave. -->
+              <div class="reglas" id="reglas">
+                <div class="regla" id="r-largo"><i></i> Ocho caracteres o más</div>
+                <div class="regla" id="r-num"><i></i> Al menos un número</div>
+              </div>
+
+              <div class="err" id="e-pass"></div>
+            </div>
+
+            <button class="btn btn-pri btn-lg btn-block" type="submit">
+              Guardar y entrar
+              <i data-lucide="arrow-right" class="go"></i>
+            </button>
+
+          </form>
+
+        </section>
+
+        <!-- ═══════════ LINK VENCIDO ═══════════ -->
+        <section id="vencido" hidden>
+
+          <div class="estado-i" data-tono="mal"><i data-lucide="clock"></i></div>
+
+          <h1>Este link<br>ya no sirve</h1>
+          <p class="auth-sub">Los links para cambiar la contraseña duran una hora, y este ya pasó
+             —o alguien lo usó antes.</p>
+
+          <div class="estado-nota">
+            No es nada raro: si el mail quedó abierto de ayer, el link de adentro ya venció. Pedí
+            uno nuevo y llega en el momento.
+          </div>
+
+          <div class="estado-acc">
+            <a class="btn btn-pri btn-lg btn-block" href="./">
+              Pedir un link nuevo <i data-lucide="arrow-right" class="go"></i>
+            </a>
+          </div>
+
+          <p class="auth-alt"><a href="../login/">Volver al ingreso</a></p>
+
+        </section>
+
+        <!-- ═══════════ LISTO ═══════════ -->
+        <section id="listo" hidden>
+
+          <div class="estado-i"><i data-lucide="check"></i></div>
+
+          <h1>Contraseña<br>cambiada</h1>
+          <p class="auth-sub">Ya podés entrar con la nueva. Si no fuiste vos quien la cambió,
+             escribinos ahora.</p>
+
+          <div class="estado-acc">
+            <a class="btn btn-pri btn-lg btn-block" href="../login/">
+              Entrar al panel <i data-lucide="arrow-right" class="go"></i>
+            </a>
+          </div>
+
+        </section>
+
+      </div>
+    </div>
+
+    <div class="auth-bot">
+      <div class="auth-box">
+        <div class="atleta">
+          <p>¿Compraste fotos y las querés bajar de nuevo?</p>
+          <a href="../landing/#demo">No hace falta cuenta, buscá tu evento <i data-lucide="arrow-right" class="go"></i></a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <aside class="auth-side" aria-hidden="true">
+    <div class="shot">
+      <i class="sil"></i>
+      <div class="sweep"></div>
+      <div class="lock"><span></span><span></span><span></span><span></span></div>
+      <div class="chip">DORSAL 1247</div>
+    </div>
+    <div class="side-txt">
+      <p>Tus eventos, tus fotos y tus ventas te esperan del otro lado. Recuperar la clave son dos minutos.</p>
+      <div class="side-num">
+        <span><b>21</b> eventos</span>
+        <span><b>16.337</b> fotos</span>
+      </div>
+    </div>
+  </aside>
+
+</main>
+
+<nav class="lab-estados" aria-label="Estados (laboratorio)">
+  <a href="?" id="l-poner">Poner la nueva</a>
+  <a href="?vencido" id="l-vencido">Link vencido</a>
+  <a href="?listo" id="l-listo">Listo</a>
+</nav>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+
+    try { lucide.createIcons(); } catch (e) { console.warn("lucide:", e); }
+
+    /* ── Tema ─────────────────────────────────────────────────────────── */
+    try {
+      var raiz = document.documentElement;
+      document.querySelectorAll(".js-tema").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var osc = raiz.dataset.theme === "dark";
+          raiz.dataset.theme = osc ? "" : "dark";
+          try { localStorage.setItem("tema", osc ? "light" : "dark"); } catch (e) {}
+        });
+      });
+    } catch (e) { console.warn("tema:", e); }
+
+    /* ── Estados (laboratorio) ────────────────────────────────────────── */
+    try {
+      var q = new URLSearchParams(location.search);
+      var cual = q.has("vencido") ? "vencido" : q.has("listo") ? "listo" : "poner";
+      ["poner", "vencido", "listo"].forEach(function (id) {
+        document.getElementById(id).hidden = id !== cual;
+      });
+      document.getElementById("l-" + cual).dataset.on = "1";
+    } catch (e) { console.warn("estados:", e); }
+
+    /* ── Ver contraseña ───────────────────────────────────────────────── */
+    try {
+      var pw = document.getElementById("pw");
+      var pass = document.getElementById("pass");
+      document.getElementById("ojo").addEventListener("click", function () {
+        var ver = pw.dataset.ver === "1";
+        pw.dataset.ver = ver ? "" : "1";
+        pass.type = ver ? "password" : "text";
+        this.setAttribute("aria-label", ver ? "Mostrar contraseña" : "Ocultar contraseña");
+      });
+    } catch (e) { console.warn("ojo:", e); }
+
+    /* ── Reglas, marcándose mientras se escribe ───────────────────────────
+       Acá SÍ en vivo, al revés que el email: las reglas no acusan un error,
+       muestran cuánto falta. */
+    try {
+      var pass2 = document.getElementById("pass");
+      var largo = document.getElementById("r-largo");
+      var num = document.getElementById("r-num");
+      pass2.addEventListener("input", function () {
+        largo.dataset.ok = pass2.value.length >= 8 ? "1" : "";
+        num.dataset.ok = /\d/.test(pass2.value) ? "1" : "";
+      });
+
+      document.getElementById("form").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var v = pass2.value;
+        var ok = v.length >= 8 && /\d/.test(v);
+        var campo = document.getElementById("f-pass");
+        campo.dataset.err = ok ? "" : "1";
+        pass2.setAttribute("aria-invalid", ok ? "false" : "true");
+        document.getElementById("e-pass").textContent = ok ? "" : "Le falta para cumplir las dos reglas de arriba.";
+        if (!ok) { pass2.focus(); return; }
+        location.search = "?listo";
+      });
+    } catch (e) { console.warn("reglas:", e); }
+
+  });
+</script>
+</body>
+</html>

@@ -12,7 +12,12 @@ lab/
   panel.css           ← armazón del panel: riel, barra, tarjeta, fila, chips
   panel.js            ← inyecta riel y barra, engancha tema y cajón
   vendor/lucide.min.js  ← Lucide local, para que los íconos anden sin internet
-  landing/  login/    ← público, sin riel: no cargan panel.css ni panel.js
+  landing/  login/  alta/  recuperar/   ← público, sin riel: no cargan
+                                          panel.css ni panel.js
+  recuperar/  ← index (pedir el link) y nueva.html (poner la contraseña).
+                Cargan login/login.css: son variaciones del ingreso, no
+                pantallas nuevas. Los estados se miran con ?enviado,
+                ?vencido y ?listo.
   dashboard/  eventos/  nuevo/  ventas/  fotos/  pagina/   ← panel
   cobros/  perfil/  ayuda/                                 ← panel, cuenta
 ```

@@ -1,0 +1,121 @@
+/* =============================================================================
+   encontrate · recuperar la contraseña
+   -----------------------------------------------------------------------------
+   Dos pantallas —pedir el link y poner la nueva— que son variaciones del
+   ingreso: mismo armazón de dos columnas, mismo formulario, mismo pie. Por eso
+   cargan login.css y acá va SÓLO lo que allá no existe.
+
+   Y lo que no existe es una cosa: el bloque de estado. Las dos pantallas
+   terminan en algo que no es un formulario —"revisá tu email", "listo",
+   "este link ya no sirve"— y ese momento necesita decir qué pasó sin que el
+   usuario tenga que leer un párrafo para enterarse.
+   ========================================================================== */
+
+/* El ícono del estado. Redondo y grande, con el color diciendo si salió bien o
+   mal antes de que se lea una palabra. Va arriba del título y alineado a la
+   izquierda como todo lo demás de la columna: centrarlo sólo en esta pantalla
+   haría que el bloque salte respecto del formulario que lo precede. */
+.estado-i {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--s-4);
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+  color: var(--ok);
+}
+.estado-i svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.8;
+}
+
+/* Rojo para el link vencido. Es la única de las tres que es una mala noticia,
+   y sigue teniendo salida: se pide otro. */
+.estado-i[data-tono="mal"] {
+  background: color-mix(in srgb, var(--bad) 12%, transparent);
+  color: var(--bad);
+}
+
+/* El dato que confirma la acción: a qué dirección se mandó.
+   Sin esto, "revisá tu email" no dice cuál, y el que tiene dos cuentas se
+   queda mirando la bandeja equivocada. */
+.estado-dato {
+  display: inline-block;
+  margin-top: var(--s-3);
+  padding: 7px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-2);
+  background: var(--paper-3);
+  font-family: var(--meta);
+  font-size: 13.5px;
+  color: var(--ink);
+  word-break: break-all;
+}
+
+/* La letra chica de después: qué hacer si no llegó. Es la pregunta que sigue
+   SIEMPRE a "revisá tu email", y contestarla acá es una consulta de soporte
+   menos. */
+.estado-nota {
+  margin-top: var(--s-5);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--line-soft);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.estado-nota b {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+/* Las acciones del estado, apiladas y a lo ancho: en estas pantallas hay una
+   sola cosa razonable para hacer, así que el botón la ocupa entera. */
+.estado-acc {
+  display: grid;
+  gap: var(--s-3);
+  margin-top: var(--s-6);
+}
+
+/* Las reglas de la contraseña, debajo del campo. Se muestran ANTES de que el
+   usuario falle: un mínimo que se descubre recién al enviar es el que hace que
+   se pruebe tres veces la misma clave. */
+.reglas {
+  display: grid;
+  gap: 5px;
+  margin-top: 9px;
+}
+.regla {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  transition: color 180ms ease;
+}
+.regla i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+.regla i::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.regla[data-ok="1"] {
+  color: var(--ok);
+}
+.regla[data-ok="1"] i::after {
+  opacity: 1;
+}
