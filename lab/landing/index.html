@@ -164,11 +164,31 @@
 <!-- ═══════════════════ CÓMO FUNCIONA ═══════════════════ -->
 <section class="pad" id="como">
   <div class="wrap">
-    <span class="label eyebrow">Cómo funciona</span>
-    <h2>De la tarjeta de memoria<br>a tu cuenta.</h2>
-    <p class="lede" style="margin-top:var(--s-5)">
-      Vos cubrís el evento. Indexar, publicar, cobrar y entregar lo hace la plataforma.
-    </p>
+    <div class="como-top">
+      <div>
+        <span class="label eyebrow">Cómo funciona</span>
+        <h2>De la tarjeta de memoria<br>a tu cuenta.</h2>
+        <p class="lede" style="margin-top:var(--s-5)">
+          Vos cubrís el evento. Indexar, publicar, cobrar y entregar lo hace la plataforma.
+        </p>
+      </div>
+
+      <!-- El panel de verdad subiendo un álbum: se suelta la carpeta, sube,
+           y las fotos van apareciendo reconocidas. Grabado, no ilustrado. -->
+      <figure class="tel">
+        <span class="tel-b tel-b-izq tel-b-accion"></span>
+        <span class="tel-b tel-b-izq tel-b-vol-mas"></span>
+        <span class="tel-b tel-b-izq tel-b-vol-menos"></span>
+        <span class="tel-b tel-b-der tel-b-bloqueo"></span>
+        <span class="tel-b tel-b-der tel-b-camara"></span>
+        <div class="tel-vidrio">
+          <video class="js-video-deco" poster="../assets/demo/subida.jpg"
+                 muted loop playsinline preload="none"
+                 aria-label="El panel del fotógrafo subiendo un álbum de fotos"
+                 data-src="../assets/demo/subida.mp4"></video>
+        </div>
+      </figure>
+    </div>
 
     <div class="steps">
       <article class="step">
@@ -310,17 +330,34 @@
         <span><i data-lucide="scan-face"></i>Buscar por selfie</span>
         <span><i data-lucide="download"></i>Comprar y descargar</span>
       </div>
-    </div>
 
-    <div class="ev">
-      <div class="ev-cover"><span>PORTADA DEL EVENTO</span></div>
-      <div class="ev-body">
-        <span class="label" style="color:var(--accent)">Evento real</span>
-        <div class="t" style="margin-top:6px">Duatlón Club Ciclista Chivilcoy</div>
-        <div class="m">Chivilcoy · 2.162 fotos</div>
-        <a href="#" class="btn btn-ghost">Abrir el evento <i data-lucide="arrow-up-right" class="go"></i></a>
+      <div class="ev">
+        <div class="ev-cover"><span>PORTADA DEL EVENTO</span></div>
+        <div class="ev-body">
+          <span class="label" style="color:var(--accent)">Evento real</span>
+          <div class="t" style="margin-top:6px">Duatlón Club Ciclista Chivilcoy</div>
+          <div class="m">Chivilcoy · 2.162 fotos</div>
+          <a href="#" class="btn btn-ghost">Abrir el evento <i data-lucide="arrow-up-right" class="go"></i></a>
+        </div>
       </div>
     </div>
+
+    <!-- La compra entera, de buscar el número a descargar las fotos. Es la
+         tienda de verdad: el video no ilustra el flujo, lo muestra. -->
+    <figure class="tel">
+      <span class="tel-b tel-b-izq tel-b-accion"></span>
+      <span class="tel-b tel-b-izq tel-b-vol-mas"></span>
+      <span class="tel-b tel-b-izq tel-b-vol-menos"></span>
+      <span class="tel-b tel-b-der tel-b-bloqueo"></span>
+      <span class="tel-b tel-b-der tel-b-camara"></span>
+      <div class="tel-vidrio">
+        <video class="js-video-deco" poster="../assets/demo/compra.jpg"
+               muted loop playsinline preload="none"
+               aria-label="Un atleta buscando sus fotos, comprándolas y descargándolas"
+               data-src="../assets/demo/compra.mp4"></video>
+      </div>
+    </figure>
+
   </div>
 </section>
 
@@ -539,6 +576,32 @@
         }
       });
     });
+
+    // ── Videos decorativos ──────────────────────────────────────────────
+    // Se piden recién cuando están por entrar en pantalla. Son cinco megas
+    // entre los dos y viven a dos scrolls de la portada: cargarlos al abrir
+    // retrasa todo lo demás por algo que todavía no se ve.
+    //
+    // Con "reducir movimiento" prendido no se cargan nunca y queda el poster.
+    // Un video que arranca solo y se repite es exactamente lo que esa
+    // preferencia pide que no pase, y además ahorra la descarga.
+    try {
+      var quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!quieto && "IntersectionObserver" in window) {
+        var mirón = new IntersectionObserver(function (entradas) {
+          entradas.forEach(function (e) {
+            var v = e.target;
+            if (!e.isIntersecting) { v.pause(); return; }
+            if (!v.getAttribute("src")) v.src = v.dataset.src;
+            // El play puede rebotar (batería baja, ahorro de datos). No es un
+            // error: queda el poster, que es una captura del mismo video.
+            var pr = v.play();
+            if (pr) pr.catch(function () {});
+          });
+        }, { rootMargin: "300px 0px" });
+        document.querySelectorAll(".js-video-deco").forEach(function (v) { mirón.observe(v); });
+      }
+    } catch (e) { console.warn("videos:", e); }
   });
 </script>
 </body>

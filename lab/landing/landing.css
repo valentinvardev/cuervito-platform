@@ -578,6 +578,121 @@ section { position: relative; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   TELÉFONO · el producto adentro del aparato con el que se grabó
+   ---------------------------------------------------------------------------
+   Las capturas son de un iPhone 17 Pro Max, así que el marco es ese y no un
+   rectángulo redondeado genérico. Las proporciones salen del aparato, no del
+   ojo, porque un marco mal proporcionado se nota aunque nadie sepa decir por
+   qué:
+
+     pantalla   2868 × 1320 px a 460 ppi  →  158,4 × 72,9 mm de vidrio
+     cuerpo     163,4 × 78,0 mm
+     marco      (78,0 − 72,9) / 2 = 2,55 mm  →  3,5 % del ancho de pantalla
+     esquina    62 pt sobre 440 pt de ancho  →  14,1 % del ancho de pantalla
+
+   Todo se deriva de --p, que es el ancho de la PANTALLA y no el del aparato.
+   Cambiando esa sola medida el teléfono entero escala bien.
+
+   El video no lleva controles ni sonido: es decoración, no un reproductor. Y
+   no lleva marca de agua de "demo" encima porque no es una simulación de
+   marketing: es la interfaz de verdad, grabada.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.tel {
+  --p: clamp(190px, 24vw, 290px);
+  --marco: calc(var(--p) * 0.035);
+  --r-vidrio: calc(var(--p) * 0.141);
+  /* El titanio. Dos paradas claras en las esquinas opuestas y una oscura al
+     medio: es lo que lee como metal y no como plástico gris. */
+  --titanio: linear-gradient(145deg, #8b8b8f 0%, #3a3a3d 14%, #6e6e73 34%,
+                             #2b2b2e 58%, #5f5f64 78%, #303033 100%);
+
+  position: relative;
+  margin: 0;
+  width: calc(var(--p) + var(--marco) * 2);
+  padding: var(--marco);
+  border-radius: calc(var(--r-vidrio) + var(--marco));
+  background: var(--titanio);
+  box-shadow: var(--shadow-obj);
+  /* Los botones asoman por afuera del marco. */
+  isolation: isolate;
+}
+
+/* El filo interno del titanio contra el vidrio. Sin esta línea, el marco y la
+   pantalla se leen como una sola superficie plana. */
+.tel::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--marco) - 1px);
+  border-radius: calc(var(--r-vidrio) + 1px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+              inset 0 0 0 2px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.tel-vidrio {
+  position: relative;
+  width: var(--p);
+  aspect-ratio: 1320 / 2868;
+  border-radius: var(--r-vidrio);
+  overflow: hidden;
+  background: #000;
+  /* Safari no recorta el <video> con el overflow del padre. El radio va
+     también en el hijo, y la máscara fuerza el recorte donde ni eso alcanza. */
+  -webkit-mask-image: -webkit-radial-gradient(#fff, #000);
+  mask-image: radial-gradient(#fff, #000);
+}
+
+.tel-vidrio > video,
+.tel-vidrio > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--r-vidrio);
+}
+
+/* ── Botones ─────────────────────────────────────────────────────────────────
+   Posiciones en porcentaje del alto del aparato, medidas sobre el 17 Pro Max:
+   a la izquierda el botón de Acción y el volumen, a la derecha el de bloqueo y
+   el Control de Cámara. Asoman apenas un pelo: en el aparato real el botón
+   está casi al ras del canto. */
+.tel-b {
+  position: absolute;
+  width: calc(var(--p) * 0.012);
+  background: var(--titanio);
+  z-index: 0;
+}
+.tel-b-izq  { left: calc(var(--p) * -0.008);  border-radius: 2px 0 0 2px; }
+.tel-b-der  { right: calc(var(--p) * -0.008); border-radius: 0 2px 2px 0; }
+
+.tel-b-accion   { top: 15.5%; height: 4.2%; }
+.tel-b-vol-mas  { top: 22.4%; height: 6.4%; }
+.tel-b-vol-menos{ top: 30.6%; height: 6.4%; }
+.tel-b-bloqueo  { top: 24.0%; height: 9.6%; }
+.tel-b-camara   { top: 38.4%; height: 5.0%; }
+
+/* ── Dónde se paran ──────────────────────────────────────────────────────────
+   El teléfono es la columna derecha de dos secciones. Debajo de 880 la
+   columna se apila y el aparato se centra. */
+.como-top {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--s-8);
+  align-items: center;
+}
+@media (max-width: 880px) {
+  .como-top { grid-template-columns: 1fr; }
+  .como-top .tel { justify-self: center; margin-top: var(--s-5); }
+  .demo-card .tel { justify-self: center; }
+}
+
+/* La tarjeta del evento real baja a la columna del texto cuando el teléfono
+   se queda con la derecha. Se le pone tope de ancho para que siga leyéndose
+   como tarjeta y no como una franja. */
+.demo-card .ev { max-width: 340px; margin-top: var(--s-5); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
    MOBILE · aire
    Los paddings generosos que hacen respirar en escritorio se comen la pantalla
    en un teléfono: la tarjeta de precio tenía 60px de cada lado más 28 del
