@@ -3,6 +3,7 @@ import "~/styles/prototype/panel-anim.css";
 import "~/styles/prototype/landing.css";
 import "~/styles/prototype/aviso.css";
 
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -11,16 +12,31 @@ import { whatsappUrl } from "~/lib/support";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 
-import { AthleteSearchBar } from "./_components/athlete-search-bar";
-import { AvisoRebrand } from "./_components/aviso-rebrand";
-import { DemoEventCta } from "./_components/demo-event-cta";
-import { ExternalStylesheets } from "./_components/external-stylesheets";
-import { LandingFaq } from "./_components/landing-faq";
-import { LandingMobileNav } from "./_components/landing-mobile-nav";
-import { LandingTestimonials } from "./_components/landing-testimonials";
-import { PhotoStrip, PhotoStripSkeleton } from "./_components/photo-strip";
-import { RevealOnScroll } from "./_components/reveal-on-scroll";
-import { ThemeToggle } from "./_components/theme-toggle";
+import { AthleteSearchBar } from "../_components/athlete-search-bar";
+import { AvisoRebrand } from "../_components/aviso-rebrand";
+import { DemoEventCta } from "../_components/demo-event-cta";
+import { ExternalStylesheets } from "../_components/external-stylesheets";
+import { LandingFaq } from "../_components/landing-faq";
+import { LandingMobileNav } from "../_components/landing-mobile-nav";
+import { LandingTestimonials } from "../_components/landing-testimonials";
+import { PhotoStrip, PhotoStripSkeleton } from "../_components/photo-strip";
+import { RevealOnScroll } from "../_components/reveal-on-scroll";
+import { ThemeToggle } from "../_components/theme-toggle";
+
+/**
+ * La landing de cuervito, la que estuvo en / hasta la migración.
+ *
+ * Queda accesible unos días para poder comparar en producción contra la
+ * nueva, que ya vive en /. Después de eso se borra: son setecientas líneas y
+ * el CSS del prototipo de cuervito, que sólo siguen vivos por /eventos y las
+ * pantallas que todavía no se migraron.
+ *
+ * Va con noindex: dos páginas que dicen lo mismo compiten entre ellas, y ésta
+ * además tiene la marca vieja.
+ */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 /**
  * Los números del catálogo salen de la base, no de una constante. Debajo de
@@ -43,7 +59,7 @@ async function getCatalogStats() {
   };
 }
 
-export default async function Home() {
+export default async function LandingAnterior() {
   const session = await auth().catch(() => null);
   const stats = await getCatalogStats().catch(() => ({
     events: 0,

@@ -26,9 +26,12 @@ import { Encabezado, PanelVentas, Preguntas, Telefono, VerEvento } from "./_piez
 /**
  * La landing de encontrate.app.
  *
- * Es el port de lab/landing, que es donde se decide el diseño. Vive en /nueva y
- * no en / mientras se la mira con calma: la home actual es la de cuervito y
- * está vendiendo, así que el reemplazo es un cambio aparte y de una línea.
+ * Es el port de lab/landing, que es donde se decide el diseño. Desde la
+ * migración vive en /, y la anterior quedó en /anterior para poder comparar.
+ *
+ * El buscador de eventos del atleta NO está acá: esta página es para el
+ * fotógrafo de punta a punta. El atleta entra por "Buscar mis fotos" en la
+ * barra, que lo lleva a /eventos.
  *
  * Todo lo que en el laboratorio es marcador —las baldosas del hero, la tira de
  * eventos, los contadores, la tarjeta del evento real— acá sale de la base. Un
@@ -40,9 +43,15 @@ export const metadata: Metadata = {
   title: "encontrate.app · Vendé las fotos del partido",
   description:
     "Subís las fotos y listo: reconocemos cara y número, armamos tu página de venta con tu marca, y cada compra entra directo a tu Mercado Pago.",
-  // Mientras convivan las dos landings, ésta no se indexa: dos páginas que
-  // dicen lo mismo compiten entre ellas y Google elige una sola.
-  robots: { index: false, follow: false },
+  // Se pisa lo del layout raíz, que todavía dice Cuervito. El resto de la
+  // marca —siteName, metadataBase, el dominio— sigue siendo la vieja y se
+  // cambia cuando se migre el resto, no acá.
+  openGraph: {
+    type: "website",
+    siteName: "encontrate.app",
+    title: "encontrate.app · Vendé las fotos del partido",
+    description: "Cobrás en tu Mercado Pago. Nosotros nunca tocamos tu plata.",
+  },
 };
 
 export const dynamic = "force-dynamic";

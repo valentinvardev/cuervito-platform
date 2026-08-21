@@ -76,6 +76,17 @@ const ENLACES = [
 ] as const;
 
 /**
+ * La salida del atleta.
+ *
+ * Esta página es para el fotógrafo de punta a punta, pero a la home también
+ * llega el que vino a buscar SUS fotos, y hasta ahora tenía un buscador en el
+ * primer pixel. Sacándolo sin dejar nada, ese visitante se queda sin salida en
+ * la única página que va a mirar. Un link alcanza: /eventos ya tiene la grilla
+ * y el buscador.
+ */
+const BUSCAR = { href: "/eventos", txt: "Buscar mis fotos" } as const;
+
+/**
  * La barra de arriba con su cajón de mobile.
  *
  * Va entero en un componente de cliente, incluido el velo y el cajón, aunque
@@ -112,7 +123,7 @@ export function Encabezado({ logueado }: { logueado: boolean }) {
     <>
       <nav className="nav">
         <div className="wrap nav-in">
-          <Link href="/nueva" className="mark">
+          <Link href="/" className="mark">
             encontrate<i></i>app
           </Link>
 
@@ -122,6 +133,7 @@ export function Encabezado({ logueado }: { logueado: boolean }) {
                 {e.txt}
               </a>
             ))}
+            <Link href={BUSCAR.href}>{BUSCAR.txt}</Link>
           </div>
 
           <div className="nav-cta">
@@ -167,7 +179,7 @@ export function Encabezado({ logueado }: { logueado: boolean }) {
 
       <aside className="drawer" id="menu" aria-label="Menú">
         <nav className="drawer-links">
-          {[...ENLACES, { href: "#demo", txt: "Ver un evento real" }].map((e) => (
+          {[...ENLACES, { href: "#demo", txt: "Ver un evento real" }, BUSCAR].map((e) => (
             <a key={e.href} href={e.href} onClick={() => setAbierto(false)}>
               {e.txt} <ArrowRight />
             </a>
