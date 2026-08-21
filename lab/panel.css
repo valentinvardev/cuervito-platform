@@ -209,6 +209,18 @@ body { overflow-x: hidden; }
 }
 .burger-d { display: none; }
 
+/* El isotipo en la barra, sólo cuando el riel se esconde.
+
+   En escritorio la marca ya está arriba del riel, a diez centímetros: ponerla
+   también en la barra sería decir lo mismo dos veces. En teléfono el riel es un
+   cajón cerrado, así que la barra quedaba sin ninguna marca —una hamburguesa,
+   un sol y un botón— y esa pantalla es idéntica a la de cualquier otra
+   aplicación. Es la vista que más se usa y la única que no decía de quién es.
+
+   Va sólo el ícono y no el logotipo entero: al lado de la hamburguesa hay
+   lugar para 26 píxeles, no para los 173 que mide el logotipo a esa altura. */
+.mark-ico { display: none; }
+
 .search { position: relative; flex: 1; max-width: 380px; }
 .search svg {
   position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
@@ -584,6 +596,19 @@ body { overflow-x: hidden; }
   .app::before { display: none; }
   .col { grid-column: 1; }
   .burger-d { display: grid; }
+  .mark-ico {
+    display: block;
+    /* Alto fijo y la proporción del archivo (139×178), igual que .mark con el
+       logotipo. Con una caja cuadrada el ícono quedaba metido en 26×26 y
+       ocupaba 20 de ancho, dejando aire falso a los costados. */
+    height: 26px; aspect-ratio: 139 / 178;
+    flex-shrink: 0;
+    /* Máscara y no <img>: así toma el color del texto y sirve igual en claro
+       y en oscuro, que es el mismo truco que usa .mark con el logotipo. */
+    background: var(--ink);
+    -webkit-mask: url("assets/isotipo.png") center / contain no-repeat;
+    mask: url("assets/isotipo.png") center / contain no-repeat;
+  }
   .rail {
     position: fixed; top: 0; left: 0; z-index: 70;
     width: 246px;

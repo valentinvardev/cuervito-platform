@@ -214,6 +214,11 @@ export function Shell({
             <span className="ico ico-menu">{cajon ? <X /> : <Menu />}</span>
           </button>
 
+          {/* La marca, sólo cuando el riel se esconde. El CSS la prende en el
+              mismo corte que la hamburguesa: en escritorio ya está arriba del
+              riel y repetirla sería decir lo mismo dos veces. */}
+          <Link href="/v2" className="mark-ico" aria-label="encontrate.app" prefetch />
+
           <Buscador placeholder={BUSCAR[actual] ?? "Buscar evento, dorsal o venta"} />
 
           <div className="top-r">
