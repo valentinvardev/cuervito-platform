@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Pantalla } from "~/app/v2/evento/[id]/_pantalla";
+import { Celebracion, Marca } from "../_piezas";
 
 /**
  * Los tiempos, todos juntos.
@@ -27,8 +28,10 @@ const T = {
   porLetra: 280,
   /** Cuánto se queda mostrando el resultado de la búsqueda. */
   resultado: 2400,
+  /** Cuánto dura la pantalla de cierre. */
+  cierre: 3400,
   /** Pausa antes de volver a empezar. */
-  antesDeVolver: 1200,
+  antesDeVolver: 600,
 };
 
 type Foto = {
@@ -67,17 +70,9 @@ type Props = React.ComponentProps<typeof Pantalla>;
 export function Subida({ evento, fotos, ...resto }: Props & { fotos: Foto[] }) {
   const [reveladas, setReveladas] = useState(0);
   const [reconocidas, setReconocidas] = useState(0);
-  const [rotulo, setRotulo] = useState<string | null>(null);
+  const [fin, setFin] = useState(false);
   const [vuelta, setVuelta] = useState(0);
   const cancelado = useRef(false);
-
-  // Se puede apagar con ?rotulos=no si en la edición molestan. Se lee en un
-  // efecto porque en el servidor no hay location, y decidirlo al renderizar
-  // dejaría el HTML del servidor distinto al del cliente.
-  const [conRotulos, setConRotulos] = useState(true);
-  useEffect(() => {
-    setConRotulos(new URLSearchParams(window.location.search).get("rotulos") !== "no");
-  }, []);
 
   // Las fotos que se muestran, con el estado que les toca en este instante: las
   // que todavía no se reconocieron van sin dorsal y sin caras, que es como se
@@ -116,12 +111,11 @@ export function Subida({ evento, fotos, ...resto }: Props & { fotos: Foto[] }) {
   async function correr() {
     setReveladas(0);
     setReconocidas(0);
-    setRotulo(null);
+    setFin(false);
     await dormir(T.arranque);
     if (cancelado.current) return;
 
     // 1) Suelta la carpeta del evento.
-    setRotulo("suelta la carpeta del evento");
     const recuadro = document.querySelector<HTMLElement>(".soltar");
     recuadro?.setAttribute("data-demo-toque", "1");
     // La clase "encima" es la que el soltador se pone solo cuando hay algo
@@ -135,7 +129,6 @@ export function Subida({ evento, fotos, ...resto }: Props & { fotos: Foto[] }) {
 
     // 2) La subida corre sola. Se espera a que el soltador diga "Listo", que en
     //    el DOM es su etapa sin la clase de lenta.
-    setRotulo("las fotos suben");
     await esperarA(() => {
       const et = document.querySelector(".panel-s .proc .etapa");
       return !!et && !et.classList.contains("lenta");
@@ -145,35 +138,36 @@ export function Subida({ evento, fotos, ...resto }: Props & { fotos: Foto[] }) {
     // 3) Las fotos aparecen. Todas juntas: recién subidas ya existen, lo que
     //    falta es que las reconozcan.
     await dormir(T.antesDeRevelar);
-    setRotulo("aparecen en la galería");
     setReveladas(fotos.length);
     await dormir(T.antesDeRevelar);
     if (cancelado.current) return;
 
     // 4) El reconocimiento, de a una. Es la parte que explica el producto: cada
     //    foto pasa de "todavía procesando" a tener su dorsal y sus caras.
-    setRotulo("reconoce caras y dorsales");
     for (let i = 1; i <= fotos.length; i++) {
       if (cancelado.current) return;
       setReconocidas(i);
       await dormir(T.porReconocida);
     }
-    setRotulo(null);
     await dormir(T.despues);
     if (cancelado.current) return;
 
     // 5) Y ahora se pueden buscar. Cierra la idea: subir sirve para que alguien
     //    las encuentre.
     if (dorsal) {
-      setRotulo(`busca el dorsal ${dorsal}`);
       await escribir(".barra input.inp", dorsal, T.porLetra);
       await dormir(T.resultado);
       await escribir(".barra input.inp", "", 0);
+      await dormir(500);
     }
+    if (cancelado.current) return;
 
-    // 6) Se deja el soltador como estaba y vuelve a empezar, para poder hacer
-    //    otra toma sin recargar.
-    setRotulo(null);
+    // 6) El cierre, y a empezar de nuevo para poder hacer otra toma sin
+    //    recargar. El soltador se deja como estaba ANTES de tapar la pantalla,
+    //    así el reinicio no se ve.
+    setFin(true);
+    await dormir(T.cierre);
+    if (cancelado.current) return;
     document.querySelector<HTMLElement>(".panel-s .proc .btn-ghost")?.click();
     await dormir(T.antesDeVolver);
     if (cancelado.current) return;
@@ -229,8 +223,8 @@ export function Subida({ evento, fotos, ...resto }: Props & { fotos: Foto[] }) {
 
   // La barra de arriba. No es exacta y no hace falta que lo sea: está para que
   // en el video se vea que la toma avanza y cuánto le falta.
-  const pasos = fotos.length + 6;
-  const hechos = reconocidas + (reveladas > 0 ? 3 : 0) + (rotulo ? 1 : 0);
+  const pasos = fotos.length + 4;
+  const hechos = reconocidas + (reveladas > 0 ? 2 : 0) + (fin ? 2 : 0);
 
   return (
     <div className="demo" data-fase="panel">
@@ -241,8 +235,15 @@ export function Subida({ evento, fotos, ...resto }: Props & { fotos: Foto[] }) {
         simulado
       />
 
-      {conRotulos && rotulo && <div className="demo-rotulo">{rotulo}</div>}
+      <Marca />
       <div className="demo-barra" style={{ width: `${Math.min(100, (hechos / pasos) * 100)}%` }} />
+
+      {fin && (
+        <Celebracion
+          titulo="¡Subiste tus fotos!"
+          detalle={`${fotos.length} fotos reconocidas y publicadas. Ya se pueden buscar por dorsal o por cara.`}
+        />
+      )}
     </div>
   );
 }

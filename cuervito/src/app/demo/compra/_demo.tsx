@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Entrega } from "~/app/descarga/[token]/encontrate/entrega";
 import { EncontrateShell } from "~/app/[slug]/[eventSlug]/encontrate/shell";
+import { Celebracion, Marca } from "../_piezas";
 import { guion, type Paso } from "./guion";
 
 type Foto = {
@@ -17,6 +18,9 @@ type Foto = {
   height: number | null;
   filename: string;
 };
+
+/** Cuántas fotos mete el guion en el carrito. */
+const EN_EL_CARRITO = 2;
 
 /**
  * La demo: la interfaz de verdad operándose sola, para grabar la pantalla.
@@ -55,20 +59,31 @@ export function Demo({
   fotografo: React.ComponentProps<typeof Entrega>["fotografo"];
   evento: string;
 }) {
-  const [fase, setFase] = useState<"tienda" | "entrega">("tienda");
+  const [fase, setFase] = useState<"tienda" | "entrega" | "fin">("tienda");
   const [paso, setPaso] = useState(0);
-  const [rotulo, setRotulo] = useState<string | null>(null);
   const [vuelta, setVuelta] = useState(0);
   const cancelado = useRef(false);
-
-  // Se puede apagar con ?rotulos=no si en la edición molestan. Se lee en un
-  // efecto porque en el servidor no hay location, y decidirlo al renderizar
-  // dejaría el HTML del servidor distinto al del cliente.
-  const [conRotulos, setConRotulos] = useState(true);
-  useEffect(() => {
-    setConRotulos(new URLSearchParams(window.location.search).get("rotulos") !== "no");
-  }, []);
   const pasos = guion(dorsal);
+
+  /**
+   * Las que termina comprando, que son las que tienen que aparecer en la
+   * entrega.
+   *
+   * Antes se le pasaban a la entrega las VEINTICUATRO fotos del evento, así que
+   * el carrito decía dos y la pantalla siguiente saludaba con "tus 24 fotos".
+   * En un video que justamente muestra el recorrido completo, esa cuenta es lo
+   * único que hay que leer para darse cuenta de que está armado.
+   *
+   * El guion busca el dorsal y agrega las dos primeras de lo que quedó
+   * filtrado, así que son esas.
+   */
+  const compradas = (
+    dorsal
+      ? fotos.filter((f) =>
+          (f.bibNumbers ?? "").split(",").some((b) => b.trim() === dorsal),
+        )
+      : fotos
+  ).slice(0, EN_EL_CARRITO);
 
   useEffect(() => {
     cancelado.current = false;
@@ -79,21 +94,18 @@ export function Demo({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vuelta]);
 
-  const dormir = (ms: number) =>
-    new Promise<void>((r) => setTimeout(r, ms));
+  const dormir = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
   async function correr() {
     setFase("tienda");
     setPaso(0);
-    setRotulo(null);
     // Un respiro antes de arrancar, para poder empezar a grabar.
     await dormir(600);
 
     for (let i = 0; i < pasos.length; i++) {
       if (cancelado.current) return;
       setPaso(i);
-      const p = pasos[i]!;
-      await ejecutar(p);
+      await ejecutar(pasos[i]!);
       if (cancelado.current) return;
     }
   }
@@ -110,22 +122,22 @@ export function Demo({
         await dormir(220);
         btn.removeAttribute("data-demo-apretado");
       }
-      setRotulo("paga");
       await dormir(500);
       setFase("entrega");
       // La entrega arranca con su animación de pago confirmado; después de eso,
-      // una descarga y la demo vuelve a empezar para poder hacer otra toma.
+      // una descarga, el cierre, y a empezar de nuevo para otra toma.
       await dormir(4600);
       await tocar(".eg-baja", 0);
       await dormir(2600);
+      if (cancelado.current) return;
+      setFase("fin");
+      await dormir(3400);
+      if (cancelado.current) return;
       setVuelta((v) => v + 1);
       return;
     }
 
-    if (p.tipo === "tocar") {
-      setRotulo(p.rotulo);
-      return tocar(p.sel, p.indice ?? 0);
-    }
+    if (p.tipo === "tocar") return tocar(p.sel, p.indice ?? 0);
 
     if (p.tipo === "escribir") return escribir(p.sel, p.texto, p.porLetra ?? 120);
   }
@@ -176,7 +188,7 @@ export function Demo({
           comprador="Lucía Fernández"
           evento={evento}
           fotografo={fotografo}
-          fotos={fotos.map((f) => ({
+          fotos={compradas.map((f) => ({
             id: f.id,
             filename: f.filename,
             bibNumbers: f.bibNumbers,
@@ -189,12 +201,15 @@ export function Demo({
         />
       )}
 
-      {/* El rótulo de lo que está pasando. Se puede apagar con ?rotulos=no si en
-          la edición molesta; por defecto está porque ayuda a que el paso se
-          entienda sin narración. */}
-      {conRotulos && rotulo && <div className="demo-rotulo">{rotulo}</div>}
-
+      <Marca />
       <div className="demo-barra" style={{ width: `${(paso / pasos.length) * 100}%` }} />
+
+      {fase === "fin" && (
+        <Celebracion
+          titulo="¡Ya son tuyas!"
+          detalle={`${compradas.length === 1 ? "Tu foto" : `Tus ${compradas.length} fotos`} sin marca de agua, en calidad original y también en tu mail.`}
+        />
+      )}
     </div>
   );
 }

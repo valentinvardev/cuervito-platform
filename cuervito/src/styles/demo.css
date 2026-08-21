@@ -3,11 +3,16 @@
    encontrate · demo grabable
    -----------------------------------------------------------------------------
    Lo único que agrega esta hoja es lo que hace falta para GRABAR: la marca de
-   qué se está tocando, el rótulo del paso y una barra de avance. Todo lo demás
-   —la tienda, el visor, el carrito, la entrega— es el CSS de producción sin
-   tocar, porque el punto del video es mostrar el producto y no una maqueta.
+   qué se está tocando, el isotipo en la barra de arriba, la barra de avance y
+   la pantalla de cierre. Todo lo demás —la tienda, el visor, el carrito, la
+   entrega, el panel— es el CSS de producción sin tocar, porque el punto del
+   video es mostrar el producto y no una maqueta.
 
    Se carga sólo en /demo, así que nada de esto llega a un usuario.
+
+   Esta carpeta no tiene prototipo HTML: el CSS se escribe acá porque acá se
+   decide, pero lo consume únicamente la app. Por eso las rutas de los assets
+   son las de la app (/v2/…) y no relativas al laboratorio.
    ========================================================================== */
 
 /* ── Qué se está tocando ─────────────────────────────────────────────────────
@@ -16,7 +21,12 @@
    cuarto de segundo antes del click resuelve eso sin tapar nada.
 
    Va con outline y no con box-shadow: el shadow lo recorta el overflow:hidden
-   de las fotos de la grilla, que es justo donde más se necesita. */
+   de las fotos de la grilla, que es justo donde más se necesita.
+
+   Antes había además un rótulo abajo que nombraba cada paso. Se sacó: en una
+   interfaz que se explica sola, el cartel diciendo "abre el carrito" arriba de
+   alguien abriendo el carrito sobra, y encima obliga a leer en un video que se
+   mira. El halo alcanza. */
 [data-demo-toque="1"] {
   position: relative;
   outline: 2px solid var(--accent, #F0410F);
@@ -37,38 +47,130 @@
   filter: brightness(.9);
 }
 
-/* ── Rótulo del paso ─────────────────────────────────────────────────────────
-   Abajo y centrado, donde no tapa ni la grilla ni el carrito. Sirve para que el
-   paso se entienda sin narración; si en la edición molesta, se saca de un lugar
-   solo. */
-.demo-rotulo {
-  position: fixed; left: 50%; bottom: 22px; z-index: 300;
+/* ── El isotipo, en la barra de arriba ───────────────────────────────────────
+   Va sólo en la demo. En la tienda el encabezado es del FOTÓGRAFO —su logo, su
+   nombre, su dirección— y meter el nuestro ahí contradice lo que vendemos: que
+   el atleta le compra a él y no a una galería con el logo de otro arriba. En un
+   video promocional sí hace falta que se vea de quién es el producto, así que
+   se superpone acá y no se toca el encabezado de verdad.
+
+   Al medio porque es el único lugar libre en los dos encabezados: la tienda
+   tiene el logo a la izquierda y el carrito a la derecha, y el panel tiene la
+   hamburguesa a la izquierda y los botones a la derecha.
+
+   La altura sale de los dos encabezados que envuelve: 62px el del panel, unos
+   56 el de la tienda. Con 60 el isotipo queda centrado en los dos. */
+.demo-marca {
+  position: fixed;
+  top: 0;
+  left: 50%;
   transform: translateX(-50%);
-  padding: 9px 16px;
-  border-radius: 100px;
-  background: rgba(18, 17, 15, .88);
-  color: #FBFAF8;
-  font-size: 13.5px; font-weight: 500;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  backdrop-filter: blur(8px);
-  animation: demo-rotulo-entra 220ms cubic-bezier(.2, .8, .3, 1);
+  height: 60px;
+  display: flex;
+  align-items: center;
+  /* Justo encima de los dos encabezados (40 la tienda, 30 el panel) y debajo
+     de todos los modales (60 para arriba). Así el isotipo acompaña a la barra
+     de arriba y desaparece cuando se abre el visor o el carrito, que es lo que
+     hace el encabezado de verdad. Flotando sobre el lightbox quedaba un ícono
+     suelto arriba de una foto a pantalla completa. */
+  z-index: 41;
   pointer-events: none;
 }
-@keyframes demo-rotulo-entra {
-  from { opacity: 0; transform: translate(-50%, 8px); }
-  to   { opacity: 1; transform: translateX(-50%); }
+.demo-marca i {
+  display: block;
+  width: 24px;
+  height: 24px;
+  /* Máscara y no <img>: así el isotipo toma el color del texto y sirve igual
+     sobre el fondo claro de la tienda y el oscuro del panel. */
+  background: var(--ink, #12110F);
+  -webkit-mask: url("/v2/isotipo.png") center / contain no-repeat;
+  mask: url("/v2/isotipo.png") center / contain no-repeat;
+  opacity: .55;
 }
 
 /* ── Avance ──────────────────────────────────────────────────────────────────
    Una línea finita arriba de todo. Al grabar sirve para saber cuánto falta sin
    contar los pasos, y en el corte final se recorta o se tapa. */
 .demo-barra {
-  position: fixed; top: 0; left: 0; z-index: 300;
+  position: fixed; top: 0; left: 0; z-index: 330;
   height: 2px;
   background: var(--accent, #F0410F);
   transition: width 400ms ease;
   pointer-events: none;
+}
+
+/* ── Cierre ──────────────────────────────────────────────────────────────────
+   La toma termina nombrando lo que acaba de pasar. Sin esto el video corta en
+   medio de una pantalla cualquiera y el que lo mira se queda sin saber si eso
+   era el final o si se colgó.
+
+   El tilde se dibuja, no aparece: primero el aro y después la pipa, que es el
+   orden en que uno lo dibujaría a mano y por eso se lee como que algo se
+   completó y no como un ícono que se prendió. */
+.demo-fin {
+  position: fixed; inset: 0; z-index: 400;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: var(--s-4, 20px);
+  padding: var(--s-5, 28px);
+  text-align: center;
+  background: var(--paper, #FAFAF8);
+  animation: demo-fin-entra 300ms cubic-bezier(.2, .8, .3, 1) both;
+}
+@keyframes demo-fin-entra { from { opacity: 0; } to { opacity: 1; } }
+
+.demo-fin svg { width: 104px; height: 104px; overflow: visible; }
+.demo-fin .aro {
+  fill: none;
+  stroke: var(--accent, #F0410F);
+  stroke-width: 4;
+  stroke-linecap: round;
+  /* 2πr con r=48. */
+  stroke-dasharray: 302;
+  stroke-dashoffset: 302;
+  transform: rotate(-90deg);
+  transform-origin: 52px 52px;
+  animation: demo-traza 560ms cubic-bezier(.3, .7, .3, 1) 140ms forwards;
+}
+.demo-fin .pipa {
+  fill: none;
+  stroke: var(--accent, #F0410F);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 56;
+  stroke-dashoffset: 56;
+  animation: demo-traza 300ms cubic-bezier(.3, .7, .3, 1) 620ms forwards;
+}
+@keyframes demo-traza { to { stroke-dashoffset: 0; } }
+
+.demo-fin h2 {
+  font-family: var(--display, system-ui);
+  font-weight: var(--display-weight, 800);
+  letter-spacing: var(--display-track, -0.045em);
+  font-size: clamp(28px, 7vw, 40px);
+  line-height: 1.04;
+  color: var(--ink, #12110F);
+  margin: 0;
+  animation: demo-fin-texto 420ms cubic-bezier(.2, .8, .3, 1) 760ms both;
+}
+.demo-fin p {
+  font-family: var(--sans, system-ui);
+  font-size: 16px;
+  color: var(--ink-2, #55524C);
+  max-width: 30ch;
+  margin: 0;
+  animation: demo-fin-texto 420ms cubic-bezier(.2, .8, .3, 1) 880ms both;
+}
+@keyframes demo-fin-texto {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Sin movimiento: se muestra el estado final, que es el que cuenta la historia. */
+@media (prefers-reduced-motion: reduce) {
+  .demo-fin, .demo-fin h2, .demo-fin p { animation: none; opacity: 1; transform: none; }
+  .demo-fin .aro, .demo-fin .pipa { animation: none; stroke-dashoffset: 0; }
 }
 
 /* Mientras la demo corre, nadie tiene que poder tocar nada: un toque de más en

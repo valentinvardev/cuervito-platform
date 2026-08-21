@@ -12,7 +12,7 @@
  */
 export type Paso =
   | { tipo: "esperar"; ms: number }
-  | { tipo: "tocar"; sel: string; indice?: number; rotulo: string }
+  | { tipo: "tocar"; sel: string; indice?: number }
   | { tipo: "escribir"; sel: string; texto: string; porLetra?: number }
   | { tipo: "entregar" };
 
@@ -29,32 +29,38 @@ export function guion(dorsal: string | null): Paso[] {
     //    búsqueda encuentra algo; si el evento no lee dorsales, este paso no
     //    existe y el video arranca directo por la galería.
     ...(dorsal
-    ? ([
-        { tipo: "escribir", sel: ".et-dorsal input", texto: dorsal, porLetra: 260 },
-        { tipo: "esperar", ms: 1600 },
-      ] as Paso[])
-    : []),
+      ? ([
+          { tipo: "escribir", sel: ".et-dorsal input", texto: dorsal, porLetra: 260 },
+          { tipo: "esperar", ms: 1600 },
+        ] as Paso[])
+      : []),
 
-    // 2) Mira una en grande y la agrega desde ahí.
-    { tipo: "tocar", sel: ".et-foto", indice: 0, rotulo: "abre la primera foto" },
+    // 2) Abre la primera foto en grande y la agrega desde ahí.
+    { tipo: "tocar", sel: ".et-foto", indice: 0 },
     { tipo: "esperar", ms: 1500 },
-    { tipo: "tocar", sel: ".et-visor-pie .et-btn", rotulo: "la agrega al carrito" },
+    { tipo: "tocar", sel: ".et-visor-pie .et-btn" },
     { tipo: "esperar", ms: 800 },
-    { tipo: "tocar", sel: ".et-visor-nav.der", rotulo: "pasa a la siguiente" },
+    // Pasa a la siguiente y agrega esa también.
+    { tipo: "tocar", sel: ".et-visor-nav.der" },
     { tipo: "esperar", ms: 1200 },
-    { tipo: "tocar", sel: ".et-visor-pie .et-btn", rotulo: "agrega la segunda" },
+    { tipo: "tocar", sel: ".et-visor-pie .et-btn" },
     { tipo: "esperar", ms: 800 },
-    { tipo: "tocar", sel: ".et-visor-x", rotulo: "cierra el visor" },
+    { tipo: "tocar", sel: ".et-visor-x" },
     { tipo: "esperar", ms: PAUSA },
 
-    // 3) Abre el carrito y revisa.
-    { tipo: "tocar", sel: ".et-carrito button", rotulo: "abre el carrito" },
+    // 3) Abre el carrito y sigue a los datos.
+    { tipo: "tocar", sel: ".et-carrito button" },
     { tipo: "esperar", ms: 1800 },
-    { tipo: "tocar", sel: ".et-cajon-f .et-btn-lleno", rotulo: "continuar" },
+    { tipo: "tocar", sel: ".et-cajon-f .et-btn-lleno" },
     { tipo: "esperar", ms: PAUSA },
 
-    // 4) Sus datos.
-    { tipo: "escribir", sel: '.et-cajon-b input[type="email"]', texto: "lucia@gmail.com", porLetra: 70 },
+    // 4) Sus datos: mail y nombre.
+    {
+      tipo: "escribir",
+      sel: '.et-cajon-b input[type="email"]',
+      texto: "lucia@gmail.com",
+      porLetra: 70,
+    },
     { tipo: "esperar", ms: 400 },
     { tipo: "escribir", sel: ".et-cajon-b input:not([type=email])", texto: "Lucía Fernández", porLetra: 70 },
     { tipo: "esperar", ms: 1100 },
