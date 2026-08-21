@@ -599,8 +599,16 @@ body { overflow-x: hidden; }
   .app::before { display: none; }
   .col { grid-column: 1; }
   .burger-d { display: grid; }
+  /* El botón de la derecha se queda donde está por su cuenta —es el último
+     de la fila— así que se le saca el empujón y el espacio libre queda
+     entero para los márgenes automáticos del isotipo. Con los dos empujando
+     el hueco se repartía en tres y el ícono quedaba a un tercio del borde,
+     que se lee como mal alineado y no como centrado. */
+  .top-r { margin-left: 0; }
   .mark-ico {
     display: block;
+    /* Centrado en lo que sobra entre la hamburguesa y los botones. */
+    margin-inline: auto;
     /* Alto fijo y la proporción del archivo (139×178), igual que .mark con el
        logotipo. Con una caja cuadrada el ícono quedaba metido en 26×26 y
        ocupaba 20 de ancho, dejando aire falso a los costados. */

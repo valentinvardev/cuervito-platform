@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Pantalla } from "~/app/v2/evento/[id]/_pantalla";
-import { Celebracion, Marca } from "../_piezas";
+import { Celebracion } from "../_piezas";
 
 /**
  * Los tiempos, todos juntos.
@@ -235,7 +235,9 @@ export function Subida({ evento, fotos, ...resto }: Props & { fotos: Foto[] }) {
         simulado
       />
 
-      <Marca />
+      {/* Sin <Marca />: el panel ya trae el isotipo en su propia barra. La
+          superposición de la demo existe para la tienda, cuyo encabezado es
+          del fotógrafo y no lleva el nuestro. Acá sumaba un segundo ícono. */}
       <div className="demo-barra" style={{ width: `${Math.min(100, (hechos / pasos) * 100)}%` }} />
 
       {fin && (
