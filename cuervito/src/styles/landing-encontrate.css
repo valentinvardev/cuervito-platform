@@ -205,7 +205,10 @@ section { position: relative; }
    Más grande que los otros dos teléfonos porque es lo primero que se ve y
    comparte el aire con el titular; los de abajo acompañan a un texto.
    ------------------------------------------------------------------------- */
-.tel-hero { --p: clamp(230px, 30vw, 330px); }
+/* Más grande que los otros dos teléfonos: es lo primero que se ve, comparte el
+   aire con el titular y adentro tiene una pantalla entera de 440 puntos que a
+   330px de ancho quedaba al 75% y se leía chica. */
+.tel-hero { --p: clamp(250px, 34vw, 380px); }
 
 /* ── Las ventas entrando, sobre la pantalla ──────────────────────────────────
    De a una y no apiladas: una sola que aparece y se va se lee como "acaba de

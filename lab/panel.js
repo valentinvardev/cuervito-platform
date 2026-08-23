@@ -85,6 +85,10 @@
       '<span class="ico ico-menu"><i data-lucide="menu"></i></span>' +
       '<span class="ico ico-close"><i data-lucide="x"></i></span>' +
       "</button>" +
+      // El isotipo, sólo cuando el riel se esconde. En escritorio la marca ya
+      // está arriba del riel; en teléfono la barra quedaba sin ninguna, y es
+      // la vista que más se usa. Lo prende y lo apaga panel.css.
+      '<a href="../dashboard/" class="mark-ico" aria-label="cuervito.app"></a>' +
       '<button class="btn btn-ghost btn-icon buscar-movil" id="buscar-movil" aria-label="Buscar">' +
       '<i data-lucide="search"></i></button>' +
       '<div class="search" id="search">' +
