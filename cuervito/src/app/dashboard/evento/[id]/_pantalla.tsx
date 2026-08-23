@@ -51,6 +51,9 @@ type Colaborador = { nombre: string; email: string; estado: string; fotos: numbe
 
 const POR_PAG = 20;
 
+/** Tope de la portada. El mismo que acepta el endpoint. */
+const MAX_PORTADA = 8 * 1024 * 1024;
+
 // Las mismas que ofrece el alta: con dos listas distintas, el mismo deporte
 // queda escrito distinto según por dónde se cargó.
 const DISCIPLINAS = ["Running", "Ciclismo", "Trail", "Duatlón", "Triatlón", "MTB", "Otra"];
@@ -118,6 +121,59 @@ export function Pantalla({
 }) {
   const sinCobrar = colaboradores.filter((c) => c.estado !== "PENDING" && !c.cobra);
   const [publicando, empezarPub] = useTransition();
+
+  // La portada se podía poner al crear el evento y después nunca más. El que
+  // se equivocaba de foto —o la subía antes de tener una buena— se quedaba con
+  // esa para siempre, y es lo primero que ve el atleta en la página de venta.
+  const portadaRef = useRef<HTMLInputElement>(null);
+  const [subiendoPortada, setSubiendoPortada] = useState(false);
+  const [errorPortada, setErrorPortada] = useState<string | null>(null);
+
+  async function cambiarPortada(archivo: File) {
+    setErrorPortada(null);
+    // Se filtra acá además del servidor: subir ocho megas para que los
+    // rechacen del otro lado es esperar al pedo con datos móviles.
+    if (!["image/jpeg", "image/png", "image/webp"].includes(archivo.type)) {
+      setErrorPortada("Tiene que ser JPG, PNG o WebP.");
+      return;
+    }
+    if (archivo.size > MAX_PORTADA) {
+      setErrorPortada("La portada no puede pesar más de 8 MB.");
+      return;
+    }
+    setSubiendoPortada(true);
+    try {
+      const cuerpo = new FormData();
+      cuerpo.append("cover", archivo);
+      const r = await fetch(`/api/dashboard/events/${evento.id}/cover`, {
+        method: "POST",
+        body: cuerpo,
+      });
+      if (!r.ok) {
+        const d = (await r.json().catch(() => ({}))) as { error?: string };
+        throw new Error(d.error ?? "No se pudo subir la portada.");
+      }
+      router.refresh();
+    } catch (e) {
+      setErrorPortada(e instanceof Error ? e.message : "No se pudo subir la portada.");
+    } finally {
+      setSubiendoPortada(false);
+    }
+  }
+
+  async function quitarPortada() {
+    setErrorPortada(null);
+    setSubiendoPortada(true);
+    try {
+      const r = await fetch(`/api/dashboard/events/${evento.id}/cover`, { method: "DELETE" });
+      if (!r.ok) throw new Error("No se pudo quitar la portada.");
+      router.refresh();
+    } catch (e) {
+      setErrorPortada(e instanceof Error ? e.message : "No se pudo quitar la portada.");
+    } finally {
+      setSubiendoPortada(false);
+    }
+  }
   const [avisoPub, setAvisoPub] = useState<string | null>(null);
 
 
@@ -279,7 +335,52 @@ export function Pantalla({
                 no adentro de una solapa. Antes acá había un link que se iba al
                 panel viejo. */}
             <div className="banda-acc">
-              {avisoPub && <span className="btn btn-vidrio">{avisoPub}</span>}
+              {(avisoPub ?? errorPortada) && (
+                <span className="btn btn-vidrio">{avisoPub ?? errorPortada}</span>
+              )}
+
+              {/* Cambiar la portada. Va acá, sobre la propia portada, y no
+                  enterrado en la solapa de Info: es el único lugar donde se
+                  ve el resultado mientras se decide. */}
+              <input
+                ref={portadaRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                hidden
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void cambiarPortada(f);
+                  // Se limpia para que elegir el mismo archivo dos veces
+                  // vuelva a disparar el change.
+                  e.target.value = "";
+                }}
+              />
+              <button
+                className="btn btn-vidrio"
+                type="button"
+                disabled={subiendoPortada}
+                onClick={() => portadaRef.current?.click()}
+                data-tip="JPG, PNG o WebP, hasta 8 MB"
+              >
+                <ImagenIcono />
+                {subiendoPortada
+                  ? "Subiendo"
+                  : evento.portada
+                    ? "Cambiar portada"
+                    : "Poner portada"}
+              </button>
+
+              {evento.portada && !subiendoPortada && (
+                <button
+                  className="btn btn-vidrio"
+                  type="button"
+                  onClick={() => void quitarPortada()}
+                  data-tip="Vuelve al fondo sin foto"
+                  aria-label="Quitar portada"
+                >
+                  <X />
+                </button>
+              )}
               <button
                 className="btn btn-vidrio"
                 type="button"
