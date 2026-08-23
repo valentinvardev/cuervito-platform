@@ -64,17 +64,33 @@ function pesos(centavos: number): string {
 const BASE = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
 
 /**
- * La marca, en texto y no en imagen.
+ * La marca: el pájaro como imagen, el nombre como texto.
  *
- * Es a propósito: la mayoría de los clientes no cargan imágenes hasta que uno
- * aprieta "mostrar imágenes", y un mail que abre con un rectángulo vacío
- * arriba parece roto o parece spam. En texto se ve siempre, pesa cero y no
- * depende de que el bucket esté disponible.
+ * Era todo texto, y por una buena razón: la mayoría de los clientes no cargan
+ * imágenes hasta que uno aprieta "mostrar imágenes", y un mail que abre con un
+ * rectángulo vacío arriba parece roto o parece spam.
+ *
+ * Así que el logotipo entra partido. El pájaro va como imagen —decorativa, con
+ * alt vacío— y el nombre queda en texto: si el cliente bloquea las imágenes no
+ * aparece un hueco, aparece el nombre solo, que es exactamente lo que había
+ * antes. No se pierde nada y se gana la marca cuando las imágenes sí cargan.
+ *
+ * NO se usa el logotipo completo: ese archivo tiene el texto en BLANCO, para
+ * fondo oscuro. Sobre el papel claro de estos mails desaparecería.
+ *
+ * Dice cuervito porque es el dominio desde el que salen. Cuando cambie, esto y
+ * el pie son las dos líneas que hay que tocar.
  */
 function marca(): string {
-  return `<div style="font-family:${FUENTE};font-size:17px;font-weight:800;letter-spacing:-0.03em;color:${C.texto};">encontrate<span style="color:${C.acento};">.app</span></div>`;
+  const pajaro = `${BASE}/marca/isotipo-cuervito.png`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>` +
+    `<td style="padding-right:8px;line-height:0;vertical-align:middle;">` +
+    `<img src="${pajaro}" width="22" height="21" alt="" style="display:block;border:0;outline:none;text-decoration:none;" />` +
+    `</td>` +
+    `<td style="vertical-align:middle;font-family:${FUENTE};font-size:17px;font-weight:800;letter-spacing:-0.03em;color:${C.texto};">` +
+    `Cuervito<span style="color:${C.acento};">.app</span>` +
+    `</td></tr></table>`;
 }
-
 function armar({ preheader, cuerpo }: { preheader: string; cuerpo: string }): string {
   return `<!doctype html>
 <html lang="es" style="color-scheme:only light;supported-color-schemes:only light;"><head>
@@ -83,7 +99,7 @@ function armar({ preheader, cuerpo }: { preheader: string; cuerpo: string }): st
 <meta name="color-scheme" content="only light" />
 <meta name="supported-color-schemes" content="only light" />
 <meta name="x-apple-disable-message-reformatting" />
-<title>encontrate.app</title>
+<title>cuervito.app</title>
 <!--[if mso]>
 <style type="text/css">body, table, td { font-family: Arial, Helvetica, sans-serif !important; }</style>
 <![endif]-->
@@ -109,7 +125,7 @@ function armar({ preheader, cuerpo }: { preheader: string; cuerpo: string }): st
         ${cuerpo}
       </td></tr>
       <tr><td class="en-txt3" style="padding:20px 4px 0;color:${C.texto3};font-size:11.5px;line-height:1.5;text-align:left;font-family:${FUENTE};">
-        <a href="${BASE}" class="en-txt3" style="color:${C.texto3};text-decoration:underline;">encontrate.app</a> — donde los atletas encuentran sus fotos.
+        <a href="${BASE}" class="en-txt3" style="color:${C.texto3};text-decoration:underline;">cuervito.app</a> — donde los atletas encuentran sus fotos.
       </td></tr>
     </table>
   </td></tr>
