@@ -161,6 +161,15 @@ body {
 :root[data-theme="dark"] .btn-icon .ico-moon { opacity: 0; transform: rotate(110deg) scale(.3); }
 :root[data-theme="dark"] .btn-icon .ico-sun  { opacity: 1; transform: rotate(0) scale(1); }
 
+/* La hamburguesa usa el mismo par apilado: cerrada se ve el menú, abierta la
+   cruz. Sin estas cuatro líneas los dos salían encimados —las tres rayas
+   atravesadas por la cruz— porque compartir la celda es lo que hace la
+   animación posible y también lo que los superpone si nadie apaga uno. */
+.btn-icon .ico-menu  { opacity: 1; transform: rotate(0) scale(1); }
+.btn-icon .ico-close { opacity: 0; transform: rotate(-110deg) scale(.3); }
+:root[data-rail="open"] .btn-icon .ico-menu  { opacity: 0; transform: rotate(110deg) scale(.3); }
+:root[data-rail="open"] .btn-icon .ico-close { opacity: 1; transform: rotate(0) scale(1); }
+
 /* Quiet: sin caja hasta que lo tocás. Para acciones dentro de una tarjeta. */
 .btn-quiet { color: var(--ink); background: transparent; padding: 0 10px; }
 .btn-quiet:hover { background: var(--ghost-hov); }

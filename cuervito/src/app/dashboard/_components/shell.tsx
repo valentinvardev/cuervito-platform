@@ -211,7 +211,12 @@ export function Shell({
             aria-label={cajon ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={cajon}
           >
-            <span className="ico ico-menu">{cajon ? <X /> : <Menu />}</span>
+            <span className="ico ico-menu">
+              <Menu />
+            </span>
+            <span className="ico ico-close">
+              <X />
+            </span>
           </button>
 
           {/* La marca, sólo cuando el riel se esconde. El CSS la prende en el

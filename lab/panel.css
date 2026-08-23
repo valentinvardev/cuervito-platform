@@ -631,6 +631,20 @@ body { overflow-x: hidden; }
 
 @media (max-width: 560px) {
   .search { display: none; }
+
+  /* En teléfono "Nuevo evento" se queda con el más y suelta el rótulo.
+
+     No es por ahorrar lugar: es lo que hace posible tener el isotipo en el
+     medio. Con el botón rotulado la derecha mide 214px contra los 38 de la
+     hamburguesa, y una marca centrada en una barra tan despareja le pisa el
+     botón del tema. Con los dos lados en botones de ícono, el medio de la
+     barra es medio de verdad y no queda nada encimado.
+
+     El rótulo NO se borra, se encoge a cero: sigue en el documento, así que
+     el lector de pantalla lo dice igual y el botón se sigue llamando "Nuevo
+     evento". El ícono no se va con él porque el svg trae su propio tamaño. */
+  .top-r .btn-pri { width: 38px; padding: 0; gap: 0; font-size: 0; }
+  .top-r .btn-pri svg { width: 16px; height: 16px; }
 }
 
 /* Barra de carga. Corre hasta el 82% y se queda: no sabemos cuánto falta, y
@@ -1176,6 +1190,23 @@ body { overflow-x: hidden; }
 @media (max-width: 720px) {
   .search { display: none; }
   .buscar-movil { display: grid; }
+
+  /* Con la búsqueda escondida, el isotipo se centra en la BARRA y no en lo que
+     sobra entre la hamburguesa y los botones. Los dos lados tienen anchos muy
+     distintos —a la izquierda un botón de 38px, a la derecha el tema más
+     "Nuevo evento"— así que centrarlo en el hueco lo dejaba a un tercio del
+     borde izquierdo, y eso no se lee como centrado, se lee como corrido.
+
+     Fuera de flujo y al 50% exacto de la barra: queda en el medio pase lo que
+     pase con el ancho del botón de la derecha. */
+  .mark-ico {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    margin-inline: 0;
+  }
+  /* Y como ya no hay márgenes automáticos repartiendo el hueco, los botones
+     vuelven a necesitar el empujón para irse al borde. */
+  .top-r { margin-left: auto; }
 
   /* Capa completa: el campo pasa a ocupar la barra entera y los resultados
      el resto de la pantalla. Encoger la barra a 120px y colgarle un panel
