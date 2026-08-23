@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { buildTemplateStyle } from "~/lib/storefront-templates";
+import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
+
+import { PerfilEncontrate } from "./encontrate/perfil";
 
 const RESERVED = new Set([
   "dashboard", "admin", "login", "signup", "onboarding", "suspended",
@@ -79,6 +81,44 @@ export default async function PhotographerPage(props: {
       .join("") || "?";
 
   const pageStyle = buildTemplateStyle(user.storefrontTemplate, user.storefrontBrandColor);
+
+  // La plantilla de encontrate se dibuja entera aparte: no es este mismo perfil
+  // con otros colores, es otra estructura. Las de siempre siguen abajo.
+  if (getTemplate(user.storefrontTemplate).layout === "encontrate") {
+    return (
+      <div style={pageStyle}>
+        <PerfilEncontrate
+          fotografo={{
+            slug,
+            nombre: user.name ?? "Fotógrafo",
+            bio: user.bio,
+            lugar: user.location,
+            instagram: user.instagramUrl ? user.instagramUrl.replace(/^@/, "") : null,
+            web: user.websiteUrl,
+            iniciales: initials,
+            avatarUrl,
+            logoUrl,
+          }}
+          eventos={events.map((e) => ({
+            id: e.id,
+            slug: e.slug,
+            nombre: e.name,
+            portada: e.coverUrl,
+            fecha: e.eventDate
+              ? new Date(e.eventDate).toLocaleDateString("es-AR", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })
+              : null,
+            lugar: e.location,
+            fotos: e._count.photos,
+            precio: `${Number(e.pricePerPhoto).toLocaleString("es-AR")}`,
+          }))}
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={pageStyle}>

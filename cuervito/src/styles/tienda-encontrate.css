@@ -693,3 +693,144 @@
 @media (prefers-reduced-motion: reduce) {
   .et-sk { animation: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EL PERFIL DEL FOTÓGRAFO
+   ---------------------------------------------------------------------------
+   La página de antes del evento: quién es y qué cubrió. Reusa el encabezado,
+   el hero y el pie de la página de evento —es la misma tienda, un nivel más
+   arriba— así que acá va sólo lo suyo: la lista de eventos.
+
+   Cada evento es una tarjeta con su portada. La portada NO es decoración: es
+   lo único que le dice al atleta "esta es mi carrera" antes de leer el nombre,
+   y en una lista de doce fechas es la diferencia entre encontrar la suya de un
+   vistazo o leerlas todas.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.et-perfil-bio {
+  max-width: 62ch;
+  margin-top: 12px;
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--et-tenue);
+}
+
+/* Los links del fotógrafo. Van con el nombre y no en el pie: son parte de
+   quién es, y en el pie no los ve nadie. */
+.et-perfil-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+/* ── La lista de eventos ──────────────────────────────────────────────────── */
+.et-eventos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
+  gap: clamp(14px, 2vw, 22px);
+  padding-bottom: clamp(32px, 6vw, 64px);
+}
+
+.et-ev {
+  display: block;
+  border-radius: var(--et-radio);
+  overflow: hidden;
+  background: var(--bg-surface, #FFF);
+  border: 1px solid var(--et-linea);
+  transition: transform 240ms cubic-bezier(.2, .8, .3, 1), box-shadow 240ms ease;
+}
+.et-ev:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px rgba(18, 17, 15, 0.12);
+}
+
+.et-ev-portada {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: color-mix(in srgb, var(--text-primary, #12110F) 6%, transparent);
+  overflow: hidden;
+}
+.et-ev-portada img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Se agranda apenas al pasar por encima, con la tarjeta quieta: el
+     movimiento pasa adentro del recuadro y no empuja a las de al lado. */
+  transition: transform 420ms cubic-bezier(.2, .8, .3, 1);
+}
+.et-ev:hover .et-ev-portada img { transform: scale(1.04); }
+
+/* Sin portada se dice, no se disimula con un gris: un evento sin portada se
+   lee como abandonado, y el atleta duda de si sus fotos están ahí. */
+.et-ev-sin {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  align-content: center;
+  color: var(--et-tenue);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.et-ev-sin svg { width: 20px; height: 20px; }
+
+/* La cantidad de fotos, sobre la portada. Es el dato que dice si vale la pena
+   entrar, y arriba de la foto se lee sin bajar la vista. */
+.et-ev-fotos {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 5px 10px;
+  border-radius: 100px;
+  background: rgba(18, 17, 15, 0.72);
+  backdrop-filter: blur(6px);
+  color: #FBFAF8;
+  font-size: 11.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.et-ev-cuerpo { padding: 14px 15px 16px; }
+.et-ev-cuerpo b {
+  display: block;
+  font-size: 16.5px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text-primary, #12110F);
+  line-height: 1.25;
+}
+.et-ev-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--et-tenue);
+}
+.et-ev-meta i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .5;
+}
+.et-ev-precio {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-primary, #12110F);
+  font-variant-numeric: tabular-nums;
+}
+.et-ev-precio b { display: inline; font-size: 13px; font-weight: 500; }
+
+/* El levante de la tarjeta y el acercamiento de la portada son adorno: quien
+   pidió menos movimiento no pierde nada si no pasan. */
+@media (prefers-reduced-motion: reduce) {
+  .et-ev, .et-ev-portada img { transition: none; }
+  .et-ev:hover { transform: none; }
+  .et-ev:hover .et-ev-portada img { transform: none; }
+}
