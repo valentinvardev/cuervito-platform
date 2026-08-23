@@ -278,7 +278,7 @@ export default async function LandingNueva() {
             <span className="tel-b tel-b-der tel-b-camara" />
             <div className="tel-vidrio">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/hero/panel.png" alt="" width={390} height={847} />
+              <img src="/hero/panel.webp" alt="" width={1320} height={2868} />
 
               <div className="avisos">
                 <div className="aviso" style={{ ["--i" as string]: 0 }}>
