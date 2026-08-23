@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CalendarDays, ImageOff, Plus } from "lucide-react";
 
 import { db } from "~/server/db";
+import { resolveMediaUrl } from "~/server/media";
 
 import { pesos, sesionPanel } from "../_components/sesion";
 
@@ -26,6 +27,21 @@ export default async function V2Eventos() {
     },
   });
 
+  // Las portadas se guardan como CLAVE de S3, no como URL: hay que firmarlas.
+  // Acá se leía `coverUrl` a secas y sólo se dibujaba si empezaba con http, así
+  // que las subidas desde la app —que son todas— caían en "Sin portada" aunque
+  // el evento tuviera una. Las que sí empiezan con http son las viejas, cargadas
+  // pegando una dirección a mano, y esas se dejan pasar tal cual.
+  const portadas = new Map(
+    await Promise.all(
+      eventos.map(async (e) => {
+        if (!e.coverUrl) return [e.id, null] as const;
+        if (e.coverUrl.startsWith("http")) return [e.id, e.coverUrl] as const;
+        return [e.id, await resolveMediaUrl(e.coverUrl).catch(() => null)] as const;
+      }),
+    ),
+  );
+
   const totalFotos = eventos.reduce((a, e) => a + e._count.photos, 0);
 
   return (
@@ -45,7 +61,7 @@ export default async function V2Eventos() {
             <section className="evs">
               {eventos.map((e) => {
                 const vendido = e.sales.reduce((a, s) => a + s.sellerNetCents, 0);
-                const portada = e.coverUrl?.startsWith("http") ? e.coverUrl : null;
+                const portada = portadas.get(e.id) ?? null;
                 return (
                   <Link key={e.id} href={`/dashboard/evento/${e.id}`} className="ec">
                     <div
