@@ -6,8 +6,8 @@ import "~/styles/v2/paginas.css";
 
 import { TooltipProvider } from "~/app/_components/tooltip-provider";
 
-import { Shell } from "~/app/v2/_components/shell";
-import { sesionV2 } from "~/app/v2/_components/sesion";
+import { Shell } from "~/app/dashboard/_components/shell";
+import { sesionPanel } from "~/app/dashboard/_components/sesion";
 
 /**
  * El armazón del panel, alrededor de la demo de subida.
@@ -21,7 +21,7 @@ import { sesionV2 } from "~/app/v2/_components/sesion";
  * kilobytes que la demo de la compra no usa para nada.
  */
 export default async function DemoSubidaLayout({ children }: { children: React.ReactNode }) {
-  const { nombre, slug, iniciales } = await sesionV2();
+  const { nombre, slug, iniciales } = await sesionPanel();
 
   return (
     <div

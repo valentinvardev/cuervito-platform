@@ -1,51 +1,51 @@
-import { redirect } from "next/navigation";
-
-import { auth } from "~/server/auth";
-import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 
-import { PerfilForm } from "./perfil-form";
+import { asegurarSlug, sesionPanel } from "../_components/sesion";
+import { FormPerfil } from "./_form";
 
-export default async function PerfilPage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login?callbackUrl=/dashboard/perfil");
+export const dynamic = "force-dynamic";
 
-  const user = await db.user.findUnique({
-    where: { id: session.user.id },
+export default async function V2Perfil() {
+  const { userId } = await sesionPanel();
+
+  const u = await db.user.findUnique({
+    where: { id: userId },
     select: {
       name: true,
-      email: true,
       slug: true,
       bio: true,
       instagramUrl: true,
       websiteUrl: true,
       image: true,
-      mpConnectedAt: true,
     },
   });
-  if (!user) redirect("/login");
 
-  const avatarUrl = await resolveAvatarUrl(user.image);
+  // Red para cuentas viejas sin dirección: se genera una antes de dibujar el
+  // formulario. Sin esto, guardar el perfil fallaría por un campo que ya no
+  // se muestra y el usuario no tendría forma de arreglarlo.
+  const slug = await asegurarSlug(userId, u?.name ?? "fotografo", u?.slug ?? null);
 
   return (
-    <main className="wrap-narrower">
-      <div className="head">
-        <h1>Mi perfil</h1>
-        <div className="sub">Datos personales y página pública.</div>
-      </div>
+    <main className="canvas">
+      <div className="canvas-in">
+        <div className="head">
+          <div>
+            <h1>Perfil</h1>
+            <p>Lo que el atleta ve de vos, y los datos de tu cuenta.</p>
+          </div>
+        </div>
 
-      <PerfilForm
-        email={user.email ?? ""}
-        mpConnected={!!user.mpConnectedAt}
-        initial={{
-          name: user.name ?? "",
-          slug: user.slug ?? "",
-          bio: user.bio ?? "",
-          instagramUrl: user.instagramUrl ?? "",
-          websiteUrl: user.websiteUrl ?? "",
-          avatarUrl: avatarUrl ?? "",
-        }}
-      />
+        <FormPerfil
+          inicial={{
+            name: u?.name ?? "",
+            slug,
+            bio: u?.bio ?? "",
+            instagramUrl: u?.instagramUrl ?? "",
+            websiteUrl: u?.websiteUrl ?? "",
+          }}
+          fotoInicial={u?.image ?? null}
+        />
+      </div>
     </main>
   );
 }

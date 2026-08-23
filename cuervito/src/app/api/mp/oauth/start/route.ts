@@ -7,7 +7,7 @@ import { buildOAuthUrl, isMpConfigured } from "~/server/mp";
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.redirect(new URL("/login?callbackUrl=/dashboard/cobros", req.url));
+    return NextResponse.redirect(new URL("/login?callbackUrl=/dashboard/pagos", req.url));
   }
   if (!isMpConfigured()) {
     return NextResponse.json(

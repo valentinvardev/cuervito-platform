@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { signOut } from "~/server/auth";
 
-import { AdminAvatar } from "../../dashboard/_components/admin-avatar";
+import { AdminAvatar } from "./admin-avatar";
 
 export function AdminTop({ name, email }: { name: string; email: string }) {
   const initials =

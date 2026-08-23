@@ -5,7 +5,7 @@ import { env } from "~/env";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 
-import { pesos, sesionV2 } from "~/app/v2/_components/sesion";
+import { pesos, sesionPanel } from "~/app/dashboard/_components/sesion";
 import { Subida } from "./_subida";
 
 /**
@@ -35,7 +35,7 @@ export const dynamic = "force-dynamic";
 const TOPE = 32;
 
 export default async function DemoSubida() {
-  const { userId, slug, nombre } = await sesionV2();
+  const { userId, slug, nombre } = await sesionPanel();
 
   // El evento propio con más fotos listas. Elegirlo así y no fijarlo por id
   // evita que la demo quede rota el día que ese evento se archive, y que haya

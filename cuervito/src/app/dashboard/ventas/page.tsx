@@ -1,125 +1,117 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
+import { ReceiptText } from "lucide-react";
 
-import { auth } from "~/server/auth";
 import { db } from "~/server/db";
-import { getPresignedDownloadUrl } from "~/server/s3";
-import { resolveMediaUrl } from "~/server/media";
 
-import { VentasClient, type SaleRow } from "./ventas-client";
+import { hace, pesos, sesionPanel } from "../_components/sesion";
+import { Lista } from "./_lista";
 
-const RANGES = {
-  "30d": 30,
-  "7d": 7,
-  today: 1,
-  all: null,
-} as const;
-type Range = keyof typeof RANGES;
+export const dynamic = "force-dynamic";
 
-export default async function VentasPage(props: {
-  searchParams: Promise<{ event?: string; range?: string }>;
-}) {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login?callbackUrl=/dashboard/ventas");
+const DIAS = 30;
 
-  const sp = await props.searchParams;
-  const range = (sp.range ?? "30d") as Range;
-  const eventFilter = sp.event && sp.event !== "all" ? sp.event : null;
+export default async function V2Ventas() {
+  const { userId } = await sesionPanel();
 
-  const since =
-    RANGES[range] != null
-      ? new Date(Date.now() - RANGES[range]! * 24 * 60 * 60 * 1000)
-      : null;
+  const desde = new Date(Date.now() - DIAS * 86400000);
 
-  const events = await db.event.findMany({
-    where: { ownerId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, name: true },
-  });
-
-  const sales = await db.sale.findMany({
-    where: {
-      sellerId: session.user.id,
-      ...(eventFilter ? { eventId: eventFilter } : {}),
-      ...(since ? { createdAt: { gte: since } } : {}),
-    },
-    orderBy: { createdAt: "desc" },
-    take: 200,
-    select: {
-      id: true,
-      status: true,
-      totalCents: true,
-      platformFeeCents: true,
-      sellerNetCents: true,
-      buyerEmail: true,
-      buyerName: true,
-      createdAt: true,
-      paidAt: true,
-      downloadCount: true,
-      downloadToken: true,
-      downloadTokenExpires: true,
-      event: { select: { id: true, name: true, slug: true } },
-      items: {
-        take: 1,
-        select: {
-          photo: { select: { previewKey: true, previewCleanKey: true, storageKey: true, bibNumbers: true } },
-        },
-      },
-      _count: { select: { items: true } },
-    },
-  });
-
-  const rows: SaleRow[] = await Promise.all(
-    sales.map(async (s) => {
-      const firstPhoto = s.items[0]?.photo;
-      // Photographer's own sales view — prefer the clean preview, fall back to
-      // the watermarked one for legacy photos, then to the original.
-      const thumbKey =
-        firstPhoto?.previewCleanKey ?? firstPhoto?.previewKey ?? firstPhoto?.storageKey ?? null;
-      const thumbUrl = thumbKey
-        ? await resolveMediaUrl(thumbKey).catch(() => null)
-        : null;
-      return {
-        id: s.id,
-        status: s.status,
-        totalCents: s.totalCents,
-        platformFeeCents: s.platformFeeCents,
-        sellerNetCents: s.sellerNetCents,
-        buyerEmail: s.buyerEmail,
-        buyerName: s.buyerName,
-        createdAt: s.createdAt.toISOString(),
-        paidAt: s.paidAt?.toISOString() ?? null,
-        downloadCount: s.downloadCount,
-        downloadToken: s.downloadToken,
-        downloadTokenExpires: s.downloadTokenExpires?.toISOString() ?? null,
-        eventName: s.event.name,
-        eventSlug: s.event.slug,
-        firstBib: firstPhoto?.bibNumbers ?? null,
-        itemCount: s._count.items,
-        thumbUrl,
-      };
+  const [resumen, ventas, fotos] = await Promise.all([
+    db.sale.aggregate({
+      _sum: { sellerNetCents: true },
+      _count: true,
+      where: { sellerId: userId, status: "PAID", paidAt: { gte: desde } },
     }),
-  );
+    db.sale.findMany({
+      where: { sellerId: userId, createdAt: { gte: desde } },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        buyerName: true,
+        buyerEmail: true,
+        sellerNetCents: true,
+        status: true,
+        createdAt: true,
+        paidAt: true,
+        // Para el cajón. Viajan con la lista porque son cuatro campos de la
+        // misma fila: lo caro del detalle son las miniaturas, y ésas sí se
+        // piden recién al abrir.
+        downloadToken: true,
+        downloadTokenExpires: true,
+        downloadCount: true,
+        event: { select: { name: true } },
+        _count: { select: { items: true } },
+      },
+    }),
+    db.saleItem.count({
+      where: { sale: { sellerId: userId, status: "PAID", paidAt: { gte: desde } } },
+    }),
+  ]);
 
-  const totals = rows.reduce(
-    (acc, r) => {
-      if (r.status === "PAID") {
-        acc.paidCents += r.sellerNetCents;
-        acc.paidCount += 1;
-      } else if (r.status === "PENDING") {
-        acc.pendingCount += 1;
-      }
-      return acc;
-    },
-    { paidCents: 0, paidCount: 0, pendingCount: 0 },
-  );
+  const neto = resumen._sum.sellerNetCents ?? 0;
 
   return (
-    <VentasClient
-      rows={rows}
-      events={events}
-      eventFilter={eventFilter ?? "all"}
-      range={range}
-      totals={totals}
-    />
+    <main className="canvas">
+        <div className="canvas-in">
+          <div className="head">
+            <div>
+              <h1>Ventas</h1>
+              <p>
+                {resumen._count} {resumen._count === 1 ? "venta" : "ventas"} en los últimos {DIAS} días.
+              </p>
+            </div>
+          </div>
+
+          {/* Una sola tarjeta con lo que ganó. La resta de la comisión no va
+              acá: recordarle en cada pantalla cuánto se lleva la plataforma no
+              lo ayuda a vender, y el número que le importa es el que le queda.
+              El desglose vive en Métodos de pago. */}
+          <section className="sum">
+            <div className="card neto">
+              <div className="k-lab">Ganaste en los últimos {DIAS} días</div>
+              <div className="k-n tnum">{pesos(neto)}</div>
+              <div className="k-sub">
+                {resumen._count} ventas · {fotos.toLocaleString("es-AR")} fotos · ya en tu cuenta de
+                Mercado Pago
+              </div>
+            </div>
+          </section>
+
+          <section className="card">
+            {ventas.length > 0 ? (
+              <Lista
+                ventas={ventas.map((v) => ({
+                  id: v.id,
+                  quien: v.buyerName ?? v.buyerEmail,
+                  mail: v.buyerEmail,
+                  evento: v.event.name,
+                  fotos: v._count.items,
+                  neto: v.sellerNetCents,
+                  estado: v.status,
+                  fecha: (v.paidAt ?? v.createdAt).toISOString(),
+                  hace: hace(v.createdAt),
+                  descargas: v.downloadCount,
+                  vence: v.downloadTokenExpires?.toISOString() ?? null,
+                  token: v.downloadToken,
+                }))}
+              />
+            ) : (
+              <div className="empty">
+                <div className="empty-i">
+                  <ReceiptText />
+                </div>
+                <h3>No se encontraron ventas</h3>
+                <p>
+                  Pasale el link de tu evento al grupo del club o al organizador: es de donde vienen
+                  casi todas las primeras ventas.
+                </p>
+                <Link href="/dashboard/eventos" className="btn btn-ghost">
+                  Ver mis eventos
+                </Link>
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
   );
 }

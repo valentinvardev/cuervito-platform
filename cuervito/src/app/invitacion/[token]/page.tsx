@@ -63,7 +63,7 @@ export default async function InvitationPage(props: {
             Ya sos colaborador de {invite.event.name}.
           </div>
         </div>
-        <Link href="/dashboard/events" className="btn btn-primary">
+        <Link href="/dashboard/eventos" className="btn btn-primary">
           Ir al panel
         </Link>
       </main>

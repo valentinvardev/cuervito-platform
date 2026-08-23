@@ -78,7 +78,7 @@ export async function savePerfilAction(
     },
   });
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/perfil");
+  revalidatePath("/dashboard-anterior");
+  revalidatePath("/dashboard-anterior/perfil");
   return { error: null, saved: true };
 }

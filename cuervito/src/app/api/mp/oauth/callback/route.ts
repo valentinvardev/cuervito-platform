@@ -18,13 +18,13 @@ export async function GET(req: NextRequest) {
 
   if (errorParam || !code || !state) {
     return NextResponse.redirect(
-      new URL(`/dashboard/cobros?error=${encodeURIComponent(errorParam ?? "missing_code")}`, req.url),
+      new URL(`/dashboard/pagos?error=${encodeURIComponent(errorParam ?? "missing_code")}`, req.url),
     );
   }
 
   // Defensive: confirm the state matches the current user
   if (state !== session.user.id) {
-    return NextResponse.redirect(new URL(`/dashboard/cobros?error=state_mismatch`, req.url));
+    return NextResponse.redirect(new URL(`/dashboard/pagos?error=state_mismatch`, req.url));
   }
 
   // Must match exactly what we sent to MP in /start (and what's registered in
@@ -50,11 +50,11 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    return NextResponse.redirect(new URL("/dashboard/cobros?connected=1", req.url));
+    return NextResponse.redirect(new URL("/dashboard/pagos?connected=1", req.url));
   } catch (err) {
     console.error("[mp callback] failed:", err);
     return NextResponse.redirect(
-      new URL(`/dashboard/cobros?error=oauth_failed`, req.url),
+      new URL(`/dashboard/pagos?error=oauth_failed`, req.url),
     );
   }
 }

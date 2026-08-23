@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { Pantalla } from "~/app/v2/evento/[id]/_pantalla";
+import { Pantalla } from "~/app/dashboard/evento/[id]/_pantalla";
 import { Celebracion } from "../_piezas";
 
 /**

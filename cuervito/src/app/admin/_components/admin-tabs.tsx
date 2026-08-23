@@ -12,7 +12,7 @@ const TABS = [
   { href: "/admin/settings", label: "Settings", icon: "ti-settings", tip: "Configuración global de la plataforma" },
   // Vive fuera de /admin porque no es una pantalla de administración: es el
   // panel del fotógrafo rediseñado, mostrado con los datos del admin.
-  { href: "/v2", label: "Panel nuevo", icon: "ti-sparkles", tip: "Vista previa del panel del fotógrafo rediseñado, con tus datos reales" },
+  { href: "/dashboard", label: "Panel nuevo", icon: "ti-sparkles", tip: "Vista previa del panel del fotógrafo rediseñado, con tus datos reales" },
 ];
 
 export function AdminTabs() {

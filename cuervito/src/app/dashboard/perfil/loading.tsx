@@ -1,44 +1,42 @@
-import { SkelHead, SkelLine } from "../_components/skeletons";
+import { Hueso, Lienzo } from "../_components/hueso";
 
-export default function Loading() {
+/** Perfil: la columna de campos y la tarjeta de previa, pegada a la derecha. */
+export default function Cargando() {
   return (
-    <main className="wrap-narrower">
-      <SkelHead title={140} subtitle={260} />
-
-      <div className="form-card">
-        <div className="profile-pic-row">
-          <span
-            className="skel"
-            style={{ width: 64, height: 64, borderRadius: "50%" }}
-          />
-          <div style={{ flex: 1 }}>
-            <SkelLine width="40%" height={15} style={{ marginBottom: 6 }} />
-            <SkelLine width="60%" height={12} style={{ marginBottom: 0 }} />
-          </div>
-          <SkelLine width={110} height={36} style={{ borderRadius: 8 }} />
+    <Lienzo titulo={130} bajada={300}>
+      <div className="perfil">
+        <div className="pcol">
+          {[2, 2].map((campos, c) => (
+            <section className="card blq" key={c}>
+              <Hueso a={c === 0 ? 160 : 80} alto={15} />
+              <Hueso a={280} alto={12} arriba={9} bloque />
+              <div className="blq-b">
+                {Array.from({ length: campos }).map((_, i) => (
+                  <div className="campo" key={i}>
+                    <Hueso a={70} alto={11} bloque />
+                    <Hueso alto={i === 1 && c === 0 ? 78 : 38} radio="var(--r-2)" arriba={8} bloque />
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+          <Hueso a={170} alto={42} radio="var(--r-2)" />
         </div>
 
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} style={{ marginBottom: 16 }}>
-            <SkelLine width={120} height={11} style={{ marginBottom: 8 }} />
-            <SkelLine width="100%" height={40} style={{ borderRadius: 8 }} />
+        <aside className="lado">
+          <div className="card">
+            <div className="card-h">
+              <Hueso a={90} alto={15} />
+            </div>
+            <div style={{ display: "grid", justifyItems: "center", gap: 10, padding: "var(--s-4)" }}>
+              <Hueso a={56} alto={56} radio="50%" />
+              <Hueso a={130} alto={15} />
+              <Hueso a={190} alto={11} />
+              <Hueso a={150} alto={11} />
+            </div>
           </div>
-        ))}
-
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            justifyContent: "flex-end",
-            marginTop: 22,
-            paddingTop: 18,
-            borderTop: "1px solid var(--border-subtle)",
-          }}
-        >
-          <SkelLine width={120} height={40} style={{ borderRadius: 8 }} />
-          <SkelLine width={160} height={40} style={{ borderRadius: 8 }} />
-        </div>
+        </aside>
       </div>
-    </main>
+    </Lienzo>
   );
 }
