@@ -37,7 +37,7 @@ export function Marco({
       <div className="auth-col">
         <div className="auth-top">
           <Link href="/" className="mark">
-            encontrate<i></i>app
+            Cuervito<i></i>.app
           </Link>
           <div style={{ display: "flex", gap: "var(--s-3)", alignItems: "center" }}>
             <Link href={volverA} className="volver">

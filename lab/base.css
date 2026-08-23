@@ -41,11 +41,18 @@ body {
 .mark {
   display: block;
   height: 38px;
-  aspect-ratio: 812 / 178;
+  aspect-ratio: 467 / 98;
   background: currentColor;
   color: var(--ink);
-  -webkit-mask: url("assets/logo.png") left center / contain no-repeat;
-  mask: url("assets/logo.png") left center / contain no-repeat;
+  /* MARCA.
+   Hoy apunta al logo de CUERVITO, que es el dominio en el que está el sitio.
+   Los archivos de encontrate (logo.png, isotipo.png) siguen en su lugar sin
+   usarse: cuando cambie el dominio se vuelve a apuntar acá y listo.
+     Va con máscara y no con <img> porque el archivo es naranja sobre
+     transparente: sobre papel claro el texto blanco desaparecía. Enmascarado
+     toma el color del texto y sirve en los dos temas. */
+  -webkit-mask: url("assets/logo-cuervito.png") left center / contain no-repeat;
+  mask: url("assets/logo-cuervito.png") left center / contain no-repeat;
   /* El texto sigue en el marcado para los lectores de pantalla, pero no se
      dibuja: lo que se ve es la máscara. */
   font-size: 0;

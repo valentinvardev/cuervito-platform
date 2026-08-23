@@ -1,4 +1,4 @@
-/* COPIADO DE lab/panel.css. No editar acá: los cambios se hacen en el laboratorio
+/* COPIADO DE lab/.. No editar acá: los cambios se hacen en el laboratorio
    y se vuelven a copiar, si no las dos versiones divergen y la del
    laboratorio deja de servir para decidir. */
 /* =============================================================================
@@ -612,13 +612,13 @@ body { overflow-x: hidden; }
     /* Alto fijo y la proporción del archivo (139×178), igual que .mark con el
        logotipo. Con una caja cuadrada el ícono quedaba metido en 26×26 y
        ocupaba 20 de ancho, dejando aire falso a los costados. */
-    height: 26px; aspect-ratio: 139 / 178;
+    height: 26px; aspect-ratio: 105 / 98;
     flex-shrink: 0;
     /* Máscara y no <img>: así toma el color del texto y sirve igual en claro
        y en oscuro, que es el mismo truco que usa .mark con el logotipo. */
     background: var(--ink);
-    -webkit-mask: url("/v2/isotipo.png") center / contain no-repeat;
-    mask: url("/v2/isotipo.png") center / contain no-repeat;
+    -webkit-mask: url("/marca/isotipo-cuervito.png") center / contain no-repeat;
+    mask: url("/marca/isotipo-cuervito.png") center / contain no-repeat;
   }
   .rail {
     position: fixed; top: 0; left: 0; z-index: 70;
@@ -850,12 +850,12 @@ body { overflow-x: hidden; }
 .mp-marca {
   display: block;
   background: currentColor;
-  -webkit-mask: url("/v2/mp-vertical.svg") center / contain no-repeat;
-  mask: url("/v2/mp-vertical.svg") center / contain no-repeat;
+  -webkit-mask: url("/marca/mp-vertical.svg") center / contain no-repeat;
+  mask: url("/marca/mp-vertical.svg") center / contain no-repeat;
 }
 .mp-marca.ancha {
-  -webkit-mask-image: url("/v2/mp-horizontal.svg");
-  mask-image: url("/v2/mp-horizontal.svg");
+  -webkit-mask-image: url("/marca/mp-horizontal.svg");
+  mask-image: url("/marca/mp-horizontal.svg");
 }
 
 /* ═════════════════════════════ CALENDARIO ════════════════════════════════

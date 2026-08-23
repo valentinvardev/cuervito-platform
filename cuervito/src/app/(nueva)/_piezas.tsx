@@ -78,7 +78,7 @@ export function Encabezado({ logueado }: { logueado: boolean }) {
       <nav className="nav">
         <div className="wrap nav-in">
           <Link href="/" className="mark">
-            encontrate<i></i>app
+            Cuervito<i></i>.app
           </Link>
 
           <div className="nav-links">

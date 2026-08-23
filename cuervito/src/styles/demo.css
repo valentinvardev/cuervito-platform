@@ -12,7 +12,7 @@
 
    Esta carpeta no tiene prototipo HTML: el CSS se escribe acá porque acá se
    decide, pero lo consume únicamente la app. Por eso las rutas de los assets
-   son las de la app (/v2/…) y no relativas al laboratorio.
+   son las de la app (/marca/…) y no relativas al laboratorio.
    ========================================================================== */
 
 /* ── Qué se está tocando ─────────────────────────────────────────────────────
@@ -83,8 +83,8 @@
   /* Máscara y no <img>: así el isotipo toma el color del texto y sirve igual
      sobre el fondo claro de la tienda y el oscuro del panel. */
   background: var(--ink, #12110F);
-  -webkit-mask: url("/v2/isotipo.png") center / contain no-repeat;
-  mask: url("/v2/isotipo.png") center / contain no-repeat;
+  -webkit-mask: url("/marca/isotipo-cuervito.png") center / contain no-repeat;
+  mask: url("/marca/isotipo-cuervito.png") center / contain no-repeat;
   opacity: .55;
 }
 
