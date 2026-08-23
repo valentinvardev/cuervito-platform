@@ -1072,7 +1072,7 @@ function Datos({
           </div>
           <div className="campo">
             <label htmlFor="lugar">Lugar</label>
-            <input className="inp" id="lugar" placeholder="Chivilcoy, Buenos Aires" {...campo("location")} />
+            <input className="inp" id="lugar" placeholder="Tandil, Buenos Aires" {...campo("location")} />
           </div>
         </div>
 

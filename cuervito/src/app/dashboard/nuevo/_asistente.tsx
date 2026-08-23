@@ -190,7 +190,7 @@ export function Asistente() {
                     className="inp"
                     id="nom"
                     autoFocus
-                    placeholder="Duatlón Club Ciclista Chivilcoy"
+                    placeholder="Duatlón Club Ciclista Tandil"
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
                     onBlur={() => setTocado(true)}
@@ -212,7 +212,7 @@ export function Asistente() {
                     <input
                       className="inp"
                       id="lugar"
-                      placeholder="Chivilcoy, Buenos Aires"
+                      placeholder="Tandil, Buenos Aires"
                       value={lugar}
                       onChange={(e) => setLugar(e.target.value)}
                     />
