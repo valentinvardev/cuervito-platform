@@ -1,7 +1,6 @@
-/* COPIADO DE lab/landing/landing.css. No editar acá: los cambios se hacen en
-   el laboratorio y se vuelven a copiar, si no las dos versiones divergen y la
+/* COPIADO DE lab/landing/landing.css. No editar acá: los cambios se hacen en el
+   laboratorio y se vuelven a copiar, si no las dos versiones divergen y la
    del laboratorio deja de servir para decidir. */
-
 /* =============================================================================
    encontrate · landing (laboratorio) · versión papel
    La foto es la única masa oscura de la pantalla. Todo lo demás es aire.
@@ -220,26 +219,42 @@ section { position: relative; }
    paga un componente de cliente por un adorno. */
 .avisos {
   position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 16px;
+  /* Todo lo de acá adentro se mide contra --p, el ancho de la PANTALLA del
+     teléfono, igual que el marco y los botones del costado. Con medidas fijas
+     en píxeles la tarjeta estaba dibujada para el teléfono grande: en el chico
+     —190px contra 290— quedaba enorme al lado de la interfaz de abajo y se
+     salía del marco por la derecha.
+
+     La escala va como font-size y el resto en em, así hay un solo número que
+     tocar en vez de diez calc(). A --p de 290 da 10px, que es donde estaban
+     afinadas las medidas viejas: 1em = los 10px de antes. */
+  font-size: calc(var(--p) / 29);
+  left: 1em;
+  right: 1em;
+  bottom: 1.6em;
   display: grid;
   z-index: 2;
   pointer-events: none;
 }
 .aviso {
   grid-area: 1 / 1;
+  /* Un ítem de grilla no baja de su tamaño mínimo de contenido salvo que uno
+     se lo permita, y el mínimo de esta tarjeta es ancho: el subtítulo va con
+     white-space: nowrap y el monto con flex-shrink: 0. Sin esta línea la
+     tarjeta medía 240px adentro de una caja de 170 y el sobrante se dibujaba
+     afuera del teléfono. */
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 9px 11px;
-  border-radius: 12px;
+  gap: .9em;
+  padding: .9em 1.1em;
+  border-radius: 1.2em;
   /* Colores FIJOS y no del tema: la captura de abajo es siempre oscura, así
      que si la tarjeta siguiera al tema de la página, en modo oscuro quedaría
      gris sobre gris y desaparecería justo el elemento que tiene que saltar. */
   background: #FBFAF8;
   border: 1px solid rgba(18, 17, 15, 0.07);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 .6em 2em rgba(0, 0, 0, 0.35);
   opacity: 0;
   animation: aviso-turno 12s linear infinite;
   animation-delay: calc(var(--i, 0) * 4s);
@@ -255,8 +270,8 @@ section { position: relative; }
 }
 
 .aviso-i {
-  width: 28px;
-  height: 28px;
+  width: 2.8em;
+  height: 2.8em;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -264,22 +279,25 @@ section { position: relative; }
   background: rgba(46, 125, 91, 0.12);
   color: #2E7D5B;
 }
-.aviso-i svg { width: 15px; height: 15px; stroke-width: 1.9; }
+.aviso-i svg { width: 1.5em; height: 1.5em; stroke-width: 1.9; }
 
 .aviso-txt { flex: 1; min-width: 0; }
 .aviso-txt b {
   display: block;
   font-family: var(--sans);
-  font-size: 12.5px;
+  font-size: 1.25em;
   font-weight: 500;
   letter-spacing: -0.01em;
   color: #12110F;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .aviso-txt span {
   display: block;
-  font-size: 10.5px;
+  font-size: 1.05em;
   color: #8C887F;
-  margin-top: 1px;
+  margin-top: .1em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -288,13 +306,12 @@ section { position: relative; }
 /* El monto es lo único que alguien va a leer si mira medio segundo. */
 .aviso-m {
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: 1.3em;
   font-weight: 500;
   color: #2E7D5B;
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
-
 /* Sin movimiento: queda la primera, quieta. */
 @media (prefers-reduced-motion: reduce) {
   .aviso { animation: none; opacity: 0; transform: none; }
