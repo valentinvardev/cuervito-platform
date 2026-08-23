@@ -54,8 +54,8 @@ body {
      Va con máscara y no con <img> porque el archivo es naranja sobre
      transparente: sobre papel claro el texto blanco desaparecía. Enmascarado
      toma el color del texto y sirve en los dos temas. */
-  -webkit-mask: url("assets/logo-cuervito.png") left center / contain no-repeat;
-  mask: url("assets/logo-cuervito.png") left center / contain no-repeat;
+  -webkit-mask: url("/marca/logo-cuervito.png") left center / contain no-repeat;
+  mask: url("/marca/logo-cuervito.png") left center / contain no-repeat;
   /* El texto sigue en el marcado para los lectores de pantalla, pero no se
      dibuja: lo que se ve es la máscara. */
   font-size: 0;

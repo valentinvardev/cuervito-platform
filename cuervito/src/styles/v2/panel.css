@@ -617,8 +617,8 @@ body { overflow-x: hidden; }
     /* Máscara y no <img>: así toma el color del texto y sirve igual en claro
        y en oscuro, que es el mismo truco que usa .mark con el logotipo. */
     background: var(--ink);
-    -webkit-mask: url("assets/isotipo-cuervito.png") center / contain no-repeat;
-    mask: url("assets/isotipo-cuervito.png") center / contain no-repeat;
+    -webkit-mask: url("/marca/isotipo-cuervito.png") center / contain no-repeat;
+    mask: url("/marca/isotipo-cuervito.png") center / contain no-repeat;
   }
   .rail {
     position: fixed; top: 0; left: 0; z-index: 70;
@@ -864,12 +864,12 @@ body { overflow-x: hidden; }
 .mp-marca {
   display: block;
   background: currentColor;
-  -webkit-mask: url("assets/mp-vertical.svg") center / contain no-repeat;
-  mask: url("assets/mp-vertical.svg") center / contain no-repeat;
+  -webkit-mask: url("/marca/mp-vertical.svg") center / contain no-repeat;
+  mask: url("/marca/mp-vertical.svg") center / contain no-repeat;
 }
 .mp-marca.ancha {
-  -webkit-mask-image: url("assets/mp-horizontal.svg");
-  mask-image: url("assets/mp-horizontal.svg");
+  -webkit-mask-image: url("/marca/mp-horizontal.svg");
+  mask-image: url("/marca/mp-horizontal.svg");
 }
 
 /* ═════════════════════════════ CALENDARIO ════════════════════════════════
