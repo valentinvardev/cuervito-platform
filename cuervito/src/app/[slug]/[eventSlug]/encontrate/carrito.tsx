@@ -5,6 +5,8 @@ import { ArrowRight, ShoppingBag, Tag, X } from "lucide-react";
 import { useState } from "react";
 
 import { useCart } from "../cart-context";
+import type { DescuentoBase } from "~/lib/descuentos";
+import { useDescuento } from "../usar-descuento";
 import type { Promo } from "./promo";
 
 function pesos(centavos: number) {
@@ -28,11 +30,13 @@ export function Carrito({
   eventId,
   promo,
   hayCodigos,
+  descuentos,
   alVer,
 }: {
   eventId: string;
   promo: Promo | null;
   hayCodigos: boolean;
+  descuentos: DescuentoBase[];
   /** Abre la foto en grande. La pasa la tienda, que es la que tiene el visor. */
   alVer?: (photoId: string) => void;
 }) {
@@ -40,6 +44,18 @@ export function Carrito({
   const { items, remove, closeCart, subtotalCents } = useCart();
   const [paso, setPaso] = useState<"lista" | "datos">("lista");
   const [codigo, setCodigo] = useState("");
+
+  // La cuenta de verdad, con la misma fórmula que el checkout. Antes acá se
+  // mostraba el subtotal como total y un cartel decía que los descuentos se
+  // aplicaban al pagar: el que sumaba cinco fotos esperando la promoción veía
+  // el precio entero y se iba pensando que no funcionaba.
+  const { descuentoCentavos, totalCentavos, texto, codigoInvalido, validando } = useDescuento({
+    eventId,
+    photoIds: items.map((i) => i.photoId),
+    subtotalCentavos: subtotalCents,
+    descuentos,
+    codigo,
+  });
   const [mail, setMail] = useState("");
   const [nombre, setNombre] = useState("");
   const [tel, setTel] = useState("");
@@ -193,6 +209,25 @@ export function Carrito({
                   />
                 </label>
               )}
+
+              {/* Se avisa mientras escribe, no al pagar. Y sólo cuando ya
+                  terminó de consultar: marcar en rojo "VER" mientras alguien
+                  tipea "VERANO20" es corregirlo antes de que termine. */}
+              {hayCodigos && codigo.trim() && (
+                <div style={{ fontSize: 12.5, lineHeight: 1.4 }}>
+                  {validando ? (
+                    <span style={{ color: "var(--et-tenue)" }}>Buscando el código…</span>
+                  ) : codigoInvalido ? (
+                    <span style={{ color: "var(--accent, #F0410F)" }}>
+                      Ese código no existe o ya venció.
+                    </span>
+                  ) : descuentoCentavos > 0 ? (
+                    <span style={{ color: "var(--ok, #2E7D5B)" }}>
+                      Listo: {texto}.
+                    </span>
+                  ) : null}
+                </div>
+              )}
               {error && (
                 <div style={{ fontSize: 13, color: "var(--accent, #F0410F)" }}>{error}</div>
               )}
@@ -220,17 +255,26 @@ export function Carrito({
                 </span>
                 <span className="tnum">{pesos(subtotalCents)}</span>
               </div>
+
+              {/* La línea del descuento sólo existe cuando descuenta. Una fila
+                  con -$0 fijo es ruido en la decisión más importante. */}
+              {descuentoCentavos > 0 && (
+                <div style={{ color: "var(--ok, #2E7D5B)" }}>
+                  <span>{texto ?? "Descuento"}</span>
+                  <span className="tnum">-{pesos(descuentoCentavos)}</span>
+                </div>
+              )}
+
               <div className="et-total">
                 <span>Total</span>
-                <b className="tnum">{pesos(subtotalCents)}</b>
+                <b className="tnum">{pesos(totalCentavos)}</b>
               </div>
             </div>
 
-            {/* Se dice ANTES de pagar y no en la pantalla de pago: enterarse
-                del descuento después de haber decidido el monto es la clase de
-                sorpresa que hace desconfiar aunque sea a favor. */}
+            {/* El precio final lo sigue decidiendo el servidor, pero ya no hay
+                sorpresa: el número de arriba es el mismo que va a cobrar. */}
             <div style={{ fontSize: 11.5, color: "var(--et-tenue)", lineHeight: 1.4 }}>
-              Los descuentos se aplican al pagar. El total final lo confirma Mercado Pago.
+              El total final lo confirma Mercado Pago.
             </div>
 
             {paso === "lista" ? (

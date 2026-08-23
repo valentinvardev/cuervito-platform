@@ -33,10 +33,10 @@ type EventInfo = {
   photosCount: number;
 };
 
+/** Sin `code`: esto viaja al navegador. Ver event-coverage-shell. */
 export type PublicDiscount = {
   id: string;
   type: "CODE" | "BUNDLE" | "QTYPCT";
-  code: string | null;
   kind: string | null;
   value: number | null;
   qty: number | null;

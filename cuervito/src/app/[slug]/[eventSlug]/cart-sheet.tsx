@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { useDescuento } from "./usar-descuento";
 import { useCart } from "./cart-context";
 import type { PublicDiscount } from "./event-coverage-shell";
 
@@ -14,29 +15,6 @@ type Photo = {
 
 function formatARS(cents: number): string {
   return `$${(cents / 100).toLocaleString("es-AR")}`;
-}
-
-// Pick the best automatic discount (BUNDLE/QTYPCT) for the current cart count.
-function bestAutoDiscount(
-  discounts: PublicDiscount[],
-  count: number,
-  subtotalCents: number,
-): { discount: PublicDiscount; savingsCents: number } | null {
-  let best: { discount: PublicDiscount; savingsCents: number } | null = null;
-  for (const d of discounts) {
-    if (d.type === "BUNDLE" && d.qty !== null && count >= d.qty && d.price !== null) {
-      const savings = subtotalCents - Math.round(d.price * 100) * count;
-      if (savings > 0 && (!best || savings > best.savingsCents)) {
-        best = { discount: d, savingsCents: savings };
-      }
-    } else if (d.type === "QTYPCT" && d.qty !== null && count >= d.qty && d.value !== null) {
-      const savings = Math.floor((subtotalCents * d.value) / 100);
-      if (savings > 0 && (!best || savings > best.savingsCents)) {
-        best = { discount: d, savingsCents: savings };
-      }
-    }
-  }
-  return best;
 }
 
 // Find the closest upcoming BUNDLE or QTYPCT discount (not yet unlocked).
@@ -88,26 +66,25 @@ export function CartSheet({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Compute discount preview (client-side mirror of server logic)
-  const autoDiscount = bestAutoDiscount(discounts, items.length, subtotalCents);
-  const codeDiscount = discounts.find(
-    (d) => d.type === "CODE" && d.code === codeInput.toUpperCase().trim(),
-  );
-  // Code takes priority if entered
-  const appliedDiscount: { discount: PublicDiscount; savingsCents: number } | null =
-    codeInput.trim() && codeDiscount
-      ? {
-          discount: codeDiscount,
-          savingsCents:
-            codeDiscount.kind === "pct"
-              ? Math.floor((subtotalCents * (codeDiscount.value ?? 0)) / 100)
-              : Math.min(Math.round((codeDiscount.value ?? 0) * 100), subtotalCents - 1),
-        }
-      : autoDiscount;
-
-  const discountCents = appliedDiscount?.savingsCents ?? 0;
-  const totalCents = Math.max(subtotalCents - discountCents, 0);
-
+  // La misma cuenta que el checkout, del módulo compartido. Antes acá había
+  // una copia de la fórmula Y la validación del código se hacía contra la
+  // lista de cupones que venía en la página: eso obligaba a mandarle todos los
+  // códigos del evento al navegador, donde los lee cualquiera.
+  const { descuentoCentavos, totalCentavos, texto, codigoInvalido, validando } = useDescuento({
+    eventId,
+    photoIds: items.map((i) => i.photoId),
+    subtotalCentavos: subtotalCents,
+    descuentos: discounts,
+    codigo: codeInput,
+  });
+  // Lo que necesitan los subcomponentes para dibujar, sin el descuento entero:
+  // ya no llega uno completo porque el navegador no recibe los cupones.
+  const appliedDiscount =
+    descuentoCentavos > 0
+      ? { savingsCents: descuentoCentavos, texto, esCodigo: !!codeInput.trim() }
+      : null;
+  const discountCents = descuentoCentavos;
+  const totalCents = totalCentavos;
   const nudge = nearestNudge(discounts, items.length);
   const hasCodeDiscounts = discounts.some((d) => d.type === "CODE");
 
@@ -271,7 +248,7 @@ function CartView({
   totalCents: number;
   pricePerPhoto: number;
   nudge: { discount: PublicDiscount; needed: number } | null;
-  appliedDiscount: { discount: PublicDiscount; savingsCents: number } | null;
+  appliedDiscount: { savingsCents: number; texto: string | null; esCodigo: boolean } | null;
   onClear: () => void;
   onContinue: () => void;
 }) {
@@ -523,7 +500,7 @@ function CheckoutView({
   phone: string; setPhone: (v: string) => void;
   codeInput: string; setCodeInput: (v: string) => void;
   hasCodeDiscounts: boolean;
-  appliedDiscount: { discount: PublicDiscount; savingsCents: number } | null;
+  appliedDiscount: { savingsCents: number; texto: string | null; esCodigo: boolean } | null;
   subtotalCents: number;
   discountCents: number;
   totalCents: number;
@@ -534,8 +511,7 @@ function CheckoutView({
   onBack: () => void;
   onPay: () => void;
 }) {
-  const codeApplied =
-    appliedDiscount?.discount.type === "CODE" && codeInput.trim().length > 0;
+  const codeApplied = appliedDiscount?.esCodigo === true;
 
   return (
     <>

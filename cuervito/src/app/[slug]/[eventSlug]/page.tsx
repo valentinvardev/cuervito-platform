@@ -115,7 +115,11 @@ export default async function PublicEventPage(props: {
       OR: [{ expires: null }, { expires: { gt: now } }],
     },
     select: {
-      id: true, type: true, code: true, kind: true, value: true,
+      // SIN `code`: esto viaja al navegador. Con el código adentro, todos los
+      // cupones del evento quedaban en el HTML de la página de venta y los
+      // leía cualquiera con las herramientas de desarrollo, que es
+      // exactamente lo contrario de para qué existe un código.
+      id: true, type: true, kind: true, value: true,
       qty: true, price: true, expires: true, maxUses: true, usageCount: true,
     },
   });

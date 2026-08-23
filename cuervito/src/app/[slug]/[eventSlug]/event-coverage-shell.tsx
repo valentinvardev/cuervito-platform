@@ -33,10 +33,17 @@ type EventInfo = {
   photosCount: number;
 };
 
+/**
+ * Lo que la tienda sabe de los descuentos.
+ *
+ * SIN `code`, a propósito: esto viaja al navegador. Con el código adentro,
+ * todos los cupones del evento quedaban legibles en el HTML de la página de
+ * venta. El tipo se queda igual para poder decir SI hay cupones —y mostrar el
+ * campo— sin decir cuáles son. Validarlos es trabajo de /api/mp/descuento.
+ */
 export type PublicDiscount = {
   id: string;
   type: "CODE" | "BUNDLE" | "QTYPCT";
-  code: string | null;
   kind: string | null;
   value: number | null;
   qty: number | null;

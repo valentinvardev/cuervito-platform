@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 
 import { env } from "~/env";
+import { calcular } from "~/lib/descuentos";
 import { db } from "~/server/db";
 import { accrueCommissionsForSale } from "~/server/commissions";
 import { sendEmail } from "~/server/email";
@@ -130,57 +131,39 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  let discountCents = 0;
-  let appliedDiscountId: string | null = null;
+  // La cuenta vive en ~/lib/descuentos y la comparte con el carrito y con
+  // /api/mp/descuento. Estaba sólo acá, así que el carrito no podía mostrar el
+  // precio con descuento sin copiar la fórmula, y mostraba el subtotal como
+  // total: el que sumaba cinco fotos esperando la promoción veía el precio
+  // entero y concluía que no funcionaba.
+  const { aplicado, totalCentavos } = calcular({
+    descuentos: activeDiscounts.map((d) => ({
+      ...d,
+      value: d.value === null ? null : Number(d.value),
+      price: d.price === null ? null : Number(d.price),
+    })),
+    subtotalCentavos: subtotalCents,
+    cantidad: photos.length,
+    codigo: parsed.data.discountCode,
+  });
 
-  const codeInput = parsed.data.discountCode?.toUpperCase();
-  if (codeInput) {
-    // Try to find a matching CODE discount
-    const codeDsc = activeDiscounts.find(
-      (d) =>
-        d.type === "CODE" &&
-        d.code === codeInput &&
-        (d.maxUses === null || d.usageCount < d.maxUses),
+  // Un código que no sirve se avisa; que no haya automático aplicable, no.
+  if (parsed.data.discountCode?.trim() && !aplicado) {
+    return NextResponse.json(
+      { error: "Código de descuento inválido o vencido." },
+      { status: 400 },
     );
-    if (!codeDsc) {
-      return NextResponse.json({ error: "Código de descuento inválido o vencido." }, { status: 400 });
-    }
-    if (codeDsc.kind === "pct") {
-      discountCents = Math.floor((subtotalCents * Number(codeDsc.value)) / 100);
-    } else {
-      discountCents = Math.min(Math.round(Number(codeDsc.value) * 100), subtotalCents - 1);
-    }
-    appliedDiscountId = codeDsc.id;
-  } else {
-    // Find best automatic discount (BUNDLE or QTYPCT) based on photo count
-    let bestSavings = 0;
-    for (const d of activeDiscounts) {
-      if (d.type === "BUNDLE" && d.qty !== null && photos.length >= d.qty && d.price !== null) {
-        const bundleTotal = Math.round(Number(d.price) * 100) * photos.length;
-        const savings = subtotalCents - bundleTotal;
-        if (savings > bestSavings) {
-          bestSavings = savings;
-          discountCents = savings;
-          appliedDiscountId = d.id;
-        }
-      } else if (d.type === "QTYPCT" && d.qty !== null && photos.length >= d.qty && d.value !== null) {
-        const savings = Math.floor((subtotalCents * Number(d.value)) / 100);
-        if (savings > bestSavings) {
-          bestSavings = savings;
-          discountCents = savings;
-          appliedDiscountId = d.id;
-        }
-      }
-    }
   }
 
+  const discountCents = aplicado?.centavos ?? 0;
+  const appliedDiscountId = aplicado?.id ?? null;
   // Origen del comprador, congelado en la venta. Viene de la cookie de
   // primer contacto que escribe VisitorTracker en el storefront.
   const trafficSource = parseTrafficSource(
     req.cookies.get(SOURCE_COOKIE)?.value,
   );
 
-  const totalCents = Math.max(subtotalCents - discountCents, 0);
+  const totalCents = totalCentavos;
   // La comisión la define el EVENTO, no una constante global: un evento sin
   // reconocimiento paga menos porque no nos cuesta procesarlo. Los eventos
   // creados antes de que existiera la columna la tienen en null y siguen con

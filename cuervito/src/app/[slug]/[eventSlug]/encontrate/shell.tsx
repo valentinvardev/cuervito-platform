@@ -502,6 +502,7 @@ function Adentro({
         eventId={event.id}
         promo={promo}
         hayCodigos={hayCodigos}
+        descuentos={discounts}
         alVer={(id) => {
           // El visor trabaja sobre la página visible de la grilla, así que si la
           // foto quedó fuera de esa tanda hay que estirarla hasta alcanzarla:
