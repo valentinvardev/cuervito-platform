@@ -12,12 +12,31 @@ lab/
   panel.css           ← armazón del panel: riel, barra, tarjeta, fila, chips
   panel.js            ← inyecta riel y barra, engancha tema y cajón
   vendor/lucide.min.js  ← Lucide local, para que los íconos anden sin internet
-  landing/  login/  alta/  recuperar/   ← público, sin riel: no cargan
-                                          panel.css ni panel.js
-  recuperar/  ← index (pedir el link) y nueva.html (poner la contraseña).
-                Cargan login/login.css: son variaciones del ingreso, no
-                pantallas nuevas. Los estados se miran con ?enviado,
-                ?vencido y ?listo.
+  landing/  login/  registro/  recuperar/  alta/   ← público, sin riel: no
+                                            cargan panel.css ni panel.js
+
+  Las cuatro de cuenta cargan login/login.css y no repiten estructura: son la
+  misma pantalla con distinto contenido en el medio.
+    login/      ← entrar
+    registro/   ← crear la cuenta
+    recuperar/  ← index (pedir el link) y nueva.html (poner la contraseña).
+                  Estados: ?enviado, ?vencido, ?listo
+
+  OJO con alta/: NO es crear la cuenta. Es el asistente de DESPUÉS —perfil,
+  cómo cobrás, listo— que en la app vive en /onboarding. El nombre engaña y ya
+  costó una confusión.
+
+  _captura/   ← no es una pantalla: es el generador de la imagen del hero de la
+                landing. Es el panel con los números inflados y sin contadores
+                animados (panel.js anima todo lo que tenga data-num, y la
+                captura tiene que ser el estado de reposo). marco.html lo mete
+                en un iframe de 390px para tener un viewport de teléfono de
+                verdad —Chrome headless no baja de 485— y de ahí sale
+                assets/hero/panel.png, recortado a 780×1304 (2x), que es donde
+                arranca la segunda sección.
+
+  assets/demo/  ← los dos videos grabables de la landing, ya comprimidos.
+  assets/hero/  ← la captura del panel que va en el hero.
   dashboard/  eventos/  nuevo/  ventas/  fotos/  pagina/   ← panel
   cobros/  perfil/  ayuda/                                 ← panel, cuenta
 ```
