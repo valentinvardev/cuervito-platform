@@ -430,7 +430,7 @@ export default async function LandingNueva() {
               <li>
                 <Zap className="r-i" />
                 <div>
-                  <strong>Se encuentra en 30 segundos.</strong>
+                  <strong>Se encuentra al instante.</strong>
                   <p>
                     Busca por número o sube una selfie, compra sin crear cuenta y descarga al
                     acreditarse el pago. Menos fricción, más fotos vendidas.
