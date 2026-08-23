@@ -280,8 +280,8 @@ function Adentro({
             <b>Encontrá tus fotos</b>
             <span>
               {buscaPorDorsal
-                ? "Poné tu número de dorsal, o sacate una selfie."
-                : "Sacate una selfie y te mostramos en cuáles saliste."}
+                ? "Poné tu número de dorsal, o sacate (o subí) una selfie."
+                : "Sacate (o subí) una selfie y te mostramos en cuáles saliste."}
             </span>
           </div>
 
@@ -341,7 +341,7 @@ function Adentro({
               <span>
                 {buscandoSelfie
                   ? "Puede tardar unos segundos"
-                  : "Sacate una foto y encontramos todas en las que estás"}
+                  : "Sacate (o subí) una foto y encontramos todas en las que estás"}
               </span>
             </span>
           </button>
