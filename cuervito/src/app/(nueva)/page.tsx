@@ -260,53 +260,60 @@ export default async function LandingNueva() {
             </div>
           </div>
 
-          {/* El panel de verdad, con las ventas cayendo encima. El titular
-              promete plata, así que al lado va la plata y no el reconocimiento.
+          {/* El panel de verdad, adentro del teléfono, con las ventas cayendo
+              encima. El titular promete plata, así que al lado va la plata y no
+              el reconocimiento.
 
-              Es una captura de la pantalla real renderizada a 390px y cortada
-              donde arranca la segunda sección, lo que da 390×652: casi
-              exactamente 9:16, así que se lee como un teléfono sin necesitar un
-              marco dibujado. La página ya tiene dos teléfonos más abajo.
+              La captura es la pantalla real renderizada a 390px y a alto
+              completo de teléfono, y va en el mismo marco que las dos demos de
+              más abajo: suelta es una imagen que hay que adivinar que es una
+              app, enmarcada se lee de una.
 
-              Los números están inflados a propósito y no son de nadie: es una
-              captura de demostración, no el mes de un cliente. */}
-          <div className="panelazo" aria-hidden="true">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/hero/panel.png" alt="" width={390} height={652} />
+              Los números están inflados y no son de nadie. */}
+          <figure className="tel tel-hero" aria-hidden="true">
+            <span className="tel-b tel-b-izq tel-b-accion" />
+            <span className="tel-b tel-b-izq tel-b-vol-mas" />
+            <span className="tel-b tel-b-izq tel-b-vol-menos" />
+            <span className="tel-b tel-b-der tel-b-bloqueo" />
+            <span className="tel-b tel-b-der tel-b-camara" />
+            <div className="tel-vidrio">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/hero/panel.png" alt="" width={390} height={847} />
 
-            <div className="avisos">
-              <div className="aviso" style={{ ["--i" as string]: 0 }}>
-                <span className="aviso-i">
-                  <Banknote />
-                </span>
-                <div className="aviso-txt">
-                  <b>Venta acreditada</b>
-                  <span>Maratón del Litoral · 4 fotos</span>
+              <div className="avisos">
+                <div className="aviso" style={{ ["--i" as string]: 0 }}>
+                  <span className="aviso-i">
+                    <Banknote />
+                  </span>
+                  <div className="aviso-txt">
+                    <b>Venta acreditada</b>
+                    <span>Maratón del Litoral · 4 fotos</span>
+                  </div>
+                  <span className="aviso-m">+$9.600</span>
                 </div>
-                <span className="aviso-m">+$9.600</span>
-              </div>
-              <div className="aviso" style={{ ["--i" as string]: 1 }}>
-                <span className="aviso-i">
-                  <Banknote />
-                </span>
-                <div className="aviso-txt">
-                  <b>Venta acreditada</b>
-                  <span>Gran Fondo Sierras · pack</span>
+                <div className="aviso" style={{ ["--i" as string]: 1 }}>
+                  <span className="aviso-i">
+                    <Banknote />
+                  </span>
+                  <div className="aviso-txt">
+                    <b>Venta acreditada</b>
+                    <span>Gran Fondo Sierras · pack</span>
+                  </div>
+                  <span className="aviso-m">+$12.600</span>
                 </div>
-                <span className="aviso-m">+$12.600</span>
-              </div>
-              <div className="aviso" style={{ ["--i" as string]: 2 }}>
-                <span className="aviso-i">
-                  <Banknote />
-                </span>
-                <div className="aviso-txt">
-                  <b>Venta acreditada</b>
-                  <span>Copa Río Salado · 3 fotos</span>
+                <div className="aviso" style={{ ["--i" as string]: 2 }}>
+                  <span className="aviso-i">
+                    <Banknote />
+                  </span>
+                  <div className="aviso-txt">
+                    <b>Venta acreditada</b>
+                    <span>Copa Río Salado · 3 fotos</span>
+                  </div>
+                  <span className="aviso-m">+$7.200</span>
                 </div>
-                <span className="aviso-m">+$7.200</span>
               </div>
             </div>
-          </div>
+          </figure>
         </div>
       </header>
 

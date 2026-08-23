@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es-AR">
+<html lang="es-AR" data-theme="dark">
 <head>
 <!-- GENERADOR DE LA CAPTURA DEL HERO. No es una pantalla: es esta misma
      copia del panel con los números inflados y sin los contadores animados
@@ -25,17 +25,9 @@
 <link rel="stylesheet" href="../tokens.css?v=1786906781">
 <link rel="stylesheet" href="../base.css?v=1786906781">
 <link rel="stylesheet" href="../panel.css?v=1786906781">
-<link rel="stylesheet" href="dashboard.css?v=1786906781">
+<link rel="stylesheet" href="../dashboard/dashboard.css">
 
-<script>
-  (function () {
-    var elegido = null;
-    try { elegido = localStorage.getItem("tema"); } catch (e) {}
-    var h = new Date().getHours();
-    document.documentElement.dataset.theme =
-      elegido === "light" ? "" : (elegido || (h >= 7 && h < 19 ? "" : "dark"));
-  })();
-</script>
+
 <script src="../vendor/iconos.js?v=1786906781" defer></script>
 </head>
 
@@ -444,16 +436,5 @@
   });
 </script>
 
-<pre id="d" style="position:fixed;bottom:0;left:0;background:#fff;color:#000;font:11px monospace;z-index:999;margin:0;padding:5px"></pre>
-<script>
-addEventListener("load", function(){ setTimeout(function(){
-  var NL=String.fromCharCode(10), o=[];
-  o.push("ancho=" + document.documentElement.clientWidth);
-  document.querySelectorAll("main section, main .head").forEach(function(el,i){
-    var r=el.getBoundingClientRect();
-    o.push(i + "  ." + (el.className||"head") + "  y " + Math.round(r.top+scrollY) + " a " + Math.round(r.bottom+scrollY));
-  });
-  document.getElementById("d").textContent=o.join(NL);
-}, 2500); });
-</script></body>
+</body>
 </html>

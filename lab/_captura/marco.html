@@ -1,17 +1,7 @@
 <!doctype html><html><head><meta charset="utf-8"><style>
   html,body{margin:0;background:#fff}
-  iframe{width:390px;height:1500px;border:0;display:block}
+  iframe{width:390px;height:900px;border:0;display:block}
 </style></head><body>
 <iframe id="f" src="./index.html"></iframe>
-<pre id="d" style="font:11px monospace"></pre>
-<script>
-addEventListener("load", function(){ setTimeout(function(){
-  var NL=String.fromCharCode(10), o=[], d=document.getElementById("f").contentDocument;
-  o.push("ancho interno = " + d.documentElement.clientWidth);
-  d.querySelectorAll("main section, main .head").forEach(function(el,i){
-    var r=el.getBoundingClientRect();
-    o.push(i + "  ." + (el.className||"head") + "  y " + Math.round(r.top) + " a " + Math.round(r.bottom));
-  });
-  document.getElementById("d").textContent=o.join(NL);
-}, 3000); });
-</script></body></html>
+
+</body></html>

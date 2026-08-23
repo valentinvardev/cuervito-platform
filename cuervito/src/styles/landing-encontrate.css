@@ -196,92 +196,47 @@ section { position: relative; }
 .trust span::after { content: "/"; margin-left: var(--s-4); color: var(--line-strong); }
 .trust span:last-child::after { content: ""; }
 
-/* ── El panel del fotógrafo, con las ventas cayendo ──────────────────────────
-   Antes acá había una hoja de contactos animada: entraban las fotos, pasaba un
-   barrido, aparecían los dorsales. Explicaba el reconocimiento, que es CÓMO
-   funciona. Pero el titular no promete reconocimiento, promete plata —"cobrás
-   en tu Mercado Pago"—, así que la imagen que va al lado tiene que ser esa: el
-   panel con la guita adentro y las ventas entrando solas.
+/* ── El panel del fotógrafo, adentro del teléfono ────────────────────────────
+   La captura es la pantalla REAL del panel, renderizada a 390px y a alto
+   completo de teléfono, y va adentro del mismo marco de iPhone 17 Pro Max que
+   usan las dos demos de más abajo. El marco no es adorno: sin él la captura es
+   una imagen suelta y hay que adivinar que es una app; con él se lee de una.
 
-   Es una captura de verdad del panel, no un dibujo: se renderiza la pantalla
-   real a 390px y se corta donde arranca la segunda sección, que da 390×652 y
-   es casi exactamente 9:16. Por eso se lee como un teléfono sin necesitar un
-   marco de teléfono dibujado: la página ya tiene dos más abajo y un tercero
-   sería repetir el mismo truco tres veces.
-
-   Los números están inflados a propósito y no son de nadie: es una captura de
-   demostración, no el mes de un cliente.
+   Más grande que los otros dos teléfonos porque es lo primero que se ve y
+   comparte el aire con el titular; los de abajo acompañan a un texto.
    ------------------------------------------------------------------------- */
-.panelazo {
-  position: relative;
-  width: 100%;
-  max-width: 390px;
-  margin-inline: auto;
-  aspect-ratio: 390 / 652;
-  border-radius: var(--r-4);
-  overflow: hidden;
-  background: var(--paper-3);
-  box-shadow: var(--shadow-obj);
-  /* El filete claro despega la captura del fondo cuando el tema y la captura
-     son los dos oscuros, que si no se funden en una sola mancha. */
-  outline: 1px solid var(--line);
-  outline-offset: -1px;
-}
-.panelazo > img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top center;
-}
+.tel-hero { --p: clamp(230px, 30vw, 330px); }
 
-/* El corte de abajo se desvanece en vez de terminar en un filo. Cortada seca,
-   la captura parece rota; con el degradé parece que sigue y no entra. */
-.panelazo::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 96px;
-  /* Se funde con el FONDO DE LA CAPTURA, no con el de la página. La captura
-     es siempre oscura —es el panel en modo oscuro— así que en tema claro un
-     degradé hacia --paper terminaba en una banda blanca sobre una pantalla
-     negra: se leía como que la imagen estaba rota, no como un corte suave.
-     El color sale de medir el borde inferior del PNG. */
-  background: linear-gradient(to bottom, transparent, #0D0D0C);
-  pointer-events: none;
-  /* Debajo de los avisos: el degradé es para difuminar el CORTE, no la venta
-     que está entrando. Sin esto la tarjeta caía adentro del velo y se veía
-     lavada, que es justo lo contrario de lo que tiene que transmitir. */
-  z-index: 1;
-}
+/* ── Las ventas entrando, sobre la pantalla ──────────────────────────────────
+   De a una y no apiladas: una sola que aparece y se va se lee como "acaba de
+   entrar una venta". Tres juntas se leen como una lista, que es lo que ya
+   muestra el panel de más abajo.
 
-/* ── Las ventas entrando ─────────────────────────────────────────────────────
-   De a una y no apiladas: una sola tarjeta que aparece, se queda un rato y se
-   va se lee como "acaba de entrar una venta". Tres apiladas se leen como una
-   lista, que es lo que ya muestra el panel de más abajo.
-
-   Todo en CSS y sin JavaScript: son tres tarjetas con el mismo ciclo de doce
-   segundos y el arranque corrido cuatro segundos cada una, así que se turnan
-   solas y la landing no paga un componente de cliente por un adorno. */
+   Todo en CSS: tres tarjetas con el mismo ciclo de doce segundos y el arranque
+   corrido cuatro segundos cada una, así que se turnan solas y la landing no
+   paga un componente de cliente por un adorno. */
 .avisos {
   position: absolute;
-  left: var(--s-4);
-  right: var(--s-4);
-  bottom: var(--s-6);
+  left: 10px;
+  right: 10px;
+  bottom: 16px;
   display: grid;
-  pointer-events: none;
   z-index: 2;
+  pointer-events: none;
 }
 .aviso {
   grid-area: 1 / 1;
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 11px 13px;
-  border-radius: var(--r-3);
-  background: var(--paper-2);
-  border: 1px solid var(--line-soft);
-  box-shadow: var(--shadow-card);
+  gap: 9px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  /* Colores FIJOS y no del tema: la captura de abajo es siempre oscura, así
+     que si la tarjeta siguiera al tema de la página, en modo oscuro quedaría
+     gris sobre gris y desaparecería justo el elemento que tiene que saltar. */
+  background: #FBFAF8;
+  border: 1px solid rgba(18, 17, 15, 0.07);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
   opacity: 0;
   animation: aviso-turno 12s linear infinite;
   animation-delay: calc(var(--i, 0) * 4s);
@@ -297,30 +252,30 @@ section { position: relative; }
 }
 
 .aviso-i {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  background: color-mix(in srgb, var(--ok) 14%, transparent);
-  color: var(--ok);
+  background: rgba(46, 125, 91, 0.12);
+  color: #2E7D5B;
 }
-.aviso-i svg { width: 17px; height: 17px; stroke-width: 1.9; }
+.aviso-i svg { width: 15px; height: 15px; stroke-width: 1.9; }
 
 .aviso-txt { flex: 1; min-width: 0; }
 .aviso-txt b {
   display: block;
   font-family: var(--sans);
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 500;
   letter-spacing: -0.01em;
-  color: var(--ink);
+  color: #12110F;
 }
 .aviso-txt span {
   display: block;
-  font-size: 11.5px;
-  color: var(--ink-3);
+  font-size: 10.5px;
+  color: #8C887F;
   margin-top: 1px;
   white-space: nowrap;
   overflow: hidden;
@@ -330,20 +285,18 @@ section { position: relative; }
 /* El monto es lo único que alguien va a leer si mira medio segundo. */
 .aviso-m {
   font-family: var(--sans);
-  font-size: 14.5px;
+  font-size: 13px;
   font-weight: 500;
-  color: var(--ok);
+  color: #2E7D5B;
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
 
-/* Sin movimiento: queda la primera, quieta. La captura sola ya cuenta la
-   historia; las otras dos sólo agregan repetición. */
+/* Sin movimiento: queda la primera, quieta. */
 @media (prefers-reduced-motion: reduce) {
   .aviso { animation: none; opacity: 0; transform: none; }
   .aviso:first-child { opacity: 1; }
 }
-
 /* ── Tira de prueba ──────────────────────────────────────────────────────── */
 .strip { border-block: 1px solid var(--line-soft); padding: var(--s-5) 0; overflow: hidden; }
 .strip-track { display: flex; gap: var(--s-3); width: max-content; animation: slide 52s linear infinite; }
