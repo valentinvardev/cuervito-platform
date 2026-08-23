@@ -6,9 +6,9 @@
      (panel.js anima todo lo que tenga data-num, y la captura tiene que ser
      el estado de reposo y no un fotograma del conteo).
 
-     Se renderiza marco.html, que la mete en un iframe de 390px para tener un
-     viewport de teléfono de verdad, se captura a 2x y se recorta 780×1304,
-     que es donde arranca la segunda sección. Sale en assets/hero/panel.png. -->
+     Se renderiza marco.html, que la mete en un iframe de 440×956 —el viewport
+     lógico del iPhone 17 Pro Max— y se captura a 3x: 1320×2868, que es la
+     resolución física de esa pantalla. Sale en assets/hero/panel.webp. -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>encontrate · panel</title>
@@ -50,7 +50,7 @@
 
         <div class="head">
           <div>
-            <h1>Buen día, Germán</h1>
+            <h1>Buen día, Valentín</h1>
             <p>Tres cosas esperándote y el mes viene 34% arriba de julio.</p>
           </div>
         </div>
@@ -58,14 +58,14 @@
         <section class="kpis">
           <div class="card kpi">
             <div class="k-top"><span class="k-lab">Ventas del mes</span><i data-lucide="trending-up"></i></div>
-            <div class="k-n tnum"><span>$1.284.600</span></div>
+            <div class="k-n tnum"><span>$2.148.900</span></div>
             <div class="k-sub"><span class="delta up"><i data-lucide="arrow-up-right"></i> 34%</span> vs. julio</div>
           </div>
 
           <div class="card kpi">
             <div class="k-top"><span class="k-lab">Fotos vendidas</span><i data-lucide="image-down"></i></div>
-            <div class="k-n tnum"><span>1.847</span></div>
-            <div class="k-sub"><span class="delta up"><i data-lucide="arrow-up-right"></i> 212</span> esta semana</div>
+            <div class="k-n tnum"><span>3.074</span></div>
+            <div class="k-sub"><span class="delta up"><i data-lucide="arrow-up-right"></i> 358</span> esta semana</div>
           </div>
 
           <!-- El porcentaje solo no se entiende: "convierte 6,4%" es jerga.
@@ -86,8 +86,8 @@
             <div class="k-top"><span class="k-lab">Visitas que compran</span><i data-lucide="percent"></i></div>
             <div class="k-n tnum"><span>11,2</span><small>%</small></div>
             <div class="k-sub razon">
-              <span><i data-lucide="scan-face"></i> <b class="tnum">8.940</b> se encontraron</span>
-              <span><i data-lucide="shopping-cart"></i> <b class="tnum">1.001</b> compraron</span>
+              <span><i data-lucide="scan-face"></i> <b class="tnum">14.893</b> se encontraron</span>
+              <span><i data-lucide="shopping-cart"></i> <b class="tnum">1.668</b> compraron</span>
             </div>
           </div>
         </section>
@@ -212,7 +212,7 @@
               <span class="ev-cv"></span>
               <span class="ev-n"><b>Duatlón Club Ciclista Chivilcoy</b><span>Hoy</span></span>
               <span class="num soft">2.162</span>
-              <span class="num tnum">$48.200</span>
+              <span class="num tnum">$80.600</span>
               <span class="pill live"><i></i> En vivo</span>
             </a>
 
@@ -220,7 +220,7 @@
               <span class="ev-cv"></span>
               <span class="ev-n"><b>Media Maratón de Chivilcoy</b><span>3 de agosto</span></span>
               <span class="num soft">3.104</span>
-              <span class="num tnum">$164.900</span>
+              <span class="num tnum">$275.800</span>
               <span class="pill"><i></i> Publicado</span>
             </a>
 
@@ -228,7 +228,7 @@
               <span class="ev-cv"></span>
               <span class="ev-n"><b>Torneo Apertura · Fecha 8</b><span>27 de julio</span></span>
               <span class="num soft">1.488</span>
-              <span class="num tnum">$91.300</span>
+              <span class="num tnum">$152.700</span>
               <span class="pill"><i></i> Publicado</span>
             </a>
 
