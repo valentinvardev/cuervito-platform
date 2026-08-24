@@ -410,7 +410,16 @@ export default async function V2Page() {
               {ultimas.length > 0 ? (
                 <>
                   {ultimas.map((v) => (
-                    <div key={v.id} className="row sale">
+                    <div
+                      key={v.id}
+                      className="row sale"
+                      // La que llegó mientras el panel estaba abierto se marca
+                      // sola. Se decide con la hora de pago y no con un estado
+                      // del navegador: así también sale marcada si el fotógrafo
+                      // entra al panel justo después de la venta, que es
+                      // exactamente cuando quiere verla.
+                      data-nueva={v.paidAt && ahora.getTime() - v.paidAt.getTime() < 60_000 ? "1" : undefined}
+                    >
                       <span className="sale-av">{iniciales(v.buyerName ?? v.buyerEmail)}</span>
                       <span className="sale-t">
                         <b>{v.buyerName ?? v.buyerEmail}</b>

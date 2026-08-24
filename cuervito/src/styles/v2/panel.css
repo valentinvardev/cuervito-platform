@@ -804,6 +804,105 @@ body { overflow-x: hidden; }
 .lote .btn.peligro:hover { background: rgba(255, 142, 142, .14); border-color: rgba(255, 142, 142, .5); }
 .lote-x { color: color-mix(in srgb, var(--paper) 60%, transparent); }
 
+/* ═════════════════════════ LA VENTA QUE ACABA DE ENTRAR ═══════════════════
+   Un rectángulo chico arriba a la derecha, debajo de la barra. Aparece cuando
+   Mercado Pago confirma un pago y se va solo.
+
+   Tiene la MISMA anatomía que una fila de la lista de últimas ventas —inicial,
+   nombre y detalle, importe— y eso no es pereza: el fotógrafo ya sabe leer esa
+   fila, así que reconoce lo que llegó sin detenerse a interpretarlo. La
+   diferencia es que ésta se mueve y trae el borde verde.
+
+   Arriba a la derecha y no abajo: abajo ya vive la barra de selección de fotos
+   y las dos se pisarían justo cuando el fotógrafo está subiendo material, que
+   es cuando más ventas entran.
+   ═══════════════════════════════════════════════════════════════════════ */
+.ventas-vivo {
+  /* Pila: si entran dos ventas seguidas, la segunda va abajo de la primera y
+     no encima. Con position:fixed en cada tarjeta se superponían. */
+  position: fixed;
+  top: calc(62px + var(--s-3));
+  right: var(--s-4);
+  z-index: 55;
+  display: grid;
+  gap: var(--s-2);
+  justify-items: end;
+  pointer-events: none;
+}
+
+.venta-viva {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  width: 296px;
+  max-width: calc(100vw - var(--s-4) * 2);
+  padding: 10px 12px;
+  border-radius: var(--r-3);
+  background: var(--paper-2);
+  /* El borde verde es la única marca de color: dice "entró plata" sin
+     necesidad de un rótulo que diga entró plata. */
+  border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent);
+  box-shadow: 0 14px 38px rgba(18, 17, 15, .22);
+  animation: venta-entra 420ms cubic-bezier(.2, .8, .3, 1) both;
+}
+/* Entra desde la derecha, que es de donde vendría algo que llega. */
+@keyframes venta-entra {
+  from { opacity: 0; transform: translateX(18px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+/* Se va hacia arriba y no hacia la derecha: hacia la derecha se lee como que
+   se descartó; hacia arriba, como que se guardó en la lista de ventas. */
+.venta-viva[data-yendo="1"] {
+  animation: venta-sale 260ms ease forwards;
+}
+@keyframes venta-sale {
+  to { opacity: 0; transform: translateY(-8px) scale(.98); }
+}
+
+.venta-viva-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  color: var(--ok-txt);
+}
+.venta-viva-av svg { width: 15px; height: 15px; }
+
+.venta-viva-t { min-width: 0; line-height: 1.3; }
+.venta-viva-t b {
+  display: block; font-size: 13px; font-weight: 500;
+  /* Una línea, como en la fila de la lista: con nombres largos la tarjeta
+     crecía a dos renglones y dos avisos apilados quedaban de alturas
+     distintas, que se lee como que uno es más importante. */
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.venta-viva-t span {
+  display: block; font-size: 11.5px; color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.venta-viva-m {
+  font-size: 14px; font-weight: 500;
+  color: var(--ok-txt);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* En teléfono ocupa el ancho, pegada a los dos bordes: 296px fijos dejaban un
+   margen despareja contra el borde izquierdo de la pantalla. */
+@media (max-width: 560px) {
+  .ventas-vivo { left: var(--s-4); justify-items: stretch; }
+  .venta-viva { width: auto; }
+}
+
+/* Sin movimiento aparece y desaparece, sin deslizarse. */
+@media (prefers-reduced-motion: reduce) {
+  .venta-viva { animation: none; }
+  .venta-viva[data-yendo="1"] { animation: none; opacity: 0; }
+}
+
+
 
 @media (max-width: 560px) {
   .fg { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 6px; }
@@ -1296,3 +1395,18 @@ body { overflow-x: hidden; }
 /* En pantallas táctiles no hay hover: el globito aparecería recién al tocar,
    justo cuando el botón ya hizo lo suyo, y taparía el resultado. */
 @media (hover: none) { .cs-tooltip { display: none; } }
+
+/* La venta que llegó recién, adentro de la lista. El cartel de la esquina dice
+   que entró; esta marca dice CUÁL es, para que el fotógrafo no tenga que
+   comparar la lista con la de hace diez segundos. Se apaga sola. */
+.row.sale[data-nueva="1"] {
+  animation: venta-nueva 2.6s ease both;
+}
+@keyframes venta-nueva {
+  0%   { background: color-mix(in srgb, var(--ok) 20%, transparent); }
+  12%  { background: color-mix(in srgb, var(--ok) 20%, transparent); }
+  100% { background: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .row.sale[data-nueva="1"] { animation: none; }
+}

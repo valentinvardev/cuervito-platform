@@ -1,6 +1,6 @@
-/* COPIADO DE lab/dashboard/dashboard.css. No editar acá: los cambios se hacen
-   en el laboratorio y se vuelven a copiar, si no las dos versiones divergen
-   y la del laboratorio deja de servir para decidir. */
+/* COPIADO DE lab/dashboard/dashboard.css. No editar acá: los cambios se hacen en el
+   laboratorio y se vuelven a copiar, si no las dos versiones divergen y la
+   del laboratorio deja de servir para decidir. */
 /* =============================================================================
    encontrate · panel · inicio
    -----------------------------------------------------------------------------
@@ -152,3 +152,18 @@
 /* Tapa el área del gráfico hasta que hay trazo. Sin esto quedan las líneas de
    la grilla flotando sobre un rectángulo vacío, que se lee como error. */
 .chart-sk { position: absolute; inset: 0; border-radius: var(--r-2); }
+
+/* El trazo se vuelve a dibujar cuando llega una venta y la curva cambia. Sin
+   esto el cambio es de un cuadro al otro: un día entre treinta mueve la línea
+   unos pocos píxeles y no se ve que haya pasado algo. */
+.chart .ln.redibuja {
+  stroke-dasharray: 1;
+  animation: chart-redibuja 720ms cubic-bezier(.2, .8, .3, 1);
+}
+@keyframes chart-redibuja {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chart .ln.redibuja { animation: none; stroke-dasharray: none; }
+}

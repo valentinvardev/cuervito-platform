@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const MES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
@@ -19,6 +19,24 @@ const PAD = 6;
 export function Grafico({ puntos }: { puntos: { dia: string; monto: number }[] }) {
   const caja = useRef<HTMLDivElement>(null);
   const [activo, setActivo] = useState<number | null>(null);
+
+  /* Cuando entra una venta el panel se refresca y la curva cambia sola. Sin
+     nada más, cambia de un cuadro al otro y no se ve: el trazo de un día entre
+     treinta se mueve unos pocos píxeles. Así que se vuelve a dibujar de
+     izquierda a derecha, que es lo que hace notar que hay dato nuevo.
+
+     La firma se calcula ACÁ ARRIBA y no con la ruta del path, porque más abajo
+     hay un return temprano —cuando no alcanzan los puntos— y un hook después
+     de un return condicional es un hook que a veces no corre. */
+  const firma = puntos.map((x) => x.monto).join(",");
+  const [redibujo, setRedibujo] = useState(0);
+  const firmaAnterior = useRef<string | null>(null);
+  useEffect(() => {
+    if (firmaAnterior.current !== null && firmaAnterior.current !== firma) {
+      setRedibujo((k) => k + 1);
+    }
+    firmaAnterior.current = firma;
+  }, [firma]);
 
   if (puntos.length < 2) {
     return (
@@ -79,7 +97,15 @@ export function Grafico({ puntos }: { puntos: { dia: string; monto: number }[] }
             })}
           </g>
           <path className="ar" d={area} fill="url(#v2fade)" />
-          <path className="ln" d={d} />
+          <path
+            key={redibujo}
+            className={redibujo ? "ln redibuja" : "ln"}
+            // Normaliza el largo a 1 para que el guion del trazo no dependa de
+            // la escala: el SVG se estira con preserveAspectRatio="none" y en
+            // unidades del viewBox el largo real no es el que se ve.
+            pathLength={1}
+            d={d}
+          />
         </svg>
 
         <div className="cur" style={{ left: px }} />

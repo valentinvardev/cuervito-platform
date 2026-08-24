@@ -23,6 +23,7 @@ import { useEffect, useState, useTransition } from "react";
 import { whatsappUrl } from "~/lib/support";
 
 import { Buscador } from "./buscador";
+import { VentasEnVivo } from "./ventas-en-vivo";
 
 /**
  * Riel y barra superior.
@@ -248,6 +249,10 @@ export function Shell({
 
         {children}
       </div>
+
+      {/* Acá y no en la página de inicio: la venta entra igual mientras el
+          fotógrafo está subiendo fotos a un evento, que es cuando más pasa. */}
+      <VentasEnVivo />
 
       <div className="rail-scrim" onClick={() => setCajon(false)} />
     </div>

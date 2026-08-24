@@ -29,6 +29,7 @@ const HOJAS = {
   tokens:  { origen: "tokens.css",          destino: "v2/tokens.css" },
   base:    { origen: "base.css",            destino: "v2/base.css" },
   panel:   { origen: "panel.css",           destino: "v2/panel.css" },
+  dashboard: { origen: "dashboard/dashboard.css", destino: "v2/dashboard.css" },
   landing: { origen: "landing/landing.css", destino: "landing-encontrate.css" },
   tienda:  { origen: "tienda/tienda.css",   destino: "tienda-encontrate.css" },
 };
