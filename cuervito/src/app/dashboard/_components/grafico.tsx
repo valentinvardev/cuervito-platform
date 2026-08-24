@@ -83,7 +83,20 @@ export function Grafico({ puntos }: { puntos: { dia: string; monto: number }[] }
         onMouseMove={mover}
         onMouseLeave={() => setActivo(null)}
       >
-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+        {/* La clase va acá y no en el trazo. El trazo lleva
+            vector-effect: non-scaling-stroke, y con eso el guion de
+            stroke-dasharray se mide en píxeles de pantalla en vez de en
+            unidades del path: un dasharray de 1 lo dejaba punteado de a un
+            píxel para siempre, que es la línea rota. Se descubre la curva con
+            un recorte, que no toca el trazo.
+            key fuerza el remonte, que es lo que rebobina la animación. */}
+        <svg
+          key={redibujo}
+          className={redibujo ? "redibuja" : undefined}
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
           <defs>
             <linearGradient id="v2fade" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="var(--ink)" stopOpacity=".13" />
@@ -97,15 +110,7 @@ export function Grafico({ puntos }: { puntos: { dia: string; monto: number }[] }
             })}
           </g>
           <path className="ar" d={area} fill="url(#v2fade)" />
-          <path
-            key={redibujo}
-            className={redibujo ? "ln redibuja" : "ln"}
-            // Normaliza el largo a 1 para que el guion del trazo no dependa de
-            // la escala: el SVG se estira con preserveAspectRatio="none" y en
-            // unidades del viewBox el largo real no es el que se ve.
-            pathLength={1}
-            d={d}
-          />
+          <path className="ln" d={d} />
         </svg>
 
         <div className="cur" style={{ left: px }} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BadgeDollarSign } from "lucide-react";
 
@@ -63,8 +63,69 @@ function pesos(centavos: number): string {
   return `$${(centavos / 100).toLocaleString("es-AR")}`;
 }
 
+/** Tres notas que suben: mi, sol, do. Es un acorde, no un pitido de sistema. */
+const NOTAS = [
+  { hz: 659.25, en: 0 },
+  { hz: 783.99, en: 0.14 },
+  { hz: 1046.5, en: 0.28 },
+];
+
+/**
+ * El sonido de la venta.
+ *
+ * El navegador no deja sonar hasta que hubo un gesto del usuario, y si el
+ * AudioContext se crea recién al llegar la venta, la primera de cada pestaña
+ * sale muda —que es justo la que uno quiere escuchar—. Así que se abre y se
+ * destraba con el primer click o tecla que haya en el panel, mucho antes de
+ * que entre nada.
+ */
+function useSonidoVenta() {
+  const ctx = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    const destrabar = () => {
+      try {
+        ctx.current ??= new (window.AudioContext ??
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+        if (ctx.current.state === "suspended") void ctx.current.resume();
+      } catch {
+        // Sin audio en este navegador: la venta se ve igual.
+      }
+    };
+    // once: alcanza con el primer gesto; después queda destrabado.
+    addEventListener("pointerdown", destrabar, { once: true });
+    addEventListener("keydown", destrabar, { once: true });
+    return () => {
+      removeEventListener("pointerdown", destrabar);
+      removeEventListener("keydown", destrabar);
+    };
+  }, []);
+
+  return useCallback(() => {
+    const c = ctx.current;
+    if (c?.state !== "running") return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const ahora = c.currentTime;
+    for (const n of NOTAS) {
+      const t = ahora + n.en;
+      const osc = c.createOscillator();
+      const vol = c.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(n.hz, t);
+      // Ataque corto y caída exponencial: así suena a campana y no a zumbido.
+      vol.gain.setValueAtTime(0, t);
+      vol.gain.linearRampToValueAtTime(0.12, t + 0.008);
+      vol.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+      osc.connect(vol).connect(c.destination);
+      osc.start(t);
+      osc.stop(t + 0.2);
+    }
+  }, []);
+}
+
 export function VentasEnVivo() {
   const router = useRouter();
+  const sonar = useSonidoVenta();
   const [avisos, setAvisos] = useState<Aviso[]>([]);
   // Los timers se guardan para poder limpiarlos si el componente se va con
   // avisos todavía en pantalla.
@@ -91,6 +152,8 @@ export function VentasEnVivo() {
         monto: pesos(v.amount),
         yendo: false,
       };
+
+      sonar();
 
       setAvisos((prev) => {
         // El webhook de Mercado Pago puede repetir el mismo aviso: reintenta
@@ -124,7 +187,7 @@ export function VentasEnVivo() {
       relojes.current = [];
       if (refresco.current) clearTimeout(refresco.current);
     };
-  }, [router]);
+  }, [router, sonar]);
 
   if (avisos.length === 0) return null;
 
