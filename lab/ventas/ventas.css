@@ -72,9 +72,20 @@
    Cajón y no página aparte: revisar ventas es una tarea de barrido, se miran
    ocho seguidas. Con navegación completa cada vuelta cuesta dos cargas y se
    pierde el lugar en la lista. ──────────────────────────────────────────── */
+/* Desenfoque y no una capa de color.
+
+   Una capa de --ink al 26% es tinta sobre papel en el tema claro, pero en el
+   oscuro --ink es casi blanco: quedaba un velo BLANCO encima del panel, que se
+   lee como que la pantalla se lavó y no como que hay algo adelante.
+
+   El desenfoque no tiene ese problema: no depende de qué color sea la tinta,
+   y además dice lo que tiene que decir —esto de atrás sigue estando, pero
+   ahora no es lo que estás mirando—. Es el mismo velo que ya usa el cajón del
+   menú, así que los dos cajones del panel se abren igual. */
 .dscrim {
   position: fixed; inset: 0; z-index: 80;
-  background: color-mix(in srgb, var(--ink) 26%, transparent);
+  background: color-mix(in srgb, var(--paper) 40%, transparent);
+  backdrop-filter: blur(10px);
   opacity: 0; pointer-events: none;
   transition: opacity 240ms ease;
 }
@@ -103,16 +114,38 @@
 .drw-b { flex: 1; overflow-y: auto; padding: var(--s-5); display: grid; gap: var(--s-5); }
 .drw-f { padding: var(--s-4) var(--s-5); border-top: 1px solid var(--line-soft); display: flex; gap: var(--s-2); }
 
-.dl { display: grid; gap: 9px; }
+/* El margen y la sangría son los del navegador, no del diseño: <dl> viene con
+   1em arriba y abajo y <dd> con 40px de sangría izquierda. base.css resetea
+   h1..h3 y p, pero no las listas de definición, así que acá se caían solas.
+   Los 16px de arriba y abajo eran lo que hacía que el bloque del monto se
+   viera desproporcionado para una línea de texto. */
+.dl { display: grid; gap: 9px; margin: 0; }
+.dl dd { margin: 0; }
 .dl > div { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-4); font-size: 13.5px; }
 .dl dt { color: var(--ink-3); }
 .dl dd { font-variant-numeric: tabular-nums; text-align: right; }
 
 /* El monto de la venta, solo y sin cuentas al lado. */
-.desg { padding: var(--s-4); background: var(--paper-3); border-radius: var(--r-2); }
-.desg .tot { font-size: 15px; font-weight: 500; }
+.desg { padding: var(--s-3) var(--s-4); background: var(--paper-3); border-radius: var(--r-2); }
+.desg .dl { gap: 7px; }
+/* Las filas de la cuenta, más chicas que el total: son el camino, no el
+   destino. El fotógrafo mira "Ganaste"; lo de arriba está para cuando el
+   número no es el que esperaba. */
+.desg .dl > div { font-size: 12.5px; }
+.desg .dl dt { color: var(--ink-3); }
+/* Lo que se resta va con el signo pegado al número y en la misma tinta tenue:
+   pintarlo de rojo sería marcar como problema algo que el fotógrafo eligió. */
+.desg .resta dd { color: var(--ink-3); }
+/* El total se separa con una línea, no con más aire: el aire ya se lo lleva
+   el bloque, y sin línea la cuenta y el resultado se leen como una lista de
+   cinco cosas parejas. */
+.desg .tot {
+  margin-top: 3px; padding-top: 9px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 14px; font-weight: 500;
+}
 .desg .tot dt { color: var(--ink); }
-.desg .tot dd { font-size: 19px; font-weight: 300; }
+.desg .tot dd { font-size: 17px; font-weight: 400; }
 
 .minis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .mini {

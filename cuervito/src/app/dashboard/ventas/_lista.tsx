@@ -11,6 +11,13 @@ export type Venta = {
   mail: string;
   evento: string;
   fotos: number;
+  /** La cuenta, en centavos. Suma de las fotos, antes de nada. */
+  subtotal: number;
+  /** Lo que se descontó: cupón o promoción por cantidad. Cero si no hubo. */
+  descuento: number;
+  /** Lo que efectivamente pagó el comprador. */
+  pago: number;
+  /** Lo que le queda al fotógrafo, ya sin comisión. */
   neto: number;
   estado: string;
   fecha: string;
@@ -250,8 +257,40 @@ export function Lista({ ventas }: { ventas: Venta[] }) {
                 )}
               </div>
 
+              {/* La cuenta entera y no sólo el resultado.
+
+                  Antes acá había una sola línea con lo que ganó, así que una
+                  venta con cupón mostraba un número más chico que el precio de
+                  las fotos y no había forma de saber por qué. El descuento
+                  existe —está en la venta— pero no se mostraba en ningún lado
+                  del panel.
+
+                  La comisión sale de restar y no del campo platformFeeCents:
+                  si la venta tuvo comisión de referido, el campo solo no
+                  cierra y la cuenta que el fotógrafo tiene delante no da. */}
               <div className="desg">
                 <dl className="dl">
+                  <div>
+                    <dt>
+                      {abierta.fotos} {abierta.fotos === 1 ? "foto" : "fotos"}
+                    </dt>
+                    <dd className="tnum">{pesos(abierta.subtotal)}</dd>
+                  </div>
+
+                  {abierta.descuento > 0 && (
+                    <div className="resta">
+                      <dt>Descuento</dt>
+                      <dd className="tnum">−{pesos(abierta.descuento)}</dd>
+                    </div>
+                  )}
+
+                  {abierta.pago - abierta.neto > 0 && (
+                    <div className="resta">
+                      <dt>Comisión ({Math.round(((abierta.pago - abierta.neto) / abierta.pago) * 100)}%)</dt>
+                      <dd className="tnum">−{pesos(abierta.pago - abierta.neto)}</dd>
+                    </div>
+                  )}
+
                   <div className="tot">
                     <dt>Ganaste</dt>
                     <dd className="tnum">{pesos(abierta.neto)}</dd>
