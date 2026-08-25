@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
 import type { Metadata } from "next";
 import {
   ArrowRight,
@@ -132,29 +133,55 @@ async function tiraDeEventos() {
  * si tuviéramos nueve fotos en total.
  */
 async function miniaturasDeVentas() {
+  /* Medido en producción: esta función tardaba 13 SEGUNDOS y era, ella sola,
+     el tiempo de carga de la home entera.
+
+     La culpa la tenían dos cosas de la consulta anterior, y las dos son la
+     misma trampa: pedirle a la base que resuelva algo por evento mientras
+     busca los eventos.
+
+     · El `photos: { some: ... }` obliga a un EXISTS contra la tabla de fotos
+       por cada evento candidato.
+     · Y el `take: 1` ANIDADO es el caro de verdad. Prisma no lo traduce a un
+       LIMIT por evento —no existe tal cosa en SQL—: numera con una función de
+       ventana TODAS las fotos que pasan el filtro y después se queda con las
+       de número uno. O sea que para mostrar tres miniaturas ordenaba la tabla
+       de fotos completa.
+
+     Ahora son dos pasos tontos: los eventos por un lado, y una foto de cada
+     uno por el otro, que son tres consultas por índice de eventId. Se piden
+     seis eventos y se usan los tres primeros que tengan foto, porque sin el
+     filtro `some` un evento vacío ahora devuelve null en vez de no aparecer. */
   const eventos = await db.event.findMany({
-    where: {
-      isPublished: true,
-      NOT: { status: "ARCHIVED" },
-      photos: {
-        some: { deletedAt: null, fileSize: { not: null }, previewKey: { not: null } },
-      },
-    },
+    where: { isPublished: true, NOT: { status: "ARCHIVED" } },
     orderBy: [{ eventDate: "desc" }, { createdAt: "desc" }],
     skip: 9,
-    take: 3,
-    select: {
-      photos: {
-        where: { deletedAt: null, fileSize: { not: null }, previewKey: { not: null } },
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: { previewKey: true },
-      },
-    },
+    take: 6,
+    select: { id: true },
   });
 
+  const claves = await Promise.all(
+    eventos.map((e) =>
+      db.photo
+        .findFirst({
+          where: {
+            eventId: e.id,
+            deletedAt: null,
+            fileSize: { not: null },
+            previewKey: { not: null },
+          },
+          orderBy: { createdAt: "desc" },
+          select: { previewKey: true },
+        })
+        .catch(() => null),
+    ),
+  );
+
   const urls = await Promise.all(
-    eventos.flatMap((e) => e.photos.map((f) => resolveMediaUrl(f.previewKey!).catch(() => null))),
+    claves
+      .filter((f): f is { previewKey: string } => !!f?.previewKey)
+      .slice(0, 3)
+      .map((f) => resolveMediaUrl(f.previewKey).catch(() => null)),
   );
   return urls.filter((u): u is string => !!u);
 }
@@ -204,26 +231,53 @@ async function eventoDemo() {
   };
 }
 
+/**
+ * Todo lo que la home muestra de la base, junto y cacheado.
+ *
+ * Son números y fotos de vitrina: cuántos eventos hay, cuántas fotos, la tira
+ * de portadas, el evento que se ofrece para probar. Nada de eso cambia entre
+ * una visita y la siguiente, y sin embargo la home lo recalculaba en cada
+ * pedido —y esperaba por la más lenta de las cinco.
+ *
+ * Cinco minutos: si alguien publica un evento, tarda como mucho eso en
+ * aparecer en el contador de la portada, que es una espera que nadie nota. Lo
+ * que sí se nota es que la página abra.
+ *
+ * La sesión queda AFUERA a propósito: es por usuario, y unstable_cache no
+ * puede envolver nada que lea cookies.
+ */
+const vitrina = unstable_cache(
+  async () => {
+    // Cada una cae por su cuenta: que no haya portadas cargadas no puede dejar
+    // la landing entera en blanco.
+    const t0 = ahora();
+    const [eventos, fotos, tira, demo, miniaturas] = await Promise.all([
+      db.event
+        .count({ where: { isPublished: true, NOT: { status: "ARCHIVED" } } })
+        .catch(() => 0)
+        .finally(() => lento("home · contar eventos", t0)),
+      db.photo
+        .count({ where: { fileSize: { not: null }, deletedAt: null } })
+        .catch(() => 0)
+        .finally(() => lento("home · contar todas las fotos", t0)),
+      tiraDeEventos().catch(() => []).finally(() => lento("home · tira", t0)),
+      eventoDemo().catch(() => null).finally(() => lento("home · evento demo", t0)),
+      miniaturasDeVentas()
+        .catch(() => [] as string[])
+        .finally(() => lento("home · miniaturas", t0)),
+    ]);
+    return { eventos, fotos, tira, demo, miniaturas };
+  },
+  ["home-vitrina"],
+  { revalidate: 300, tags: ["home-vitrina"] },
+);
+
 export default async function LandingNueva() {
-  // Cada una cae por su cuenta: que no haya portadas cargadas no puede dejar
-  // la landing entera en blanco.
-  // Salen todas en paralelo, así que los doce segundos que tarda la home son
-  // la MÁS lenta y no la suma. Se cronometra cada una para saber cuál.
-  const t0 = ahora();
-  const [sesion, eventos, fotos, tira, demo, miniaturas] = await Promise.all([
-    auth().catch(() => null).finally(() => lento("home · sesión", t0)),
-    db.event
-      .count({ where: { isPublished: true, NOT: { status: "ARCHIVED" } } })
-      .catch(() => 0)
-      .finally(() => lento("home · contar eventos", t0)),
-    db.photo
-      .count({ where: { fileSize: { not: null }, deletedAt: null } })
-      .catch(() => 0)
-      .finally(() => lento("home · contar todas las fotos", t0)),
-    tiraDeEventos().catch(() => []).finally(() => lento("home · tira", t0)),
-    eventoDemo().catch(() => null).finally(() => lento("home · evento demo", t0)),
-    miniaturasDeVentas().catch(() => [] as string[]).finally(() => lento("home · miniaturas", t0)),
+  const [sesion, datos] = await Promise.all([
+    auth().catch(() => null),
+    vitrina(),
   ]);
+  const { eventos, fotos, tira, demo, miniaturas } = datos;
 
   const hayNumeros = eventos >= MIN_EVENTOS && fotos >= MIN_FOTOS;
   const n = (x: number) => x.toLocaleString("es-AR");
