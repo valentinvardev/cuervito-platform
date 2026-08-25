@@ -92,7 +92,9 @@ export default async function PublicEventPage(props: {
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
-      storageKey: true,
+      // storageKey NO: es el original sin marca de agua y no se usa en
+      // esta pantalla. Traerlo son 136 bytes por foto —300 KB en este
+      // evento— cruzando la red para descartarse.
       previewKey: true,
       bibNumbers: true,
       width: true,
