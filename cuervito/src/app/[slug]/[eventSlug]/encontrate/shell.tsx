@@ -50,6 +50,7 @@ type EventInfo = {
 type Photo = {
   id: string;
   previewUrl: string;
+  fullUrl: string;
   bibNumbers: string | null;
   width: number | null;
   height: number | null;

@@ -98,6 +98,11 @@ export function previewPhotoKey(userId: string, eventId: string, photoId: string
 
 /** Unwatermarked preview, shown to the photographer in their dashboard. Same
  *  dimensions/quality as the watermarked preview but without the marca. */
+/** La miniatura de la grilla. Vive al lado del preview, con otro prefijo. */
+export function thumbPhotoKey(userId: string, eventId: string, photoId: string) {
+  return `cuervito/users/${userId}/events/${eventId}/thumb/${photoId}.webp`;
+}
+
 export function previewCleanPhotoKey(userId: string, eventId: string, photoId: string) {
   return `${prefix}/users/${userId}/events/${eventId}/preview-clean/${photoId}.webp`;
 }
@@ -204,10 +209,24 @@ export async function getS3ObjectBytes(key: string): Promise<Uint8Array> {
   return Buffer.concat(chunks);
 }
 
+/**
+ * Un día de caché para lo que se muestra: miniaturas, previews, portadas.
+ *
+ * Hoy los objetos suben SIN Cache-Control. CloudFront igual los cachea, pero el
+ * navegador no recibe ninguna instrucción y revalida por su cuenta: volver atrás
+ * en la galería o entrar de nuevo al rato vuelve a pagar la transferencia.
+ *
+ * Un día y no `immutable`: las claves de preview se REUSAN cuando el fotógrafo
+ * cambia su marca de agua y se regeneran los derivados. Con immutable, esa marca
+ * vieja se le quedaría congelada a los visitantes por un año.
+ */
+export const CACHE_MOSTRAR = "public, max-age=86400";
+
 export async function putS3Object(
   key: string,
   body: Buffer | Uint8Array,
   contentType: string,
+  cacheControl?: string,
 ): Promise<void> {
   if (!bucket) throw new Error("AWS_S3_BUCKET is not configured");
   await s3.send(
@@ -216,6 +235,7 @@ export async function putS3Object(
       Key: key,
       Body: body,
       ContentType: contentType,
+      ...(cacheControl ? { CacheControl: cacheControl } : {}),
     }),
   );
 }

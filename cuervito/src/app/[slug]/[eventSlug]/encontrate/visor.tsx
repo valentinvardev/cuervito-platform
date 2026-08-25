@@ -3,7 +3,10 @@
 import { Check, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-type FotoVisor = { id: string; previewUrl: string; bibNumbers: string | null };
+// fullUrl y no previewUrl: en la grilla previewUrl es la miniatura de 560px,
+// que estirada a pantalla completa se ve borrosa. El visor es donde el atleta
+// decide si compra, así que ahí va la de 2400.
+type FotoVisor = { id: string; fullUrl: string; bibNumbers: string | null };
 
 /** Lo que dura la animación de salida en el CSS. */
 const SALIDA_MS = 150;
@@ -99,7 +102,7 @@ export function Visor({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             key={foto.id}
-            src={foto.previewUrl}
+            src={foto.fullUrl}
             alt={foto.bibNumbers ? `Dorsal ${foto.bibNumbers}` : "Foto del evento"}
           />
         </div>

@@ -126,6 +126,9 @@ export default async function PublicEventPage(props: {
         // storageKey NO: es el original sin marca de agua y no se usa en esta
         // pantalla. Traerlo son 136 bytes por foto que viajan para nada.
         previewKey: true,
+        // La miniatura de 560px. Nula en las fotos anteriores al cambio: ahí
+        // se cae al preview de 2400px, que es lento pero se ve.
+        thumbKey: true,
         bibNumbers: true,
         width: true,
         height: true,
@@ -145,7 +148,8 @@ export default async function PublicEventPage(props: {
   const photos = await Promise.all(
     rawPhotos.map(async (p) => ({
       id: p.id,
-      previewUrl: await resolveMediaUrl(p.previewKey!),
+      previewUrl: await resolveMediaUrl(p.thumbKey ?? p.previewKey!),
+      fullUrl: await resolveMediaUrl(p.previewKey!),
       bibNumbers: p.bibNumbers,
       width: p.width,
       height: p.height,

@@ -105,7 +105,16 @@ export async function GET(
     // Con lista de ids no hay tandas: se pidieron esas y son esas.
     ...(listaIds ? {} : { take: TANDA + 1 }),
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    select: { id: true, previewKey: true, bibNumbers: true, width: true, height: true },
+    select: {
+      id: true,
+      // La miniatura primero; el preview grande es la caída para las fotos
+      // anteriores al cambio.
+      thumbKey: true,
+      previewKey: true,
+      bibNumbers: true,
+      width: true,
+      height: true,
+    },
   });
 
   // Se pide una de más para saber si hay siguiente sin contar el total, que
@@ -118,7 +127,8 @@ export async function GET(
       fotos: await Promise.all(
         tanda.map(async (f) => ({
           id: f.id,
-          previewUrl: await resolveMediaUrl(f.previewKey!),
+          previewUrl: await resolveMediaUrl(f.thumbKey ?? f.previewKey!),
+          fullUrl: await resolveMediaUrl(f.previewKey!),
           bibNumbers: f.bibNumbers,
           width: f.width,
           height: f.height,

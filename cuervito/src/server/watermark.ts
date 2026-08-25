@@ -11,11 +11,21 @@ import {
   previewCleanPhotoKey,
   previewPhotoKey,
   putS3Object,
+  thumbPhotoKey,
+  CACHE_MOSTRAR,
   userWatermarkKey,
 } from "~/server/s3";
 
 const PREVIEW_MAX_WIDTH = 2400;
 const PREVIEW_QUALITY = 85;
+/* La miniatura de la grilla de la tienda.
+
+   560px porque el recuadro de la grilla mide entre 212 y 300 CSS, y en una
+   pantalla densa eso son hasta 600 píxeles reales. Medido sobre una foto real
+   del evento: 2400px q85 son 845 KB, 560px q72 son 56 KB. Quince veces menos
+   para algo que se ve idéntico a ese tamaño. */
+const THUMB_WIDTH = 560;
+const THUMB_QUALITY = 72;
 
 // ── Concurrency limiter ───────────────────────────────────────────────────────
 // Sharp is CPU + memory intensive. Without a cap, uploading 50 photos at once
@@ -161,6 +171,7 @@ async function _generatePreview(photoId: string): Promise<PreviewResult> {
       storageKey: true,
       previewKey: true,
       previewCleanKey: true,
+      thumbKey: true,
     },
   });
   if (!photo) return { watermarkedKey: null, rekognitionBytes: null };
@@ -207,6 +218,17 @@ async function _generatePreview(photoId: string): Promise<PreviewResult> {
       .webp({ quality: PREVIEW_QUALITY })
       .toBuffer();
 
+    /* La miniatura sale de la imagen YA MARCADA y no del original.
+
+       Si se compusiera la marca sobre una imagen de 560px habría que escalar
+       también la marca, y dos caminos que dibujan la misma marca a tamaños
+       distintos se separan en la primera corrección que se hace en uno solo.
+       Achicando la marcada, la marca queda igual, sólo que más chica. */
+    const thumbOut = await sharp(Buffer.from(watermarkedOut))
+      .resize({ width: THUMB_WIDTH, withoutEnlargement: true })
+      .webp({ quality: THUMB_QUALITY })
+      .toBuffer();
+
     // Derivado JPEG para Rekognition. No se sube a S3: viaja en memoria
     // hasta runOcr/runFaceIndex y se descarta. Reusa `resized`, así que
     // cuesta un encode y ahorra dos descargas del original + dos resizes.
@@ -218,15 +240,18 @@ async function _generatePreview(photoId: string): Promise<PreviewResult> {
     const stale: string[] = [];
     if (photo.previewKey) stale.push(photo.previewKey);
     if (photo.previewCleanKey) stale.push(photo.previewCleanKey);
+    if (photo.thumbKey) stale.push(photo.thumbKey);
     if (stale.length > 0) {
       await deleteS3Objects(stale).catch(() => undefined);
     }
 
     const cleanKey = previewCleanPhotoKey(photo.ownerId, photo.eventId, photo.id);
     const watermarkedKey = previewPhotoKey(photo.ownerId, photo.eventId, photo.id);
+    const thumbKey = thumbPhotoKey(photo.ownerId, photo.eventId, photo.id);
     await Promise.all([
-      putS3Object(cleanKey, cleanOut, "image/webp"),
-      putS3Object(watermarkedKey, watermarkedOut, "image/webp"),
+      putS3Object(cleanKey, cleanOut, "image/webp", CACHE_MOSTRAR),
+      putS3Object(watermarkedKey, watermarkedOut, "image/webp", CACHE_MOSTRAR),
+      putS3Object(thumbKey, thumbOut, "image/webp", CACHE_MOSTRAR),
     ]);
 
     await db.photo.update({

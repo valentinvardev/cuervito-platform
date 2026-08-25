@@ -122,6 +122,11 @@ export default async function DemoCompra() {
       // comprador terminaba mirando su propia compra con la marca de agua
       // encima, que es exactamente lo que acababa de pagar por sacarse. Misma
       // cascada que la entrega de verdad: limpia, marcada, y el original.
+      // La demo no usa la miniatura chica de la tienda: son treinta fotos y
+      // el visor tiene que abrir la misma imagen que la grilla.
+      fullUrl: p.previewKey
+        ? await resolveMediaUrl(p.previewKey)
+        : await getPresignedDownloadUrl(p.storageKey, { expiresIn: 60 * 30 }),
       limpiaUrl: p.previewCleanKey
         ? await resolveMediaUrl(p.previewCleanKey)
         : p.previewKey

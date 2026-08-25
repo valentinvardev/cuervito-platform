@@ -313,6 +313,13 @@ model Photo {
     storageKey      String  @unique // S3 key for full-res original
     previewKey      String? // S3 key for watermarked preview (shown to public)
     previewCleanKey String? // S3 key for unwatermarked preview (shown to owner in dashboard)
+    /** Miniatura de 560px CON marca de agua, para la grilla de la tienda.
+     *
+     *  El preview mide 2400px y pesa 845 KB: se sirve igual en un recuadro
+     *  de 212px de la grilla que a pantalla completa en el visor, así que
+     *  una primera pantalla de 24 fotos son 20 MB. Esta versión pesa 56 KB.
+     *  Nulo en las fotos anteriores al cambio: la grilla cae al preview. */
+    thumbKey        String?
     filename     String
     mimeType     String?
     fileSize     Int?    // bytes

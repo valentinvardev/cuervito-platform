@@ -26,7 +26,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export type Foto = {
   id: string;
+  /** La miniatura de 560px: es lo que dibuja la grilla. */
   previewUrl: string;
+  /** La de 2400px, para el visor. La grilla NO la pide. */
+  fullUrl: string;
   bibNumbers: string | null;
   width: number | null;
   height: number | null;
