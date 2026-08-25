@@ -11,11 +11,12 @@ import {
   Tag,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { CartProvider, useCart } from "../cart-context";
 import type { PublicDiscount } from "../event-coverage-shell";
 import { useBusquedaSelfie } from "../selfie-search";
+import { useFotos, type Modo } from "../usar-fotos";
 import { Carrito } from "./carrito";
 import { elegirPromo } from "./promo";
 import { Visor } from "./visor";
@@ -54,8 +55,8 @@ type Photo = {
   height: number | null;
 };
 
-/** Cuántas fotos se dibujan por tanda. */
-const TANDA = 24;
+/** Cuánto se espera después de la última tecla antes de buscar el dorsal. */
+const RETARDO_DORSAL = 350;
 
 /**
  * La fecha como la diría una persona: 27 de julio de 2026.
@@ -103,7 +104,10 @@ function pesos(centavos: number) {
 export function EncontrateShell(props: {
   photographer: Photographer;
   event: EventInfo;
+  /** La primera tanda; el resto lo pide el navegador. */
   photos: Photo[];
+  /** Desde dónde seguir. Null si el evento entra entero en la tanda. */
+  cursorInicial?: string | null;
   discounts?: PublicDiscount[];
   testMode?: boolean;
   /** Si el evento lee dorsales. Sale de Event.bibDetection. */
@@ -124,6 +128,7 @@ function Adentro({
   photographer,
   event,
   photos,
+  cursorInicial = null,
   discounts = [],
   testMode,
   buscaPorDorsal = true,
@@ -131,6 +136,7 @@ function Adentro({
   photographer: Photographer;
   event: EventInfo;
   photos: Photo[];
+  cursorInicial?: string | null;
   discounts?: PublicDiscount[];
   testMode?: boolean;
   buscaPorDorsal?: boolean;
@@ -143,7 +149,6 @@ function Adentro({
   // cero sin que nadie lo haya pedido.
   const [selfie, setSelfie] = useState<string[] | null>(null);
   const [errorSelfie, setErrorSelfie] = useState<string | null>(null);
-  const [visibles, setVisibles] = useState(TANDA);
   const [viendo, setViendo] = useState<number | null>(null);
 
   const {
@@ -152,7 +157,6 @@ function Adentro({
     onPick: buscarSelfie,
     abrir: abrirSelfie,
   } = useBusquedaSelfie(event.id, (r) => {
-    setVisibles(TANDA);
     if (r.kind === "ok") {
       setSelfie(r.photoIds);
       setDorsal("");
@@ -170,7 +174,6 @@ function Adentro({
     setSelfie(null);
     setDorsal("");
     setErrorSelfie(null);
-    setVisibles(TANDA);
   }
 
   const precioCent = Math.round(event.pricePerPhoto * 100);
@@ -181,26 +184,36 @@ function Adentro({
   );
   const hayCodigos = discounts.some((d) => d.type === "CODE");
 
-  const filtradas = useMemo(() => {
-    // La selfie manda sobre el dorsal: si el atleta se sacó una foto, ya dijo
-    // quién es, y filtrar eso además por un número que quedó escrito sería
-    // esconderle sus propias fotos.
-    if (selfie?.length) {
-      const suyas = new Set(selfie);
-      return photos.filter((p) => suyas.has(p.id));
-    }
-    if (dorsal.trim()) {
-      return photos.filter((p) =>
-        (p.bibNumbers ?? "")
-          .split(",")
-          .some((b) => b.trim().startsWith(dorsal.trim())),
-      );
-    }
-    return photos;
-  }, [photos, selfie, dorsal]);
+  /* Qué le pedimos al servidor.
 
-  const trozo = filtradas.slice(0, visibles);
-  const buscando = !!selfie || !!dorsal.trim();
+     La selfie manda sobre el dorsal: si el atleta se sacó una foto ya dijo
+     quién es, y filtrar eso además por un número que quedó escrito sería
+     esconderle sus propias fotos.
+
+     El dorsal va con retardo porque cada tecla es un pedido: sin esperar,
+     escribir 1234 dispara cuatro búsquedas y las tres primeras se tiran. */
+  const [dorsalTardio, setDorsalTardio] = useState("");
+  useEffect(() => {
+    const reloj = setTimeout(() => setDorsalTardio(dorsal.trim()), RETARDO_DORSAL);
+    return () => clearTimeout(reloj);
+  }, [dorsal]);
+
+  const modo: Modo = useMemo(() => {
+    if (selfie) return { tipo: "ids", ids: selfie };
+    if (dorsalTardio) return { tipo: "dorsal", q: dorsalTardio };
+    return { tipo: "todas" };
+  }, [selfie, dorsalTardio]);
+
+  const {
+    fotos: filtradas,
+    hayMas,
+    buscando: trayendo,
+    trayendoMas,
+    cargarMas,
+  } = useFotos({ eventId: event.id, iniciales: photos, cursorInicial, modo });
+
+  const trozo = filtradas;
+  const buscando = !!selfie || !!dorsalTardio;
 
   function alternar(f: Photo) {
     if (isInCart(f.id)) remove(f.id);
@@ -301,8 +314,7 @@ function Adentro({
                     value={dorsal}
                     onChange={(e) => {
                       setDorsal(e.target.value.replace(/\D/g, "").slice(0, 6));
-                      setVisibles(TANDA);
-                      setSelfie(null);
+                                        setSelfie(null);
                     }}
                   />
                 </div>
@@ -433,7 +445,18 @@ function Adentro({
             );
           })}
 
-          {filtradas.length === 0 && (
+          {/* Mientras la búsqueda viaja, la grilla está vacía pero eso no
+              quiere decir que no haya nada: sin este caso, escribir un dorsal
+              mostraba «ninguna foto con ese dorsal» durante el medio segundo
+              que tarda la respuesta, y después aparecían las fotos. */}
+          {trayendo && (
+            <div className="et-vacio">
+              <div className="et-vacio-i"><ScanSearch /></div>
+              <h3>Buscando…</h3>
+            </div>
+          )}
+
+          {!trayendo && filtradas.length === 0 && (
             <div className="et-vacio">
               <div className="et-vacio-i">{buscando ? <ScanSearch /> : <ImageOff />}</div>
               <h3>
@@ -467,10 +490,12 @@ function Adentro({
           )}
         </section>
 
-        {visibles < filtradas.length && (
+        {hayMas && (
           <div className="et-mas-fotos">
-            <button className="et-btn" onClick={() => setVisibles((v) => v + TANDA)}>
-              Ver más fotos ({(filtradas.length - visibles).toLocaleString("es-AR")})
+            {/* Ya no dice cuántas faltan: el servidor manda una tanda y un
+                cursor, no un total, justamente para no tener que contar. */}
+            <button className="et-btn" onClick={cargarMas} disabled={trayendoMas}>
+              {trayendoMas ? "Trayendo…" : "Ver más fotos"}
             </button>
           </div>
         )}
@@ -504,12 +529,14 @@ function Adentro({
         hayCodigos={hayCodigos}
         descuentos={discounts}
         alVer={(id) => {
-          // El visor trabaja sobre la página visible de la grilla, así que si la
-          // foto quedó fuera de esa tanda hay que estirarla hasta alcanzarla:
-          // si no, tocar una miniatura del carrito no haría nada.
+          // El visor trabaja sobre lo que la grilla tiene cargado. Antes
+          // estaban TODAS las fotos del evento en memoria y siempre la
+          // encontraba; ahora puede pasar que la del carrito no esté en la
+          // tanda actual —por ejemplo si se buscó un dorsal después de
+          // agregarla—. En ese caso no se abre nada, que es lo mismo que
+          // hacía antes cuando el id no aparecía.
           const i = filtradas.findIndex((f) => f.id === id);
           if (i < 0) return;
-          if (i >= visibles) setVisibles(Math.ceil((i + 1) / TANDA) * TANDA);
           setViendo(i);
         }}
       />

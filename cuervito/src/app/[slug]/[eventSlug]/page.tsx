@@ -12,6 +12,9 @@ import { EventCoverageShell } from "./event-coverage-shell";
 import { EncontrateShell } from "./encontrate/shell";
 import { EventFeedShell } from "./event-feed-shell";
 
+/** Fotos en la primera tanda. Tiene que coincidir con el endpoint. */
+const TANDA = 60;
+
 const RESERVED = new Set([
   "dashboard", "admin", "login", "signup", "onboarding", "suspended",
   "api", "descarga", "_components", "_next", "favicon.ico", "robots.txt",
@@ -81,27 +84,62 @@ export default async function PublicEventPage(props: {
   // in the dashboard immediately after upload; the public gallery only
   // catches up once the background watermark finishes (a few seconds
   // after the commit returns).
+  /* La PRIMERA tanda, no todas.
+
+     Acá se traían las 2.162 fotos del evento para una pantalla que muestra
+     24. Medido contra producción: Postgres resuelve esa consulta en 3
+     milisegundos, pero mover las 783 KB de resultado desde Supabase hasta el
+     VPS tardaba TREINTA SEGUNDOS. El cuello nunca fue la base ni un índice
+     que faltara —el plan es un Bitmap Index Scan perfecto— sino la cantidad
+     de datos cruzando la red en cada visita.
+
+     Se piden 61 para saber si hay una tanda más sin gastar una segunda
+     consulta contando. El resto lo pide el navegador a /api/evento/…/fotos
+     cuando hace falta. */
+  /* Sólo la plantilla de encontrate pagina.
+
+     Las otras dos dibujan la grilla con lo que reciben y no saben pedir más,
+     así que mandarles la primera tanda las dejaría mostrando 60 fotos de
+     2.162 sin decir nada. Se llevan todo, como hasta ahora: siguen lentas,
+     pero no rotas. Cuando alguna se migre, se le saca la excepción. */
+  const layout = getTemplate(photographer.storefrontTemplate).layout;
+  const paginado = layout === "encontrate";
+
   const tFotos = ahora();
-  const rawPhotos = await db.photo.findMany({
-    where: {
-      eventId: event.id,
-      fileSize: { not: null },
-      deletedAt: null,
-      previewKey: { not: null },
-    },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      // storageKey NO: es el original sin marca de agua y no se usa en
-      // esta pantalla. Traerlo son 136 bytes por foto —300 KB en este
-      // evento— cruzando la red para descartarse.
-      previewKey: true,
-      bibNumbers: true,
-      width: true,
-      height: true,
-    },
-  });
+  const donde = {
+    eventId: event.id,
+    fileSize: { not: null },
+    deletedAt: null,
+    previewKey: { not: null },
+  } as const;
+
+  const [primeras, totalFotos] = await Promise.all([
+    db.photo.findMany({
+      where: donde,
+      // El desempate por id no es adorno: en una tanda de subida hay decenas
+      // de fotos con el mismo createdAt al segundo, y un cursor que sólo mira
+      // la fecha saltea o repite justo ahí.
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      ...(paginado ? { take: TANDA + 1 } : {}),
+      select: {
+        id: true,
+        // storageKey NO: es el original sin marca de agua y no se usa en esta
+        // pantalla. Traerlo son 136 bytes por foto que viajan para nada.
+        previewKey: true,
+        bibNumbers: true,
+        width: true,
+        height: true,
+      },
+    }),
+    // El total sigue haciendo falta para el «2.162 fotos» del encabezado.
+    // Es un count por índice sobre un solo evento: no cuesta nada.
+    db.photo.count({ where: donde }),
+  ]);
   lento("evento · traer fotos", tFotos);
+
+  const hayMas = paginado && primeras.length > TANDA;
+  const rawPhotos = hayMas ? primeras.slice(0, TANDA) : primeras;
+  const cursorInicial = hayMas ? (rawPhotos[rawPhotos.length - 1]?.id ?? null) : null;
 
   const tUrls = ahora();
   const photos = await Promise.all(
@@ -190,14 +228,13 @@ export default async function PublicEventPage(props: {
       coverUrl: coverSignedUrl,
       pricePerPhoto: Number(event.pricePerPhoto),
       currency: event.currency,
-      photosCount: photos.length,
+      photosCount: totalFotos,
     },
     photos,
+    cursorInicial,
     discounts: activeDiscounts,
     testMode,
   };
-
-  const layout = getTemplate(photographer.storefrontTemplate).layout;
 
   return (
     <div style={pageStyle}>
