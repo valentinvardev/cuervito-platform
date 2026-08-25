@@ -6,7 +6,6 @@ import "~/styles/v2/paginas.css";
 
 import { TooltipProvider } from "~/app/_components/tooltip-provider";
 
-import { auth } from "~/server/auth";
 import { puedeUsarHistorias } from "~/server/historias/acceso";
 
 import { Shell } from "./_components/shell";
@@ -23,11 +22,14 @@ import { sesionPanel } from "./_components/sesion";
  * del armazón en vez de reemplazar la pantalla entera.
  */
 export default async function V2Layout({ children }: { children: React.ReactNode }) {
-  const { nombre, slug, iniciales } = await sesionPanel();
-  // El riel se arma con lo que el usuario puede abrir. Preguntarlo acá y no en
-  // la pantalla es lo que hace que el ítem no aparezca para quien al entrar se
-  // comería un 404.
-  const historias = await puedeUsarHistorias((await auth())?.user);
+  const { userId, rol, nombre, slug, iniciales } = await sesionPanel();
+  // El riel se arma con lo que el usuario puede abrir: así el ítem no aparece
+  // para quien al entrar se comería un 404.
+  //
+  // Con el rol que sesionPanel ya trajo, y NO con otro auth(). Con auth() esto
+  // costaba una consulta más a Supabase en todas las pantallas del panel, y en
+  // serie: primero terminaba sesionPanel y recién ahí salía la segunda.
+  const historias = await puedeUsarHistorias({ id: userId, role: rol });
 
   // Las variables se pisan en un envoltorio y no en :root: las propiedades
   // personalizadas se heredan, así que todo lo de adentro las toma y lo de

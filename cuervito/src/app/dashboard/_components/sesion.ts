@@ -38,6 +38,11 @@ export async function sesionPanel() {
     nombre,
     slug: yo?.slug ?? "tu-usuario",
     iniciales: iniciales(nombre),
+    // El rol viaja desde acá y no se vuelve a pedir con otro auth(). El
+    // callback jwt de NextAuth consulta la base en CADA auth() para refrescar
+    // rol y estado, así que una segunda llamada no es leer una cookie: es un
+    // viaje entero a Supabase, y encima en serie después de éste.
+    rol: session.user.role,
   };
 }
 

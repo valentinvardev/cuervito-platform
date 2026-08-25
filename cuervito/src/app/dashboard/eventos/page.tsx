@@ -11,21 +11,40 @@ export const dynamic = "force-dynamic";
 export default async function V2Eventos() {
   const { userId } = await sesionPanel();
 
-  const eventos = await db.event.findMany({
-    where: { ownerId: userId, NOT: { status: "ARCHIVED" } },
-    orderBy: { eventDate: "desc" },
-    select: {
-      id: true,
-      name: true,
-      location: true,
-      eventDate: true,
-      coverUrl: true,
-      isPublished: true,
-      status: true,
-      _count: { select: { photos: true } },
-      sales: { where: { status: "PAID" }, select: { sellerNetCents: true } },
-    },
-  });
+  // Lo recaudado se pide APARTE y sumado por la base.
+  //
+  // Antes venía colgado de cada evento —sales: { select: { sellerNetCents } }—
+  // así que Supabase mandaba UNA FILA POR VENTA sólo para que acá se sumaran.
+  // Con las ventas acumulándose, esa consulta engorda sola aunque la pantalla
+  // muestre siempre lo mismo: un número por evento.
+  //
+  // Las dos salen en paralelo. Agrupar por sellerId y no por los ids de los
+  // eventos es lo que lo permite, y da igual: el checkout graba la venta con
+  // sellerId = event.ownerId, así que para los eventos de este usuario son
+  // exactamente las mismas filas.
+  const [eventos, recaudado] = await Promise.all([
+    db.event.findMany({
+      where: { ownerId: userId, NOT: { status: "ARCHIVED" } },
+      orderBy: { eventDate: "desc" },
+      select: {
+        id: true,
+        name: true,
+        location: true,
+        eventDate: true,
+        coverUrl: true,
+        isPublished: true,
+        status: true,
+        _count: { select: { photos: true } },
+      },
+    }),
+    db.sale.groupBy({
+      by: ["eventId"],
+      where: { sellerId: userId, status: "PAID" },
+      _sum: { sellerNetCents: true },
+    }),
+  ]);
+
+  const vendidoPor = new Map(recaudado.map((r) => [r.eventId, r._sum.sellerNetCents ?? 0]));
 
   // Las portadas se guardan como CLAVE de S3, no como URL: hay que firmarlas.
   // Acá se leía `coverUrl` a secas y sólo se dibujaba si empezaba con http, así
@@ -60,7 +79,7 @@ export default async function V2Eventos() {
           {eventos.length > 0 ? (
             <section className="evs">
               {eventos.map((e) => {
-                const vendido = e.sales.reduce((a, s) => a + s.sellerNetCents, 0);
+                const vendido = vendidoPor.get(e.id) ?? 0;
                 const portada = portadas.get(e.id) ?? null;
                 return (
                   <Link key={e.id} href={`/dashboard/evento/${e.id}`} className="ec">
