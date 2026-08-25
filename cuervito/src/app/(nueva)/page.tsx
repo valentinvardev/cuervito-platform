@@ -19,6 +19,7 @@ import {
 import { whatsappUrl } from "~/lib/support";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
+import { ahora, lento } from "~/server/medir";
 import { resolveMediaUrl } from "~/server/media";
 
 import { Encabezado, PanelVentas, Preguntas, Telefono, VerEvento } from "./_piezas";
@@ -206,13 +207,22 @@ async function eventoDemo() {
 export default async function LandingNueva() {
   // Cada una cae por su cuenta: que no haya portadas cargadas no puede dejar
   // la landing entera en blanco.
+  // Salen todas en paralelo, así que los doce segundos que tarda la home son
+  // la MÁS lenta y no la suma. Se cronometra cada una para saber cuál.
+  const t0 = ahora();
   const [sesion, eventos, fotos, tira, demo, miniaturas] = await Promise.all([
-    auth().catch(() => null),
-    db.event.count({ where: { isPublished: true, NOT: { status: "ARCHIVED" } } }).catch(() => 0),
-    db.photo.count({ where: { fileSize: { not: null }, deletedAt: null } }).catch(() => 0),
-    tiraDeEventos().catch(() => []),
-    eventoDemo().catch(() => null),
-    miniaturasDeVentas().catch(() => [] as string[]),
+    auth().catch(() => null).finally(() => lento("home · sesión", t0)),
+    db.event
+      .count({ where: { isPublished: true, NOT: { status: "ARCHIVED" } } })
+      .catch(() => 0)
+      .finally(() => lento("home · contar eventos", t0)),
+    db.photo
+      .count({ where: { fileSize: { not: null }, deletedAt: null } })
+      .catch(() => 0)
+      .finally(() => lento("home · contar todas las fotos", t0)),
+    tiraDeEventos().catch(() => []).finally(() => lento("home · tira", t0)),
+    eventoDemo().catch(() => null).finally(() => lento("home · evento demo", t0)),
+    miniaturasDeVentas().catch(() => [] as string[]).finally(() => lento("home · miniaturas", t0)),
   ]);
 
   const hayNumeros = eventos >= MIN_EVENTOS && fotos >= MIN_FOTOS;

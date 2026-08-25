@@ -4,6 +4,7 @@ import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
+import { ahora, lento } from "~/server/medir";
 import { resolveMediaUrl } from "~/server/media";
 import { getMpTestMode } from "~/server/settings";
 
@@ -80,6 +81,7 @@ export default async function PublicEventPage(props: {
   // in the dashboard immediately after upload; the public gallery only
   // catches up once the background watermark finishes (a few seconds
   // after the commit returns).
+  const tFotos = ahora();
   const rawPhotos = await db.photo.findMany({
     where: {
       eventId: event.id,
@@ -97,6 +99,9 @@ export default async function PublicEventPage(props: {
       height: true,
     },
   });
+  lento("evento · traer fotos", tFotos);
+
+  const tUrls = ahora();
   const photos = await Promise.all(
     rawPhotos.map(async (p) => ({
       id: p.id,
@@ -106,6 +111,7 @@ export default async function PublicEventPage(props: {
       height: p.height,
     })),
   );
+  lento(`evento · resolver ${photos.length} urls`, tUrls);
 
   // Active discounts for nudge display and checkout
   const now = new Date();
