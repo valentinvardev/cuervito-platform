@@ -1930,6 +1930,120 @@
   .guias { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* ═══════════════ historias/historias.css ═══════════════ */
+/* =============================================================================
+   encontrate · panel · estudio de historias
+   -----------------------------------------------------------------------------
+   Elegir un evento, elegir una foto, elegir el formato, ver el resultado.
+
+   La pantalla es de dos columnas y no de pasos numerados. Un asistente de
+   cuatro pasos serviría si cada decisión dependiera de la anterior, pero acá
+   no: probar la misma foto en los dos formatos, o cambiar de foto sin tocar el
+   formato, es lo que uno hace todo el tiempo. Con pasos, cada prueba cuesta
+   volver atrás; con las opciones a la izquierda y el resultado a la derecha,
+   cuesta un click.
+
+   A la derecha va siempre el resultado, y en el tamaño en que se va a publicar.
+   Una vista previa chica de algo que termina ocupando una pantalla entera de
+   teléfono no sirve para decidir si el título tapa la cara.
+   ========================================================================== */
+
+.hist {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--s-5);
+  align-items: start;
+}
+
+/* ── La columna de decisiones ─────────────────────────────────────────────── */
+.hist-op { display: grid; gap: var(--s-3); }
+.hist-op > .card { padding: var(--s-4); }
+
+.hist-tit {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s-3); margin-bottom: var(--s-3);
+}
+.hist-tit b { font-size: 14px; font-weight: 500; }
+.hist-tit span { font-size: 12.5px; color: var(--ink-3); }
+
+/* Las opciones de formato y plantilla: tarjetas de radio, no un desplegable.
+   Son cuatro en total y la diferencia entre ellas es visual; esconderlas
+   adentro de un select obliga a abrir, leer y cerrar para comparar dos cosas
+   que entran juntas en pantalla. */
+.hist-ops { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.hist-o {
+  display: grid; gap: 3px;
+  padding: 11px 13px;
+  text-align: left;
+  border: 1px solid var(--line); border-radius: var(--r-2);
+  background: none; cursor: pointer;
+  font-family: var(--sans);
+  transition: border-color 140ms ease, background 140ms ease;
+}
+.hist-o:hover { border-color: var(--line-strong); }
+.hist-o b { font-size: 13px; font-weight: 500; color: var(--ink); }
+.hist-o span { font-size: 11.5px; color: var(--ink-3); line-height: 1.35; }
+/* Elegido con el borde y un fondo tenue, no con un tilde en la esquina: el
+   tilde hay que buscarlo, el borde se ve de reojo. */
+.hist-o[aria-pressed="true"] {
+  border-color: var(--ink);
+  background: var(--ghost-hov);
+}
+
+/* La foto elegida, dentro de la grilla compartida. */
+.hist-fg .ft { cursor: pointer; }
+.hist-fg .ft[data-sel="1"] { outline: 2px solid var(--ink); outline-offset: 2px; }
+.hist-fg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ── La vista previa ──────────────────────────────────────────────────────── */
+.hist-pv { position: sticky; top: calc(62px + var(--s-4)); display: grid; gap: var(--s-3); }
+
+/* La proporción la fija el formato elegido, con una variable: si la caja no
+   cambiara de forma al cambiar de formato, la vista previa estaría mintiendo
+   sobre lo único que el formato decide. */
+.hist-lienzo {
+  aspect-ratio: var(--pv, 9 / 16);
+  border-radius: var(--r-3);
+  overflow: hidden;
+  background: var(--paper-3);
+  border: 1px solid var(--line-soft);
+  display: grid; place-items: center;
+  transition: aspect-ratio 240ms cubic-bezier(.2, .8, .3, 1);
+}
+.hist-lienzo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+/* Mientras renderiza queda la imagen anterior, atenuada. Vaciar la caja hace
+   que la columna salte de alto y que uno pierda la referencia de lo que estaba
+   comparando, que es justo lo que vino a hacer. */
+.hist-lienzo[data-cargando="1"] img { opacity: .38; }
+
+.hist-vacio {
+  padding: var(--s-5); text-align: center;
+  font-size: 13px; color: var(--ink-3); line-height: 1.5;
+}
+
+.hist-acc { display: grid; gap: 8px; }
+
+/* La marca de beta. Va arriba de todo y dice qué esperar, porque lo que se
+   está probando es si las imágenes sirven para publicar, y eso sólo se puede
+   contestar mirándolas. */
+.hist-beta {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px var(--s-4);
+  border: 1px dashed var(--line-strong); border-radius: var(--r-2);
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.5;
+}
+.hist-beta svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; color: var(--ink-3); }
+
+@media (max-width: 1080px) {
+  .hist { grid-template-columns: minmax(0, 1fr); }
+  /* En una columna la vista previa va ARRIBA de las opciones: es lo que se
+     mira mientras se decide, y abajo de una grilla de fotos queda fuera de
+     pantalla justo cuando se está eligiendo. */
+  .hist-pv { position: static; order: -1; }
+  .hist-lienzo { max-width: 320px; margin: 0 auto; }
+}
+
 /* ═════════════════ ARREGLOS DE LA CONCATENACIÓN ══════════════════════════
    Los archivos del laboratorio son independientes y varios definen las mismas
    clases de andamiaje (.blq-b, .par, .lado, .precios). Puestos uno atrás del

@@ -10,6 +10,18 @@ const config = {
   eslint: { ignoreDuringBuilds: true },
   // Silence the "multiple lockfiles" warning by pinning the workspace root.
   outputFileTracingRoot: process.cwd(),
+  // satori afuera del empaquetado.
+  //
+  // Para maquetar el texto usa dos módulos WebAssembly —yoga para el flexbox y
+  // harfbuzz para el shaping—. webpack se lleva el JavaScript al chunk de la
+  // ruta pero deja los .wasm donde estaban, así que en ejecución busca hb.wasm
+  // al lado del route.js y ahí no existe:
+  //
+  //   ENOENT ... .next/server/app/api/dashboard/historias/hb.wasm
+  //
+  // Marcándolo externo, Next lo resuelve desde node_modules, que es donde sus
+  // .wasm sí están. Es lo mismo que hace falta para sharp, y por lo mismo.
+  serverExternalPackages: ["satori", "sharp"],
 
   async redirects() {
     return [

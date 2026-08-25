@@ -37,6 +37,7 @@ const PANTALLAS = [
   "pagos/pagos.css",
   "perfil/perfil.css",
   "ayuda/ayuda.css",
+  "historias/historias.css",
 ];
 
 const CABECERA = `/* GENERADO por scripts/armar-paginas.mjs. No editar a mano.

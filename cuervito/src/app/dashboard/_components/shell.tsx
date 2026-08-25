@@ -50,10 +50,18 @@ const CUENTA = [
 // Se anuncian antes de existir para que se vea hacia dónde va esto. No llevan a
 // ningún lado a propósito: un ítem que se ve igual que los demás y no hace nada
 // se prueba una vez, no pasa nada, y se prueba de nuevo.
-const PRONTO = [
-  { id: "portfolio", icono: Images, texto: "Portfolio" },
-  { id: "studio", icono: Sparkles, texto: "Historias" },
-];
+const PRONTO = [{ id: "portfolio", icono: Images, texto: "Portfolio" }];
+
+// Historias existe pero está cerrada. Para quien no la tiene sigue siendo un
+// anuncio; para quien sí, es un ítem más del riel y no una sección aparte:
+// el día que se abra a todos no cambia nada de lugar.
+const HISTORIAS = {
+  id: "historias",
+  href: "/dashboard/historias",
+  icono: Sparkles,
+  texto: "Historias",
+};
+const HISTORIAS_PRONTO = { id: "studio", icono: Sparkles, texto: "Historias" };
 
 const BUSCAR: Record<string, string> = {
   eventos: "Buscar evento por nombre o lugar",
@@ -66,11 +74,14 @@ function idDeRuta(p: string) {
 }
 
 export function Shell({
+  historias = false,
   nombre,
   slug,
   iniciales,
   children,
 }: {
+  /** Si el usuario tiene la beta del estudio de historias. */
+  historias?: boolean;
   nombre: string;
   slug: string;
   iniciales: string;
@@ -155,7 +166,7 @@ export function Shell({
           </Link>
         </div>
 
-        <nav className="rail-nav">{NAV.map(item)}</nav>
+        <nav className="rail-nav">{(historias ? [...NAV, HISTORIAS] : NAV).map(item)}</nav>
 
         <div>
           <div className="rail-sep" />
@@ -167,7 +178,7 @@ export function Shell({
           <div className="rail-sep" />
           <div className="rail-cap">Próximamente</div>
           <div className="rail-nav">
-            {PRONTO.map((i) => (
+            {(historias ? PRONTO : [...PRONTO, HISTORIAS_PRONTO]).map((i) => (
               <span className="rl pronto" key={i.id} aria-disabled="true">
                 <i.icono /> {i.texto}
                 <span className="rl-pronto">Pronto</span>

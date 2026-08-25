@@ -6,6 +6,9 @@ import "~/styles/v2/paginas.css";
 
 import { TooltipProvider } from "~/app/_components/tooltip-provider";
 
+import { auth } from "~/server/auth";
+import { puedeUsarHistorias } from "~/server/historias/acceso";
+
 import { Shell } from "./_components/shell";
 import { sesionPanel } from "./_components/sesion";
 
@@ -21,6 +24,10 @@ import { sesionPanel } from "./_components/sesion";
  */
 export default async function V2Layout({ children }: { children: React.ReactNode }) {
   const { nombre, slug, iniciales } = await sesionPanel();
+  // El riel se arma con lo que el usuario puede abrir. Preguntarlo acá y no en
+  // la pantalla es lo que hace que el ítem no aparezca para quien al entrar se
+  // comería un 404.
+  const historias = await puedeUsarHistorias((await auth())?.user);
 
   // Las variables se pisan en un envoltorio y no en :root: las propiedades
   // personalizadas se heredan, así que todo lo de adentro las toma y lo de
@@ -36,7 +43,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
         } as React.CSSProperties
       }
     >
-      <Shell nombre={nombre} slug={slug} iniciales={iniciales}>
+      <Shell historias={historias} nombre={nombre} slug={slug} iniciales={iniciales}>
         {children}
       </Shell>
       {/* Escucha data-tip en todo el árbol y pinta el globito con un portal a
