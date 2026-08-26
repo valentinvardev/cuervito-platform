@@ -75,7 +75,12 @@ const db = new PrismaClient({ datasources: { db: { url: env.DATABASE_URL } } });
  */
 async function bajar(key) {
   if (env.CLOUDFRONT_DOMAIN) {
-    const r = await fetch(`https://${env.CLOUDFRONT_DOMAIN}/${key}`);
+    // Con tiempo límite: un fetch sin timeout que se cuelga no falla nunca, y
+    // como cada tanda es un Promise.all, UNA descarga colgada dejaba clavadas
+    // a las doce y el relleno entero parecía muerto.
+    const r = await fetch(`https://${env.CLOUDFRONT_DOMAIN}/${key}`, {
+      signal: AbortSignal.timeout(45_000),
+    });
     if (!r.ok) throw new Error(`CloudFront ${r.status}`);
     return Buffer.from(await r.arrayBuffer());
   }
@@ -94,6 +99,25 @@ const TANDA = 100;
 let hechas = 0;
 let fallidas = 0;
 const arranque = Date.now();
+
+/* Cuánto falta, sin tocar nada.
+
+   Se puede correr en otra terminal mientras el relleno trabaja: sólo cuenta.
+   Existe porque el avance del propio relleno se imprime de a tandas de cien,
+   y entre línea y línea parece que se colgó. */
+if (process.argv.includes("--estado")) {
+  const [hechas, faltan] = await Promise.all([
+    db.photo.count({ where: { thumbKey: { not: null } } }),
+    db.photo.count({ where: { thumbKey: null, previewKey: { not: null }, deletedAt: null } }),
+  ]);
+  const total = hechas + faltan;
+  const pct = total ? Math.round((hechas / total) * 100) : 100;
+  const barra = "█".repeat(Math.round(pct / 4)) + "·".repeat(25 - Math.round(pct / 4));
+  console.log(`${barra}  ${pct}%`);
+  console.log(`${hechas.toLocaleString("es-AR")} hechas · faltan ${faltan.toLocaleString("es-AR")}`);
+  await db.$disconnect();
+  process.exit(0);
+}
 
 const pendientes = await db.photo.count({
   where: { thumbKey: null, previewKey: { not: null }, deletedAt: null },
