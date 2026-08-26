@@ -23,8 +23,20 @@ import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3
 const THUMB_WIDTH = 560;
 const THUMB_QUALITY = 72;
 const CACHE = "public, max-age=86400";
-/** Cuántas a la vez. El VPS es chico: cuatro lo mantienen ocupado sin ahogarlo. */
-const A_LA_VEZ = 4;
+/**
+ * Cuántas a la vez.
+ *
+ * Cada foto es bajar 845 KB, achicarla y subir 56 KB. Lo que tarda es la red,
+ * no el procesador: achicar una imagen son milisegundos. Y como el VPS tiene
+ * una conexión mala pero la espera es en su mayoría LATENCIA y no ancho de
+ * banda, subir el paralelismo escala casi lineal —a 4 daba 12 por minuto, que
+ * son veintiuna horas—.
+ *
+ * Se ajusta sin editar el archivo:  --paralelo 16
+ * Si el ritmo deja de mejorar al subirlo, ahí está el techo del enlace.
+ */
+const iPar = process.argv.indexOf("--paralelo");
+const A_LA_VEZ = iPar > -1 ? Math.max(1, Number(process.argv[iPar + 1])) : 12;
 
 const env = Object.fromEntries(
   fs
