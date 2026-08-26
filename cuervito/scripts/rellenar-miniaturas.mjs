@@ -49,7 +49,24 @@ const s3 = new S3Client({
 });
 const db = new PrismaClient({ datasources: { db: { url: env.DATABASE_URL } } });
 
+/**
+ * Baja el preview POR CLOUDFRONT, no por S3.
+ *
+ * Son 18.000 fotos de 845 KB: unos 16 GB. Pedidos a S3 eso es
+ * DataTransfer-Out, que es exactamente la línea que en su momento hizo que la
+ * factura de S3 fuera de $46 y por la que se puso CloudFront delante. Por CF
+ * cae dentro del tier gratuito de 1 TB, que hoy está casi sin usar.
+ *
+ * Se puede porque el preview es la imagen CON marca de agua, la misma que la
+ * tienda ya sirve públicamente por esa misma URL. Sin CloudFront configurado
+ * cae a S3, que en desarrollo es lo correcto.
+ */
 async function bajar(key) {
+  if (env.CLOUDFRONT_DOMAIN) {
+    const r = await fetch(`https://${env.CLOUDFRONT_DOMAIN}/${key}`);
+    if (!r.ok) throw new Error(`CloudFront ${r.status}`);
+    return Buffer.from(await r.arrayBuffer());
+  }
   const r = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
   const trozos = [];
   for await (const t of r.Body) trozos.push(t);
