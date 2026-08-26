@@ -63,12 +63,15 @@ export function useFotos({
   iniciales,
   cursorInicial,
   modo,
+  tanda,
 }: {
   eventId: string;
   /** La primera tanda, que viaja con el HTML. */
   iniciales: Foto[];
   cursorInicial: string | null;
   modo: Modo;
+  /** Cuántas pedir en cada tanda siguiente. El relleno de fondo pide grande. */
+  tanda?: number;
 }): EstadoFotos {
   const k = clave(modo);
 
@@ -92,9 +95,10 @@ export function useFotos({
       if (m.tipo === "dorsal") u.set("dorsal", m.q);
       if (m.tipo === "ids") u.set("ids", m.ids.join(","));
       if (desde) u.set("cursor", desde);
+      if (tanda) u.set("limite", String(tanda));
       return `/api/evento/${eventId}/fotos?${u.toString()}`;
     },
-    [eventId],
+    [eventId, tanda],
   );
 
   useEffect(() => {

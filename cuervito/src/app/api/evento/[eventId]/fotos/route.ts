@@ -27,8 +27,16 @@ import { resolveMediaUrl } from "~/server/media";
 
 export const runtime = "nodejs";
 
-/** Cuántas fotos por tanda. */
+/** Cuántas fotos por tanda, si no piden otra cosa. */
 const TANDA = 60;
+/**
+ * El techo de una tanda.
+ *
+ * La primera tanda es chica porque lo que importa es que la grilla aparezca.
+ * El relleno de fondo pide tandas grandes: ya hay algo en pantalla y lo que
+ * conviene ahí es gastar menos viajes, que en este VPS es lo caro.
+ */
+const TANDA_MAX = 300;
 /** Tope de ids por pedido, para que nadie use esto como descarga masiva. */
 const MAX_IDS = 200;
 
@@ -36,6 +44,7 @@ const esquema = z.object({
   cursor: z.string().min(1).optional(),
   dorsal: z.string().trim().max(12).optional(),
   ids: z.string().max(MAX_IDS * 30).optional(),
+  limite: z.coerce.number().int().min(1).max(TANDA_MAX).optional(),
 });
 
 export async function GET(
@@ -48,6 +57,7 @@ export async function GET(
     return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
   }
   const { cursor, dorsal, ids } = parsed.data;
+  const tandaPedida = parsed.data.limite ?? TANDA;
 
   const evento = await db.event.findFirst({
     where: { id: eventId, isPublished: true, NOT: { status: "ARCHIVED" } },
@@ -103,7 +113,7 @@ export async function GET(
     // fecha saltea o repite justo ahí.
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     // Con lista de ids no hay tandas: se pidieron esas y son esas.
-    ...(listaIds ? {} : { take: TANDA + 1 }),
+    ...(listaIds ? {} : { take: tandaPedida + 1 }),
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     select: {
       id: true,
@@ -119,8 +129,8 @@ export async function GET(
 
   // Se pide una de más para saber si hay siguiente sin contar el total, que
   // sería una segunda consulta para responder sí o no.
-  const hayMas = !listaIds && filas.length > TANDA;
-  const tanda = hayMas ? filas.slice(0, TANDA) : filas;
+  const hayMas = !listaIds && filas.length > tandaPedida;
+  const tanda = hayMas ? filas.slice(0, tandaPedida) : filas;
 
   return NextResponse.json(
     {
