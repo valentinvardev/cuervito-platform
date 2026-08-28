@@ -36,6 +36,17 @@ const config = {
       { source: "/v2", destination: "/dashboard", permanent: false },
       { source: "/v2/:resto*", destination: "/dashboard/:resto*", permanent: false },
 
+      // El panel y la landing viejos, que se borraron al terminar la migración.
+      // Estuvieron meses en producción y quedaron en favoritos: sin esto, quien
+      // los tenga guardados se come un 404 y cree que se le rompió la cuenta.
+      // Las rutas de adentro no se mapean una por una porque los nombres
+      // cambiaron —events/ pasó a eventos/, cobros/ a pagos/— y mandar a
+      // cualquiera al inicio del panel es más honesto que adivinar mal.
+      { source: "/anterior", destination: "/", permanent: false },
+      { source: "/anterior/:resto*", destination: "/", permanent: false },
+      { source: "/dashboard-anterior", destination: "/dashboard", permanent: false },
+      { source: "/dashboard-anterior/:resto*", destination: "/dashboard", permanent: false },
+
       // Tres pantallas cambiaron de nombre al migrar. Estas direcciones
       // estuvieron en producción, así que están en favoritos y en el historial
       // de gente que entra todos los días. El orden importa: /events/new tiene

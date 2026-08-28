@@ -21,7 +21,7 @@ export async function saveBrandColorAction(
     where: { id: session.user.id },
     data: { storefrontBrandColor: parsed.data.toUpperCase() },
   });
-  revalidatePath("/dashboard-anterior/tienda");
+  revalidatePath("/dashboard/pagina");
   return { error: null };
 }
 
@@ -37,6 +37,6 @@ export async function saveTemplateAction(
     where: { id: session.user.id },
     data: { storefrontTemplate: templateId },
   });
-  revalidatePath("/dashboard-anterior/tienda");
+  revalidatePath("/dashboard/pagina");
   return { error: null };
 }

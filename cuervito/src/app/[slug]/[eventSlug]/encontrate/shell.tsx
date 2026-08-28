@@ -15,6 +15,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import { CartProvider, useCart } from "../cart-context";
 import type { PublicDiscount } from "../event-coverage-shell";
+import { NOMBRE, SITIO } from "~/lib/marca";
+
 import { useBusquedaSelfie } from "../selfie-search";
 import { useFotos, type Modo } from "../usar-fotos";
 import { Carrito } from "./carrito";
@@ -507,8 +509,10 @@ function Adentro({
           Fotos de {photographer.name}. Las comprás y te las llevás sin marca
           de agua.
         </span>
-        <a href="https://encontrate.app" target="_blank" rel="noopener">
-          Hecho con encontrate.app
+        {/* El texto dice la marca nueva, el link va al dominio que responde.
+            Hasta hoy apuntaba a https://encontrate.app, que no resuelve. */}
+        <a href={SITIO} target="_blank" rel="noopener">
+          Hecho con {NOMBRE}
         </a>
       </footer>
 

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { AtSign, CalendarDays, Globe, ImageOff, MapPin } from "lucide-react";
 
+import { NOMBRE, SITIO } from "~/lib/marca";
+
 /**
  * El perfil público del fotógrafo, en la plantilla de encontrate.
  *
@@ -172,8 +174,9 @@ export function PerfilEncontrate({
 
       <footer className="et-pie">
         <span>Fotos de {fotografo.nombre}. Las comprás y te las llevás sin marca de agua.</span>
-        <a href="https://encontrate.app" target="_blank" rel="noopener">
-          Hecho con encontrate.app
+        {/* El texto dice la marca nueva, el link va al dominio que responde. */}
+        <a href={SITIO} target="_blank" rel="noopener">
+          Hecho con {NOMBRE}
         </a>
       </footer>
     </div>

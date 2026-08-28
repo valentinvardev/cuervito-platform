@@ -69,7 +69,7 @@ export function AdminAvatar({
           <span className="name">{userName}</span>
           {userEmail && <span className="mail">{userEmail}</span>}
         </div>
-        <Link href="/dashboard-anterior/perfil" className="adm-dropdown-item" role="menuitem">
+        <Link href="/dashboard/perfil" className="adm-dropdown-item" role="menuitem">
           <i className="ti ti-user-edit" />
           <span>Editar perfil</span>
         </Link>

@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { NOMBRE, SITIO } from "~/lib/marca";
+
 import { compartirLink, esIos, guardarConHojaDeCompartir } from "../guardar-ios";
 import { Velo } from "./velo";
 import { Visor } from "./visor";
@@ -323,8 +325,11 @@ export function Entrega({
 
       <footer className="et-pie">
         <span>Guardá este link: podés volver a descargarlas mientras esté vigente.</span>
-        <a href="https://encontrate.app" target="_blank" rel="noopener">
-          Hecho con encontrate.app
+        {/* El texto dice la marca nueva, el link va al dominio que responde.
+            Ésta es la página que ve TODO el que compra: el link roto de antes
+            se lo comía cada comprador. */}
+        <a href={SITIO} target="_blank" rel="noopener">
+          Hecho con {NOMBRE}
         </a>
       </footer>
     </div>
