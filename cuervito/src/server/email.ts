@@ -140,7 +140,7 @@ function layout({ preheader, body }: LayoutInput): string {
       </td></tr>
       <tr><td class="cv-text-3" style="padding:20px 4px 0;color:${COLORS.textTertiary};font-size:11.5px;line-height:1.5;text-align:left;font-family:${FONT_BODY};">
         Recibís este correo porque sos parte de <strong class="cv-text-2" style="color:${COLORS.textSecondary};">cuervito</strong>, la plataforma de fotos deportivas.<br>
-        <a href="${env.NEXT_PUBLIC_BASE_URL}" class="cv-text-3" style="color:${COLORS.textTertiary};text-decoration:underline;">cuervito.app</a>
+        <a href="${env.NEXT_PUBLIC_BASE_URL}" class="cv-text-3" style="color:${COLORS.textTertiary};text-decoration:underline;">encontrate.app</a>
       </td></tr>
     </table>
   </td></tr>
@@ -231,7 +231,7 @@ export function welcomeEmailHtml(input: WelcomeEmailInput): string {
       ${step(
         3,
         "Compartí el link de tu galería",
-        "Apenas publiques el evento, te damos un link cuervito.app/tu-usuario que podés mandar por WhatsApp o pegar en tu Instagram. Las ventas te llegan automáticas.",
+        "Apenas publiques el evento, te damos un link encontrate.app/tu-usuario que podés mandar por WhatsApp o pegar en tu Instagram. Las ventas te llegan automáticas.",
         "Ir a mi panel",
         `${baseUrl}/dashboard`,
         false,

@@ -99,7 +99,7 @@ function armar({ preheader, cuerpo }: { preheader: string; cuerpo: string }): st
 <meta name="color-scheme" content="only light" />
 <meta name="supported-color-schemes" content="only light" />
 <meta name="x-apple-disable-message-reformatting" />
-<title>cuervito.app</title>
+<title>encontrate.app</title>
 <!--[if mso]>
 <style type="text/css">body, table, td { font-family: Arial, Helvetica, sans-serif !important; }</style>
 <![endif]-->
@@ -125,7 +125,7 @@ function armar({ preheader, cuerpo }: { preheader: string; cuerpo: string }): st
         ${cuerpo}
       </td></tr>
       <tr><td class="en-txt3" style="padding:20px 4px 0;color:${C.texto3};font-size:11.5px;line-height:1.5;text-align:left;font-family:${FUENTE};">
-        <a href="${BASE}" class="en-txt3" style="color:${C.texto3};text-decoration:underline;">cuervito.app</a> — donde los atletas encuentran sus fotos.
+        <a href="${BASE}" class="en-txt3" style="color:${C.texto3};text-decoration:underline;">encontrate.app</a> — donde los atletas encuentran sus fotos.
       </td></tr>
     </table>
   </td></tr>

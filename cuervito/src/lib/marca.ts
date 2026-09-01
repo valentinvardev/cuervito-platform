@@ -1,9 +1,9 @@
 /**
  * Cómo se llama el producto y dónde vive, que hoy no son lo mismo.
  *
- * Estamos en el medio de un rebrand: la marca que se anuncia es encontrate.app
- * —hay un aviso en el panel y una pregunta en las de siempre— pero el sitio
- * sigue estando en cuervito.app, y encontrate.app TODAVÍA NO RESUELVE.
+ * El rebrand está hecho: encontrate.app ya resuelve y sirve la app. Se deja
+ * la separación igual, porque cuervito.app sigue vivo y respondiendo: está en
+ * los mails ya enviados y en los links que la gente guardó.
  *
  * Eso ya había producido un error real: tres pies de página públicos —la
  * tienda, el perfil del fotógrafo y la página de entrega— tenían
@@ -19,4 +19,4 @@
 export const NOMBRE = "encontrate.app";
 
 /** El dominio que de verdad responde. Todo href sale de acá. */
-export const SITIO = "https://cuervito.app";
+export const SITIO = "https://encontrate.app";

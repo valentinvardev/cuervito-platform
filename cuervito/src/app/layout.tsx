@@ -7,21 +7,21 @@ import { display, sans } from "~/styles/v2/fuentes";
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
-  title: "Cuervito · Fotos de eventos deportivos",
+  title: "encontrate.app · Fotos de eventos deportivos",
   description:
     "La plataforma para fotógrafos deportivos. Vendé tus fotos de carreras, ciclismo y más. Los atletas encuentran las suyas con reconocimiento facial o número de dorsal.",
-  metadataBase: new URL("https://cuervito.app"),
+  metadataBase: new URL("https://encontrate.app"),
   openGraph: {
     type: "website",
-    siteName: "Cuervito",
-    title: "Cuervito · Fotos de eventos deportivos",
+    siteName: "encontrate.app",
+    title: "encontrate.app · Fotos de eventos deportivos",
     description:
       "Encontrá tus fotos de carrera. Comprá directo al fotógrafo.",
-    url: "https://cuervito.app",
+    url: "https://encontrate.app",
   },
   twitter: {
     card: "summary",
-    title: "Cuervito · Fotos de eventos deportivos",
+    title: "encontrate.app · Fotos de eventos deportivos",
     description: "Encontrá tus fotos de carrera. Comprá directo al fotógrafo.",
   },
   icons: {

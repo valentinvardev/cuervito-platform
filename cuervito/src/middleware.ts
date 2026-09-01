@@ -7,7 +7,20 @@ import { resolveSlugForHost } from "~/server/domain-map";
 const PROTECTED_PREFIXES = ["/dashboard", "/admin"];
 
 // Hostnames where we serve cuervito.app's regular routes directly.
+/* Los dominios que son NUESTROS, no de un fotógrafo.
+
+   Todo host que no esté acá se trata como dominio personalizado: se busca
+   a qué fotógrafo pertenece y se reescribe a /{slug}. Por eso encontrate.app
+   tiene que estar en la lista — sin esto, /login y /dashboard en el dominio
+   nuevo redirigían de vuelta a cuervito.app, que fue exactamente lo que
+   pasó al apuntar el DNS.
+
+   cuervito.app se queda para siempre. Está en los mails ya enviados, en los
+   links de descarga que la gente guardó y en las biografías de Instagram de
+   los fotógrafos. Sacarlo rompe todo eso de golpe. */
 const PRIMARY_HOSTS = new Set([
+  "encontrate.app",
+  "www.encontrate.app",
   "cuervito.app",
   "www.cuervito.app",
   "localhost",
