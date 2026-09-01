@@ -191,7 +191,7 @@ export function AdminSalesClient({
       >
         <KpiTile label="Total bruto cobrado" value={formatARS(totals.paidGross)} accent />
         <KpiTile
-          label="Comisión Cuervito"
+          label="Comisión encontrate.app"
           value={formatARS(totals.platformFee)}
         />
         <KpiTile

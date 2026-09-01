@@ -61,7 +61,7 @@ export default function ComparativaPage() {
               Ver comparativa
             </a>
             <Link href="/signup" className="btn btn-outline">
-              Cambiar a Cuervito
+              Cambiar a encontrate.app
             </Link>
           </div>
 
@@ -142,7 +142,7 @@ export default function ComparativaPage() {
                 </span>
               </div>
               <div className="cuervito-col">
-                <span className="platform-name">Cuervito</span>
+                <span className="platform-name">encontrate.app</span>
                 <span className="platform-tag">10% · ilimitado</span>
               </div>
               <div>
@@ -315,7 +315,7 @@ export default function ComparativaPage() {
                 Conectás Mercado Pago, subís fotos y empezás a vender el mismo día. Sin formularios
                 eternos ni revisión manual de 48 horas.
               </p>
-              <div className="micro">Otras plataformas: hasta 48 hs · Cuervito: al toque</div>
+              <div className="micro">Otras plataformas: hasta 48 hs · encontrate.appo: al toque</div>
             </article>
           </div>
         </div>
@@ -335,7 +335,7 @@ export default function ComparativaPage() {
             <div className="pi-card us">
               <div className="label">Tu mejor opción</div>
               <div className="name">
-                Cuervito<span className="pct">· 10%</span>
+                encontrate.app<span className="pct">· 10%</span>
               </div>
               <div className="breakdown">
                 <div className="row">
@@ -388,7 +388,7 @@ export default function ComparativaPage() {
         <div className="container">
           <div className="final-card reveal">
             <h2>
-              Cambiate a <span className="accent">Cuervito</span> hoy.
+              Cambiate a <span className="accent">encontrate.app</span> hoy.
             </h2>
             <p>
               Te ayudamos a portar tu evento actual sin perder ni una venta. Tomamos 30 minutos por
@@ -400,7 +400,7 @@ export default function ComparativaPage() {
                 Empezar gratis
               </Link>
               <a
-                href={whatsappUrl("Hola, quiero migrar mi evento a Cuervito.")}
+                href={whatsappUrl("Hola, quiero migrar mi evento a encontrate.app.")}
                 className="btn btn-outline"
                 target="_blank"
                 rel="noopener noreferrer"

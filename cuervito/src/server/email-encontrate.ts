@@ -78,17 +78,22 @@ const BASE = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
  * NO se usa el logotipo completo: ese archivo tiene el texto en BLANCO, para
  * fondo oscuro. Sobre el papel claro de estos mails desaparecería.
  *
- * Dice cuervito porque es el dominio desde el que salen. Cuando cambie, esto y
- * el pie son las dos líneas que hay que tocar.
+ * Va la versión en TINTA del isotipo y no el archivo de la marca.
+ *
+ * El isotipo de encontrate es la silueta en blanco sobre transparente: como
+ * máscara CSS toma el color del texto, pero un mail no puede usar máscaras y
+ * el <img> blanco sobre el papel claro de estos mails es invisible. Se probó.
+ * isotipo-tinta.png es el mismo dibujo relleno de tinta, generado del canal
+ * alfa del original, así que no hay dos siluetas que mantener.
  */
 function marca(): string {
-  const pajaro = `${BASE}/marca/isotipo-cuervito.png`;
+  const pajaro = `${BASE}/marca/isotipo-tinta.png`;
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>` +
     `<td style="padding-right:8px;line-height:0;vertical-align:middle;">` +
-    `<img src="${pajaro}" width="22" height="21" alt="" style="display:block;border:0;outline:none;text-decoration:none;" />` +
+    `<img src="${pajaro}" width="17" height="22" alt="" style="display:block;border:0;outline:none;text-decoration:none;" />` +
     `</td>` +
     `<td style="vertical-align:middle;font-family:${FUENTE};font-size:17px;font-weight:800;letter-spacing:-0.03em;color:${C.texto};">` +
-    `Cuervito<span style="color:${C.acento};">.app</span>` +
+    `Encontrate<span style="color:${C.acento};">.app</span>` +
     `</td></tr></table>`;
 }
 function armar({ preheader, cuerpo }: { preheader: string; cuerpo: string }): string {

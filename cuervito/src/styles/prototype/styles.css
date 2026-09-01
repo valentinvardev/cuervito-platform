@@ -498,10 +498,14 @@ img { max-width: 100%; display: block; }
 /* ----- Logo ----- */
 .logo {
   display: inline-block;
-  width: 168px;
+  /* 155 y no 168: el logotipo de encontrate es 812×178 y el de cuervito era
+     467×98. Con `contain` no se deforma, pero con el ancho viejo quedaban
+     trece píxeles de aire a la derecha que corrían todo lo que sigue. */
+  width: 155px;
   height: 34px;
-  background: url('/assets/logo/cuervito.png') left center / contain no-repeat;
-  /* Hide the text content (cuerv·to) — image already carries the brand */
+  background: url('/marca/logo.png') left center / contain no-repeat;
+  /* El texto sigue en el marcado para los lectores de pantalla; lo que se ve
+     es la imagen. */
   font-size: 0;
   line-height: 0;
   color: transparent;

@@ -83,18 +83,20 @@ function formatARS(cents: number): string {
 }
 
 /**
- * Cuervito logo — served from the public bucket (cuervito.app/assets/logo).
+ * El logotipo de encontrate, que es blanco: acá funciona porque estos mails
+ * son de fondo oscuro. En los de encontrate.app, que van sobre papel claro,
+ * hace falta la versión en tinta.
  * Wrapped in a dark-bg pill so it stays legible on Gmail dark mode (which
  * sometimes inverts colors aggressively). The pill bg matches the card so
  * the logo feels mounted, not floating.
  *
- * Alt text uses the wordmark itself ("cuerv·to") so it reads cleanly when
+ * Alt text lleva el nombre completo para cuando el destinatario no clickeó
  * the recipient hasn't clicked "show images".
  */
 function wordmark(): string {
   const baseUrl = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
-  const src = `${baseUrl}/assets/logo/cuervito.png`;
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${COLORS.bgSurface}" style="background:${COLORS.bgSurface};padding:10px 16px;border-radius:10px;border:1px solid ${COLORS.border};line-height:0;"><img src="${src}" width="120" height="auto" alt="cuervito" style="display:block;border:0;outline:none;text-decoration:none;height:auto;max-height:32px;" /></td></tr></table>`;
+  const src = `${baseUrl}/marca/logo.png`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${COLORS.bgSurface}" style="background:${COLORS.bgSurface};padding:10px 16px;border-radius:10px;border:1px solid ${COLORS.border};line-height:0;"><img src="${src}" width="120" height="auto" alt="encontrate.app" style="display:block;border:0;outline:none;text-decoration:none;height:auto;max-height:32px;" /></td></tr></table>`;
 }
 
 type LayoutInput = {
@@ -112,7 +114,7 @@ function layout({ preheader, body }: LayoutInput): string {
 <meta name="color-scheme" content="only light" />
 <meta name="supported-color-schemes" content="only light" />
 <meta name="x-apple-disable-message-reformatting" />
-<title>Cuervito</title>
+<title>encontrate.app</title>
 <!--[if mso]>
 <style type="text/css">body, table, td { font-family: Arial, Helvetica, sans-serif !important; }</style>
 <![endif]-->
@@ -207,7 +209,7 @@ export function welcomeEmailHtml(input: WelcomeEmailInput): string {
     ${eyebrow("Bienvenida a cuervito")}
     ${heading(`Hola ${input.name}, qué bueno tenerte acá.`)}
     ${paragraph(
-      `Cuervito es la plataforma más simple para vender las fotos que sacaste en eventos deportivos. Sin contratos largos, sin tomarte semanas configurar nada — armás tu galería, los corredores compran online y la plata cae directo en tu Mercado Pago.`,
+      `encontrate.app es la plataforma más simple para vender las fotos que sacaste en eventos deportivos. Sin contratos largos, sin tomarte semanas configurar nada — armás tu galería, los corredores compran online y la plata cae directo en tu Mercado Pago.`,
     )}
     ${paragraph(`Tu próximo paso depende de qué tan listo estés:`)}
 

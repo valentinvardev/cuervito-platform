@@ -11,7 +11,7 @@ import { RevealOnScroll } from "../_components/reveal-on-scroll";
 import { ThemeToggle } from "../_components/theme-toggle";
 
 export const metadata: Metadata = {
-  title: "Buscá las fotos de tu carrera · Cuervito",
+  title: "Buscá las fotos de tu carrera · encontrate.app",
   description:
     "Elegí tu evento y encontrá tus fotos por número de dorsal o con una selfie. Comprás y descargás al instante, sin crear cuenta.",
   alternates: { canonical: "/eventos" },

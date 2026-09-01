@@ -220,9 +220,9 @@ export default async function AdminMetricasPage() {
           <div>
             <h2>Origen de las ventas</h2>
             <p>
-              Si la mayoría llega por el link del fotógrafo, Cuervito es una
+              Si la mayoría llega por el link del fotógrafo, encontrate.app es una
               herramienta y la comisión es difícil de justificar. Si llega por
-              el buscador, Cuervito genera la demanda y la comisión vale.
+              el buscador, encontrate.app genera la demanda y la comisión vale.
             </p>
           </div>
           {attributedSales > 0 && (
@@ -255,7 +255,7 @@ export default async function AdminMetricasPage() {
             {sourceRows.map((r) => {
               const label =
                 r.source === "PLATFORM"
-                  ? "Buscador de Cuervito"
+                  ? "Buscador de encontrate.app"
                   : r.source === "DIRECT"
                     ? "Link del fotógrafo"
                     : "Sin atribuir";
