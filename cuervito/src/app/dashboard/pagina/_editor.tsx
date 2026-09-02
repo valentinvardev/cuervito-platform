@@ -1,6 +1,7 @@
 "use client";
 
-import { ImageOff, Pipette } from "lucide-react";
+import { ImageOff, Pipette, Trash2, Upload } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 
 import { savePerfilAction } from "~/app/dashboard/perfil/actions";
@@ -41,14 +42,68 @@ export function Editor({
   perfil,
   colorInicial,
   plantillaInicial,
+  logoInicial,
 }: {
   perfil: { name: string; slug: string; bio: string; instagramUrl: string; websiteUrl: string };
   colorInicial: string;
   plantillaInicial: string;
+  /** El logo que ya subió, resuelto a URL. Null si no tiene. */
+  logoInicial: string | null;
 }) {
   const [color, setColor] = useState(colorInicial);
   const [plantilla, setPlantilla] = useState(plantillaInicial);
+  const router = useRouter();
   const [telefono, setTelefono] = useState(false);
+
+  const archivoLogo = useRef<HTMLInputElement>(null);
+  const [logo, setLogo] = useState(logoInicial);
+  const [tocandoLogo, setTocandoLogo] = useState(false);
+  const [errorLogo, setErrorLogo] = useState<string | null>(null);
+
+  async function subirLogo(f: File) {
+    setTocandoLogo(true);
+    setErrorLogo(null);
+    try {
+      const fd = new FormData();
+      // El endpoint espera el campo "logo", no "file": no es el de la foto
+      // de perfil aunque se le parezca.
+      fd.append("logo", f);
+      const r = await fetch("/api/dashboard/logo", { method: "POST", body: fd });
+      const d = (await r.json().catch(() => ({}))) as { key?: string; error?: string };
+      if (!r.ok) {
+        setErrorLogo(d.error ?? "No se pudo subir el logo.");
+        return;
+      }
+      // La respuesta trae la CLAVE de S3, no una URL servible. En vez de
+      // armarla acá —que sería duplicar la lógica de CloudFront del
+      // servidor— se muestra el archivo local y se recarga: la próxima
+      // pintada ya viene con la URL de verdad.
+      setLogo(URL.createObjectURL(f));
+      router.refresh();
+    } catch {
+      setErrorLogo("No se pudo subir el logo.");
+    } finally {
+      setTocandoLogo(false);
+    }
+  }
+
+  async function quitarLogo() {
+    setTocandoLogo(true);
+    setErrorLogo(null);
+    try {
+      const r = await fetch("/api/dashboard/logo", { method: "DELETE" });
+      if (!r.ok) {
+        setErrorLogo("No se pudo quitar el logo.");
+        return;
+      }
+      setLogo(null);
+      router.refresh();
+    } catch {
+      setErrorLogo("No se pudo quitar el logo.");
+    } finally {
+      setTocandoLogo(false);
+    }
+  }
   const [guardando, empezar] = useTransition();
   const [aviso, setAviso] = useState<string | null>(null);
 
@@ -188,6 +243,70 @@ export function Editor({
                 <span className="pl-n">{p.nombre}</span>
               </label>
             ))}
+          </div>
+        </section>
+
+        <section className="card blq">
+          <h2>Tu logo</h2>
+          <p className="ayuda">
+            Reemplaza tu nombre arriba de la página. Si no subís ninguno, va tu nombre y la
+            dirección, que es un logo provisional: sirve hasta que tengas el tuyo.
+          </p>
+          <div className="blq-b">
+            <div className="logo-fila">
+              {/* Sobre tinta y no sobre papel: la mayoría de los logos vienen en
+                  blanco o con el fondo transparente, y sobre claro no se ven. */}
+              <div className="logo-caja" data-vacia={logo ? undefined : "1"}>
+                {logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logo} alt="Tu logo" />
+                ) : (
+                  <ImageOff />
+                )}
+              </div>
+
+              <div className="logo-acc">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => archivoLogo.current?.click()}
+                  disabled={tocandoLogo}
+                >
+                  <Upload /> {logo ? "Cambiar" : "Subir logo"}
+                </button>
+                {logo && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => void quitarLogo()}
+                    disabled={tocandoLogo}
+                  >
+                    <Trash2 /> Quitar
+                  </button>
+                )}
+                <span className="logo-nota">PNG, JPG o WebP · hasta 3 MB</span>
+              </div>
+            </div>
+
+            <input
+              ref={archivoLogo}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                // Se limpia el input para que elegir el MISMO archivo otra vez
+                // vuelva a disparar el change.
+                e.target.value = "";
+                if (f) void subirLogo(f);
+              }}
+            />
+
+            {errorLogo && (
+              <div className="pista" style={{ color: "var(--bad)" }}>
+                {errorLogo}
+              </div>
+            )}
           </div>
         </section>
 

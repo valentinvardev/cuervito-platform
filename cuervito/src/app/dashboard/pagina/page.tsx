@@ -1,6 +1,7 @@
 import { ExternalLink } from "lucide-react";
 
 import { db } from "~/server/db";
+import { resolveMediaUrl } from "~/server/media";
 
 import { sesionPanel } from "../_components/sesion";
 import { Editor } from "./_editor";
@@ -20,6 +21,7 @@ export default async function V2Pagina() {
       websiteUrl: true,
       storefrontBrandColor: true,
       storefrontTemplate: true,
+      logoKey: true,
     },
   });
 
@@ -50,6 +52,7 @@ export default async function V2Pagina() {
           }}
           colorInicial={u?.storefrontBrandColor ?? "#F0410F"}
           plantillaInicial={u?.storefrontTemplate ?? "light"}
+          logoInicial={u?.logoKey ? await resolveMediaUrl(u.logoKey) : null}
         />
       </div>
     </main>

@@ -1555,6 +1555,38 @@
   .plt { grid-template-columns: repeat(2, 1fr); }
 }
 
+/* ── El logo del fotógrafo ───────────────────────────────────────────────────
+   La caja de vista previa va sobre TINTA y no sobre papel. La mayoría de los
+   logos que suben vienen en blanco o con el fondo transparente —es lo que un
+   diseñador entrega para poner sobre una foto— y sobre claro no se ven. Sobre
+   oscuro se ven los dos casos, que es lo que uno quiere de una vista previa.
+
+   Y es la misma tinta de la barra de la tienda, así que lo que se ve acá es
+   literalmente lo que va a ver el atleta. */
+.logo-fila { display: flex; align-items: center; gap: var(--s-4); flex-wrap: wrap; }
+
+.logo-caja {
+  width: 180px; height: 62px;
+  flex-shrink: 0;
+  display: grid; place-items: center;
+  padding: 10px 14px;
+  border-radius: var(--r-2);
+  background: var(--ink);
+  border: 1px solid var(--line);
+}
+/* Se acota por ALTO: los logos vienen apaisados, cuadrados y a veces
+   verticales, y el alto es lo único que la barra no puede ceder. */
+.logo-caja img { max-height: 100%; max-width: 100%; width: auto; object-fit: contain; display: block; }
+.logo-caja[data-vacia="1"] { background: var(--paper-3); }
+.logo-caja[data-vacia="1"] svg { width: 20px; height: 20px; color: var(--ink-3); }
+
+.logo-acc { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+.logo-nota { font-size: 12px; color: var(--ink-3); }
+
+@media (max-width: 560px) {
+  .logo-caja { width: 100%; }
+}
+
 /* ═══════════════ pagos/pagos.css ═══════════════ */
 /* =============================================================================
    encontrate · panel · métodos de pago
