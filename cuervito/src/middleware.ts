@@ -34,9 +34,37 @@ function isPrimaryHost(host: string): boolean {
   return false;
 }
 
+/* El dominio viejo. Sigue resolviendo y sigue sirviendo la app —está en los
+   mails ya enviados y en los links que la gente guardó— pero manda a todo el
+   mundo al nuevo, a la MISMA ruta: cuervito.app/casa termina en
+   encontrate.app/casa. */
+const HOSTS_VIEJOS = new Set(["cuervito.app", "www.cuervito.app"]);
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const host = req.headers.get("host") ?? "";
+  const h = host.toLowerCase().split(":")[0] ?? "";
+
+  /* ─── El dominio viejo al nuevo, misma ruta ──────────────────────────
+
+     Se preserva el path Y la query. La query no es un detalle: ?src=demo es
+     lo que atribuye de dónde vino la visita, y perderlo en el salto
+     falsearía las métricas de todo el que llegue por un link viejo.
+
+     /api/ QUEDA AFUERA, y es lo único delicado de esto. Mercado Pago guarda
+     el notification_url ADENTRO de cada preferencia, así que todas las
+     ventas creadas antes del cambio de dominio le van a pegar a
+     cuervito.app/api/mp/webhook. MP no sigue redirecciones al entregar un
+     webhook: si esto redirigiera /api/, esas ventas nunca se marcarían como
+     pagadas y el comprador nunca recibiría sus fotos.
+
+     301 y no 307: es una mudanza de dominio de verdad, y es lo que le dice a
+     Google que mueva el posicionamiento al dominio nuevo. Los navegadores lo
+     cachean fuerte, así que conviene probarlo antes de darlo por hecho. */
+  if (HOSTS_VIEJOS.has(h) && !pathname.startsWith("/api/")) {
+    const destino = new URL(pathname + req.nextUrl.search, "https://encontrate.app");
+    return NextResponse.redirect(destino, 301);
+  }
 
   // ─── Custom domain handling ──────────────────────────────────────────
   // If the request came in on a hostname we recognize as a photographer's
