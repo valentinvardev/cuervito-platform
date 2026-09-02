@@ -1,0 +1,324 @@
+/* COPIADO DE lab/admin/admin.css. No editar acá: los cambios se hacen en el
+   laboratorio y se vuelven a copiar, si no las dos versiones divergen y la
+   del laboratorio deja de servir para decidir. */
+/* =============================================================================
+   encontrate · panel de administración
+   -----------------------------------------------------------------------------
+   La fachada de encontrate sobre el admin, SIN tocar el marcado.
+
+   El admin son 7.500 líneas de componentes que funcionan. Reescribirlos para
+   cambiarles el color sería tirar funcionalidad a cambio de estética, así que
+   esto es una capa de estilo y nada más: mismas clases, mismos componentes,
+   misma interfaz.
+
+   Y se apoya en algo que el prototipo hizo bien: el 90% de su aspecto sale de
+   variables CSS —605 usos contra 71 colores fijos—. Redefinir esas variables
+   cambia la piel entera sin escribir una regla por componente. Lo que sigue
+   después del bloque de variables es sólo lo que las variables no alcanzan.
+
+   Se carga DESPUÉS de las hojas del prototipo. El orden importa.
+   ========================================================================== */
+
+/* ── El puente entre las dos paletas ──────────────────────────────────────────
+   A la izquierda los nombres que usa el prototipo; a la derecha los tokens de
+   encontrate, que ya traen tema claro y oscuro. Con esto el admin acompaña el
+   toggle de tema como el resto del producto, que antes no hacía. */
+.adm {
+  --bg-base:        var(--paper);
+  --bg-surface:     var(--paper-2);
+  --bg-elevated:    var(--paper-3);
+  --bg-subtle:      var(--paper-3);
+
+  --text-primary:   var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-tertiary:  var(--ink-3);
+
+  --border-subtle:  var(--line-soft);
+  --border-default: var(--line);
+  --border-strong:  var(--line-strong);
+  --border-accent:  color-mix(in srgb, var(--accent) 40%, transparent);
+
+  --accent-bright:  var(--accent-2);
+  --accent-muted:   color-mix(in srgb, var(--accent) 60%, var(--paper));
+  --accent-glow:    var(--accent-wash);
+  --accent-deep:    var(--accent-wash);
+  --text-on-accent: var(--acento-txt);
+
+  /* El botón primario del admin es de TINTA y no del acento, igual que en el
+     panel del fotógrafo: el naranja se gasta una vez por pantalla, y en el
+     admin esa vez casi nunca es un botón de guardar. */
+  --btn-primary-bg:     var(--cta-bg);
+  --btn-primary-hover:  var(--cta-bg-hov);
+  --btn-primary-color:  var(--cta-fg);
+  --btn-primary-shadow: none;
+
+  --success: var(--ok);
+  --error:   var(--bad);
+
+  /* Las tipografías ya vienen del layout raíz, así que no hay que traer nada
+     de Google: alcanza con decir qué rol cumple cada una. */
+  --font-ui:      var(--sans);
+  --font-display: var(--display);
+
+  /* Las sombras del prototipo eran de tema oscuro: negras y profundas. Sobre
+     papel se leen como manchas. */
+  --hover-shadow:        var(--shadow-card);
+  --hover-shadow-strong: var(--shadow-obj);
+  --hover-shadow-accent: var(--shadow-card);
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+
+  /* Cubre la pantalla entera. El <body> lo pinta styles.css con el fondo
+     oscuro del prototipo, así que sin esto queda una franja negra abajo de
+     todo apenas el contenido no llega al pie. */
+  min-height: 100dvh;
+}
+
+/* El logotipo, como máscara y no como imagen de fondo.
+
+   El archivo de encontrate es blanco sobre transparente —está hecho para
+   fondos oscuros— y el admin ahora es de papel: puesto como background-image
+   directamente no se ve. Enmascarado toma el color del texto, así que funciona
+   en los dos temas sin un segundo archivo. Es el mismo truco de .mark en el
+   panel del fotógrafo. */
+.adm .logo {
+  background: var(--ink);
+  -webkit-mask: url("/marca/logo.png") left center / contain no-repeat;
+  mask: url("/marca/logo.png") left center / contain no-repeat;
+}
+/* El punto naranja era del logotipo de cuervito, que lo tenía en el medio de
+   la palabra. El de encontrate no tiene: el archivo ya trae la marca entera. */
+.adm .logo-dot { display: none; }
+
+/* ── Lo que las variables no alcanzan ──────────────────────────────────────── */
+
+/* La barra de arriba. El prototipo la pinta con un color fijo. */
+.adm .adm-top {
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  backdrop-filter: blur(12px) saturate(1.4);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+/* Las solapas: el activo se marca con TINTA abajo, no con una píldora de
+   acento. Es la misma señal que usa el riel del panel del fotógrafo. */
+.adm .admin-tabs { border-bottom: 1px solid var(--line-soft); background: transparent; }
+.adm .admin-tab {
+  color: var(--ink-3);
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-family: var(--sans);
+  font-weight: 400;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+.adm .admin-tab:hover { color: var(--ink); background: none; }
+.adm .admin-tab[aria-current="page"],
+.adm .admin-tab.active {
+  color: var(--ink);
+  font-weight: 500;
+  border-bottom-color: var(--ink);
+  background: none;
+}
+
+/* Los botones, alineados con los del panel: bajos, esquinas de 6, sin sombra. */
+.adm .btn {
+  border-radius: var(--r-2);
+  font-family: var(--sans);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  box-shadow: none;
+}
+.adm .btn-primary { background: var(--cta-bg); color: var(--cta-fg); border-color: var(--cta-bg); }
+.adm .btn-primary:hover { background: var(--cta-bg-hov); }
+.adm .btn-outline,
+.adm .btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+}
+.adm .btn-outline:hover,
+.adm .btn-ghost:hover { background: var(--ghost-hov); border-color: var(--line-strong); }
+
+/* Las tarjetas y secciones. */
+.adm .section,
+.adm .form-card,
+.adm .sales-card {
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  box-shadow: none;
+}
+
+/* Títulos con la display de encontrate, en versalitas como el resto. */
+.adm .section-head h2,
+.adm .head h1 {
+  font-family: var(--display);
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-track);
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.adm .sub { color: var(--ink-3); font-weight: 300; }
+
+/* Las píldoras de estado: contorno y no relleno, que es como las dibuja el
+   panel del fotógrafo. Rellenas compiten con las fotos y con los importes. */
+.adm .status-pill {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  border-radius: 100px;
+  font-family: var(--sans);
+  font-weight: 500;
+}
+.adm .status-pill.ok,
+.adm .status-pill.success { border-color: color-mix(in srgb, var(--ok) 45%, transparent); color: var(--ok-txt); }
+.adm .status-pill.bad,
+.adm .status-pill.error { border-color: color-mix(in srgb, var(--bad) 45%, transparent); color: var(--bad-txt); }
+
+/* Campos de formulario. */
+.adm .input,
+.adm input[type="text"],
+.adm input[type="email"],
+.adm input[type="number"],
+.adm select,
+.adm textarea {
+  background: var(--paper-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-2);
+  color: var(--ink);
+  font-family: var(--sans);
+}
+.adm .input:focus,
+.adm input:focus,
+.adm select:focus,
+.adm textarea:focus {
+  outline: none;
+  background: var(--paper-2);
+  border-color: var(--line-strong);
+}
+
+/* Tablas: sin cebra, separadas por línea fina. Con muchas filas de números la
+   cebra pelea con la lectura de la columna. */
+.adm table { border-collapse: collapse; }
+.adm th {
+  font-family: var(--meta);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 500;
+  border-bottom: 1px solid var(--line);
+}
+.adm td { border-bottom: 1px solid var(--line-soft); color: var(--ink-2); }
+.adm tbody tr:hover { background: var(--ghost-hov); }
+/* Los números en columna se leen mal si cada dígito tiene su propio ancho. */
+.adm td, .adm th { font-variant-numeric: tabular-nums; }
+
+/* El menú de la cuenta y el cajón lateral. */
+.adm .adm-dropdown,
+.adm .adm-drawer {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-obj);
+}
+.adm .adm-dropdown-item:hover,
+.adm .adm-drawer-link:hover { background: var(--ghost-hov); }
+.adm .adm-dropdown-sep { background: var(--line-soft); }
+.adm .adm-drawer-backdrop {
+  background: color-mix(in srgb, var(--paper) 40%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+/* El avatar del admin. */
+.adm .adm-avatar {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--sans);
+  font-weight: 600;
+}
+
+/* Los íconos de Tabler quedan: cambiarlos por lucide sería tocar 58 lugares
+   del marcado para ganar consistencia que nadie fuera del equipo va a notar. */
+.adm .ti { color: inherit; }
+
+/* ── La grilla de eventos ────────────────────────────────────────────────────
+   La sección que faltaba: el catálogo de la plataforma con su portada. El
+   admin tenía usuarios, ventas y métricas, pero para mirar cómo quedó una
+   tienda había que sacar el slug del fotógrafo y armar la URL a mano.
+
+   La portada manda. En una grilla de sesenta eventos con nombres parecidos
+   —"1ra Huracán vs Alsina", "1ra Varela vs Once Tigres"— la imagen es lo
+   único que permite reconocer uno de un vistazo. */
+.adm-ev-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(252px, 1fr));
+  gap: var(--s-3);
+  margin-top: var(--s-5);
+}
+
+.adm-ev {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-3);
+  overflow: hidden;
+  background: var(--paper-2);
+  transition: border-color 160ms ease, transform 200ms cubic-bezier(.2, .8, .3, 1);
+}
+.adm-ev:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+
+.adm-ev-portada {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--paper-3);
+  overflow: hidden;
+}
+.adm-ev-portada img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Sin portada se dice, no se disimula: un evento publicado sin portada vende
+   la mitad, y esta pantalla existe justamente para detectarlos. */
+.adm-ev-sin {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; justify-items: center; gap: 5px;
+  color: var(--ink-3);
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+}
+.adm-ev-sin .ti { font-size: 19px; }
+
+/* El estado, sobre la portada. Fondo sólido y no translúcido: sobre una foto
+   clara un velo tenue deja el texto ilegible justo en el dato que se busca. */
+.adm-ev-estado {
+  position: absolute; top: 8px; left: 8px;
+  padding: 3px 9px;
+  border-radius: 100px;
+  background: var(--ink); color: var(--paper);
+  font-size: 10.5px; font-weight: 500; letter-spacing: .04em;
+}
+.adm-ev-estado[data-pub="1"] { background: var(--ok); color: #FFFFFF; }
+
+.adm-ev-cuerpo { padding: 12px 13px 13px; display: grid; gap: 5px; }
+.adm-ev-cuerpo b {
+  font-size: 14.5px; font-weight: 500; line-height: 1.25;
+  color: var(--ink); letter-spacing: -0.015em;
+}
+
+.adm-ev-meta,
+.adm-ev-nums {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 12px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.adm-ev-meta i,
+.adm-ev-nums i {
+  width: 3px; height: 3px; border-radius: 50%;
+  background: currentColor; opacity: .5; flex-shrink: 0;
+}
+
+.adm-ev-acc { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+.adm-ev-acc .btn { height: 30px; padding: 0 10px; font-size: 12.5px; }
+.adm-ev-nota { font-size: 12px; color: var(--ink-3); align-self: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-ev:hover { transform: none; }
+}

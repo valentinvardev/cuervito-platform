@@ -31,7 +31,7 @@ export function AdminTop({ name, email }: { name: string; email: string }) {
 
       <div className="adm-top-center" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
         <Link href="/dashboard" className="logo">
-          cuerv<span className="logo-dot"></span>to
+          encontrate.app
         </Link>
         <span
           style={{

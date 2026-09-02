@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const TABS = [
   { href: "/admin/users", label: "Usuarios", icon: "ti-users", tip: "Fotógrafos registrados: rol, cuotas y actividad" },
+  { href: "/admin/eventos", label: "Eventos", icon: "ti-photo", tip: "El catálogo de la plataforma, con su portada y un link a cada tienda" },
   { href: "/admin/sales", label: "Ventas", icon: "ti-shopping-cart", tip: "Todas las ventas de la plataforma" },
   { href: "/admin/metricas", label: "Métricas", icon: "ti-chart-bar", tip: "Conversión por fotógrafo: ventas por cada 1.000 fotos" },
   { href: "/admin/watermark", label: "Watermark", icon: "ti-watermark", tip: "Marca de agua global aplicada a las previews" },
