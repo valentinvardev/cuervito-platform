@@ -87,6 +87,46 @@ export async function POST(
   }
 
   const data = parsed.data;
+
+  /* Que no entren dos veces el mismo.
+
+     La pantalla ya bloquea el botón mientras guarda, así que el doble click
+     no es el problema: el problema es todo lo demás. Dos pestañas abiertas,
+     un pedido que falló en la red pero llegó igual, o simplemente volver la
+     semana que viene y cargar de nuevo el pack de 5 sin acordarse de que ya
+     estaba.
+
+     Y duplicado no significa lo mismo en cada tipo:
+
+     · CODE  — el mismo código dos veces está roto, no repetido. El canje
+               busca el primero que encuentra, así que el segundo es un cupón
+               que existe en la base y no se aplica nunca.
+     · BUNDLE / QTYPCT — la clave es la CANTIDAD. Dos reglas para «5 o más»
+               se contradicen entre sí, y la tienda termina eligiendo una por
+               un criterio que el fotógrafo nunca decidió.
+
+     Los VENCIDOS no cuentan: renovar un código que ya expiró es legítimo y
+     es justamente lo que uno querría poder hacer. */
+  const vigente = { OR: [{ expires: null }, { expires: { gt: new Date() } }] };
+  const repetido = await db.discount.findFirst({
+    where:
+      data.type === "CODE"
+        ? { eventId: id, type: "CODE", code: data.code, ...vigente }
+        : { eventId: id, type: data.type, qty: data.qty, ...vigente },
+    select: { id: true },
+  });
+  if (repetido) {
+    return NextResponse.json(
+      {
+        error:
+          data.type === "CODE"
+            ? `Ya tenés un código ${data.code} activo en este evento.`
+            : `Ya tenés un descuento para ${data.qty} fotos o más. Borrá el que está antes de cargar otro.`,
+      },
+      { status: 409 },
+    );
+  }
+
   const discount = await db.discount.create({
     data: {
       eventId: id,
