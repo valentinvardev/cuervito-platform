@@ -27,9 +27,7 @@ export default async function DemoSubidaLayout({ children }: { children: React.R
     <div
       style={
         {
-          "--display": "var(--fuente-display), system-ui, sans-serif",
-          "--sans": "var(--fuente-sans), system-ui, sans-serif",
-          "--meta": "var(--fuente-sans), system-ui, sans-serif",
+          "--meta": "var(--sans)",
         } as React.CSSProperties
       }
     >

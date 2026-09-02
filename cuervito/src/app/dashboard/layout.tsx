@@ -31,17 +31,19 @@ export default async function V2Layout({ children }: { children: React.ReactNode
   // serie: primero terminaba sesionPanel y recién ahí salía la segunda.
   const historias = await puedeUsarHistorias({ id: userId, role: rol });
 
-  // Las variables se pisan en un envoltorio y no en :root: las propiedades
-  // personalizadas se heredan, así que todo lo de adentro las toma y lo de
-  // afuera de /v2 queda intacto. --fuente-display y --fuente-sans las define
-  // el layout raíz sobre el <html>; acá sólo se dice qué rol cumple cada una.
+  // Las tipografías NO se declaran acá: las decide tokens.css, que apunta a las
+  // variables de next/font con el nombre literal como respaldo. Estaban
+  // repetidas en los cuatro layouts que cargan los tokens, y el panel de
+  // administración —que se sumó después— se olvidó de copiarlas y estuvo
+  // renderizando en la fuente del sistema. Con una sola fuente de verdad, el
+  // que venga después no tiene de qué acordarse.
+  //
+  // El envoltorio se queda porque --meta sí es una decisión de esta pantalla.
   return (
     <div
       style={
         {
-          "--display": "var(--fuente-display), system-ui, sans-serif",
-          "--sans": "var(--fuente-sans), system-ui, sans-serif",
-          "--meta": "var(--fuente-sans), system-ui, sans-serif",
+          "--meta": "var(--sans)",
         } as React.CSSProperties
       }
     >

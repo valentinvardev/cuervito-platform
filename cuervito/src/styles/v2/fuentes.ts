@@ -15,11 +15,20 @@ import { Outfit, Unbounded } from "next/font/google";
  * siempre presente y es bloqueante, junto a las de Geist. Deja de haber un
  * orden de llegada del que depender.
  *
- * preload en false a propósito: el layout raíz lo comparte TODA la app, y
- * precargar doce woff2 en la página pública del fotógrafo —que no usa ninguna
- * de las dos— sería pagar el rebrand en el lugar donde más cuesta. Sin
- * precarga, el archivo se pide cuando una pantalla de /v2 lo necesita y
- * display:swap se ocupa del resto.
+ * PRECARGA. Estuvo apagada por una razón que ya no corre: cuando esto era el
+ * rediseño de /v2, la página pública del fotógrafo no usaba ninguna de las dos
+ * y precargar doce woff2 ahí era pagar el rebrand en el lugar donde más
+ * cuesta. Hoy las usan la landing, el panel, el panel de administración y la
+ * tienda —que es la plantilla de encontrate—, o sea prácticamente todo.
+ *
+ * Sin precarga, con display:swap, cada pantalla arranca dibujada en la
+ * tipografía del sistema y salta cuando llega la real. Ese salto es
+ * exactamente lo que se ve al entrar al panel.
+ *
+ * Sólo la SANS se precarga. La display se usa en los títulos, que son cuatro
+ * palabras: si llega tarde salta un renglón y se nota mucho menos que si
+ * saltara el cuerpo entero. Y son tres pesos de una fuente pesada —el archivo
+ * de Unbounded es ocho veces el de Outfit— que no vale bloquear.
  */
 export const display = Unbounded({
   subsets: ["latin"],
@@ -34,5 +43,5 @@ export const sans = Outfit({
   weight: ["200", "300", "400", "500", "600"],
   variable: "--fuente-sans",
   display: "swap",
-  preload: false,
+  preload: true,
 });

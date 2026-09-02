@@ -83,7 +83,21 @@
      Unbounded es MUY ancha: el tracking va bien negativo para compactarla y
      la escala baja, porque a igual cuerpo ocupa casi un 40% más de ancho que
      una grotesca normal. */
-  --display:       "Unbounded", system-ui, sans-serif;
+  /* La familia sale de la variable que planta next/font en el layout raíz, con
+     el nombre literal como respaldo.
+
+     Es la única forma de que esto sirva en los dos lados. next/font NO registra
+     la fuente con su nombre real: genera uno propio, tipo __Unbounded_a1b2c3.
+     Así que un `font-family: "Unbounded"` en la app cae al respaldo del sistema
+     sin avisar —le pasó al panel de administración, que estuvo un rato
+     renderizando en system-ui sin que se notara a simple vista—. En el
+     laboratorio, en cambio, --fuente-display no existe y las hojas se cargan
+     desde Google por su nombre, así que ahí el respaldo es el que corresponde.
+
+     El respaldo va ADENTRO del var() y no como segundo ítem de la lista: con
+     --fuente-display sin definir, `var(--fuente-display), "Unbounded"` invalida
+     la declaración entera en vez de pasar a la siguiente. */
+  --display:       var(--fuente-display, "Unbounded"), system-ui, sans-serif;
   --display-track: -0.045em;
   --display-scale: 0.74;
   --display-weight: 800;
@@ -93,7 +107,7 @@
      dio el sistema hasta ahora. El cuerpo va en 400 igual: 300 a 16px sobre
      papel se afina demasiado y en Windows se rompe. El thin se reserva para
      donde luce, que es de 20px para arriba. */
-  --sans:    "Outfit", system-ui, sans-serif;
+  --sans:    var(--fuente-sans, "Outfit"), system-ui, sans-serif;
   --meta:    var(--sans);
 
   --t-hero:  clamp(34px, 5.6vw, 68px);   /* en caja alta el tamaño óptico crece */

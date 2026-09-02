@@ -24,9 +24,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
     <div
       style={
         {
-          "--display": "var(--fuente-display), system-ui, sans-serif",
-          "--sans": "var(--fuente-sans), system-ui, sans-serif",
-          "--meta": "var(--fuente-sans), system-ui, sans-serif",
+          "--meta": "var(--sans)",
         } as React.CSSProperties
       }
     >
