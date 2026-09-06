@@ -6,6 +6,7 @@ import { resolveAvatarUrl } from "~/server/avatar";
 import { resolveMediaUrl } from "~/server/media";
 
 import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
+import { esEntregable } from "~/lib/venta";
 
 import { DescargaClient } from "./descarga-client";
 import { Entrega } from "./encontrate/entrega";
@@ -61,7 +62,7 @@ export default async function DescargaPage(props: {
   });
 
   if (!sale) notFound();
-  if (sale.status !== "PAID") {
+  if (!esEntregable(sale.status)) {
     return (
       <ExpiredOrUnpaid
         message="El pago todavía no fue confirmado."
@@ -69,6 +70,11 @@ export default async function DescargaPage(props: {
       />
     );
   }
+  // Fotos regaladas: no hubo pago, así que ni la animación de llegada ni el
+  // encabezado pueden hablar de uno. Sale de la fila y no de un parámetro en
+  // la URL: el estado de la venta es el que manda, y una dirección no se
+  // puede editar para que diga otra cosa.
+  const regalo = sale.status === "GIFT";
   if (sale.downloadTokenExpires && sale.downloadTokenExpires < new Date()) {
     return (
       <ExpiredOrUnpaid
@@ -125,6 +131,7 @@ export default async function DescargaPage(props: {
           }}
           fotos={photos}
           recienPagado={fresh}
+          regalo={regalo}
         />
       </div>
     );
@@ -138,6 +145,7 @@ export default async function DescargaPage(props: {
       eventName={sale.event.name}
       photos={photos}
       fresh={fresh}
+      regalo={regalo}
     />
   );
 }

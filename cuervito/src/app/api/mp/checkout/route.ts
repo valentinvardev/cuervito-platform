@@ -27,12 +27,12 @@ const checkoutSchema = z.object({
 export async function POST(req: NextRequest) {
   const globalTestMode = await getMpTestMode();
 
-  if (!globalTestMode && !isMpConfigured()) {
-    return NextResponse.json(
-      { error: "Mercado Pago no está configurado." },
-      { status: 503 },
-    );
-  }
+  /* Acá arriba estaba el control de "¿Mercado Pago está configurado?", y
+     bajarlo no es orden: era un 503 en la puerta para TODA compra, también
+     para las que no hay que cobrar. Un evento regalado en una cuenta que nunca
+     conectó Mercado Pago —que es exactamente el caso de uso— moría antes de
+     que nadie mirara el precio. La pregunta "¿podemos cobrar?" ahora se hace
+     donde se cobra, que es el único lugar donde la respuesta cambia algo. */
 
   let body: unknown;
   try {
@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
           status: true,
           role: true,
           testModeEnabled: true,
+          giftEnabled: true,
         },
       },
     },
@@ -88,13 +89,6 @@ export async function POST(req: NextRequest) {
   const sellerTestMode =
     event.owner.role === "ADMIN" && event.owner.testModeEnabled;
   const testMode = globalTestMode || sellerTestMode;
-
-  if (!testMode && !event.owner.mpAccessToken) {
-    return NextResponse.json(
-      { error: "El fotógrafo aún no conectó Mercado Pago." },
-      { status: 409 },
-    );
-  }
 
   // Defensive: confirm all photoIds belong to this event, are uploaded, and
   // not soft-deleted (a buyer can't pay for a photo the photographer removed).
@@ -174,10 +168,45 @@ export async function POST(req: NextRequest) {
   const platformFeeCents = Math.round((totalCents * feePct) / 100);
   const sellerNetCents = totalCents - platformFeeCents;
 
-  // === TEST MODE ===
-  // Skip MP entirely: create the Sale already PAID with a downloadToken so
-  // we can validate the post-payment UX locally without going through MP.
-  if (testMode) {
+  /* Dos copias sin nulos, para poder usarlas adentro de entregarSinCobrar.
+
+     El estrechamiento de tipos que hicieron los `if` de arriba —el evento
+     existe, los datos parsearon— no cruza la frontera de una función anidada:
+     TypeScript no puede saber cuándo se la va a llamar, así que adentro
+     vuelven a ser "posiblemente nulo". Las copias son const y se toman después
+     de los controles, que es lo que hace que el compilador las acepte. */
+  const evento = event;
+  const datos = parsed.data;
+
+  /* ── Entregar sin cobrar ──────────────────────────────────────────────────
+     Dos caminos distintos terminan en lo mismo: la venta nace ya entregada,
+     con su token de descarga, sin pasar por Mercado Pago. El modo de prueba,
+     que ya existía, y el regalo, que es lo nuevo.
+
+     Está compartido y no copiado porque lo de adentro —el token, cuánto dura,
+     el descuento que se marca como usado, el mail que recibe el comprador— es
+     el contrato de entrega de la plataforma. Dos copias de eso se desincronizan
+     el día que alguien toca una sola: la que quedó vieja sigue entregando con
+     un vencimiento que ya no es el que rige, y nadie se entera hasta que
+     escribe un comprador.
+
+     Lo que NO tienen en común va por parámetro, y esa lista es exactamente lo
+     que separa un regalo de una venta. */
+  async function entregarSinCobrar({
+    estado,
+    notas,
+    comoVenta,
+    etiqueta,
+  }: {
+    estado: "PAID" | "GIFT";
+    notas: string;
+    /** Si cuenta como venta: devenga comisiones, suena la campanita del panel
+     *  y le llega el aviso al fotógrafo. Un regalo no hace nada de eso —son
+     *  cero pesos, y una caja registradora sonando por cero pesos es ruido. */
+    comoVenta: boolean;
+    /** Para los console.error, así se sabe cuál de los dos caminos falló. */
+    etiqueta: string;
+  }): Promise<{ saleId: string; token: string }> {
     const downloadToken = randomBytes(24).toString("hex");
     const tokenExpiresAt = new Date(
       Date.now() + env.DOWNLOAD_TOKEN_RETENTION_DAYS * 24 * 60 * 60 * 1000,
@@ -186,24 +215,26 @@ export async function POST(req: NextRequest) {
     const [sale] = await db.$transaction([
       db.sale.create({
         data: {
-          sellerId: event.ownerId,
-          eventId: event.id,
-          buyerEmail: parsed.data.buyerEmail,
-          buyerName: parsed.data.buyerName ?? null,
-          buyerPhone: parsed.data.buyerPhone ?? null,
+          sellerId: evento.ownerId,
+          eventId: evento.id,
+          buyerEmail: datos.buyerEmail,
+          buyerName: datos.buyerName ?? null,
+          buyerPhone: datos.buyerPhone ?? null,
           subtotalCents,
           discountCents,
           totalCents,
           platformFeeCents,
           sellerNetCents,
-          status: "PAID",
-          paidAt: new Date(),
+          status: estado,
+          // paidAt es CUÁNDO ENTRÓ LA PLATA, no cuándo se entregó. En un
+          // regalo no entró ninguna, así que queda en null: las pantallas que
+          // muestran fecha ya caen a createdAt, y las cuentas de plata filtran
+          // por paidAt sin tener que acordarse de descontar los regalos.
+          paidAt: estado === "PAID" ? new Date() : null,
           trafficSource,
           downloadToken,
           downloadTokenExpires: tokenExpiresAt,
-          notes: sellerTestMode
-            ? "TEST MODE (vendedor admin) — pago no verificado"
-            : "TEST MODE (global) — pago no verificado",
+          notes: notas,
           items: {
             create: items.map((i) => ({ photoId: i.photoId, priceCents: i.priceCents })),
           },
@@ -215,48 +246,131 @@ export async function POST(req: NextRequest) {
         : []),
     ]);
 
-    // Mismo flujo que el webhook real, comisiones incluidas.
-    void accrueCommissionsForSale(sale.id).catch((err: unknown) =>
-      console.error("[checkout test-mode] accrueCommissions failed:", err),
-    );
+    if (comoVenta) {
+      // Mismo flujo que el webhook real, comisiones incluidas.
+      void accrueCommissionsForSale(sale.id).catch((err: unknown) =>
+        console.error(`[checkout ${etiqueta}] accrueCommissions failed:`, err),
+      );
 
-    publishSale(event.ownerId, {
-      saleId: sale.id,
-      amount: totalCents,
-      itemCount: items.length,
-      eventName: event.name,
-      buyerName: parsed.data.buyerName ?? null,
-      paidAt: new Date().toISOString(),
-    });
-    revalidateTag(`user:${event.ownerId}:dashboard`);
+      publishSale(evento.ownerId, {
+        saleId: sale.id,
+        amount: totalCents,
+        itemCount: items.length,
+        eventName: evento.name,
+        buyerName: datos.buyerName ?? null,
+        paidAt: new Date().toISOString(),
+      });
+      revalidateTag(`user:${evento.ownerId}:dashboard`);
 
-    // Buyer delivery email + seller notification (same as the webhook path)
+      void recordPendingAndMaybeNotify(sale.id).catch((err: unknown) =>
+        console.error(`[checkout ${etiqueta}] seller notify failed:`, err),
+      );
+    }
+
+    // El mail al comprador SÍ va siempre: es la entrega. Que no se haya
+    // cobrado no cambia que del otro lado hay alguien esperando sus fotos.
     const baseUrl = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
     void sendEmail({
-      to: parsed.data.buyerEmail,
-      subject: `Tus fotos · ${event.name}`,
-      html: mailsDe(event.owner.storefrontTemplate).deliveryEmailHtml({
-        buyerName: parsed.data.buyerName ?? "Hola",
-        eventName: event.name,
+      to: datos.buyerEmail,
+      subject: `Tus fotos · ${evento.name}`,
+      html: mailsDe(evento.owner.storefrontTemplate).deliveryEmailHtml({
+        buyerName: datos.buyerName ?? "Hola",
+        eventName: evento.name,
         photoCount: items.length,
         downloadUrl: `${baseUrl}/descarga/${downloadToken}`,
       }),
     }).catch((err: unknown) =>
-      console.error("[checkout test-mode] delivery email failed:", err),
-    );
-    void recordPendingAndMaybeNotify(sale.id).catch((err: unknown) =>
-      console.error("[checkout test-mode] seller notify failed:", err),
+      console.error(`[checkout ${etiqueta}] delivery email failed:`, err),
     );
 
+    return { saleId: sale.id, token: downloadToken };
+  }
+
+  /* ── No hay nada que cobrar ───────────────────────────────────────────────
+     El total dio cero. Puede ser porque el evento está a precio cero —que es
+     como se regala una galería entera— o porque un descuento se comió el
+     total.
+
+     Los dos casos tenían el mismo final hasta hoy, y era malo: se armaba una
+     preferencia de cero pesos, Mercado Pago la rechazaba, el comprador veía un
+     502 y quedaba una venta en FAILED. Un pago de cero no existe; el error era
+     pedirlo.
+
+     Quién puede hacerlo es un permiso por cuenta y no una opción del evento:
+     poner el precio en cero siempre se pudo, así que si el cero por sí solo
+     repartiera fotos gratis, cualquiera lo descubriría sin querer. */
+  if (totalCents === 0) {
+    if (event.owner.giftEnabled) {
+      const { saleId, token } = await entregarSinCobrar({
+        estado: "GIFT",
+        comoVenta: false,
+        etiqueta: "regalo",
+        notas:
+          subtotalCents === 0
+            ? "REGALO — el evento está a precio cero"
+            : `REGALO — el descuento cubrió el total (${aplicado?.texto ?? "sin detalle"})`,
+      });
+      return NextResponse.json({
+        saleId,
+        initPoint: `/descarga/${token}?fresh=1`,
+        regalo: true,
+      });
+    }
+    if (!testMode) {
+      return NextResponse.json(
+        {
+          error:
+            "Estas fotos no tienen precio cargado, así que no hay nada que cobrar. Avisale al fotógrafo.",
+        },
+        { status: 409 },
+      );
+    }
+    // Con el modo de prueba prendido sigue de largo al camino de abajo, que es
+    // lo que hacía antes de que el regalo existiera.
+  }
+
+  // === TEST MODE ===
+  // Skip MP entirely: create the Sale already PAID with a downloadToken so
+  // we can validate the post-payment UX locally without going through MP.
+  if (testMode) {
+    const { saleId, token } = await entregarSinCobrar({
+      estado: "PAID",
+      comoVenta: true,
+      etiqueta: "test-mode",
+      notas: sellerTestMode
+        ? "TEST MODE (vendedor admin) — pago no verificado"
+        : "TEST MODE (global) — pago no verificado",
+    });
+
     return NextResponse.json({
-      saleId: sale.id,
+      saleId,
       // Send the buyer straight to /descarga with ?fresh=1 — the page renders
       // the photo grid AND runs the in-place "Confirmando pago → Pago
       // confirmado → Gracias por tu compra" overlay on top. No intermediate
       // navigation, no loading wheel between states.
-      initPoint: `/descarga/${downloadToken}?fresh=1`,
+      initPoint: `/descarga/${token}?fresh=1`,
       testMode: true,
     });
+  }
+
+  /* Recién acá se pregunta si podemos cobrar, porque recién acá se cobra.
+     Antes las dos preguntas estaban en la puerta de entrada y le cerraban el
+     paso a compras que no había que cobrar.
+
+     Van ANTES de crear la venta y no después: contestarlas con la fila ya
+     creada deja, en cada intento sin Mercado Pago, una venta PENDING colgada
+     que no se va a completar nunca. */
+  if (!isMpConfigured()) {
+    return NextResponse.json(
+      { error: "Mercado Pago no está configurado." },
+      { status: 503 },
+    );
+  }
+  if (!event.owner.mpAccessToken) {
+    return NextResponse.json(
+      { error: "El fotógrafo aún no conectó Mercado Pago." },
+      { status: 409 },
+    );
   }
 
   // === REAL MP FLOW ===

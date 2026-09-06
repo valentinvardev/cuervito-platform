@@ -6,7 +6,7 @@ import { db } from "~/server/db";
 import type { AdminSaleRow } from "./admin-sales-client";
 
 // Prisma enum values for Sale.status
-const VALID_STATUS = new Set(["PAID", "PENDING", "FAILED", "REFUNDED", "EXPIRED"]);
+const VALID_STATUS = new Set(["PAID", "PENDING", "FAILED", "REFUNDED", "EXPIRED", "GIFT"]);
 
 const RANGES: Record<string, number | null> = {
   today: 1,
@@ -42,7 +42,7 @@ export async function loadMoreAdminSalesAction(input: {
   const where = {
     ...(since ? { createdAt: { gte: since } } : {}),
     ...(input.status !== "all" && VALID_STATUS.has(input.status)
-      ? { status: input.status as "PAID" | "PENDING" | "FAILED" | "REFUNDED" | "EXPIRED" }
+      ? { status: input.status as "PAID" | "PENDING" | "FAILED" | "REFUNDED" | "EXPIRED" | "GIFT" }
       : {}),
     ...(q
       ? {

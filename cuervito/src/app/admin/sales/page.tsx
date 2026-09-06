@@ -39,7 +39,7 @@ export default async function AdminSalesPage(props: {
   const where = {
     ...(since ? { createdAt: { gte: since } } : {}),
     ...(status !== "all"
-      ? { status: status as "PAID" | "PENDING" | "FAILED" | "REFUNDED" | "EXPIRED" }
+      ? { status: status as "PAID" | "PENDING" | "FAILED" | "REFUNDED" | "EXPIRED" | "GIFT" }
       : {}),
     ...(q
       ? {

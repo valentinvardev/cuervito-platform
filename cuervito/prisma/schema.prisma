@@ -119,6 +119,19 @@ model User {
      *  desactiva el bypass aunque el flag quede en true. */
     testModeEnabled  Boolean   @default(false)
 
+    /** Puede regalar fotos: si el total de una compra da CERO, la venta se
+     *  entrega directo, sin pasar por Mercado Pago, y queda en estado GIFT.
+     *
+     *  Es un permiso y no una opción del evento porque la decisión no es del
+     *  fotógrafo: poner el precio en cero ya se podía siempre, y hasta ahora
+     *  eso simplemente rompía el checkout —Mercado Pago no acepta un pago de
+     *  cero—. Esto habilita a una cuenta puntual a que ese cero signifique
+     *  "regalado" en lugar de "roto".
+     *
+     *  Sin el permiso, un evento a precio cero devuelve un error claro en vez
+     *  de un 502 de Mercado Pago. Lo prende un admin desde /admin/users/[id]. */
+    giftEnabled      Boolean   @default(false)
+
     // Storefront customization
     storefrontBrandColor String?  // hex, e.g. "#F5820A"
     storefrontTemplate   String?  // template id from frontend catalog
@@ -414,6 +427,21 @@ enum SaleStatus {
     FAILED
     REFUNDED
     EXPIRED
+
+    /// Entregada sin cobrar. El total era cero, así que no hubo nada que
+    /// cobrar y no se pasó por Mercado Pago.
+    ///
+    /// Es un estado propio y no un PAID con una marca al lado porque PAID
+    /// significa que entró plata. Toda la contabilidad —lo que ganó el
+    /// fotógrafo, la comisión, las métricas— filtra por PAID, y un regalo
+    /// tiene que quedar afuera de esas cuentas sin que nadie se acuerde de
+    /// excluirlo.
+    ///
+    /// La contracara es que también queda afuera de los filtros de ENTREGA,
+    /// que sí lo necesitan. Por eso quién puede bajar las fotos no se
+    /// pregunta más comparando contra "PAID": se pregunta con esEntregable(),
+    /// en ~/lib/venta.
+    GIFT
 }
 
 model Sale {

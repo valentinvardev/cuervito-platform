@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { esEntregable } from "~/lib/venta";
 import { db } from "~/server/db";
 
 /**
@@ -27,6 +28,6 @@ export async function GET(
   }
   return NextResponse.json({
     status: sale.status,
-    downloadToken: sale.status === "PAID" ? sale.downloadToken : null,
+    downloadToken: esEntregable(sale.status) ? sale.downloadToken : null,
   });
 }

@@ -9,6 +9,7 @@ import {
   reactivateUserAction,
   setUserRoleAction,
   suspendUserAction,
+  toggleGiftAction,
 } from "../actions";
 import { QuotaOverrideForm } from "./quota-override-form";
 import { SuspendDialog } from "./suspend-dialog";
@@ -18,8 +19,16 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
   const session = await auth();
   const isSelf = session?.user?.id === id;
 
-  const [user, quota, recentActions, recognitionUsage, recentDownloads, ownedEventIds] =
-    await Promise.all([
+  const [
+    user,
+    quota,
+    recentActions,
+    recognitionUsage,
+    recentDownloads,
+    ownedEventIds,
+    eventosGratis,
+    regalados,
+  ] = await Promise.all([
       db.user.findUnique({
         where: { id },
         select: {
@@ -36,6 +45,7 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
           lastLoginAt: true,
           storageQuotaBytes: true,
           recognitionQuotaMonthly: true,
+          giftEnabled: true,
           _count: { select: { eventsOwned: true, sales: true, photosOwned: true } },
         },
       }),
@@ -69,6 +79,12 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
         where: { ownerId: id },
         select: { id: true, name: true, slug: true },
       }),
+      // Cuántos eventos suyos están hoy a precio cero. Es el número que hace
+      // falta para decidir: prender el permiso no elige eventos, habilita
+      // todos los que ya tengan el precio en cero, y sin este dato se prende
+      // a ciegas.
+      db.event.count({ where: { ownerId: id, pricePerPhoto: 0 } }),
+      db.sale.count({ where: { sellerId: id, status: "GIFT" } }),
     ]);
 
   if (!user) notFound();
@@ -186,6 +202,72 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
               </button>
             </form>
           )}
+        </div>
+      </section>
+
+      {/* Regalar fotos */}
+      <section className="section">
+        <div className="section-head">
+          <h2>Regalar fotos</h2>
+          <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+            {regalados > 0
+              ? `${regalados.toLocaleString("es-AR")} ${regalados === 1 ? "entrega regalada" : "entregas regaladas"} hasta hoy`
+              : "Todavía no regaló ninguna"}
+          </div>
+        </div>
+        <div
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: 14,
+            padding: 22,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ minWidth: 240, flex: 1 }}>
+            <div style={{ fontWeight: 500, color: user.giftEnabled ? "var(--accent)" : undefined }}>
+              {user.giftEnabled ? "Puede regalar fotos" : "No puede regalar fotos"}
+            </div>
+            <div style={{ fontSize: 13, color: "var(--text-tertiary)", marginTop: 4 }}>
+              {user.giftEnabled ? (
+                <>
+                  Cualquier compra suya que dé <strong>$0</strong> se entrega sin pasar por Mercado
+                  Pago y queda registrada como regalo, fuera de las cuentas de facturación.
+                </>
+              ) : (
+                <>
+                  Con el permiso puesto, sus eventos a precio $0 entregan las fotos directo, sin
+                  Mercado Pago. Sin el permiso, un evento en $0 no se puede comprar.
+                </>
+              )}
+              {eventosGratis > 0 && (
+                <div style={{ marginTop: 6, color: "var(--warning)" }}>
+                  <i className="ti ti-alert-triangle" style={{ marginRight: 5 }} />
+                  Tiene {eventosGratis} {eventosGratis === 1 ? "evento" : "eventos"} a precio $0
+                  {user.giftEnabled ? " que ya se están regalando." : ". Al prender esto pasan a ser gratis."}
+                </div>
+              )}
+            </div>
+          </div>
+          <form action={toggleGiftAction}>
+            <input type="hidden" name="userId" value={user.id} />
+            <input type="hidden" name="enabled" value={user.giftEnabled ? "0" : "1"} />
+            <button
+              type="submit"
+              className={user.giftEnabled ? "btn btn-outline" : "btn btn-primary"}
+              data-tip={
+                user.giftEnabled
+                  ? "Sus eventos en $0 vuelven a no poder comprarse"
+                  : "Sus eventos en $0 pasan a entregarse gratis"
+              }
+            >
+              {user.giftEnabled ? "Sacarle el permiso" : "Habilitar regalos"}
+            </button>
+          </form>
         </div>
       </section>
 

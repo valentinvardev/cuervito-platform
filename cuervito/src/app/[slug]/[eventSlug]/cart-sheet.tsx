@@ -46,6 +46,7 @@ export function CartSheet({
   photos,
   discounts = [],
   testMode = false,
+  regalo = false,
 }: {
   eventId: string;
   eventName: string;
@@ -53,6 +54,9 @@ export function CartSheet({
   photos: Photo[];
   discounts?: PublicDiscount[];
   testMode?: boolean;
+  /** El evento se regala: precio cero y el fotógrafo habilitado. No hay nada
+   *  que cobrar, así que tampoco hay precios ni botón de pagar que mostrar. */
+  regalo?: boolean;
 }) {
   const router = useRouter();
   const { items, open, closeCart, remove, clear, subtotalCents } = useCart();
@@ -155,7 +159,7 @@ export function CartSheet({
               {items.length > 0 && (
                 <>
                   <span> · </span>
-                  <span className="accent">{formatARS(totalCents)}</span>
+                  <span className="accent">{regalo ? "Gratis" : formatARS(totalCents)}</span>
                   {discountCents > 0 && (
                     <span style={{ color: "var(--success)", fontSize: 12, marginLeft: 4 }}>
                       (-{formatARS(discountCents)})
@@ -188,6 +192,7 @@ export function CartSheet({
               discountCents={discountCents}
               totalCents={totalCents}
               pricePerPhoto={pricePerPhoto}
+              regalo={regalo}
               nudge={nudge}
               appliedDiscount={appliedDiscount}
               onClear={clear}
@@ -213,6 +218,7 @@ export function CartSheet({
               totalCents={totalCents}
               count={items.length}
               testMode={testMode}
+              regalo={regalo}
               pending={pending}
               error={error}
               onBack={() => setView("cart")}
@@ -234,6 +240,7 @@ function CartView({
   discountCents,
   totalCents,
   pricePerPhoto,
+  regalo = false,
   nudge,
   appliedDiscount,
   onClear,
@@ -247,6 +254,7 @@ function CartView({
   discountCents: number;
   totalCents: number;
   pricePerPhoto: number;
+  regalo?: boolean;
   nudge: { discount: PublicDiscount; needed: number } | null;
   appliedDiscount: { savingsCents: number; texto: string | null; esCodigo: boolean } | null;
   onClear: () => void;
@@ -447,7 +455,7 @@ function CartView({
                 fontFamily: "var(--font-display)", fontWeight: 800,
                 fontSize: 26, color: "var(--text-primary)", letterSpacing: "-0.02em", lineHeight: 1,
               }}>
-                {formatARS(totalCents)}
+                {regalo ? "Gratis" : formatARS(totalCents)}
               </span>
             </div>
           </div>
@@ -470,7 +478,9 @@ function CartView({
           <div style={{
             fontSize: 11, color: "var(--text-tertiary)", marginTop: 10, textAlign: "center",
           }}>
-            ${pricePerPhoto.toLocaleString("es-AR")} por foto · pago seguro · descarga en alta resolución
+            {regalo
+              ? "Sin cargo · descarga en alta resolución"
+              : `$${pricePerPhoto.toLocaleString("es-AR")} por foto · pago seguro · descarga en alta resolución`}
           </div>
         </div>
       )}
@@ -490,6 +500,7 @@ function CheckoutView({
   totalCents,
   count,
   testMode = false,
+  regalo = false,
   pending,
   error,
   onBack,
@@ -506,6 +517,7 @@ function CheckoutView({
   totalCents: number;
   count: number;
   testMode?: boolean;
+  regalo?: boolean;
   pending: boolean;
   error: string | null;
   onBack: () => void;
@@ -664,7 +676,7 @@ function CheckoutView({
               fontFamily: "var(--font-display)", fontWeight: 800,
               fontSize: 26, color: "var(--accent)", letterSpacing: "-0.02em",
             }}>
-              {formatARS(totalCents)}
+              {regalo ? "Gratis" : formatARS(totalCents)}
             </span>
           </div>
         </div>
@@ -690,11 +702,17 @@ function CheckoutView({
                   display: "inline-block",
                   animation: "spin 0.9s linear infinite",
                 }} />
-                {testMode ? "Confirmando…" : "Redirigiendo…"}
+                {testMode || regalo ? "Preparando…" : "Redirigiendo…"}
               </>
             ) : (
               <>
-                <span>{testMode ? "Confirmar compra (test)" : "Pagar con Mercado Pago"}</span>
+                <span>
+                  {regalo
+                    ? "Descargar gratis"
+                    : testMode
+                      ? "Confirmar compra (test)"
+                      : "Pagar con Mercado Pago"}
+                </span>
                 <i className="ti ti-arrow-right" />
               </>
             )}

@@ -37,6 +37,10 @@ const ESTADO: Record<string, { txt: string; cls: string }> = {
   REFUNDED: { txt: "Reembolsada", cls: "bad" },
   FAILED: { txt: "Fallida", cls: "bad" },
   EXPIRED: { txt: "Vencida", cls: "bad" },
+  // Entregada sin cobrar: aparece en la lista igual que cualquier otra,
+  // porque también es una entrega que el fotógrafo puede tener que atender.
+  // Lo que no hace es sumar a lo que ganó, que se cuenta aparte.
+  GIFT: { txt: "Regalo", cls: "draft" },
 };
 
 // Miniaturas que se muestran; el resto se resume en un "+N". Ocho llenan dos

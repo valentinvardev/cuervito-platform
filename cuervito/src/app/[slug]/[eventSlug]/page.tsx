@@ -39,6 +39,7 @@ export default async function PublicEventPage(props: {
       logoKey: true,
       status: true,
       onboardingCompletedAt: true,
+      giftEnabled: true,
     },
   });
   if (!photographer || photographer.status !== "ACTIVE" || !photographer.onboardingCompletedAt) {
@@ -202,6 +203,18 @@ export default async function PublicEventPage(props: {
       : {}),
   } as React.CSSProperties;
 
+  /* Este evento se regala.
+     
+     Dos condiciones, no una: el precio en cero lo pone el fotógrafo, pero el
+     permiso lo damos nosotros. Sin el permiso, un evento en cero no es gratis
+     —es un evento sin precio cargado— y la tienda no puede prometer algo que
+     el checkout va a rechazar.
+     
+     Es la misma cuenta que hace el checkout, y por eso sólo cambia lo que se
+     lee: el precio de verdad lo decide el servidor cuando se compra. Si las
+     dos se separaran, mandaría el checkout. */
+  const regalo = Number(event.pricePerPhoto) === 0 && photographer.giftEnabled;
+
   const shellProps = {
     photographer: {
       slug,
@@ -230,6 +243,7 @@ export default async function PublicEventPage(props: {
     cursorInicial,
     discounts: activeDiscounts,
     testMode,
+    regalo,
   };
 
   return (

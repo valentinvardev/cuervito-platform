@@ -47,6 +47,7 @@ export function GaleriaProgresiva({
   photos: Foto[];
   discounts?: React.ComponentProps<typeof EventCoverageShell>["discounts"];
   testMode?: boolean;
+  regalo?: boolean;
 }) {
   const { fotos, hayMas, trayendoMas, cargarMas } = useFotos({
     eventId: props.event.id,

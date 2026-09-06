@@ -149,6 +149,9 @@ export default async function DemoSubida() {
         portada: cover,
         publicado: e.isPublished,
         precio: Number(e.pricePerPhoto),
+        // La demo graba un evento con precio, así que el cartel del $0 no se
+        // ve nunca. En false, que es lo que corresponde a una cuenta común.
+        puedeRegalar: false,
         comision: e.platformFeePct !== null ? Number(e.platformFeePct) : env.PLATFORM_FEE_PERCENT,
         reconocimiento: e.recognition,
         leeDorsales: e.bibDetection,

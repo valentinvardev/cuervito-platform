@@ -24,7 +24,15 @@ const CONFIRMANDO_MS = 1600;
 const APROBADO_MS = 1500;
 const SALIDA_MS = 420;
 
-export function Velo({ alTerminar }: { alTerminar: () => void }) {
+export function Velo({
+  alTerminar,
+  regalo = false,
+}: {
+  alTerminar: () => void;
+  /** Fotos regaladas: no hubo pago que confirmar. Sin esto el velo le anuncia
+   *  a alguien que no pagó nada que estamos hablando con Mercado Pago. */
+  regalo?: boolean;
+}) {
   const [estado, setEstado] = useState<"confirmando" | "ok">("confirmando");
   const [saliendo, setSaliendo] = useState(false);
 
@@ -85,13 +93,21 @@ export function Velo({ alTerminar }: { alTerminar: () => void }) {
 
         {estado === "confirmando" ? (
           <>
-            <h1>Confirmando tu pago</h1>
-            <p>Un segundo, estamos hablando con Mercado Pago.</p>
+            <h1>{regalo ? "Preparando tus fotos" : "Confirmando tu pago"}</h1>
+            <p>
+              {regalo
+                ? "Un segundo, las estamos juntando."
+                : "Un segundo, estamos hablando con Mercado Pago."}
+            </p>
           </>
         ) : (
           <>
-            <h1>¡Pago confirmado!</h1>
-            <p>Ya son tuyas. Te las mostramos para que las bajes.</p>
+            <h1>{regalo ? "¡Son tuyas!" : "¡Pago confirmado!"}</h1>
+            <p>
+              {regalo
+                ? "Te las regalaron. Te las mostramos para que las bajes."
+                : "Ya son tuyas. Te las mostramos para que las bajes."}
+            </p>
           </>
         )}
       </div>

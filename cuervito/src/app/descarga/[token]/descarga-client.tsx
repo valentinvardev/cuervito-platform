@@ -60,6 +60,7 @@ export function DescargaClient({
   eventName,
   photos,
   fresh = false,
+  regalo = false,
 }: {
   token: string;
   buyerEmail: string;
@@ -67,6 +68,9 @@ export function DescargaClient({
   eventName: string;
   photos: Photo[];
   fresh?: boolean;
+  /** La venta se entregó sin cobrar. Cambia sólo lo que habla de plata: acá
+   *  todo el encabezado agradece una compra que no ocurrió. */
+  regalo?: boolean;
 }) {
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -201,8 +205,12 @@ export function DescargaClient({
             </div>
             <h1 className={`pay-title ${overlaySwap ? "swap-out" : ""}`}>
               {stage === "approved"
-                ? "¡Listo! Pago aprobado."
-                : "Confirmando pago…"}
+                ? regalo
+                  ? "¡Listo! Son tuyas."
+                  : "¡Listo! Pago aprobado."
+                : regalo
+                  ? "Preparando tus fotos…"
+                  : "Confirmando pago…"}
             </h1>
             <p className={`pay-sub ${overlaySwap ? "swap-out" : ""}`}>
               {stage === "approved"
@@ -224,9 +232,19 @@ export function DescargaClient({
           <div className="check-circle">
             <i className="ti ti-check" />
           </div>
-          <div className="eyebrow-success">Pago aprobado · Compra confirmada</div>
+          <div className="eyebrow-success">
+            {regalo ? "Fotos de regalo · Ya son tuyas" : "Pago aprobado · Compra confirmada"}
+          </div>
           <h1>
-            Gracias por<br />tu compra.
+            {regalo ? (
+              <>
+                Son tuyas.<br />Sin cargo.
+              </>
+            ) : (
+              <>
+                Gracias por<br />tu compra.
+              </>
+            )}
           </h1>
           <p className="lede">
             Tus fotos están listas para descargar. También te las enviamos por email a{" "}

@@ -67,6 +67,10 @@ export function EventCoverageShell(props: {
   photos: Photo[];
   discounts?: PublicDiscount[];
   testMode?: boolean;
+  /** El evento se regala: precio cero y el fotógrafo con el permiso puesto.
+   *  Cambia lo que se lee —no hay precio ni "pagar"— pero el precio real lo
+   *  sigue decidiendo el servidor al comprar. */
+  regalo?: boolean;
 }) {
   return (
     <CartProvider
@@ -85,12 +89,17 @@ function ShellInner({
   photos,
   discounts = [],
   testMode,
+  regalo = false,
 }: {
   photographer: Photographer;
   event: EventInfo;
   photos: Photo[];
   discounts?: PublicDiscount[];
   testMode?: boolean;
+  /** El evento se regala: precio cero y el fotógrafo con el permiso puesto.
+   *  Cambia lo que se lee —no hay precio ni "pagar"— pero el precio real lo
+   *  sigue decidiendo el servidor al comprar. */
+  regalo?: boolean;
 }) {
   const { items, openCart, isInCart, add, remove } = useCart();
   const [shown, setShown] = useState(PAGE_SIZE);
@@ -335,8 +344,10 @@ function ShellInner({
                 onClick={() => setLightboxIdx(i)}
               >
                 <div className="watermark">cuervito</div>
+                {/* "$0" sobre cada foto no se lee como gratis: se lee como
+                    un precio que falta cargar. */}
                 <div className="price">
-                  ${event.pricePerPhoto.toLocaleString("es-AR")}
+                  {regalo ? "Gratis" : `$${event.pricePerPhoto.toLocaleString("es-AR")}`}
                 </div>
                 <button
                   type="button"
@@ -388,6 +399,7 @@ function ShellInner({
         photos={photos}
         discounts={discounts}
         testMode={testMode}
+        regalo={regalo}
       />
 
       {lightboxIdx !== null && (

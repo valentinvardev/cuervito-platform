@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { esEntregable } from "~/lib/venta";
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
 
@@ -24,7 +25,8 @@ export async function GET(
   if (!sale) {
     return NextResponse.json({ error: "Token no encontrado" }, { status: 404 });
   }
-  if (sale.status !== "PAID") {
+  // PAID o GIFT: la pregunta es si tiene derecho a las fotos, no si pagó.
+  if (!esEntregable(sale.status)) {
     return NextResponse.json({ error: "Compra no confirmada" }, { status: 403 });
   }
   if (sale.downloadTokenExpires && sale.downloadTokenExpires < new Date()) {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { env } from "~/env";
 import { auth } from "~/server/auth";
+import { esEntregable } from "~/lib/venta";
 import { db } from "~/server/db";
 import { sendEmail } from "~/server/email";
 import { mailsDe } from "~/server/email-marca";
@@ -34,8 +35,8 @@ export async function POST(
   if (sale.sellerId !== session.user.id) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
-  if (sale.status !== "PAID" || !sale.downloadToken) {
-    return NextResponse.json({ error: "La venta no está pagada" }, { status: 409 });
+  if (!esEntregable(sale.status) || !sale.downloadToken) {
+    return NextResponse.json({ error: "La venta todavía no se entregó" }, { status: 409 });
   }
   if (sale.downloadTokenExpires && sale.downloadTokenExpires < new Date()) {
     return NextResponse.json({ error: "El link de descarga venció" }, { status: 410 });

@@ -31,12 +31,18 @@ export function Carrito({
   promo,
   hayCodigos,
   descuentos,
+  regalo = false,
   alVer,
 }: {
   eventId: string;
   promo: Promo | null;
   hayCodigos: boolean;
   descuentos: DescuentoBase[];
+  /** El evento se regala. Desaparece todo lo que habla de plata: los precios
+   *  por foto, el desglose, el código de descuento y el botón de pagar. Dejar
+   *  "$0" repetido en seis lugares no comunica que es gratis, comunica que
+   *  algo se rompió. */
+  regalo?: boolean;
   /** Abre la foto en grande. La pasa la tienda, que es la que tiene el visor. */
   alVer?: (photoId: string) => void;
 }) {
@@ -126,7 +132,9 @@ export function Carrito({
                 ? vacio
                   ? "Todavía no elegiste ninguna"
                   : `${items.length} ${items.length === 1 ? "foto" : "fotos"}`
-                : "Te las mandamos por mail al pagar"}
+                : regalo
+                  ? "Te las mandamos por mail"
+                  : "Te las mandamos por mail al pagar"}
             </div>
           </div>
           <button className="et-btn et-btn-icono" onClick={closeCart} aria-label="Cerrar">
@@ -156,7 +164,7 @@ export function Carrito({
                 </button>
                 <div className="et-linea-t">
                   <b>Foto digital</b>
-                  <span>{pesos(i.priceCents)}</span>
+                  <span>{regalo ? "Gratis" : pesos(i.priceCents)}</span>
                 </div>
                 <button
                   className="et-quitar"
@@ -197,7 +205,7 @@ export function Carrito({
               {/* El campo del código aparece sólo si el evento tiene alguno.
                   Un campo de cupón vacío en una tienda sin cupones sólo logra
                   que la gente se vaya a buscar uno que no existe. */}
-              {hayCodigos && (
+              {hayCodigos && !regalo && (
                 <label className="et-campo">
                   <span>
                     <Tag style={{ width: 15, height: 15, verticalAlign: -2 }} />
@@ -213,7 +221,7 @@ export function Carrito({
               {/* Se avisa mientras escribe, no al pagar. Y sólo cuando ya
                   terminó de consultar: marcar en rojo "VER" mientras alguien
                   tipea "VERANO20" es corregirlo antes de que termine. */}
-              {hayCodigos && codigo.trim() && (
+              {hayCodigos && !regalo && codigo.trim() && (
                 <div style={{ fontSize: 12.5, lineHeight: 1.4 }}>
                   {validando ? (
                     <span style={{ color: "var(--et-tenue)" }}>Buscando el código…</span>
@@ -240,7 +248,7 @@ export function Carrito({
             {/* Falta poco para la promoción: es el momento en que el descuento
                 de verdad mueve la aguja. Antes de elegir la primera foto el
                 mismo cartel es información; acá es una decisión. */}
-            {paso === "lista" && promo && items.length < promo.desde && (
+            {!regalo && paso === "lista" && promo && items.length < promo.desde && (
               <div style={{ fontSize: 13, color: "var(--accent, #F0410F)" }}>
                 Agregá {promo.desde - items.length}{" "}
                 {promo.desde - items.length === 1 ? "foto más" : "fotos más"} y se aplica el
@@ -253,7 +261,7 @@ export function Carrito({
                 <span>
                   {items.length} {items.length === 1 ? "foto" : "fotos"}
                 </span>
-                <span className="tnum">{pesos(subtotalCents)}</span>
+                <span className="tnum">{regalo ? "Gratis" : pesos(subtotalCents)}</span>
               </div>
 
               {/* La línea del descuento sólo existe cuando descuenta. Una fila
@@ -267,14 +275,16 @@ export function Carrito({
 
               <div className="et-total">
                 <span>Total</span>
-                <b className="tnum">{pesos(totalCentavos)}</b>
+                <b className="tnum">{regalo ? "Gratis" : pesos(totalCentavos)}</b>
               </div>
             </div>
 
             {/* El precio final lo sigue decidiendo el servidor, pero ya no hay
                 sorpresa: el número de arriba es el mismo que va a cobrar. */}
             <div style={{ fontSize: 11.5, color: "var(--et-tenue)", lineHeight: 1.4 }}>
-              El total final lo confirma Mercado Pago.
+              {regalo
+                ? "Estas fotos son un regalo del fotógrafo. No se cobra nada."
+                : "El total final lo confirma Mercado Pago."}
             </div>
 
             {paso === "lista" ? (
@@ -284,7 +294,11 @@ export function Carrito({
             ) : (
               <>
                 <button className="et-btn et-btn-lleno" onClick={pagar} disabled={enviando}>
-                  {enviando ? "Un momento" : "Pagar con Mercado Pago"}
+                  {enviando
+                    ? "Un momento"
+                    : regalo
+                      ? "Descargar gratis"
+                      : "Pagar con Mercado Pago"}
                 </button>
                 <button className="et-btn" onClick={() => setPaso("lista")} disabled={enviando}>
                   Volver a las fotos

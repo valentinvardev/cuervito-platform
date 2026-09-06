@@ -51,6 +51,9 @@ const STATUS_PILL: Record<string, { label: string; color: string }> = {
   FAILED: { label: "Falló", color: "var(--error)" },
   REFUNDED: { label: "Reembolsada", color: "var(--text-tertiary)" },
   EXPIRED: { label: "Expirada", color: "var(--text-tertiary)" },
+  // Entregada sin cobrar. Va en el acento y no en verde: verde acá significa
+  // "entró plata", y por un regalo no entró ninguna.
+  GIFT: { label: "Regalo", color: "var(--accent)" },
 };
 
 export function AdminSalesClient({
@@ -238,6 +241,7 @@ export function AdminSalesClient({
             { value: "FAILED", label: "Fallaron" },
             { value: "REFUNDED", label: "Reembolsadas" },
             { value: "EXPIRED", label: "Expiradas" },
+            { value: "GIFT", label: "Regaladas" },
           ]}
         />
         <Select

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { esEntregable } from "~/lib/venta";
 import { db } from "~/server/db";
 
 /**
@@ -57,7 +58,7 @@ export default async function PagoProcesandoPage(props: {
     );
   }
 
-  if (sale.status === "PAID" && sale.downloadToken) {
+  if (esEntregable(sale.status) && sale.downloadToken) {
     redirect(`/descarga/${sale.downloadToken}?fresh=1`);
   }
 

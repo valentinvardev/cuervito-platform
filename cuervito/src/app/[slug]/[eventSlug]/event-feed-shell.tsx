@@ -60,6 +60,10 @@ export function EventFeedShell(props: {
   photos: Photo[];
   discounts?: PublicDiscount[];
   testMode?: boolean;
+  /** El evento se regala: precio cero y el fotógrafo con el permiso puesto.
+   *  Cambia lo que se lee —no hay precio ni "pagar"— pero el precio real lo
+   *  sigue decidiendo el servidor al comprar. */
+  regalo?: boolean;
 }) {
   return (
     <CartProvider
@@ -78,12 +82,17 @@ function FeedInner({
   photos,
   discounts = [],
   testMode,
+  regalo = false,
 }: {
   photographer: Photographer;
   event: EventInfo;
   photos: Photo[];
   discounts?: PublicDiscount[];
   testMode?: boolean;
+  /** El evento se regala: precio cero y el fotógrafo con el permiso puesto.
+   *  Cambia lo que se lee —no hay precio ni "pagar"— pero el precio real lo
+   *  sigue decidiendo el servidor al comprar. */
+  regalo?: boolean;
 }) {
   const { items, openCart, isInCart, add, remove, subtotalCents } = useCart();
   const [shown, setShown] = useState(PAGE_SIZE);
@@ -685,7 +694,7 @@ function FeedInner({
                         fontWeight: 600,
                       }}
                     >
-                      ${event.pricePerPhoto.toLocaleString("es-AR")}
+                      {regalo ? "Gratis" : `$${event.pricePerPhoto.toLocaleString("es-AR")}`}
                     </span>
                     <button
                       type="button"
@@ -808,6 +817,7 @@ function FeedInner({
         photos={photos}
         discounts={discounts}
         testMode={testMode}
+        regalo={regalo}
       />
 
       {lightboxIdx !== null && (

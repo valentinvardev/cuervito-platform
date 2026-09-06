@@ -96,6 +96,9 @@ export function Pantalla({
     portada: string | null;
     publicado: boolean;
     precio: number;
+    /** Si esta cuenta tiene el permiso de regalar fotos. Decide qué significa
+     *  poner el precio en cero, que son dos cosas opuestas. */
+    puedeRegalar: boolean;
     comision: number;
     reconocimiento: boolean;
     leeDorsales: boolean;
@@ -798,7 +801,12 @@ export function Pantalla({
 
         {solapa === "precio" && (
           <section className="panel-s" data-activo="1">
-            <Precio eventoId={evento.id} inicial={evento.precio} comision={evento.comision} />
+            <Precio
+              eventoId={evento.id}
+              inicial={evento.precio}
+              comision={evento.comision}
+              puedeRegalar={evento.puedeRegalar}
+            />
 
             <Descuentos eventId={evento.id} precio={evento.precio} />
 
@@ -1229,10 +1237,12 @@ function Precio({
   eventoId,
   inicial,
   comision,
+  puedeRegalar,
 }: {
   eventoId: string;
   inicial: number;
   comision: number;
+  puedeRegalar: boolean;
 }) {
   // Se guardan los dígitos pelados y se muestra con puntos: el separador es
   // presentación, y tenerlo en el estado obliga a limpiarlo en cada lectura.
@@ -1323,10 +1333,20 @@ function Precio({
         <div className="cuenta-p">
           {valido ? (
             n === 0 ? (
-              <>
-                A <b>$0</b> las fotos se descargan gratis. Sirve para un evento de muestra, pero no
-                vas a cobrar nada.
-              </>
+              // Las dos mitades de esto son verdad o mentira según el permiso,
+              // y hasta que existió el permiso el cartel prometía algo que no
+              // pasaba: a $0 el cobro fallaba y nadie podía bajar nada.
+              puedeRegalar ? (
+                <>
+                  A <b>$0</b> las fotos se regalan: el que las quiere deja su mail y las baja, sin
+                  pasar por Mercado Pago. No vas a cobrar nada.
+                </>
+              ) : (
+                <>
+                  A <b>$0</b> nadie va a poder comprarlas: un cobro necesita un importe. Si querés
+                  regalar las fotos de este evento, escribinos y te habilitamos.
+                </>
+              )
             ) : (
               <>
                 Por cada foto vendida te quedan <b>${neto.toLocaleString("es-AR")}</b>, con la

@@ -35,6 +35,9 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
       recognition: true,
       bibDetection: true,
       ownerId: true,
+      // Si esta cuenta puede regalar. Es lo que decide qué significa poner el
+      // precio en cero: entregar gratis, o dejar el evento sin poder cobrarse.
+      owner: { select: { giftEnabled: true } },
       sales: { where: { status: "PAID" }, select: { sellerNetCents: true } },
       collaborators: {
         select: {
@@ -46,6 +49,7 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
     },
   });
   if (e?.ownerId !== userId) notFound();
+  const puedeRegalar = e.owner.giftEnabled;
 
   // Los tres conteos van al servidor y no se sacan del arreglo de fotos: ese
   // está topeado en TOPE, así que en un evento grande contar sobre él daría
@@ -160,6 +164,7 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
         // La del evento. Los creados antes de que existiera la columna la
         // tienen en null y siguen con la global.
         comision: e.platformFeePct !== null ? Number(e.platformFeePct) : env.PLATFORM_FEE_PERCENT,
+        puedeRegalar,
         reconocimiento: e.recognition,
         leeDorsales: e.bibDetection,
         maxFoto: env.QUOTA_MAX_PHOTO_BYTES,

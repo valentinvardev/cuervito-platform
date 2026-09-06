@@ -97,6 +97,43 @@ export async function setUserRoleAction(formData: FormData): Promise<void> {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// Regalar fotos
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Habilitar o deshabilitar que esta cuenta pueda regalar fotos.
+ *
+ * Con el permiso puesto, una compra cuyo total dé CERO —porque el evento está
+ * a precio cero, o porque un descuento cubrió todo— se entrega directo, sin
+ * pasar por Mercado Pago, y queda registrada en estado GIFT.
+ *
+ * Es un permiso de la plataforma y no una opción del fotógrafo a propósito.
+ * Poner un evento en cero se pudo siempre —el formulario acepta el cero desde
+ * el principio, y hasta ahora eso simplemente rompía el checkout—, así que si
+ * el cero por sí solo repartiera fotos gratis, cualquiera se lo encontraría de
+ * casualidad al equivocarse escribiendo el precio.
+ *
+ * Queda en el log de admin porque es un permiso que reparte contenido sin
+ * cobrar: si mañana aparece una galería entera entregada gratis, tiene que
+ * poder responderse quién habilitó qué y cuándo.
+ */
+export async function toggleGiftAction(formData: FormData): Promise<void> {
+  const actorId = await assertAdmin();
+  const targetId = String(formData.get("userId") ?? "");
+  const enabled = String(formData.get("enabled") ?? "") === "1";
+  if (!targetId) return;
+
+  await db.user.update({
+    where: { id: targetId },
+    data: { giftEnabled: enabled },
+  });
+  await logAction(actorId, enabled ? "ENABLE_GIFT" : "DISABLE_GIFT", "User", targetId);
+
+  revalidatePath(`/admin/users/${targetId}`);
+  revalidatePath("/admin/users");
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Quota overrides
 // ──────────────────────────────────────────────────────────────────────────
 

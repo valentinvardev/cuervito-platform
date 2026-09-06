@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 
+import { esEntregable } from "~/lib/venta";
 import { db } from "~/server/db";
 import { getS3ObjectBytes } from "~/server/s3";
 
@@ -32,7 +33,7 @@ export async function GET(
   });
 
   if (!sale) return new Response("Token no encontrado", { status: 404 });
-  if (sale.status !== "PAID") {
+  if (!esEntregable(sale.status)) {
     return new Response("Compra no confirmada", { status: 403 });
   }
   if (sale.downloadTokenExpires && sale.downloadTokenExpires < new Date()) {

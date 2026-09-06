@@ -113,6 +113,8 @@ export function EncontrateShell(props: {
   cursorInicial?: string | null;
   discounts?: PublicDiscount[];
   testMode?: boolean;
+  /** El evento se regala: precio cero y el fotógrafo con el permiso puesto. */
+  regalo?: boolean;
   /** Si el evento lee dorsales. Sale de Event.bibDetection. */
   buscaPorDorsal?: boolean;
 }) {
@@ -134,6 +136,7 @@ function Adentro({
   cursorInicial = null,
   discounts = [],
   testMode,
+  regalo = false,
   buscaPorDorsal = true,
 }: {
   photographer: Photographer;
@@ -142,6 +145,7 @@ function Adentro({
   cursorInicial?: string | null;
   discounts?: PublicDiscount[];
   testMode?: boolean;
+  regalo?: boolean;
   buscaPorDorsal?: boolean;
 }) {
   const { items, add, remove, isInCart, open, openCart } = useCart();
@@ -286,8 +290,19 @@ function Adentro({
             <b>{event.photosCount.toLocaleString("es-AR")}</b>
             <span>fotos</span>
             <i style={{ width: 3, height: 3, borderRadius: "50%", background: "currentColor" }} />
-            <b>{pesos(precioCent)}</b>
-            <span>cada una</span>
+            {/* "$0 cada una" no se lee como gratis: se lee como un precio que
+                el fotógrafo se olvidó de cargar. */}
+            {regalo ? (
+              <>
+                <b>Gratis</b>
+                <span>te las regala</span>
+              </>
+            ) : (
+              <>
+                <b>{pesos(precioCent)}</b>
+                <span>cada una</span>
+              </>
+            )}
           </div>
         </section>
 
@@ -392,7 +407,7 @@ function Adentro({
         {/* Sólo descuentos automáticos. Los de código no se anuncian acá: un
             código publicado en la misma página donde se compra no es un código,
             es un descuento con un paso de más para todos. */}
-        {promo && (
+        {promo && !regalo && (
           <div className="et-promo">
             <span className="et-promo-i">
               <Tag />
@@ -521,7 +536,7 @@ function Adentro({
           fotos={filtradas}
           indice={viendo}
           enCarrito={isInCart}
-          precio={pesos(precioCent)}
+          precio={regalo ? "Gratis" : pesos(precioCent)}
           alCerrar={() => setViendo(null)}
           alIr={setViendo}
           alAlternar={(f) => alternar(f as Photo)}
@@ -533,6 +548,7 @@ function Adentro({
         promo={promo}
         hayCodigos={hayCodigos}
         descuentos={discounts}
+        regalo={regalo}
         alVer={(id) => {
           // El visor trabaja sobre lo que la grilla tiene cargado. Antes
           // estaban TODAS las fotos del evento en memoria y siempre la

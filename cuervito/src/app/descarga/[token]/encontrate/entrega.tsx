@@ -47,6 +47,7 @@ export function Entrega({
   fotografo,
   fotos,
   recienPagado,
+  regalo = false,
   simulado = false,
 }: {
   token: string;
@@ -55,6 +56,9 @@ export function Entrega({
   fotografo: Fotografo;
   fotos: Foto[];
   recienPagado: boolean;
+  /** La venta se entregó sin cobrar. Sólo cambia la copia del velo: el resto
+   *  de la entrega es idéntica, porque las fotos son las mismas. */
+  regalo?: boolean;
   /**
    * Modo demo: finge las descargas en vez de pedirlas.
    *
@@ -180,7 +184,7 @@ export function Entrega({
 
   return (
     <div className="et">
-      {velo && <Velo alTerminar={() => setVelo(false)} />}
+      {velo && <Velo alTerminar={() => setVelo(false)} regalo={regalo} />}
 
       {/* El fotógrafo arriba, con la vuelta a su página. El atleta le compró a
           una persona: si acá no está, la entrega se lee como de un sistema. */}
