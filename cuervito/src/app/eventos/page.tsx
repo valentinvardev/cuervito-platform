@@ -9,6 +9,7 @@ import { ExternalStylesheets } from "../_components/external-stylesheets";
 import { LiveEventsSearch } from "../_components/live-events-search";
 import { RevealOnScroll } from "../_components/reveal-on-scroll";
 import { ThemeToggle } from "../_components/theme-toggle";
+import { NOMBRE } from "~/lib/marca";
 
 export const metadata: Metadata = {
   title: "Buscá las fotos de tu carrera · encontrate.app",
@@ -65,7 +66,7 @@ export default function EventosPage() {
       <footer className="footer">
         <div className="container">
           <div className="footer-bottom" style={{ borderTop: "none" }}>
-            <span>© 2026 cuervito.app · Hecho en Argentina</span>
+            <span>© 2026 {NOMBRE} · Hecho en Argentina</span>
             <div style={{ display: "flex", gap: 18, alignItems: "center" }}>
               <Link href="/terminos" className="footer-legal-link">
                 Términos

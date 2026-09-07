@@ -3,6 +3,7 @@ import "server-only";
 import exifr from "exifr";
 
 import type { ProjectMetadata } from "~/lib/editor-types";
+import { NOMBRE, SITIO } from "~/lib/marca";
 
 type ExifShape = {
   DateTimeOriginal?: Date | string;
@@ -150,7 +151,7 @@ export async function reverseGeocode(
     const res = await fetch(url.toString(), {
       headers: {
         // Nominatim policy: identify yourself.
-        "User-Agent": "Cuervito Admin Editor (https://cuervito.app)",
+        "User-Agent": `${NOMBRE} Admin Editor (${SITIO})`,
       },
       signal: AbortSignal.timeout(5000),
     });

@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 
 import { saveProfileAction, type ProfileState } from "./actions";
 import { ObShell } from "./ob-shell";
+import { NOMBRE } from "~/lib/marca";
 
 type Initial = {
   name: string;
@@ -68,7 +69,7 @@ export function ProfileShell({ initial }: { initial: Initial }) {
           <div className="field full">
             <label className="label">Tu usuario</label>
             <div className={`input-group ${fe.slug ? "input-error" : ""}`}>
-              <span className="prefix">cuervito.app/</span>
+              <span className="prefix">{NOMBRE}/</span>
               <input
                 name="slug"
                 placeholder="ana-liotta"

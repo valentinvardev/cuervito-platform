@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { NOMBRE } from "~/lib/marca";
 
 type NavItem = {
   href: string;
@@ -315,7 +316,7 @@ export function LandingMobileNav({ loggedIn }: { loggedIn: boolean }) {
           textAlign: "center",
         }}
       >
-        cuervito.app
+        {NOMBRE}
       </footer>
     </div>
   );
