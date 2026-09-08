@@ -30,13 +30,29 @@ export function Buscador({ placeholder }: { placeholder: string }) {
     const corte = new AbortController();
     const id = setTimeout(() => {
       fetch(`/api/v2/buscar?q=${encodeURIComponent(q)}`, { signal: corte.signal })
-        .then((r) => r.json())
-        .then((d: Resultado) => {
-          setRes(d);
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+        .then((d: Partial<Resultado>) => {
+          /* Sólo se guarda lo que tiene la forma que se espera.
+
+             Antes se guardaba lo que viniera. El endpoint contestó `{error}`
+             —un 403 que nadie había visto porque no nos pasaba a nosotros—,
+             eso quedó en `res`, y en el render siguiente `res.eventos.forEach`
+             reventó. Sin un límite de error en el panel, esa línea tiraba
+             abajo la pantalla ENTERA: el fotógrafo escribía dos letras en la
+             barra y se quedaba mirando un fondo vacío.
+
+             Una respuesta rara es "sin resultados". Nunca es "sin panel". */
+          if (!Array.isArray(d.eventos) || !Array.isArray(d.ventas)) {
+            setRes(VACIO);
+            return;
+          }
+          setRes({ eventos: d.eventos, ventas: d.ventas, dorsal: d.dorsal ?? null });
           setMarcado(0);
         })
-        .catch(() => {
-          /* cancelado por la tecla siguiente */
+        .catch((e: unknown) => {
+          // Cancelado por la tecla siguiente: no hay nada que mostrar todavía.
+          // Cualquier otra falla se muestra como lista vacía, por lo de arriba.
+          if ((e as Error).name !== "AbortError") setRes(VACIO);
         });
     }, 180);
     return () => {
@@ -82,8 +98,11 @@ export function Buscador({ placeholder }: { placeholder: string }) {
           : "Ninguna foto con ese número",
     });
   }
-  res.eventos.forEach((e) => items.push({ href: `/dashboard/events/${e.id}`, icono: <CalendarDays />, nombre: e.nombre, meta: e.meta }));
-  res.ventas.forEach((v) => items.push({ href: `/dashboard/ventas`, icono: <ReceiptText />, nombre: v.nombre, meta: v.meta }));
+  res.eventos.forEach((e) => items.push({ href: `/dashboard/evento/${e.id}`, icono: <CalendarDays />, nombre: e.nombre, meta: e.meta }));
+  // A ESA venta, abierta. Antes llevaba a la lista general, que muestra las
+  // últimas cincuenta: buscar una venta de hace dos meses te dejaba en una
+  // lista donde no estaba.
+  res.ventas.forEach((v) => items.push({ href: `/dashboard/ventas?venta=${v.id}`, icono: <ReceiptText />, nombre: v.nombre, meta: v.meta }));
 
   function ir(i: number) {
     const it = items[i];

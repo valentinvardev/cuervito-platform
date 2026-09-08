@@ -13,8 +13,19 @@ import { db } from "~/server/db";
  */
 export async function GET(req: Request) {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "no" }, { status: 403 });
+  /* Cualquier sesión, no sólo admin.
+
+     Acá había un `role !== "ADMIN"` de cuando el panel era una vista previa
+     que sólo veíamos nosotros. Cuando el panel se abrió a todos, el candado
+     se sacó de las páginas y se olvidó acá. El resultado: para todo fotógrafo
+     real, escribir dos letras en la barra devolvía un 403 con `{error:"no"}`,
+     el buscador lo guardaba como si fueran resultados y el panel entero se
+     caía en blanco. Nosotros no lo veíamos nunca, porque somos admin.
+
+     No hace falta más control que la sesión: cada consulta de abajo ya está
+     acotada al userId, así que nadie busca en lo de otro. */
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Sesión expirada." }, { status: 401 });
   }
 
   const q = (new URL(req.url).searchParams.get("q") ?? "").trim();

@@ -60,8 +60,19 @@ const MINIS = 8;
  * Traerlas con la lista serían cientos de URLs firmadas de S3 para mirar, con
  * suerte, una.
  */
-export function Lista({ ventas }: { ventas: Venta[] }) {
-  const [abierta, setAbierta] = useState<Venta | null>(null);
+export function Lista({
+  ventas,
+  abrirId,
+}: {
+  ventas: Venta[];
+  /** Una venta para abrir de entrada. Es a donde llega el buscador: encontrar
+   *  una venta de hace dos meses y aterrizar en una lista donde no está no es
+   *  encontrarla. */
+  abrirId?: string;
+}) {
+  const [abierta, setAbierta] = useState<Venta | null>(
+    () => (abrirId ? (ventas.find((v) => v.id === abrirId) ?? null) : null),
+  );
   const [fotos, setFotos] = useState<FotoVenta[] | null>(null);
   const [cargando, setCargando] = useState(false);
   const [falloFotos, setFalloFotos] = useState(false);
