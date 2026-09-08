@@ -22,3 +22,17 @@ existir: una vez es un descuido, dos es una tendencia.
 - Señal temprana: si al agregar una funcionalidad hay que editar la misma
   condición en más de dos archivos, esa condición era un módulo.
 - Estado: activo
+
+## Estado derivado que se calcula una vez y nunca se reconcilia
+- Primera vez: 2026-09-08 (registrado; la primera aparición fue el relleno de miniaturas)
+- Ocurrencias: 2 (thumbKey → hizo falta `rellenar-miniaturas.mjs`; previewGeneratedAt → 160 fotos cobrables invisibles en un evento publicado)
+- Qué pasa: el trabajo que deriva algo de una foto —miniatura, marca de agua,
+  OCR, caras— corre una sola vez, en memoria, disparado por el commit. Si el
+  proceso se reinicia (cada deploy hace `pm2 restart`), lo que estaba en cola se
+  pierde y nada vuelve a preguntarse "¿a qué foto le falta algo?".
+- Por qué importa: la falla es silenciosa. La foto existe, tiene tamaño, el
+  fotógrafo la ve en su panel; la tienda no la muestra y el atleta no la
+  encuentra. Se descubre por casualidad o por queja, meses después.
+- Señal temprana: si un campo se llena "después" de crear la fila, tiene que
+  existir la consulta que lista las filas donde sigue vacío, y algo que la corra.
+- Estado: activo
