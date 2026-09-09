@@ -39,8 +39,20 @@ export function Soltador({
   // Sin miniaturas: esta pantalla muestra una barra y tres números, no una
   // celda por foto. Pedirlas sería leer cada archivo entero a base64 para
   // tirarlo.
-  const { total, hechas, fallidas, cerrado, fase, pct, agregar, reintentar, conFallo, limpiar } =
-    useSubida(eventId, { miniaturas: 0, maxBytes, simulado });
+  const {
+    total,
+    hechas,
+    fallidas,
+    cerrado,
+    fase,
+    pct,
+    ritmoPorMin,
+    etaMs,
+    agregar,
+    reintentar,
+    conFallo,
+    limpiar,
+  } = useSubida(eventId, { miniaturas: 0, maxBytes, simulado });
 
   async function recibir(lista: FileList | File[]) {
     const r = await agregar(lista);
@@ -97,12 +109,22 @@ export function Soltador({
                   </>
                 ) : (
                   <>
-                    Ya están arriba. El reconocimiento corre solo y las fotos van apareciendo abajo a
-                    medida que termina.
+                    Ya están arriba. Se procesan de a unas treinta por minuto: con muchas fotos
+                    tardan un rato en aparecer en la tienda.
                   </>
                 )
               ) : (
-                <>No cierres esta pestaña hasta que termine.</>
+                /* Cuánto falta, cuando se puede saber.
+
+                   "No cierres esta pestaña" a secas, en una tanda de dos mil
+                   fotos que tarda dos horas, no le dice al fotógrafo lo único
+                   que necesita para decidir: si se queda mirando o se va a
+                   hacer otra cosa. */
+                <>
+                  {ritmoPorMin ? `${ritmoPorMin} por minuto` : "Subiendo"}
+                  {etaMs !== null && <> · faltan unos {tiempo(etaMs)}</>} · No cierres esta
+                  pestaña.
+                </>
               )}
             </div>
           </div>
@@ -223,4 +245,13 @@ export function Soltador({
       )}
     </>
   );
+}
+
+/** "40 min", "1 h 20 min". Sin segundos: no aportan y cambian todo el tiempo. */
+function tiempo(ms: number): string {
+  const min = Math.max(1, Math.round(ms / 60_000));
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const r = min % 60;
+  return r === 0 ? `${h} h` : `${h} h ${r} min`;
 }
