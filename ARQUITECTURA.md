@@ -239,12 +239,49 @@ distintas**:
 conocida: quien sube fotos grupales quema cuota mucho más rápido con el mismo
 volumen de fotos. Pendiente separarlo en tres límites.
 
+### Procesamiento de fotos
+
+Lo que convierte una foto subida en una foto vendible —marca de agua,
+miniatura, dorsal, caras— **no corre en el request del commit**. Corre en una
+cola (`src/server/cola-fotos.ts`) que arranca desde `src/instrumentation.ts` y
+saca el trabajo pendiente de la tabla `Photo`.
+
+El estado del trabajo son columnas de la propia fila: `previewKey` nulo es "sin
+marca de agua", `processLeaseUntil` es quién la tiene tomada, `processAttempts`
+cuántas veces se intentó y `processError` por qué falló. No hay tabla de
+trabajos porque no hace falta: la fila ya dice todo eso.
+
+El commit sólo confirma que el archivo llegó y llama a `despertar()`. Si ese
+aviso se pierde, no pasa nada: la foto ya quedó anotada como pendiente y la
+levanta la próxima pasada. Ésa es la diferencia con lo de antes, que era un
+`void (async …)` en memoria y moría con el proceso.
+
+Ritmo real: ~5 s por foto, 3 en paralelo (semáforo de sharp) ≈ **30 fotos por
+minuto**.
+
 ### Cron
 
-`POST /api/cron/cleanup` (con `Authorization: Bearer $CRON_SECRET`):
-1. Borra de S3 y de la DB las fotos con `deletedAt` anterior a
+`POST /api/cron/cleanup` (con `Authorization: Bearer $CRON_SECRET`), diario:
+1. Adopta o borra las subidas que se firmaron y nunca llegaron, preguntándole a
+   S3 con HEAD antes de decidir. Va **primero**: estaba después del paso 2, que
+   corta con 502 si S3 falla, así que un mal día de S3 salteaba esta limpieza
+   entera.
+2. Borra de S3 y de la DB las fotos con `deletedAt` anterior a
    `PHOTO_RETENTION_DAYS`, en lotes de 500.
-2. Limpia los `downloadToken` vencidos — la `Sale` queda para la contabilidad.
+3. Limpia los `downloadToken` vencidos — la `Sale` queda para la contabilidad.
+4. Deja `cron:cleanup:ultimaCorrida` en `Setting`, que es la única forma de
+   saber desde afuera si el crontab del VPS existe de verdad.
+
+`POST /api/cron/procesador` (mismo secreto), cada 5 minutos: **es un respaldo,
+no el mecanismo**. La cola trabaja sola mientras el proceso viva; esto la
+despierta por si el bucle murió por algo que no previmos. Con `GET` devuelve el
+estado (pendientes, en vuelo, enfriándose, venenosas). Acepta además
+`barrer-huerfanas`, `reintentar-venenosas` y `reconocer-evento`.
+
+```
+*/5 * * * * curl -fsS -X POST -H 'Authorization: Bearer <CRON_SECRET>' \
+  https://encontrate.app/api/cron/procesador >> /var/log/cuervito-procesador.log 2>&1
+```
 
 ---
 
@@ -293,6 +330,33 @@ salir.
 
 Cosas que ya causaron bugs y conviene tener presentes.
 
+**Lo que se difiere con `void (async …)` muere con el proceso.** Y `pm2
+restart` es la operación normal, no una falla rara: su `kill_timeout` por
+defecto son 1,6 s, y una marca de agua tarda 5. Así se perdieron 160 fotos —
+cobrables e invisibles en un evento publicado— la noche de tres deploys
+seguidos. Por eso el trabajo diferido vive en la tabla `Photo` y no en promesas
+sueltas, y por eso `ecosystem.config.cjs` sube el `kill_timeout` a 30 s.
+
+**`instrumentation.ts` se compila en otra capa de webpack que los route
+handlers.** Un módulo importado desde los dos lados se evalúa DOS veces, así que
+cualquier estado que tenga que ser uno por proceso va en `globalThis`: ver
+`db.ts` (el cliente de Prisma), `sales-bus.ts` (los suscriptores), `watermark.ts`
+(el semáforo de sharp) y `cola-fotos.ts`. Un `let` de módulo son dos contadores,
+dos semáforos y dos pools de conexiones.
+
+**El `if` de `instrumentation.ts` tiene que ser un bloque, no un `return`
+temprano.** Existe `middleware.ts`, así que Next compila ese archivo también
+para Edge, donde sharp no puede ni importarse. webpack elimina el import
+dinámico sólo si está dentro de un `if` con condición resoluble en compilación;
+con un `return` temprano deja el import vivo y el build se cae con "Module not
+found: child_process".
+
+**Los clientes de AWS no tienen timeout por defecto.** El default del SDK es 0 =
+sin límite. Una descarga colgada retiene un permiso del semáforo de sharp para
+siempre, y tres de ésas detienen el procesamiento sin un solo error en el log.
+`socketTimeout` es el que importa: `requestTimeout` sólo cubre hasta los
+encabezados.
+
 **El middleware corre en Edge y no puede usar Prisma.** Por eso la resolución de
 dominios propios pasa por `/api/_internal/domain-map`, un route handler en Node
 que el middleware consulta con caché de 60s.
@@ -340,22 +404,87 @@ Medidos sobre 30 días (referencia para dimensionar):
 Costos AWS aproximados: Rekognition ~US$9/mes, storage ~US$4/mes creciendo
 US$1,55 cada mes. El face storage es despreciable (US$0,29/mes).
 
+Números de subida y procesamiento, medidos en septiembre de 2026 y necesarios
+para dimensionar cualquier cambio en ese camino:
+
+| Métrica | Valor |
+|---|---|
+| Marca de agua | ~5 s por foto, 3 en paralelo ≈ **30 fotos/min** |
+| Subida real de la fotógrafa principal | ~16 fotos/min (3,9 MB/s, fotos de 14,9 MB) |
+| Filas `Photo` | ~16.000 |
+| Evento más grande | 2.162 fotos |
+
+El servidor procesa casi el doble de rápido de lo que entra, así que la cola no
+se acumula con un fotógrafo. Con dos subiendo a la vez, sí.
+
 ---
 
 ## 9. Deploy
 
 ```bash
 git pull
-npx prisma db push     # obligatorio si cambió el schema
+npx prisma db push     # ANTES del build, siempre. Ver abajo.
 npm run build
 pm2 restart cuervito
 ```
 
+**`db push` va antes del build y no es opcional.** Se salteó una vez, en el
+deploy del 7 de septiembre de 2026, y el resultado fue que toda tienda pública
+devolvió 500 hasta que se corrió: `[slug]/[eventSlug]/page.tsx` leía una columna
+que no existía. Y no falla ruidosamente al arrancar, falla en cada request, que
+es peor.
+
+La asimetría explica el orden: un cambio aditivo de esquema es compatible hacia
+atrás —el código viejo ignora la columna nueva— pero el código nuevo **no** es
+compatible con el esquema viejo. Primero la base, después el deploy: así la
+ventana entre los dos pasos es segura en lugar de ser una caída.
+
 `prisma db push` sincroniza la base y regenera el cliente. El `npm run build`
 corre `prisma generate` por su cuenta, así que un cliente desactualizado ya no
-rompe la compilación — pero **si el schema cambió, `db push` sigue siendo
-obligatorio**: sin él el cliente compila pero las columnas no existen y falla en
-runtime.
+rompe la compilación — pero eso hace que saltearse el `db push` sea todavía más
+fácil: **compila igual**.
+
+### Primera vez con `ecosystem.config.cjs`
+
+```bash
+pm2 delete cuervito && pm2 start ecosystem.config.cjs && pm2 save
+```
+
+Los deploys siguientes son el `pm2 restart cuervito` de arriba.
+
+### Qué mirar en los primeros minutos
+
+```bash
+pm2 logs cuervito --nostream --lines 200 | grep '\[cola\]'
+```
+
+- Tiene que aparecer **una sola** línea `[cola] arranca` con **un solo** id. Si
+  hay dos ids, el estado no quedó en `globalThis`: son dos bucles compitiendo,
+  dos semáforos de sharp y dos pools de Prisma. Parar con `PROCESADOR_ACTIVO=false`
+  y arreglarlo antes de seguir.
+- Después, `[cola] leases huérfanos liberados=N`. Es lo que hace que un restart
+  a mitad de una tanda cueste segundos en vez de los diez minutos del lease.
+
+La cola se reconstruye sola desde `Photo`, así que después de un restart no hay
+que disparar nada. Esto lo confirma:
+
+```sql
+SELECT count(*) FROM "Photo"
+WHERE "fileSize" IS NOT NULL AND "deletedAt" IS NULL AND "previewKey" IS NULL
+  AND "createdAt" < now() - interval '30 minutes';
+```
+
+Tiene que ser 0. Si no baja, el estado de la cola se ve con:
+
+```bash
+curl -s -H "Authorization: Bearer $CRON_SECRET" https://encontrate.app/api/cron/procesador
+```
+
+### Si algo sale mal
+
+`PROCESADOR_ACTIVO=false` en el `.env` y `pm2 restart` apaga la cola sin tocar
+código. Las fotos quedan pendientes en la base —no se pierde nada— y se retoman
+al volver a prenderla.
 
 Cuando el build aborta por cualquier motivo, `.next/` queda con el bundle viejo
 **incluido el CSS**. Es la causa habitual de "agregaste estilos pero no se ven".

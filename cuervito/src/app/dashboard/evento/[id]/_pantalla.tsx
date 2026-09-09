@@ -107,6 +107,10 @@ export function Pantalla({
     descripcion: string | null;
     total: number;
     reconocidas: number;
+    /** Fotos que llegaron y todavía no se ven en la tienda. */
+    noVisibles: number;
+    /** Nombres de las que se dieron por perdidas: hay que volver a exportarlas. */
+    noSePudieron: string[];
     conDorsal: number;
     ventas: number;
     recaudado: string;
@@ -647,7 +651,25 @@ export function Pantalla({
                                 }
                               : undefined
                           }
-                        />
+                        >
+                          {/* Sin imagen todavía. La celda ya caía a un recuadro
+                              vacío, que se lee como una foto que no cargó;
+                              decirlo la convierte en una foto que va a estar. */}
+                          {!f.url && (
+                            <span
+                              style={{
+                                position: "absolute",
+                                inset: 0,
+                                display: "grid",
+                                placeItems: "center",
+                                fontSize: 11,
+                                color: "var(--tenue)",
+                              }}
+                            >
+                              procesando
+                            </span>
+                          )}
+                        </div>
                         <div className="ft-v" />
                         {/* El tilde es la puerta de entrada al modo selección:
                             tocarlo elige esa foto y a partir de ahí cualquier
@@ -871,15 +893,50 @@ export function Pantalla({
                 </div>
               )}
 
-              {evento.total > 0 && evento.reconocidas < evento.total && (
+              {/* Tres estados distintos y no uno.
+
+                  Antes esto decía siempre "igual se venden: aparecen en tu
+                  galería", y para una foto sin marca de agua eso es falso: la
+                  tienda filtra por previewKey, así que no aparece en ningún
+                  lado. Alguien podía mirar este cartel tranquilo mientras
+                  ciento sesenta fotos estaban invisibles. */}
+              {evento.noVisibles > 0 && (
                 <div className="porque">
                   <Info />
                   <span>
-                    Las que faltan pueden estar todavía procesando, o ser fotos donde no se ve
-                    ninguna cara. Igual se venden: aparecen en tu galería.
+                    <b>{evento.noVisibles.toLocaleString("es-AR")}</b>{" "}
+                    {evento.noVisibles === 1 ? "foto se está procesando" : "fotos se están procesando"}
+                    : todavía no aparecen en la tienda. Se hacen unas treinta por minuto.
                   </span>
                 </div>
               )}
+
+              {evento.noSePudieron.length > 0 && (
+                <div className="porque">
+                  <Info />
+                  <span>
+                    <b>
+                      {evento.noSePudieron.length}{" "}
+                      {evento.noSePudieron.length === 1 ? "foto no se pudo" : "fotos no se pudieron"}{" "}
+                      procesar
+                    </b>{" "}
+                    y no van a aparecer en la tienda. Probá exportarlas de nuevo y volvé a subirlas:{" "}
+                    {evento.noSePudieron.join(", ")}.
+                  </span>
+                </div>
+              )}
+
+              {evento.noVisibles === 0 &&
+                evento.total > 0 &&
+                evento.reconocidas < evento.total && (
+                  <div className="porque">
+                    <Info />
+                    <span>
+                      Las que faltan son fotos donde no se ve ninguna cara. Se venden igual: están
+                      en tu galería y se pueden encontrar por dorsal.
+                    </span>
+                  </div>
+                )}
             </div>
           </section>
         )}

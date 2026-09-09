@@ -54,7 +54,8 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
   // Los tres conteos van al servidor y no se sacan del arreglo de fotos: ese
   // está topeado en TOPE, así que en un evento grande contar sobre él daría
   // "580 de 580" cuando hay 3.000.
-  const [fotos, total, reconocidas, conDorsal, vendidasIds] = await Promise.all([
+  const [fotos, total, reconocidas, conDorsal, vendidasIds, noVisibles, noSePudieron] =
+    await Promise.all([
     db.photo.findMany({
       where: { eventId: id, deletedAt: null, fileSize: { not: null } },
       orderBy: { createdAt: "desc" },
@@ -97,6 +98,22 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
     db.saleItem.findMany({
       where: { sale: { eventId: id, status: "PAID" } },
       select: { photoId: true },
+    }),
+    /* Cuántas NO se ven todavía en la tienda.
+
+       Es a propósito una pregunta distinta de la que hace la cola. La cola
+       pregunta "a qué le falta trabajo", que incluye el lease y los intentos;
+       esto pregunta "qué no se ve", que es lo único que le importa al
+       fotógrafo. No es la misma regla escrita dos veces: son dos preguntas. */
+    db.photo.count({
+      where: { eventId: id, deletedAt: null, fileSize: { not: null }, previewKey: null },
+    }),
+    /* Las que se dieron por perdidas. El único arreglo posible es que las
+       vuelva a exportar, así que hay que nombrarlas. */
+    db.photo.findMany({
+      where: { eventId: id, deletedAt: null, processAttempts: { gte: 4 }, previewKey: null },
+      select: { filename: true },
+      take: 6,
     }),
   ]);
 
@@ -172,6 +189,8 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
         total,
         reconocidas,
         conDorsal,
+        noVisibles,
+        noSePudieron: noSePudieron.map((f) => f.filename),
         ventas: e.sales.length,
         recaudado: pesos(e.sales.reduce((a, s) => a + s.sellerNetCents, 0)),
       }}
