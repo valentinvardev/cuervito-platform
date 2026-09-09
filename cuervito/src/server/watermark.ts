@@ -259,6 +259,12 @@ async function _generatePreview(photoId: string): Promise<PreviewResult> {
       data: {
         previewKey: watermarkedKey,
         previewCleanKey: cleanKey,
+        // La miniatura SE SUBÍA a S3 tres líneas más arriba y no se guardaba
+        // acá, así que para la base no existía: 2.620 fotos con el archivo de
+        // 56 KB sentado en el bucket mientras la grilla les servía el preview
+        // de 845 KB. Todo el trabajo de agosto para que la galería abriera
+        // rápido se apagó solo, sin romper nada, sin un error en ningún lado.
+        thumbKey,
         previewGeneratedAt: new Date(),
         width: resizedMeta.width ?? w,
         height: resizedMeta.height ?? h,
