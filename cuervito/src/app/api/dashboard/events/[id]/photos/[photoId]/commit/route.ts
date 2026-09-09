@@ -1,13 +1,25 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { env } from "~/env";
 import { auth } from "~/server/auth";
+import { despertar } from "~/server/cola-fotos";
 import { db } from "~/server/db";
-import { evaluarDorsales } from "~/server/dorsales";
 import { canUploadToEvent } from "~/server/event-access";
-import { runFaceIndex, runOcr } from "~/server/rekognition";
-import { deleteS3Objects, getObjectSize } from "~/server/s3";
-import { generatePreview } from "~/server/watermark";
+import { deleteS3Objects, headObject } from "~/server/s3";
+
+/**
+ * Confirmar que la foto llegó a S3. Nada más.
+ *
+ * Acá adentro corría todo el procesamiento —marca de agua, miniatura, OCR,
+ * caras— en un `void (async () => …)()` que se lanzaba sin esperar. Eso es lo
+ * que dejó 160 fotos cobrables e invisibles la noche que hubo tres deploys
+ * seguidos: la promesa vivía en la memoria del proceso y el proceso se
+ * reinició.
+ *
+ * Ahora esta ruta hace dos cosas: anota que el archivo está, y toca el timbre.
+ * El trabajo lo saca de la base ~/server/cola-fotos, que es lo único que
+ * sobrevive a un `pm2 restart`. Si el timbre no llega a sonar, no se pierde
+ * nada: la foto ya quedó anotada como pendiente.
+ */
 
 export async function POST(
   _req: NextRequest,
@@ -28,6 +40,7 @@ export async function POST(
       ownerId: true,
       storageKey: true,
       fileSize: true,
+      previewKey: true,
     },
   });
   // El commit lo hace quien subió: puede ser el dueño o un colaborador,
@@ -39,74 +52,51 @@ export async function POST(
   }
 
   if (photo.fileSize !== null) {
+    /* Ya tenía tamaño, pero puede no tener marca de agua.
+
+       No es teórico: la Lambda de S3 escribe fileSize apenas ve el objeto y
+       vuelve sin procesar si el dueño pasó el tope de gasto. El commit llega
+       después, ve el tamaño puesto, contesta "ya estaba" y —hasta ahora— nadie
+       generaba nunca el preview. Es una de las dos causas plausibles de las
+       160 fotos invisibles. Tocar el timbre acá no cuesta nada. */
+    if (!photo.previewKey) despertar();
     return NextResponse.json({ ok: true, already: true });
   }
 
-  // Después del corte por idempotencia: en el camino "ya estaba" no hace falta
-  // saber nada del evento y sería una consulta al pedo por cada reintento.
-  const ev = await db.event.findUnique({
-    where: { id: eventId },
-    select: { recognition: true, bibDetection: true },
-  });
-  const reconoce = ev?.recognition ?? true;
-  const leeDorsales = ev?.bibDetection ?? true;
+  /* Las TRES respuestas de S3, no dos.
 
-  // Verify the object actually landed in S3 with a HEAD request
-  const size = await getObjectSize(photo.storageKey);
-  if (size === null) {
-    // Upload never completed — delete the stale Photo row so quota stays clean
-    await db.photo.delete({ where: { id: photo.id } });
+     Antes esto era `getObjectSize`, que devolvía null tanto si el objeto no
+     estaba como si S3 no pudo contestar, y en los dos casos se BORRABA la fila.
+     Con S3 teniendo un mal momento, eso borra fotos que sí llegaron —y deja el
+     objeto huérfano pagando storage sin ninguna fila que lo referencie—. */
+  const h = await headObject(photo.storageKey);
+
+  if (h.estado === "error") {
+    // El cliente ya trata el 5xx como transitorio y reintenta.
+    return NextResponse.json(
+      { error: "No pudimos verificar el archivo. Probá de nuevo." },
+      { status: 503 },
+    );
+  }
+  if (h.estado === "no-existe") {
+    /* No se borra la fila acá.
+
+       Puede que el PUT esté todavía en vuelo y el commit haya llegado antes por
+       un reintento del cliente. La barrida de huérfanas decide con calma: si a
+       las 24 horas el objeto sigue sin estar, ahí sí se borra. */
     return NextResponse.json({ error: "El archivo no llegó al storage" }, { status: 410 });
   }
 
-  await db.photo.update({
-    where: { id: photo.id },
-    data: { fileSize: size },
+  // CAS: si la Lambda ya escribió el tamaño, no lo pisamos.
+  await db.photo.updateMany({
+    where: { id: photo.id, fileSize: null },
+    data: { fileSize: h.size },
   });
 
-  // Everything below runs in the background — the client doesn't wait. The
-  // public storefront filters by `previewGeneratedAt: { not: null }` so the
-  // photo only appears once it has its watermark; the dashboard grid shows
-  // it immediately with the original key as a fallback preview (the owner
-  // is already authenticated, so seeing the unwatermarked original is fine).
-  //
-  // Order matters: generate the watermark FIRST so the preview is ready as
-  // soon as possible. OCR + face index can take longer and aren't required
-  // for the photo to be sellable.
-  void (async () => {
-    // generatePreview ya bajó el original y lo tiene resizeado a 2400px en
-    // memoria, así que devuelve además un JPEG listo para Rekognition. Se
-    // lo pasamos a OCR y a face-index: sin eso cada uno volvía a bajar el
-    // original completo de S3 (~15MB c/u) y a comprimirlo con sharp por su
-    // cuenta. Si generatePreview falla, ambos caen al camino viejo solos.
-    let rekBytes: Uint8Array | null = null;
-    try {
-      const preview = await generatePreview(photo.id);
-      rekBytes = env.REKOGNITION_USE_ORIGINAL ? null : preview.rekognitionBytes;
-    } catch (err) {
-      console.error("[commit bg] generatePreview:", err);
-    }
-    // El reconocimiento corre sólo si el evento lo pidió. Un evento de galería
-    // simple paga 5% justamente porque no lo usa: procesarlo igual sería
-    // cobrarle la mitad y gastar lo mismo. La marca de agua sí se genera
-    // siempre, que es lo que hace vendible a la foto.
-    if (reconoce) {
-      // La búsqueda por cara va siempre: es la que hace que el atleta encuentre
-      // sus fotos. La lectura de dorsales puede estar apagada porque este
-      // evento no tiene dorsales — un trail, una salida de ciclismo— y ahí cada
-      // llamada es paga y no va a devolver nada nunca.
-      if (leeDorsales) {
-        void runOcr(photo.id, rekBytes)
-          .then(() => evaluarDorsales(eventId))
-          .catch((err) => console.error("[commit bg] runOcr:", err));
-      }
-      void runFaceIndex(photo.id, eventId, rekBytes).catch((err) =>
-        console.error("[commit bg] runFaceIndex:", err),
-      );
-    }
-  })();
+  // El timbre. Si no suena, la próxima pasada la levanta igual.
+  despertar();
 
-  return NextResponse.json({ ok: true, photoId: photo.id, size });
+  return NextResponse.json({ ok: true, photoId: photo.id, size: h.size });
 }
 
 /* DELETE handler — used by the upload UI when the user cancels mid-upload */
@@ -121,12 +111,25 @@ export async function DELETE(
   const { id: eventId, photoId } = await ctx.params;
   const photo = await db.photo.findUnique({
     where: { id: photoId },
-    select: { ownerId: true, eventId: true, storageKey: true, previewKey: true, previewCleanKey: true },
+    select: {
+      ownerId: true,
+      eventId: true,
+      storageKey: true,
+      previewKey: true,
+      previewCleanKey: true,
+      // La miniatura también, o queda huérfana en el bucket para siempre.
+      thumbKey: true,
+    },
   });
   if (!photo || photo.ownerId !== session.user.id || photo.eventId !== eventId) {
     return NextResponse.json({ error: "Foto no encontrada" }, { status: 404 });
   }
-  const keys = [photo.storageKey, photo.previewKey, photo.previewCleanKey].filter(Boolean) as string[];
+  const keys = [
+    photo.storageKey,
+    photo.previewKey,
+    photo.previewCleanKey,
+    photo.thumbKey,
+  ].filter(Boolean) as string[];
   if (keys.length) await deleteS3Objects(keys);
   await db.photo.delete({ where: { id: photoId } });
   return NextResponse.json({ ok: true });

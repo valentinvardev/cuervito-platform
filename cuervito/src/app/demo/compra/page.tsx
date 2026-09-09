@@ -5,7 +5,6 @@ import { buildTemplateStyle } from "~/lib/storefront-templates";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
-import { getPresignedDownloadUrl } from "~/server/s3";
 
 import { Demo } from "./_demo";
 
@@ -42,7 +41,11 @@ export default async function DemoCompra() {
       isPublished: true,
       NOT: { status: "ARCHIVED" },
       owner: { status: "ACTIVE" },
-      photos: { some: { deletedAt: null, previewGeneratedAt: { not: null } } },
+      // Por previewKey y no por previewGeneratedAt: el primero es el
+      // RESULTADO —la imagen con marca de agua existe— y el segundo sólo dice
+      // cuándo se intentó. La tienda pública ya gatea por previewKey; acá
+      // hacía falta porque abajo había un respaldo que servía el original.
+      photos: { some: { deletedAt: null, previewKey: { not: null } } },
     },
     orderBy: { createdAt: "desc" },
     select: {
@@ -82,7 +85,7 @@ export default async function DemoCompra() {
       eventId: evento.id,
       deletedAt: null,
       fileSize: { not: null },
-      previewGeneratedAt: { not: null },
+      previewKey: { not: null },
     },
     orderBy: { createdAt: "desc" },
     take: TOPE,
@@ -92,7 +95,6 @@ export default async function DemoCompra() {
       bibNumbers: true,
       width: true,
       height: true,
-      storageKey: true,
       previewKey: true,
       previewCleanKey: true,
     },
@@ -115,23 +117,30 @@ export default async function DemoCompra() {
       // muestra una versión distinta de la misma foto.
       //
       // La vitrina va MARCADA: es lo que ve alguien que todavía no pagó.
-      previewUrl: p.previewKey
-        ? await resolveMediaUrl(p.previewKey)
-        : await getPresignedDownloadUrl(p.storageKey, { expiresIn: 60 * 30 }),
+      /* Sin respaldo al original.
+
+         Los tres campos de abajo caían a getPresignedDownloadUrl(storageKey)
+         cuando faltaba el preview: el ORIGINAL, sin marca de agua, con una URL
+         firmada de media hora, en una página PÚBLICA —el middleware sólo
+         protege /dashboard y /admin— que elige sola el evento publicado más
+         reciente, que en día de carrera es el que se está subiendo.
+
+         Hoy no podía dispararse porque previewKey y previewGeneratedAt se
+         escriben juntos. Pero el filtro de arriba ya garantiza que hay
+         preview, así que el respaldo no protegía de nada y sí era una bomba
+         esperando a que alguien separara esas dos columnas. Si algún día no
+         hay preview, lo correcto es no mostrar la foto. */
+      previewUrl: await resolveMediaUrl(p.previewKey!),
       // La entrega va LIMPIA. Antes reusaba la de la vitrina y en el video el
       // comprador terminaba mirando su propia compra con la marca de agua
       // encima, que es exactamente lo que acababa de pagar por sacarse. Misma
       // cascada que la entrega de verdad: limpia, marcada, y el original.
       // La demo no usa la miniatura chica de la tienda: son treinta fotos y
       // el visor tiene que abrir la misma imagen que la grilla.
-      fullUrl: p.previewKey
-        ? await resolveMediaUrl(p.previewKey)
-        : await getPresignedDownloadUrl(p.storageKey, { expiresIn: 60 * 30 }),
+      fullUrl: await resolveMediaUrl(p.previewKey!),
       limpiaUrl: p.previewCleanKey
         ? await resolveMediaUrl(p.previewCleanKey)
-        : p.previewKey
-          ? await resolveMediaUrl(p.previewKey)
-          : await getPresignedDownloadUrl(p.storageKey, { expiresIn: 60 * 30 }),
+        : await resolveMediaUrl(p.previewKey!),
     })),
   );
 

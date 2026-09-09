@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { env } from "~/env";
+import { barrerHuerfanas } from "~/server/cola-fotos";
 import { db } from "~/server/db";
 import { deleteS3Objects } from "~/server/s3";
 
@@ -43,17 +44,37 @@ export async function POST(req: NextRequest) {
     now.getTime() - env.PHOTO_RETENTION_DAYS * 24 * 60 * 60 * 1000,
   );
 
-  // ── 1) Hard-delete soft-deleted photos past retention ───────────────────
+  /* ── 1) Las subidas que se firmaron y nunca llegaron ─────────────────────
+     Va PRIMERO y no después del borrado de fotos vencidas. Estaba abajo, y el
+     paso de abajo devuelve 502 si S3 falla: un mal día de S3 salteaba esta
+     limpieza entera. Con 1.658 filas acumuladas y la regla de 24 horas ya
+     escrita en el código, es la explicación más probable.
+
+     Y ya no borra a ciegas. El deleteMany de antes no le preguntaba a S3 si el
+     objeto existía: si existía, la fila se iba y el archivo quedaba pagando
+     storage sin nada que lo referencie. barrerHuerfanas pregunta y decide:
+     adopta la que llegó tarde, borra la fila Y el objeto de la que ya nadie va
+     a reclamar, y no toca nada si S3 no contesta. */
+  const huerfanas = await barrerHuerfanas();
+
+  // ── 2) Hard-delete soft-deleted photos past retention ───────────────────
   const stalePhotos = await db.photo.findMany({
     where: { deletedAt: { not: null, lt: photoCutoff } },
     take: BATCH_SIZE,
-    select: { id: true, storageKey: true, previewKey: true, previewCleanKey: true },
+    select: {
+      id: true,
+      storageKey: true,
+      previewKey: true,
+      previewCleanKey: true,
+      // La miniatura también: sin esto queda en el bucket sin dueño.
+      thumbKey: true,
+    },
   });
 
   let photosDeleted = 0;
   if (stalePhotos.length > 0) {
     const s3Keys = stalePhotos
-      .flatMap((p) => [p.storageKey, p.previewKey, p.previewCleanKey])
+      .flatMap((p) => [p.storageKey, p.previewKey, p.previewCleanKey, p.thumbKey])
       .filter((k): k is string => Boolean(k));
 
     // Best-effort S3 cleanup. If S3 fails, leave the DB rows so we retry
@@ -75,22 +96,7 @@ export async function POST(req: NextRequest) {
     photosDeleted = result.count;
   }
 
-  // ── 1b) Barrer las subidas que se firmaron y nunca llegaron ─────────────
-  //
-  // presign crea la fila de Photo antes de que el archivo exista; commit le
-  // pone fileSize cuando confirma que llegó a S3. Si la subida se corta en el
-  // medio —conexión caída, pestaña cerrada— la fila queda sin tamaño para
-  // siempre. No ocupa nada en S3, pero ensucia los conteos: un evento de 12
-  // fotos mostraba "12 de 15 reconocidas" y nunca terminaba, porque esas tres
-  // no son fotos y no se van a reconocer jamás.
-  //
-  // Un día de gracia es de sobra: una subida en curso se mide en minutos.
-  const pendientesCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  const { count: pendientesBorradas } = await db.photo.deleteMany({
-    where: { fileSize: null, deletedAt: null, createdAt: { lt: pendientesCutoff } },
-  });
-
-  // ── 2) Expire stale download tokens ─────────────────────────────────────
+  // ── 3) Expire stale download tokens ─────────────────────────────────────
   // Once expired we clear the token so /descarga 404s the link cleanly.
   // The expiry timestamp itself is also nulled so the row stops appearing
   // in "still downloadable" UIs.
@@ -102,9 +108,22 @@ export async function POST(req: NextRequest) {
     data: { downloadToken: null, downloadTokenExpires: null },
   });
 
+  /* Queda anotado cuándo corrió.
+
+     Sin esta marca no hay forma de saber si el crontab del VPS existe de
+     verdad, y las 1.658 filas acumuladas con la regla de 24 horas ya en el
+     código sugieren bastante que no corría. */
+  await db.setting
+    .upsert({
+      where: { key: "cron:cleanup:ultimaCorrida" },
+      create: { key: "cron:cleanup:ultimaCorrida", value: now.toISOString() },
+      update: { value: now.toISOString() },
+    })
+    .catch(() => undefined);
+
   return NextResponse.json({
     photosDeleted,
-    pendientesBorradas,
+    huerfanas,
     tokensExpired: expiredTokens.count,
     photoBacklogRemaining: stalePhotos.length === BATCH_SIZE,
   });

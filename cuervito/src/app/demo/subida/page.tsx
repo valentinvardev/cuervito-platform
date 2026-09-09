@@ -44,7 +44,11 @@ export default async function DemoSubida() {
     where: {
       ownerId: userId,
       NOT: { status: "ARCHIVED" },
-      photos: { some: { deletedAt: null, previewGeneratedAt: { not: null } } },
+      // Por previewKey y no por previewGeneratedAt: el primero es el
+      // RESULTADO —la imagen con marca de agua existe— y el segundo sólo dice
+      // cuándo se intentó. La tienda pública ya gatea por previewKey; acá
+      // hacía falta porque abajo había un respaldo que servía el original.
+      photos: { some: { deletedAt: null, previewKey: { not: null } } },
     },
     // Por cantidad de fotos y no por fecha: el último evento puede tener una
     // sola foto, y una demo de subida con una foto no muestra nada.
@@ -80,7 +84,7 @@ export default async function DemoSubida() {
       eventId: e.id,
       deletedAt: null,
       fileSize: { not: null },
-      previewGeneratedAt: { not: null },
+      previewKey: { not: null },
     },
     orderBy: { createdAt: "desc" },
     take: TOPE,
