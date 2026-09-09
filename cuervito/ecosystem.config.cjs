@@ -41,6 +41,17 @@
  * ella. Apuntando directo al binario, el SIGINT llega al proceso que tiene que
  * enterarse.
  *
+ * ── El puerto: 3005 ─────────────────────────────────────────────────────
+ * Sale de /etc/nginx/sites-available/cuervito, que hace
+ * `proxy_pass http://localhost:3005`. No es un número elegido acá: es el que
+ * nginx ya está esperando del otro lado, y este archivo sólo lo repite.
+ *
+ * Esto ya se rompió una vez, el 9 de septiembre de 2026: la primera versión de
+ * este archivo decía 3000 —copiado de un ejemplo, sin mirar nginx— y 3000 es de
+ * otro proyecto del mismo servidor. cuervito no pudo levantar, pm2 lo reintentó
+ * quince veces y el sitio estuvo caído hasta que se corrigió. El servidor tiene
+ * nueve aplicaciones Next, cada una en su puerto; acá no se inventa ninguno.
+ *
  * Se aplica una sola vez:
  *   pm2 delete cuervito && pm2 start ecosystem.config.cjs && pm2 save
  */
@@ -49,7 +60,7 @@ module.exports = {
     {
       name: "cuervito",
       script: "node_modules/next/dist/bin/next",
-      args: "start -p 3000",
+      args: "start -p 3005",
       exec_mode: "fork",
       instances: 1,
       kill_timeout: 30000,
