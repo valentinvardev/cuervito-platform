@@ -31,6 +31,25 @@ export const env = createEnv({
      *  generatePreview. Solo para diagnosticar si la detección de dorsales
      *  empeorara — cuesta 2 descargas + 2 resizes por foto. */
     REKOGNITION_USE_ORIGINAL: z.coerce.boolean().default(false),
+
+    /* El procesador de fotos en segundo plano.
+       Apagado fuera de producción por defecto: un `npm run dev` con el .env de
+       producción al lado no tiene que convertirse en un obrero que le saca
+       trabajo al servidor de verdad. */
+    PROCESADOR_ACTIVO: z
+      .enum(["true", "false"])
+      .default(process.env.NODE_ENV === "production" ? "true" : "false")
+      .transform((v) => v === "true"),
+    /* Cuántas fotos a la vez. El techo real es sharp: cada decode de 24 MP son
+       cientos de MB, y el semáforo de watermark.ts ya lo acota a 3. */
+    PROCESADOR_A_LA_VEZ: z.coerce.number().int().min(1).max(12).default(4),
+    /* Si pm2 corre en fork con UNA instancia, un lease vivo al arrancar es de
+       un proceso muerto y se puede liberar: eso repara en minutos en vez de
+       esperar el vencimiento. En cluster hay que ponerlo en false. */
+    PROCESADOR_UNICA_INSTANCIA: z
+      .enum(["true", "false"])
+      .default("true")
+      .transform((v) => v === "true"),
     AWS_S3_BUCKET: z.string().optional(),
     AWS_S3_PREFIX: z.string().default("cuervito"),
     AWS_S3_ACCELERATE: z
@@ -111,6 +130,9 @@ export const env = createEnv({
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
     AWS_REGION: process.env.AWS_REGION,
     REKOGNITION_USE_ORIGINAL: process.env.REKOGNITION_USE_ORIGINAL,
+    PROCESADOR_ACTIVO: process.env.PROCESADOR_ACTIVO,
+    PROCESADOR_A_LA_VEZ: process.env.PROCESADOR_A_LA_VEZ,
+    PROCESADOR_UNICA_INSTANCIA: process.env.PROCESADOR_UNICA_INSTANCIA,
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
     AWS_S3_PREFIX: process.env.AWS_S3_PREFIX,
     AWS_S3_ACCELERATE: process.env.AWS_S3_ACCELERATE,

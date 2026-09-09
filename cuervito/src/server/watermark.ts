@@ -14,6 +14,7 @@ import {
   thumbPhotoKey,
   CACHE_MOSTRAR,
   userWatermarkKey,
+  headObject,
 } from "~/server/s3";
 
 const PREVIEW_MAX_WIDTH = 2400;
@@ -27,24 +28,47 @@ const PREVIEW_QUALITY = 85;
 const THUMB_WIDTH = 560;
 const THUMB_QUALITY = 72;
 
+/**
+ * Cómo se abre cualquier imagen que mandó un usuario.
+ *
+ * limitInputPixels es el que importa. QUOTA_MAX_PHOTO_BYTES son 30 MB y sharp
+ * acepta hasta ~268 megapíxeles por defecto: un PNG de 20.000x20.000 entra
+ * cómodo en 30 MB comprimido y al descomprimirlo son ~1,2 GB de RAM. Eso no
+ * lanza una excepción que se pueda atrapar: mata el proceso. Y como el proceso
+ * muere antes de anotar el intento, al reiniciar toma la misma foto y vuelve a
+ * morir, para siempre. 60 MP cubre cualquier cámara con margen.
+ */
+const OPC_SHARP = { limitInputPixels: 60_000_000, failOn: "error" as const };
+
 // ── Concurrency limiter ───────────────────────────────────────────────────────
 // Sharp is CPU + memory intensive. Without a cap, uploading 50 photos at once
 // fires 50 concurrent resize+watermark+S3-upload operations, which OOMs the
 // VPS and produces 502s. Queue extras and process at most 3 at a time.
-const MAX_CONCURRENT = 3;
-let active = 0;
-const waitQueue: Array<() => void> = [];
+export const MAX_CONCURRENT = 3;
 
-function acquireSlot(): Promise<void> {
+/* El contador vive en globalThis, como el bus de ventas y el cliente de Prisma.
+
+   No es manía: instrumentation.ts —donde va a arrancar el procesador— y los
+   route handlers se compilan en capas distintas de webpack, así que este
+   módulo se evalúa DOS veces y un `let active` de módulo serían dos contadores
+   de 3. Seis decodes de 24 MP a la vez es exactamente el escenario que el
+   comentario de arriba dice que hizo OOM y 502. */
+declare global {
+  // eslint-disable-next-line no-var
+  var __cuervito_sharp__: { active: number; waitQueue: Array<() => void> } | undefined;
+}
+const sem = (globalThis.__cuervito_sharp__ ??= { active: 0, waitQueue: [] });
+
+export function tomarSlotSharp(): Promise<void> {
   return new Promise((resolve) => {
-    if (active < MAX_CONCURRENT) { active++; resolve(); }
-    else waitQueue.push(() => { active++; resolve(); });
+    if (sem.active < MAX_CONCURRENT) { sem.active++; resolve(); }
+    else sem.waitQueue.push(() => { sem.active++; resolve(); });
   });
 }
 
-function releaseSlot() {
-  active--;
-  waitQueue.shift()?.();
+export function soltarSlotSharp() {
+  sem.active--;
+  sem.waitQueue.shift()?.();
 }
 
 // ── Watermark cache ───────────────────────────────────────────────────────────
@@ -150,15 +174,30 @@ async function buildComposite(
 export type PreviewResult = {
   watermarkedKey: string | null;
   rekognitionBytes: Uint8Array | null;
+  /** Por qué no se pudo. `permanente` significa que reintentar no sirve. */
+  error?: { mensaje: string; permanente: boolean };
 };
 
 export async function generatePreview(photoId: string): Promise<PreviewResult> {
-  await acquireSlot();
+  await tomarSlotSharp();
   try {
     return await _generatePreview(photoId);
   } finally {
-    releaseSlot();
+    soltarSlotSharp();
   }
+}
+
+/**
+ * Este fallo, reintentado, da lo mismo?
+ *
+ * Es la diferencia entre "no pude" y "no voy a poder nunca". Un archivo que no
+ * es una imagen, o que se pasa del límite de píxeles, no mejora en el segundo
+ * intento: reintentarlo es bajar 15 MB de S3 cada vez, para siempre. Una caída
+ * de red sí mejora.
+ */
+function esPermanente(err: unknown): boolean {
+  const m = err instanceof Error ? err.message : String(err);
+  return /unsupported image format|VipsJpeg|premature end|input buffer|pixel limit|unsupported/i.test(m);
 }
 
 async function _generatePreview(photoId: string): Promise<PreviewResult> {
@@ -174,25 +213,49 @@ async function _generatePreview(photoId: string): Promise<PreviewResult> {
       thumbKey: true,
     },
   });
-  if (!photo) return { watermarkedKey: null, rekognitionBytes: null };
+  if (!photo) {
+    return {
+      watermarkedKey: null,
+      rekognitionBytes: null,
+      error: { mensaje: "la foto ya no está en la base", permanente: true },
+    };
+  }
 
   let raw: Uint8Array;
   try {
     raw = await getS3ObjectBytes(photo.storageKey);
   } catch (err) {
     console.error("[watermark] download failed:", photo.storageKey, err);
-    return { watermarkedKey: null, rekognitionBytes: null };
+    // Transitorio salvo que el objeto de verdad no esté: la red se cae, S3
+    // tiene un mal momento. Si no está, no va a aparecer reintentando.
+    const h = await headObject(photo.storageKey);
+    return {
+      watermarkedKey: null,
+      rekognitionBytes: null,
+      error: {
+        mensaje: err instanceof Error ? err.message : String(err),
+        permanente: h.estado === "no-existe",
+      },
+    };
   }
 
   const buf = Buffer.from(raw);
-  const meta = await sharp(buf).metadata();
-  const w = meta.width ?? 1200;
-  const h = meta.height ?? 800;
 
   try {
+    /* metadata() ADENTRO del try.
+
+       Estaba afuera, y es la primera línea que toca los bytes del usuario: un
+       HEIC con extensión .jpg, o un archivo truncado, la hace lanzar. La
+       excepción escapaba de _generatePreview en vez de volverse un resultado
+       con error, así que el llamador —que trata esto como "devuelve nulls"—
+       se comía un rechazo que nadie atrapa. */
+    const meta = await sharp(buf, OPC_SHARP).metadata();
+    const w = meta.width ?? 1200;
+    const h = meta.height ?? 800;
+
     const resized =
       w > PREVIEW_MAX_WIDTH
-        ? await sharp(buf)
+        ? await sharp(buf, OPC_SHARP)
             .resize({ width: PREVIEW_MAX_WIDTH, withoutEnlargement: true })
             .toBuffer()
         : buf;
@@ -207,14 +270,14 @@ async function _generatePreview(photoId: string): Promise<PreviewResult> {
       resizedMeta.height ?? h,
       photo.ownerId,
     );
-    const watermarkedOut = await sharp(Buffer.from(resized))
+    const watermarkedOut = await sharp(Buffer.from(resized), OPC_SHARP)
       .composite([composite])
       .webp({ quality: PREVIEW_QUALITY })
       .toBuffer();
 
     // Clean preview (same dimensions/quality, no watermark) for the
     // photographer's own dashboard.
-    const cleanOut = await sharp(Buffer.from(resized))
+    const cleanOut = await sharp(Buffer.from(resized), OPC_SHARP)
       .webp({ quality: PREVIEW_QUALITY })
       .toBuffer();
 
@@ -224,7 +287,7 @@ async function _generatePreview(photoId: string): Promise<PreviewResult> {
        también la marca, y dos caminos que dibujan la misma marca a tamaños
        distintos se separan en la primera corrección que se hace en uno solo.
        Achicando la marcada, la marca queda igual, sólo que más chica. */
-    const thumbOut = await sharp(Buffer.from(watermarkedOut))
+    const thumbOut = await sharp(Buffer.from(watermarkedOut), OPC_SHARP)
       .resize({ width: THUMB_WIDTH, withoutEnlargement: true })
       .webp({ quality: THUMB_QUALITY })
       .toBuffer();
@@ -232,7 +295,7 @@ async function _generatePreview(photoId: string): Promise<PreviewResult> {
     // Derivado JPEG para Rekognition. No se sube a S3: viaja en memoria
     // hasta runOcr/runFaceIndex y se descarta. Reusa `resized`, así que
     // cuesta un encode y ahorra dos descargas del original + dos resizes.
-    const rekognitionBytes = await sharp(Buffer.from(resized))
+    const rekognitionBytes = await sharp(Buffer.from(resized), OPC_SHARP)
       .jpeg({ quality: PREVIEW_QUALITY })
       .toBuffer();
 
@@ -273,42 +336,18 @@ async function _generatePreview(photoId: string): Promise<PreviewResult> {
 
     return { watermarkedKey, rekognitionBytes: new Uint8Array(rekognitionBytes) };
   } catch (err) {
-    console.error(`[watermark] error for photoId=${photo.id}:`, err);
-    return { watermarkedKey: null, rekognitionBytes: null };
+    const permanente = esPermanente(err);
+    console.error(
+      `[watermark] error for photoId=${photo.id} permanente=${permanente}:`,
+      err,
+    );
+    return {
+      watermarkedKey: null,
+      rekognitionBytes: null,
+      error: {
+        mensaje: err instanceof Error ? err.message : String(err),
+        permanente,
+      },
+    };
   }
-}
-
-/**
- * Generate previews for many photos sequentially. Used by the "Regenerate"
- * job after the admin updates the platform watermark.
- *
- * NOTE: runs sync for now. If the queue gets large we'll move it to a
- * background worker.
- */
-export async function regeneratePreviewsForEvent(eventId: string): Promise<{
-  done: number;
-  failed: number;
-}> {
-  const event = await db.event.findUnique({ where: { id: eventId }, select: { ownerId: true } });
-  const photos = await db.photo.findMany({
-    where: { eventId, fileSize: { not: null }, deletedAt: null },
-    select: { id: true },
-  });
-  let done = 0;
-  let failed = 0;
-  for (const p of photos) {
-    const ok = await generatePreview(p.id);
-    if (ok.watermarkedKey) done++;
-    else failed++;
-  }
-  // Invalidate all previews for this event in CloudFront so stale cached
-  // versions are replaced immediately after watermark regeneration.
-  if (event?.ownerId && done > 0) {
-    const wmSample = previewPhotoKey(event.ownerId, eventId, "x");
-    const wmFolder = wmSample.substring(0, wmSample.lastIndexOf("/") + 1);
-    const cleanSample = previewCleanPhotoKey(event.ownerId, eventId, "x");
-    const cleanFolder = cleanSample.substring(0, cleanSample.lastIndexOf("/") + 1);
-    void createCFInvalidation([`/${wmFolder}*`, `/${cleanFolder}*`]);
-  }
-  return { done, failed };
 }

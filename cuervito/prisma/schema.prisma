@@ -345,6 +345,30 @@ model Photo {
     isPublic     Boolean @default(false) // free photo
 
     previewGeneratedAt DateTime?
+
+    /// Hasta cuándo esta foto está tomada por un procesador, o hasta cuándo no
+    /// hay que volver a mirarla después de un fallo. Las dos cosas con la misma
+    /// columna, y se distinguen por processError:
+    ///
+    ///   lease vigente + processError null    → en vuelo, alguien la está haciendo
+    ///   lease vigente + processError puesto  → enfriándose tras fallar
+    ///   lease vencido o null                 → libre, se puede reclamar
+    ///
+    /// No se reusa previewGeneratedAt como marca de reclamo, que sería no tener
+    /// que agregar nada: /demo/compra es pública, filtra por previewGeneratedAt
+    /// y cae al original SIN marca de agua cuando previewKey es null. Reclamar
+    /// con esa columna abre una ventana donde la demo publica el original.
+    processLeaseUntil DateTime?
+
+    /// Cuántas veces se reclamó. Se incrementa AL RECLAMAR y no al fallar, para
+    /// que también cuenten las muertes que no dejan rastro: si el proceso se
+    /// reinicia a la mitad, nadie ejecuta el catch. Sin esto, una foto que
+    /// voltea al procesador lo voltea de nuevo en cada arranque, para siempre.
+    processAttempts Int @default(0)
+
+    /// Por qué falló la última vez, con la clase adelante: "corrupta:", "s3:",
+    /// "rek:", "cuota:". Es lo que separa "no pude" de "no debo".
+    processError String?
     ocrProcessedAt     DateTime?
     faceProcessedAt    DateTime?
 

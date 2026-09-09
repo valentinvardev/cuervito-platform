@@ -9,11 +9,13 @@ import {
   type TextDetection,
 } from "@aws-sdk/client-rekognition";
 import sharp from "sharp";
+import { NodeHttpHandler } from "@smithy/node-http-handler";
 
 import { env } from "~/env";
 import { db } from "~/server/db";
 import { hasRecognitionQuota, incrementRecognitionUsage } from "~/server/quotas";
 import { getS3ObjectBytes } from "~/server/s3";
+import { tomarSlotSharp, soltarSlotSharp } from "~/server/watermark";
 
 const REKOGNITION_MAX_BYTES = 5 * 1024 * 1024;
 
@@ -32,6 +34,34 @@ const REKOGNITION_MAX_BYTES = 5 * 1024 * 1024;
  *     es el único lugar donde queda registrado qué foto generó qué llamada.
  *  3. Mide cuánto tardó, para poder cruzar contra los timeouts de la Lambda.
  */
+/* Cuántas llamadas a Rekognition a la vez.
+
+   No había ninguna. Con cuatro fotos en vuelo salían hasta ocho llamadas
+   simultáneas (OCR + caras por foto) contra una cuota por defecto de 5 por
+   segundo, y lo que devuelve AWS al pasarse es ThrottlingException: se paga el
+   intento y no se obtiene nada.
+
+   En globalThis por lo mismo que el de sharp: dos capas de webpack, dos
+   módulos, dos contadores. */
+const REK_A_LA_VEZ = 4;
+declare global {
+  // eslint-disable-next-line no-var
+  var __cuervito_rek__: { active: number; waitQueue: Array<() => void> } | undefined;
+}
+const semRek = (globalThis.__cuervito_rek__ ??= { active: 0, waitQueue: [] });
+
+function tomarSlotRek(): Promise<void> {
+  return new Promise((resolve) => {
+    if (semRek.active < REK_A_LA_VEZ) { semRek.active++; resolve(); }
+    else semRek.waitQueue.push(() => { semRek.active++; resolve(); });
+  });
+}
+
+function soltarSlotRek() {
+  semRek.active--;
+  semRek.waitQueue.shift()?.();
+}
+
 async function billedCall<T>(
   op: "DetectText" | "IndexFaces" | "SearchFacesByImage",
   meta: { ownerId: string; photoId?: string; eventId?: string },
@@ -42,6 +72,13 @@ async function billedCall<T>(
     meta.photoId ? ` photo=${meta.photoId}` : ""
   }${meta.eventId ? ` event=${meta.eventId}` : ""}`;
 
+  /* Primero el permiso, DESPUÉS el contador.
+
+     Estaba al revés: se contaba la llamada y después se esperaba. Con la cola
+     llena, el contador subía por trabajo que todavía no había salido, y
+     hasRecognitionQuota —que lee ese mismo contador— empezaba a rechazar fotos
+     por una cuota que en realidad no se había gastado. */
+  await tomarSlotRek();
   await incrementRecognitionUsage(meta.ownerId, kind, 1).catch(() => undefined);
   console.log(`${tag} state=start`);
 
@@ -54,11 +91,38 @@ async function billedCall<T>(
     const name = (err as { name?: string }).name ?? "Error";
     console.log(`${tag} state=error err=${name} ms=${Date.now() - started}`);
     throw err;
+  } finally {
+    soltarSlotRek();
   }
+}
+
+/**
+ * Errores de Rekognition que no se arreglan reintentando.
+ *
+ * Importa porque billedCall cuenta la llamada ANTES de hacerla: una foto que
+ * Rekognition rechaza siempre, reintentada en cada vuelta de la cola, se lleva
+ * el tope mensual de la cuenta sin producir un solo resultado.
+ */
+function esErrorPermanente(err: unknown): boolean {
+  const n = (err as { name?: string }).name ?? "";
+  return (
+    n === "InvalidImageFormatException" ||
+    n === "InvalidParameterException" ||
+    n === "ImageTooLargeException" ||
+    n === "InvalidS3ObjectException"
+  );
 }
 
 export const rekognition = new RekognitionClient({
   region: env.AWS_REGION,
+  /* Con tope de tiempo, por lo mismo que S3: el default del SDK es sin límite,
+     y una llamada colgada retiene el permiso del semáforo de abajo para
+     siempre. */
+  requestHandler: new NodeHttpHandler({
+    connectionTimeout: 10_000,
+    requestTimeout: 60_000,
+    throwOnRequestTimeout: true,
+  }),
   ...(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY
     ? {
         credentials: {
@@ -120,15 +184,61 @@ async function loadForRekognition(storageKey: string): Promise<Uint8Array | null
   try {
     const rawBytes = await getS3ObjectBytes(storageKey);
     if (rawBytes.byteLength <= REKOGNITION_MAX_BYTES) return rawBytes;
-    const compressed = await sharp(Buffer.from(rawBytes))
-      .resize({ width: 1920, withoutEnlargement: true })
-      .jpeg({ quality: 85 })
-      .toBuffer();
-    return new Uint8Array(compressed);
+    // Bajo el semáforo de sharp: es un decode de 24 MP como cualquier otro, y
+    // fuera del tope se sumaba a los tres que ya están corriendo.
+    await tomarSlotSharp();
+    try {
+      const compressed = await sharp(Buffer.from(rawBytes), {
+        limitInputPixels: 60_000_000,
+      })
+        .resize({ width: 1920, withoutEnlargement: true })
+        .jpeg({ quality: 85 })
+        .toBuffer();
+      return new Uint8Array(compressed);
+    } finally {
+      soltarSlotSharp();
+    }
   } catch (err) {
     console.error("[rekognition] download failed:", storageKey, err);
     return null;
   }
+}
+
+/**
+ * Los bytes que ve Rekognition, del preview limpio y no del original.
+ *
+ * En el camino normal —foto recién subida— los bytes llegan por parámetro
+ * desde generatePreview y nada de esto corre. Esto es para el camino de
+ * reparación: una foto que ya tiene preview y le falta el reconocimiento.
+ *
+ * Ahí bajar el original son 15 MB, y como runOcr y runFaceIndex se llaman por
+ * separado, son 30 MB de egress y dos decodes por foto. El preview limpio pesa
+ * 845 KB y tiene la misma resolución de 2400 px que se le pasa en el camino
+ * normal, así que Rekognition ve prácticamente lo mismo por una vigésima parte
+ * del tráfico.
+ */
+export async function bytesParaRekognition(foto: {
+  storageKey: string;
+  previewCleanKey: string | null;
+}): Promise<Uint8Array | null> {
+  if (foto.previewCleanKey && !env.REKOGNITION_USE_ORIGINAL) {
+    try {
+      const webp = await getS3ObjectBytes(foto.previewCleanKey);
+      // Rekognition no acepta WebP: hay que reencodear a JPEG igual.
+      await tomarSlotSharp();
+      try {
+        const jpeg = await sharp(Buffer.from(webp), { limitInputPixels: 60_000_000 })
+          .jpeg({ quality: 85 })
+          .toBuffer();
+        if (jpeg.byteLength <= REKOGNITION_MAX_BYTES) return new Uint8Array(jpeg);
+      } finally {
+        soltarSlotSharp();
+      }
+    } catch (err) {
+      console.error("[rekognition] preview limpio no se pudo usar:", foto.previewCleanKey, err);
+    }
+  }
+  return loadForRekognition(foto.storageKey);
 }
 
 /* =============================================================================
@@ -173,32 +283,35 @@ function extractAllBibs(detections: TextDetection[]): string[] {
 }
 
 /** Run DetectText against a single photo, store bibs as comma-separated. */
+export type EstadoRek = "hecha" | "ya" | "sin_cuota" | "error" | "permanente";
+
 export async function runOcr(
   photoId: string,
   /** JPEG ya preparado por generatePreview. Si no viene, se baja el original. */
   preparedBytes?: Uint8Array | null,
-): Promise<{ bibs: string | null }> {
+): Promise<{ bibs: string | null; estado: EstadoRek }> {
   const photo = await db.photo.findUnique({
     where: { id: photoId },
     select: {
       id: true,
       storageKey: true,
+      previewCleanKey: true,
       bibNumbers: true,
       ocrProcessedAt: true,
       ownerId: true,
     },
   });
-  if (!photo) return { bibs: null };
+  if (!photo) return { bibs: null, estado: "permanente" };
 
   // El corte va contra `ocrProcessedAt`, no contra `bibNumbers`. Antes miraba
   // los dorsales, y cuando el OCR no encontraba ninguno esa columna quedaba en
   // null: el guard no cortaba nunca y esas fotos se volvían a procesar (y a
   // pagar) en cada reintento. Eran ~6.000 fotos, el 27% de las llamadas.
-  if (photo.ocrProcessedAt) return { bibs: photo.bibNumbers };
+  if (photo.ocrProcessedAt) return { bibs: photo.bibNumbers, estado: "ya" };
 
   if (!(await hasRecognitionQuota(photo.ownerId, 1))) {
     console.warn(`[OCR] cuota mensual agotada owner=${photo.ownerId} photo=${photoId}`);
-    return { bibs: null };
+    return { bibs: null, estado: "sin_cuota" };
   }
 
   // Reserva atómica. El endpoint de commit y la Lambda de S3 corren sobre la
@@ -215,7 +328,7 @@ export async function runOcr(
       where: { id: photoId },
       select: { bibNumbers: true },
     });
-    return { bibs: fresh?.bibNumbers ?? null };
+    return { bibs: fresh?.bibNumbers ?? null, estado: "ya" };
   }
 
   // Devuelve la foto a la cola si no llegamos a procesarla. El `where` incluye
@@ -229,10 +342,14 @@ export async function runOcr(
       .catch(() => undefined);
 
   const imageBytes =
-    preparedBytes ?? (await loadForRekognition(photo.storageKey));
+    preparedBytes ??
+    (await bytesParaRekognition({
+      storageKey: photo.storageKey,
+      previewCleanKey: photo.previewCleanKey,
+    }));
   if (!imageBytes) {
     await release();
-    return { bibs: null };
+    return { bibs: null, estado: "error" };
   }
 
   try {
@@ -252,11 +369,17 @@ export async function runOcr(
       data: { bibNumbers: bibString },
     });
 
-    return { bibs: bibString };
+    return { bibs: bibString, estado: "hecha" };
   } catch (err) {
-    console.error(`[OCR] Rekognition error for photoId=${photoId}:`, err);
-    await release();
-    return { bibs: null };
+    const permanente = esErrorPermanente(err);
+    console.error(
+      `[OCR] Rekognition error for photoId=${photoId} permanente=${permanente}:`,
+      err,
+    );
+    // Un error permanente NO devuelve la foto a la cola: el timestamp queda
+    // puesto y no se vuelve a intentar. Cada reintento se cobra igual.
+    if (!permanente) await release();
+    return { bibs: null, estado: permanente ? "permanente" : "error" };
   }
 }
 
@@ -269,19 +392,25 @@ export async function runFaceIndex(
   eventId: string,
   /** JPEG ya preparado por generatePreview. Si no viene, se baja el original. */
   preparedBytes?: Uint8Array | null,
-): Promise<void> {
+): Promise<{ estado: EstadoRek }> {
   const photo = await db.photo.findUnique({
     where: { id: photoId },
-    select: { id: true, storageKey: true, ownerId: true, faceProcessedAt: true },
+    select: {
+      id: true,
+      storageKey: true,
+      previewCleanKey: true,
+      ownerId: true,
+      faceProcessedAt: true,
+    },
   });
-  if (!photo) return;
+  if (!photo) return { estado: "permanente" };
   // Already indexed — skip. Without this guard, retries or accidental double
   // invocations re-index the photo and charge for IndexFaces again.
-  if (photo.faceProcessedAt) return;
+  if (photo.faceProcessedAt) return { estado: "ya" };
 
   if (!(await hasRecognitionQuota(photo.ownerId, 1))) {
     console.warn(`[FaceIndex] cuota mensual agotada owner=${photo.ownerId} photo=${photoId}`);
-    return;
+    return { estado: "sin_cuota" };
   }
 
   // Misma reserva atómica que en runOcr: el guard de arriba resuelve el caso
@@ -293,7 +422,7 @@ export async function runFaceIndex(
     where: { id: photoId, faceProcessedAt: null },
     data: { faceProcessedAt: claimedAt },
   });
-  if (claim.count === 0) return;
+  if (claim.count === 0) return { estado: "ya" };
 
   const release = () =>
     db.photo
@@ -304,10 +433,14 @@ export async function runFaceIndex(
       .catch(() => undefined);
 
   const imageBytes =
-    preparedBytes ?? (await loadForRekognition(photo.storageKey));
+    preparedBytes ??
+    (await bytesParaRekognition({
+      storageKey: photo.storageKey,
+      previewCleanKey: photo.previewCleanKey,
+    }));
   if (!imageBytes) {
     await release();
-    return;
+    return { estado: "error" };
   }
 
   const rekCollectionId = rekCollectionForEvent(eventId);
@@ -376,9 +509,15 @@ export async function runFaceIndex(
         () => undefined,
       );
     }
+    return { estado: "hecha" };
   } catch (err) {
-    console.error(`[FaceIndex] Rekognition error for photoId=${photoId}:`, err);
-    await release();
+    const permanente = esErrorPermanente(err);
+    console.error(
+      `[FaceIndex] Rekognition error for photoId=${photoId} permanente=${permanente}:`,
+      err,
+    );
+    if (!permanente) await release();
+    return { estado: permanente ? "permanente" : "error" };
   }
 }
 

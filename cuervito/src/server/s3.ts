@@ -33,6 +33,21 @@ export const s3 = new S3Client({
   // kicks in.
   requestHandler: new NodeHttpHandler({
     httpsAgent: new https.Agent({ maxSockets: 300 }),
+    /* Con tope de tiempo. El default del SDK es 0: sin límite.
+
+       Un GetObject que se cuelga a mitad del stream no falla nunca, y como
+       generatePreview toma el slot del semáforo ANTES de bajar y lo suelta en
+       un finally, una sola descarga colgada se queda con uno de los tres slots
+       para siempre. Tres de esas y el procesamiento de fotos se detiene sin un
+       solo error en el log. Ya pasó en este VPS: scripts/rellenar-miniaturas.mjs
+       tiene el mismo arreglo escrito a mano.
+
+       socketTimeout es el que importa acá: requestTimeout sólo cubre hasta los
+       encabezados, y lo que se cuelga es el cuerpo. */
+    connectionTimeout: 10_000,
+    requestTimeout: 60_000,
+    socketTimeout: 60_000,
+    throwOnRequestTimeout: true,
   }),
   ...(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY
     ? {
@@ -158,6 +173,22 @@ export function isCuervitoKey(key: string): boolean {
  * through our server. The browser must send the file as the request body with
  * the matching Content-Type header.
  */
+/**
+ * Cuánto vale una URL firmada de subida.
+ *
+ * Eran 15 minutos, y ése era el techo de la subida: el navegador firmaba las
+ * 2.000 fotos de una en los primeros segundos y los obreros las consumían en
+ * orden, así que al llegar a la que se firmó hace más de 15 minutos S3 contesta
+ * 403. Medido en producción: fotos de 14,9 MB a 3,9 MB/s entran ~235 en esa
+ * ventana. Lotes de 220 llegaban enteros; de 286 se perdían 59. La fotógrafa
+ * había aprendido a subir de a 220 sin saber por qué.
+ *
+ * Una hora es margen, no la solución: la solución es que el navegador firme de
+ * a poco (ventana deslizante) para que ninguna URL espere. Con eso, la más
+ * vieja de la ventana tiene minutos de edad y esta constante no se toca nunca.
+ */
+export const PRESIGN_SUBIDA_TTL_S = 60 * 60;
+
 export async function getPresignedUploadUrl(opts: {
   key: string;
   contentType: string;
@@ -173,7 +204,7 @@ export async function getPresignedUploadUrl(opts: {
     ContentLength: opts.contentLength,
   });
 
-  const url = await getSignedUrl(s3, cmd, { expiresIn: opts.expiresIn ?? 60 * 15 });
+  const url = await getSignedUrl(s3, cmd, { expiresIn: opts.expiresIn ?? PRESIGN_SUBIDA_TTL_S });
   return { url, key: opts.key };
 }
 
@@ -199,9 +230,12 @@ export async function getPresignedDownloadUrl(
  * Server-side IO (used by the watermark pipeline and admin tools)
  * -------------------------------------------------------------------------- */
 
-export async function getS3ObjectBytes(key: string): Promise<Uint8Array> {
+export async function getS3ObjectBytes(
+  key: string,
+  opts?: { signal?: AbortSignal },
+): Promise<Uint8Array> {
   if (!bucket) throw new Error("AWS_S3_BUCKET is not configured");
-  const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+  const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }), { abortSignal: opts?.signal });
   const chunks: Uint8Array[] = [];
   for await (const chunk of res.Body as AsyncIterable<Uint8Array>) {
     chunks.push(chunk);
@@ -250,13 +284,34 @@ export async function deleteS3Objects(keys: string[]): Promise<void> {
   );
 }
 
-/** Returns the size of an object in bytes, or null if not found. */
-export async function getObjectSize(key: string): Promise<number | null> {
-  if (!bucket) return null;
+/**
+ * ¿Está el objeto en S3?
+ *
+ * Devuelve las TRES respuestas posibles y no dos, que es el punto. El catch
+ * pelado de antes convertía un 503 de S3 —o un timeout, o credenciales
+ * vencidas— en "no existe", y el commit usa esa respuesta para BORRAR la fila
+ * de la foto. Con S3 teniendo un mal momento, eso borra fotos que sí llegaron.
+ */
+export async function headObject(
+  key: string,
+): Promise<{ estado: "existe"; size: number } | { estado: "no-existe" } | { estado: "error" }> {
+  if (!bucket) return { estado: "error" };
   try {
     const res = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
-    return res.ContentLength ?? null;
-  } catch {
-    return null;
+    return { estado: "existe", size: res.ContentLength ?? 0 };
+  } catch (err) {
+    const e = err as { name?: string; $metadata?: { httpStatusCode?: number } };
+    if (e.name === "NotFound" || e.$metadata?.httpStatusCode === 404) {
+      return { estado: "no-existe" };
+    }
+    console.error("[s3] head falló:", key, e.name ?? err);
+    return { estado: "error" };
   }
+}
+
+/** El tamaño, o null. Se queda por los llamadores que sólo quieren eso; los que
+ *  toman decisiones destructivas tienen que usar headObject y mirar el estado. */
+export async function getObjectSize(key: string): Promise<number | null> {
+  const r = await headObject(key);
+  return r.estado === "existe" ? r.size : null;
 }
