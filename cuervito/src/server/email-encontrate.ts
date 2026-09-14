@@ -28,13 +28,16 @@ import type { SaleItemSummary } from "./email";
  * · bgcolor además de background: Outlook ignora el CSS de fondo.
  * ========================================================================= */
 
+/* La paleta del panel (styles/v2/tokens.css, tema claro), en hexa porque un
+   mail no puede leer variables ni rgba con transparencia sobre fondos que el
+   cliente decide. --line es tinta al 10 % sobre blanco: #E7E6E2. */
 const C = {
-  base: "#FBFAF8",
+  base: "#FAFAF8",
   superficie: "#FFFFFF",
-  suave: "#F2F0EC",
-  linea: "#E6E2DC",
+  suave: "#F1F0EC",
+  linea: "#E7E6E2",
   texto: "#12110F",
-  texto2: "#4A453F",
+  texto2: "#55524C",
   /* 4,63:1 sobre blanco. El #8B857D que tenía daba 3,65 y no llega a AA, y
      éste es justamente el color de la letra chica: el vencimiento del link, el
      pie, los rótulos. */
@@ -82,13 +85,13 @@ export const BASE = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
  * El archivo de marca (logo.png) tiene el dibujo en BLANCO, para fondo oscuro;
  * sobre el papel claro de estos mails desaparecería. logo-tinta.png es el mismo
  * dibujo relleno de tinta, generado del canal alfa del original —no hay dos
- * logos que mantener—. 812×178, así que a 24 de alto son 110 de ancho.
+ * logos que mantener—. 812×178, así que a 28 de alto son 128 de ancho.
  *
  * Si el cliente no carga imágenes, se ve el alt: el nombre, en la fuente y el
  * color del texto. No es el logo, pero tampoco es un hueco.
  */
 function marca(): string {
-  return `<img src="${BASE}/marca/logo-tinta.png" width="110" height="24" alt="encontrate.app" style="display:block;border:0;outline:none;text-decoration:none;height:24px;width:auto;font-family:${FUENTE};font-weight:700;font-size:16px;color:${C.texto};" />`;
+  return `<img src="${BASE}/marca/logo-tinta.png" width="128" height="28" alt="encontrate.app" style="display:block;border:0;outline:none;text-decoration:none;height:28px;width:auto;font-family:${FUENTE};font-weight:700;font-size:16px;color:${C.texto};" />`;
 }
 /**
  * El marco de todo mail de encontrate.
@@ -139,7 +142,7 @@ export function armar({
   <tr><td align="center" bgcolor="${C.base}" style="background:${C.base};">
     <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
       <tr><td style="padding:0 4px 22px;">${marca()}</td></tr>
-      <tr><td bgcolor="${C.superficie}" class="en-caja" style="background:${C.superficie};border:1px solid ${C.linea};border-radius:16px;padding:36px 32px;">
+      <tr><td bgcolor="${C.superficie}" class="en-caja" style="background:${C.superficie};border:1px solid ${C.linea};border-radius:16px;padding:36px 32px 14px;">
         ${cuerpo}
       </td></tr>
       <tr><td class="en-txt3" style="padding:20px 4px 0;color:${C.texto3};font-size:11.5px;line-height:1.5;text-align:left;font-family:${FUENTE};">
@@ -151,12 +154,17 @@ export function armar({
 </body></html>`;
 }
 
+/**
+ * El botón. Con aire debajo: antes tenía margin:0 y lo que viniera después
+ * —una nota al pie, el borde de la tarjeta— quedaba pegado al botón. El margen
+ * va en la tabla y no en el <a> porque Outlook ignora el margin de los inline.
+ */
 export function boton(texto: string, url: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0;"><tr><td bgcolor="${C.acentoLleno}" style="background:${C.acentoLleno};border-radius:11px;"><a href="${url}" style="display:inline-block;padding:14px 26px;color:${C.sobreAcento};font-family:${FUENTE};font-weight:600;font-size:15px;text-decoration:none;letter-spacing:-0.01em;">${esc(texto)}</a></td></tr></table>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 24px;"><tr><td bgcolor="${C.acentoLleno}" style="background:${C.acentoLleno};border-radius:10px;"><a href="${url}" style="display:inline-block;padding:15px 26px;color:${C.sobreAcento};font-family:${FUENTE};font-weight:600;font-size:15px;text-decoration:none;letter-spacing:-0.01em;">${esc(texto)}</a></td></tr></table>`;
 }
 
 export function botonSuave(texto: string, url: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0;"><tr><td bgcolor="${C.superficie}" class="en-caja" style="background:${C.superficie};border:1px solid ${C.linea};border-radius:11px;"><a href="${url}" class="en-txt" style="display:inline-block;padding:13px 24px;color:${C.texto};font-family:${FUENTE};font-weight:500;font-size:14px;text-decoration:none;">${esc(texto)}</a></td></tr></table>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 24px;"><tr><td bgcolor="${C.superficie}" class="en-caja" style="background:${C.superficie};border:1px solid ${C.linea};border-radius:10px;"><a href="${url}" class="en-txt" style="display:inline-block;padding:14px 24px;color:${C.texto};font-family:${FUENTE};font-weight:500;font-size:14px;text-decoration:none;">${esc(texto)}</a></td></tr></table>`;
 }
 
 export function titulo(t: string): string {
@@ -164,12 +172,12 @@ export function titulo(t: string): string {
 }
 
 export function parrafo(html: string): string {
-  return `<p class="en-txt2" style="margin:0 0 18px;font-family:${FUENTE};font-size:15px;line-height:1.55;color:${C.texto2};">${html}</p>`;
+  return `<p class="en-txt2" style="margin:0 0 18px;font-family:${FUENTE};font-size:15px;line-height:1.6;color:${C.texto2};">${html}</p>`;
 }
 
 /** El número grande del mail: la plata, o la cantidad de fotos. */
 export function cifra(rotulo: string, valor: string, nota?: string): string {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;"><tr><td bgcolor="${C.suave}" class="en-suave" style="background:${C.suave};border-radius:12px;padding:18px 20px;">
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;"><tr><td bgcolor="${C.suave}" class="en-suave" style="background:${C.suave};border-radius:10px;padding:18px 20px;">
     <div class="en-txt3" style="font-family:${FUENTE};font-size:11.5px;letter-spacing:0.06em;text-transform:uppercase;color:${C.texto3};">${esc(rotulo)}</div>
     <div class="en-txt" style="font-family:${FUENTE_DISPLAY};font-size:28px;font-weight:700;letter-spacing:-0.02em;color:${C.texto};margin-top:5px;">${esc(valor)}</div>
     ${nota ? `<div class="en-txt2" style="font-family:${FUENTE};font-size:12.5px;color:${C.texto2};margin-top:6px;">${esc(nota)}</div>` : ""}
@@ -209,13 +217,13 @@ export function welcomeEmailHtml(i: WelcomeEmailInput): string {
       ? {
           t: "Creá tu primer evento",
           d: "Subís las fotos y te queda un link para repartir.",
-          url: `${BASE}/v2/nuevo`,
+          url: `${BASE}/dashboard/nuevo`,
           b: "Crear un evento",
         }
       : {
           t: "Ya está todo listo",
           d: "Tenés tu cuenta lista para vender.",
-          url: `${BASE}/v2`,
+          url: `${BASE}/dashboard`,
           b: "Ir a mi panel",
         };
 
@@ -224,7 +232,7 @@ export function welcomeEmailHtml(i: WelcomeEmailInput): string {
     cuerpo: `
       ${titulo(`Bienvenido, ${i.name.split(" ")[0] ?? i.name}`)}
       ${parrafo("Tu cuenta está creada. Desde acá vas a subir tus fotos, y el atleta las encuentra con una selfie o con su número de dorsal.")}
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;"><tr><td bgcolor="${C.suave}" class="en-suave" style="background:${C.suave};border-radius:12px;padding:18px 20px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;"><tr><td bgcolor="${C.suave}" class="en-suave" style="background:${C.suave};border-radius:10px;padding:18px 20px;">
         <div class="en-txt" style="font-family:${FUENTE};font-size:15px;font-weight:600;color:${C.texto};">${esc(paso.t)}</div>
         <div class="en-txt2" style="font-family:${FUENTE};font-size:13.5px;line-height:1.5;color:${C.texto2};margin-top:4px;">${esc(paso.d)}</div>
       </td></tr></table>
@@ -268,13 +276,8 @@ export function deliveryEmailHtml(i: DeliveryEmailInput): string {
 }
 
 /* ── 3) Aviso de venta al fotógrafo ──────────────────────────────────────────
-   Las tres firmas son EXACTAMENTE las de email.ts, incluido SaleItemSummary,
-   que se importa en vez de redefinirse.
-
-   Las había escrito por mi cuenta con otros parámetros —eventName suelto,
-   netCents, buyerEmail— y no servían. El selector de plantillas promete que los
-   dos módulos son intercambiables, y con firmas distintas esa promesa se rompe
-   justo en el lugar donde importa: al mandar el mail. */
+   SaleItemSummary vive en email.ts, al lado de sendEmail, porque lo arma el
+   notificador y lo consume esto: es el contrato entre los dos. */
 
 export function saleEmailSingleHtml(i: {
   photographerName: string;
@@ -288,7 +291,7 @@ export function saleEmailSingleHtml(i: {
       ${titulo(`${nombre}, vendiste`)}
       ${parrafo(`<strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(comprador)}</strong> compró ${i.sale.itemCount === 1 ? "una foto" : `${i.sale.itemCount} fotos`} de <strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(i.sale.eventName)}</strong>.`)}
       ${cifra("Te quedan", pesos(i.sale.sellerNetCents), "Ya está en tu Mercado Pago, con la comisión descontada")}
-      ${botonSuave("Ver la venta", `${BASE}/v2/ventas`)}
+      ${botonSuave("Ver la venta", `${BASE}/dashboard/ventas`)}
     `,
   });
 }
@@ -311,7 +314,7 @@ export function saleEmailSmallBatchHtml(i: {
           `${s.itemCount} · ${pesos(s.sellerNetCents)}`,
         ]),
       )}
-      ${botonSuave("Ver mis ventas", `${BASE}/v2/ventas`)}
+      ${botonSuave("Ver mis ventas", `${BASE}/dashboard/ventas`)}
     `,
   });
 }
@@ -330,7 +333,7 @@ export function saleEmailBigBatchHtml(i: {
       ${titulo(`${nombre}, se está vendiendo`)}
       ${parrafo(`<strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(evento)}</strong> tuvo ${i.sales.length} ventas.`)}
       ${cifra("Te quedan", pesos(neto), `${fotos} fotos en ${i.sales.length} ventas`)}
-      ${botonSuave("Ver el detalle", `${BASE}/v2/ventas`)}
+      ${botonSuave("Ver el detalle", `${BASE}/dashboard/ventas`)}
     `,
   });
 }
@@ -357,8 +360,7 @@ export type CollaboratorInviteInput = {
   inviterName: string;
   eventName: string;
   acceptUrl: string;
-  /** Mismo nombre que en email.ts: los dos módulos se llaman desde el mismo
-   *  lugar, así que las firmas tienen que ser intercambiables. */
+  /** "Te queda el 20 % de lo que vendas", ya redactado por quien invita. */
   commissionLine?: string;
 };
 
@@ -383,7 +385,7 @@ export function collaboratorInviteHtml(i: CollaboratorInviteInput): string {
 
 /**
  * Todas las plantillas juntas, para poder verlas en una pantalla sin mandar
- * mails de verdad. La usa /v2/ayuda cuando corre en desarrollo.
+ * mails de verdad.
  */
 export const PLANTILLAS_ENCONTRATE = {
   bienvenida: () =>
