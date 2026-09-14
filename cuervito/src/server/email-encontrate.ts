@@ -61,7 +61,7 @@ function pesos(centavos: number): string {
   return `$${(centavos / 100).toLocaleString("es-AR")}`;
 }
 
-const BASE = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
+export const BASE = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
 
 /**
  * La marca: el pájaro como imagen, el nombre como texto.
@@ -96,7 +96,22 @@ function marca(): string {
     `Encontrate<span style="color:${C.acento};">.app</span>` +
     `</td></tr></table>`;
 }
-function armar({ preheader, cuerpo }: { preheader: string; cuerpo: string }): string {
+/**
+ * El marco de todo mail de encontrate.
+ *
+ * `pie` es para los mails de campaña: ahí va el link de baja, que un mail que
+ * uno no pidió tiene que tener sí o sí. Los transaccionales no lo mandan y
+ * queda la firma de siempre.
+ */
+export function armar({
+  preheader,
+  cuerpo,
+  pie,
+}: {
+  preheader: string;
+  cuerpo: string;
+  pie?: string;
+}): string {
   return `<!doctype html>
 <html lang="es" style="color-scheme:only light;supported-color-schemes:only light;"><head>
 <meta charset="utf-8" />
@@ -130,7 +145,7 @@ function armar({ preheader, cuerpo }: { preheader: string; cuerpo: string }): st
         ${cuerpo}
       </td></tr>
       <tr><td class="en-txt3" style="padding:20px 4px 0;color:${C.texto3};font-size:11.5px;line-height:1.5;text-align:left;font-family:${FUENTE};">
-        <a href="${BASE}" class="en-txt3" style="color:${C.texto3};text-decoration:underline;">encontrate.app</a> — donde los atletas encuentran sus fotos.
+        <a href="${BASE}" class="en-txt3" style="color:${C.texto3};text-decoration:underline;">encontrate.app</a> — donde los atletas encuentran sus fotos.${pie ? `<br /><br />${pie}` : ""}
       </td></tr>
     </table>
   </td></tr>
@@ -138,24 +153,24 @@ function armar({ preheader, cuerpo }: { preheader: string; cuerpo: string }): st
 </body></html>`;
 }
 
-function boton(texto: string, url: string): string {
+export function boton(texto: string, url: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0;"><tr><td bgcolor="${C.acentoLleno}" style="background:${C.acentoLleno};border-radius:11px;"><a href="${url}" style="display:inline-block;padding:14px 26px;color:${C.sobreAcento};font-family:${FUENTE};font-weight:600;font-size:15px;text-decoration:none;letter-spacing:-0.01em;">${esc(texto)}</a></td></tr></table>`;
 }
 
-function botonSuave(texto: string, url: string): string {
+export function botonSuave(texto: string, url: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0;"><tr><td bgcolor="${C.superficie}" class="en-caja" style="background:${C.superficie};border:1px solid ${C.linea};border-radius:11px;"><a href="${url}" class="en-txt" style="display:inline-block;padding:13px 24px;color:${C.texto};font-family:${FUENTE};font-weight:500;font-size:14px;text-decoration:none;">${esc(texto)}</a></td></tr></table>`;
 }
 
-function titulo(t: string): string {
+export function titulo(t: string): string {
   return `<h1 class="en-txt" style="margin:0 0 14px;font-family:${FUENTE};font-weight:800;font-size:28px;line-height:1.12;letter-spacing:-0.03em;color:${C.texto};">${esc(t)}</h1>`;
 }
 
-function parrafo(html: string): string {
+export function parrafo(html: string): string {
   return `<p class="en-txt2" style="margin:0 0 18px;font-family:${FUENTE};font-size:15px;line-height:1.55;color:${C.texto2};">${html}</p>`;
 }
 
 /** El número grande del mail: la plata, o la cantidad de fotos. */
-function cifra(rotulo: string, valor: string, nota?: string): string {
+export function cifra(rotulo: string, valor: string, nota?: string): string {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;"><tr><td bgcolor="${C.suave}" class="en-suave" style="background:${C.suave};border-radius:12px;padding:18px 20px;">
     <div class="en-txt3" style="font-family:${FUENTE};font-size:11.5px;letter-spacing:0.06em;text-transform:uppercase;color:${C.texto3};">${esc(rotulo)}</div>
     <div class="en-txt" style="font-family:${FUENTE};font-size:32px;font-weight:700;letter-spacing:-0.03em;color:${C.texto};margin-top:5px;">${esc(valor)}</div>

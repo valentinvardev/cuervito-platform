@@ -21,6 +21,10 @@ existir: una vez es un descuido, dos es una tendencia.
   nadie del equipo lo vio porque el equipo es admin y pasaba el candado.
 - Señal temprana: si al agregar una funcionalidad hay que editar la misma
   condición en más de dos archivos, esa condición era un módulo.
+- 2026-09-14, evitado a tiempo: getMpTestMode era la única bandera de Setting y
+  estaba escrita a mano; con los interruptores de correos e historias iban a
+  ser cinco copias. Se generalizó ANTES de copiarla (leerBandera/escribirBandera).
+  Primera vez que el patrón se ve venir en vez de encontrarse después.
 - Estado: activo
 
 ## Estado derivado que se calcula una vez y nunca se reconcilia

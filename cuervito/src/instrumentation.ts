@@ -18,5 +18,7 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     const { arrancarCola } = await import("~/server/cola-fotos");
     arrancarCola();
+    const { arrancarCorreos } = await import("~/server/correos/enviar");
+    arrancarCorreos();
   }
 }
