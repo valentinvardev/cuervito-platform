@@ -322,6 +322,23 @@ export type FontDef = {
 };
 
 export const FONTS: readonly FontDef[] = [
+  // Las de la marca van primero: son las que el editor ofrece por defecto.
+  {
+    family: "Outfit",
+    cssFamily: "'Outfit', system-ui, sans-serif",
+    weights: [300, 400, 500, 600, 700, 800, 900],
+    italics: false,
+    category: "sans",
+    gfQuery: "Outfit:wght@300;400;500;600;700;800;900",
+  },
+  {
+    family: "Unbounded",
+    cssFamily: "'Unbounded', sans-serif",
+    weights: [400, 500, 600, 700, 800, 900],
+    italics: false,
+    category: "display",
+    gfQuery: "Unbounded:wght@400;500;600;700;800;900",
+  },
   {
     family: "Inter",
     cssFamily: "'Inter', system-ui, sans-serif",
@@ -459,7 +476,7 @@ export function makeTextLayer(canvasW: number, canvasH: number): TextLayer {
     opacity: 1,
     visible: true,
     locked: false,
-    fontFamily: "'Inter', system-ui, sans-serif",
+    fontFamily: "'Outfit', system-ui, sans-serif",
     fontSize: 64,
     fontWeight: 700,
     italic: false,

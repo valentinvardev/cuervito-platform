@@ -1,7 +1,6 @@
 import "~/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Geist } from "next/font/google";
 
 import { display, sans } from "~/styles/v2/fuentes";
 import { TRPCReactProvider } from "~/trpc/react";
@@ -37,11 +36,6 @@ export const metadata: Metadata = {
   },
 };
 
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-});
-
 // Runs before body renders. Picks the theme in this order so the correct
 // palette is applied on first paint (no FOUC):
 //   1. localStorage.theme  ("light" | "dark")  — explicit user choice
@@ -64,10 +58,9 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      // Unbounded y Outfit se declaran acá aunque hoy sólo las use /v2: es la
-      // única forma de que sus @font-face viajen en un chunk que está siempre
-      // presente. Ver el porqué en styles/v2/fuentes.ts.
-      className={`${geist.variable} ${display.variable} ${sans.variable}`}
+      // Unbounded y Outfit, para TODAS las rutas: son las de encontrate y
+      // ninguna pantalla tiene por qué caer en otra. Ver styles/v2/fuentes.ts.
+      className={`${display.variable} ${sans.variable}`}
       suppressHydrationWarning
     >
       <head>

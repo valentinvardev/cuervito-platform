@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+  /* Outfit, la de encontrate. Geist era la del andamio inicial y se colaba
+     en toda ruta que no la pisara a mano. */
+  --font-sans: var(--fuente-sans, "Outfit"), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }

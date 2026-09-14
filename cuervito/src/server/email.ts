@@ -66,9 +66,12 @@ const COLORS = {
 // Sans-serif everywhere. Email clients often block webfonts, so we list a
 // short SF/Helvetica/Arial stack that's guaranteed to render. Headings just
 // crank the weight on the same family — keeps the brand consistent.
+// Las de encontrate primero; la pila del sistema donde el cliente no cargue
+// fuentes web (Gmail). Mismo criterio que en email-encontrate.ts.
 const FONT_BODY =
-  "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
-const FONT_DISPLAY = FONT_BODY;
+  "'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
+const FONT_DISPLAY =
+  "'Unbounded', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif";
 const FONT_MONO =
   "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
@@ -115,6 +118,9 @@ function layout({ preheader, body }: LayoutInput): string {
 <meta name="supported-color-schemes" content="only light" />
 <meta name="x-apple-disable-message-reformatting" />
 <title>encontrate.app</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Unbounded:wght@700;800&display=swap" rel="stylesheet" />
 <!--[if mso]>
 <style type="text/css">body, table, td { font-family: Arial, Helvetica, sans-serif !important; }</style>
 <![endif]-->
@@ -141,7 +147,7 @@ function layout({ preheader, body }: LayoutInput): string {
         ${body}
       </td></tr>
       <tr><td class="cv-text-3" style="padding:20px 4px 0;color:${COLORS.textTertiary};font-size:11.5px;line-height:1.5;text-align:left;font-family:${FONT_BODY};">
-        Recibís este correo porque sos parte de <strong class="cv-text-2" style="color:${COLORS.textSecondary};">cuervito</strong>, la plataforma de fotos deportivas.<br>
+        Recibís este correo porque sos parte de <strong class="cv-text-2" style="color:${COLORS.textSecondary};">encontrate.app</strong>, la plataforma de fotos deportivas.<br>
         <a href="${env.NEXT_PUBLIC_BASE_URL}" class="cv-text-3" style="color:${COLORS.textTertiary};text-decoration:underline;">encontrate.app</a>
       </td></tr>
     </table>
@@ -206,7 +212,7 @@ export function welcomeEmailHtml(input: WelcomeEmailInput): string {
   }
 
   const body = `
-    ${eyebrow("Bienvenida a cuervito")}
+    ${eyebrow("Bienvenida a encontrate.app")}
     ${heading(`Hola ${input.name}, qué bueno tenerte acá.`)}
     ${paragraph(
       `encontrate.app es la plataforma más simple para vender las fotos que sacaste en eventos deportivos. Sin contratos largos, sin tomarte semanas configurar nada — armás tu galería, los corredores compran online y la plata cae directo en tu Mercado Pago.`,
@@ -246,7 +252,7 @@ export function welcomeEmailHtml(input: WelcomeEmailInput): string {
   `;
 
   return layout({
-    preheader: "Tu cuenta de cuervito está lista. 3 pasos para tu primera venta.",
+    preheader: "Tu cuenta de encontrate.app está lista. 3 pasos para tu primera venta.",
     body,
   });
 }
@@ -470,7 +476,7 @@ export function passwordResetEmailHtml(input: PasswordResetEmailInput): string {
     ${eyebrow("Reset de contraseña")}
     ${heading(`${firstName}, ¿pediste reset?`)}
     ${paragraph(
-      `Alguien pidió cambiar la contraseña de tu cuenta de cuervito. Si fuiste vos, dale al botón. El link expira en 1 hora.`,
+      `Alguien pidió cambiar la contraseña de tu cuenta de encontrate.app. Si fuiste vos, dale al botón. El link expira en 1 hora.`,
     )}
 
     <div style="margin:22px 0 24px;">

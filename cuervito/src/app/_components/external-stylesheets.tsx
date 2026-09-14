@@ -1,15 +1,16 @@
 /**
- * Shared <link> tags every layout puts in <head>. Includes preconnect
- * + preload hints so the browser can fetch tabler-icons.css and Google
- * Fonts in parallel with the HTML — without this, the icon font lands
- * after the hero/grid has painted and the layout shifts visibly on the
- * first visit to a route.
+ * Los <link> que comparten las tiendas viejas: los íconos de Tabler, con
+ * preconnect y preload para que la fuente de íconos no aterrice después de que
+ * la grilla ya pintó.
+ *
+ * Acá también se cargaban Bricolage Grotesque y DM Sans de Google. Eran las
+ * fuentes de cuervito; las de encontrate (Outfit y Unbounded) las trae
+ * next/font desde el layout raíz para TODAS las rutas, así que pedirlas de
+ * nuevo a Google era una descarga más para dibujar la marca equivocada.
  */
 export function ExternalStylesheets() {
   return (
     <>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="" />
 
       <link
@@ -20,10 +21,6 @@ export function ExternalStylesheets() {
       <link
         rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css"
-      />
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
       />
     </>
   );

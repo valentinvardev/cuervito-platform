@@ -10,7 +10,8 @@
 /* ============================================
    cuervito.app — Design System
    Dark cálido con energía deportiva
-   ============================================ */& {
+   ============================================ */
+& {
   /* Fondos — cálidos */
   --bg-base:        #0F0D0B;
   --bg-surface:     #181511;
@@ -52,9 +53,13 @@
   --btn-primary-shadow:  0 4px 24px var(--accent-glow);
 
   /* Type */
-  --font-display: "Bricolage Grotesque", "Cabinet Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-ui: "DM Sans", "Geist Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "Geist Mono", ui-monospace, "SF Mono", monospace;
+  /* Las de encontrate. Vienen por next/font desde el layout raíz, así que
+     siempre están: el nombre literal es sólo el respaldo si la variable no
+     existe. Bricolage y DM Sans eran de cuervito y se fueron con el rebrand;
+     no hay fuente mono de marca, así que el mono es el del sistema. */
+  --font-display: var(--fuente-display, "Unbounded"), ui-sans-serif, system-ui, sans-serif;
+  --font-ui: var(--fuente-sans, "Outfit"), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 /* ─── Light theme ────────────────────────────────────────────────────────
@@ -486,7 +491,8 @@
   .cs-date-pop { animation: none; }
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }& {
+* { box-sizing: border-box; margin: 0; padding: 0; }
+& {
   background: var(--bg-base);
   color: var(--text-primary);
   font-family: var(--font-ui);
@@ -494,7 +500,8 @@
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-}& { min-height: 100vh; overflow-x: hidden; }
+}
+& { min-height: 100vh; overflow-x: hidden; }
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
 input, textarea, select { font-family: inherit; }

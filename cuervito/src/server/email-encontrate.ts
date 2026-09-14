@@ -48,8 +48,17 @@ const C = {
   sobreAcento: "#FFFFFF",
 } as const;
 
+/* Las de encontrate primero, la pila del sistema después.
+
+   Un mail no puede dar por sentada una fuente web: Gmail las ignora, Apple
+   Mail y la mayoría de los clientes de escritorio las cargan. Así que se pide
+   Outfit y Unbounded —con <link> en el head y @import en el style, que es lo
+   que cada cliente respeta— y se lista atrás lo que hay en cualquier máquina.
+   Donde carga, el mail es encontrate; donde no, sigue siendo legible. */
 const FUENTE =
-  "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
+  "'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
+const FUENTE_DISPLAY =
+  "'Unbounded', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif";
 
 function esc(s: string): string {
   return s.replace(/[&<>"']/g, (c) =>
@@ -64,37 +73,22 @@ function pesos(centavos: number): string {
 export const BASE = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
 
 /**
- * La marca: el pájaro como imagen, el nombre como texto.
+ * La marca: el logo entero —pájaro y nombre— como una sola imagen.
  *
- * Era todo texto, y por una buena razón: la mayoría de los clientes no cargan
- * imágenes hasta que uno aprieta "mostrar imágenes", y un mail que abre con un
- * rectángulo vacío arriba parece roto o parece spam.
+ * Antes iba partido: el pájaro como imagen y el nombre tipeado, para que si el
+ * cliente bloquea imágenes quedara al menos el nombre. Pero el nombre tipeado
+ * en la fuente del sistema no es el logotipo, y la marca es una sola pieza.
  *
- * Así que el logotipo entra partido. El pájaro va como imagen —decorativa, con
- * alt vacío— y el nombre queda en texto: si el cliente bloquea las imágenes no
- * aparece un hueco, aparece el nombre solo, que es exactamente lo que había
- * antes. No se pierde nada y se gana la marca cuando las imágenes sí cargan.
+ * El archivo de marca (logo.png) tiene el dibujo en BLANCO, para fondo oscuro;
+ * sobre el papel claro de estos mails desaparecería. logo-tinta.png es el mismo
+ * dibujo relleno de tinta, generado del canal alfa del original —no hay dos
+ * logos que mantener—. 812×178, así que a 24 de alto son 110 de ancho.
  *
- * NO se usa el logotipo completo: ese archivo tiene el texto en BLANCO, para
- * fondo oscuro. Sobre el papel claro de estos mails desaparecería.
- *
- * Va la versión en TINTA del isotipo y no el archivo de la marca.
- *
- * El isotipo de encontrate es la silueta en blanco sobre transparente: como
- * máscara CSS toma el color del texto, pero un mail no puede usar máscaras y
- * el <img> blanco sobre el papel claro de estos mails es invisible. Se probó.
- * isotipo-tinta.png es el mismo dibujo relleno de tinta, generado del canal
- * alfa del original, así que no hay dos siluetas que mantener.
+ * Si el cliente no carga imágenes, se ve el alt: el nombre, en la fuente y el
+ * color del texto. No es el logo, pero tampoco es un hueco.
  */
 function marca(): string {
-  const pajaro = `${BASE}/marca/isotipo-tinta.png`;
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>` +
-    `<td style="padding-right:8px;line-height:0;vertical-align:middle;">` +
-    `<img src="${pajaro}" width="17" height="22" alt="" style="display:block;border:0;outline:none;text-decoration:none;" />` +
-    `</td>` +
-    `<td style="vertical-align:middle;font-family:${FUENTE};font-size:17px;font-weight:800;letter-spacing:-0.03em;color:${C.texto};">` +
-    `Encontrate<span style="color:${C.acento};">.app</span>` +
-    `</td></tr></table>`;
+  return `<img src="${BASE}/marca/logo-tinta.png" width="110" height="24" alt="encontrate.app" style="display:block;border:0;outline:none;text-decoration:none;height:24px;width:auto;font-family:${FUENTE};font-weight:700;font-size:16px;color:${C.texto};" />`;
 }
 /**
  * El marco de todo mail de encontrate.
@@ -120,10 +114,14 @@ export function armar({
 <meta name="supported-color-schemes" content="only light" />
 <meta name="x-apple-disable-message-reformatting" />
 <title>encontrate.app</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Unbounded:wght@700;800&display=swap" rel="stylesheet" />
 <!--[if mso]>
 <style type="text/css">body, table, td { font-family: Arial, Helvetica, sans-serif !important; }</style>
 <![endif]-->
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Unbounded:wght@700;800&display=swap');
 /* Gmail en modo oscuro le pone [data-ogsc]/[data-ogsb] a todo y auto-invierte
    los colores. Como este diseño ya es claro, se vuelven a fijar los nuestros
    para que no termine en un gris lavado que no es de nadie. */
@@ -162,7 +160,7 @@ export function botonSuave(texto: string, url: string): string {
 }
 
 export function titulo(t: string): string {
-  return `<h1 class="en-txt" style="margin:0 0 14px;font-family:${FUENTE};font-weight:800;font-size:28px;line-height:1.12;letter-spacing:-0.03em;color:${C.texto};">${esc(t)}</h1>`;
+  return `<h1 class="en-txt" style="margin:0 0 14px;font-family:${FUENTE_DISPLAY};font-weight:700;font-size:24px;line-height:1.18;letter-spacing:-0.02em;color:${C.texto};">${esc(t)}</h1>`;
 }
 
 export function parrafo(html: string): string {
@@ -173,7 +171,7 @@ export function parrafo(html: string): string {
 export function cifra(rotulo: string, valor: string, nota?: string): string {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;"><tr><td bgcolor="${C.suave}" class="en-suave" style="background:${C.suave};border-radius:12px;padding:18px 20px;">
     <div class="en-txt3" style="font-family:${FUENTE};font-size:11.5px;letter-spacing:0.06em;text-transform:uppercase;color:${C.texto3};">${esc(rotulo)}</div>
-    <div class="en-txt" style="font-family:${FUENTE};font-size:32px;font-weight:700;letter-spacing:-0.03em;color:${C.texto};margin-top:5px;">${esc(valor)}</div>
+    <div class="en-txt" style="font-family:${FUENTE_DISPLAY};font-size:28px;font-weight:700;letter-spacing:-0.02em;color:${C.texto};margin-top:5px;">${esc(valor)}</div>
     ${nota ? `<div class="en-txt2" style="font-family:${FUENTE};font-size:12.5px;color:${C.texto2};margin-top:6px;">${esc(nota)}</div>` : ""}
   </td></tr></table>`;
 }
