@@ -13,7 +13,7 @@ export default async function AdminSettingsPage() {
 
   const [mpTestMode, historiasAbierta] = await Promise.all([
     getMpTestMode(),
-    leerBandera(HISTORIAS_ABIERTA),
+    leerBandera(HISTORIAS_ABIERTA, true),
   ]);
 
   return <SettingsClient mpTestMode={mpTestMode} historiasAbierta={historiasAbierta} />;

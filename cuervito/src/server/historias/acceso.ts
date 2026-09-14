@@ -45,10 +45,11 @@ const getBeta = unstable_cache(leerBeta, ["setting", CLAVE], {
 /**
  * Cuatro llaves, en orden de costo.
  *
- * Las dos nuevas son las que hacen falta para abrir el estudio más allá de
- * nosotros sin promover a nadie a ADMIN: `historiasEnabled` en la fila del
- * usuario —la reparte la campaña de mail que lo invita— y la bandera global
- * `historias_abierta`, que es el día que se abre para todos.
+ * Desde septiembre de 2026 el estudio está abierto: la bandera global
+ * `historias_abierta` se lee con `true` por defecto, así que sin una fila en
+ * Setting que diga lo contrario, cualquier cuenta lo ve. La bandera queda
+ * como llave de emergencia —apagarla desde /admin/settings vuelve al modo
+ * lista— y las otras dos llaves siguen ahí para ese caso.
  *
  * `historiasEnabled` viene por parámetro cuando el llamador ya tiene la fila
  * (sesionPanel la trae) y se consulta sólo si no. Es una consulta chica, pero
@@ -63,7 +64,7 @@ export async function puedeUsarHistorias(
 ): Promise<boolean> {
   if (!usuario?.id) return false;
   if (usuario.role === "ADMIN") return true;
-  if (await leerBandera(HISTORIAS_ABIERTA)) return true;
+  if (await leerBandera(HISTORIAS_ABIERTA, true)) return true;
 
   const propia =
     usuario.historiasEnabled ??

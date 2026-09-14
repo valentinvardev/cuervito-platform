@@ -6,7 +6,8 @@ import path from "node:path";
 import satori from "satori";
 import sharp from "sharp";
 
-import { FORMATOS, type FormatoId, type PlantillaId } from "./formatos";
+import { cajaFoto, FORMATOS, type Foco, type FormatoId, type PlantillaId } from "./formatos";
+import { fuentesSatori } from "./fuentes";
 import { dibujar, tintaSobre, type DatosHistoria } from "./plantillas";
 
 /**
@@ -24,48 +25,90 @@ import { dibujar, tintaSobre, type DatosHistoria } from "./plantillas";
  * sentido.
  */
 
-// ── Fuentes ─────────────────────────────────────────────────────────────────
-// satori pide los archivos, no los nombres: corre fuera del navegador y no hay
-// CSS que resuelva nada. Van versionadas en el repo y no bajadas al vuelo
-// porque una historia que falla porque Google Fonts tardó no se puede explicar.
-const FUENTES = path.join(process.cwd(), "src/server/historias/fuentes");
+// ── La marca ────────────────────────────────────────────────────────────────
+// El logo de encontrate va como data URI porque satori no sale a la red. Se
+// lee una vez por proceso: son dos PNG de 11 KB.
+let marcaCache: { clara: string; tinta: string } | null = null;
 
-type Fuente = { name: string; data: Buffer; weight: 400 | 600 | 800; style: "normal" };
-let fuentesCache: Fuente[] | null = null;
-
-async function fuentes(): Promise<Fuente[]> {
-  fuentesCache ??= [
-    { name: "Outfit", data: await readFile(path.join(FUENTES, "Outfit-400.ttf")), weight: 400, style: "normal" },
-    { name: "Outfit", data: await readFile(path.join(FUENTES, "Outfit-600.ttf")), weight: 600, style: "normal" },
-    { name: "Unbounded", data: await readFile(path.join(FUENTES, "Unbounded-800.ttf")), weight: 800, style: "normal" },
-  ];
-  return fuentesCache;
+async function marca(): Promise<{ clara: string; tinta: string }> {
+  if (marcaCache) return marcaCache;
+  const carpeta = path.join(process.cwd(), "public/marca");
+  const uri = async (archivo: string) =>
+    `data:image/png;base64,${(await readFile(path.join(carpeta, archivo))).toString("base64")}`;
+  marcaCache = { clara: await uri("logo.png"), tinta: await uri("logo-tinta.png") };
+  return marcaCache;
 }
 
 // ── Piezas ──────────────────────────────────────────────────────────────────
 
-/** Recorta la foto a una caja, con las esquinas redondeadas si se piden. */
+const acotar = (n: number) => Math.min(1, Math.max(0, n));
+
+/**
+ * Recorta la foto a una caja, con las esquinas redondeadas si se piden.
+ *
+ * Con `foco` el encuadre lo decide el fotógrafo: la foto se escala hasta
+ * cubrir la caja y se desplaza para que ese punto —en fracciones de la foto—
+ * caiga en el mismo punto de la caja. Es la misma regla que `object-position`
+ * en CSS, y tiene que serlo: la pantalla muestra la foto con esa regla
+ * mientras se arrastra, y lo que se ve al soltar tiene que ser lo que sale.
+ *
+ * Sin `foco`, el recorte inteligente de sharp busca la zona con más contraste
+ * y detalle, que en una foto deportiva casi siempre es el atleta. No es
+ * reconocimiento de caras y a veces se equivoca; para eso está el arrastre.
+ * Se devuelve el foco que se usó, así el arrastre arranca desde donde quedó
+ * la foto y no desde el centro.
+ */
 async function recortar(
   foto: Buffer,
   ancho: number,
   alto: number,
-  radio = 0,
-): Promise<Buffer> {
-  const base = sharp(foto).resize(ancho, alto, {
-    fit: "cover",
-    // El recorte inteligente de sharp busca la zona con más contraste y
-    // detalle, que en una foto deportiva casi siempre es el atleta. No es
-    // reconocimiento de caras y a veces se equivoca; es lo que reemplaza el
-    // punto focal que va a dar el modelo cuando enchufemos esa parte.
-    position: sharp.strategy.attention,
-  });
+  radio: number,
+  foco: Foco | null,
+): Promise<{ png: Buffer; foco: Foco }> {
+  const meta = await sharp(foto).metadata();
+  const w = meta.width ?? ancho;
+  const h = meta.height ?? alto;
+  const escala = Math.max(ancho / w, alto / h);
+  // Nunca por debajo de la caja: un redondeo hacia abajo dejaría el extract
+  // un píxel fuera de la imagen, y sharp lo rechaza entero.
+  const sw = Math.max(ancho, Math.round(w * escala));
+  const sh = Math.max(alto, Math.round(h * escala));
 
-  if (radio <= 0) return base.png().toBuffer();
+  let base: sharp.Sharp;
+  let usado: Foco;
+
+  if (foco) {
+    const left = Math.round((sw - ancho) * acotar(foco.x));
+    const top = Math.round((sh - alto) * acotar(foco.y));
+    base = sharp(foto)
+      .resize(sw, sh, { fit: "fill" })
+      .extract({ left, top, width: ancho, height: alto });
+    usado = { x: acotar(foco.x), y: acotar(foco.y) };
+  } else {
+    const { data, info } = await sharp(foto)
+      .resize(ancho, alto, { fit: "cover", position: sharp.strategy.attention })
+      .png()
+      .toBuffer({ resolveWithObject: true });
+    base = sharp(data);
+    // sharp devuelve el desplazamiento del recorte sobre la imagen ya
+    // escalada, con signo negativo (es cuánto se corrió la imagen, no dónde
+    // empieza el recorte). Llevado a fracción es el mismo foco que el
+    // arrastre va a mandar.
+    usado = {
+      x: sw > ancho ? acotar(-(info.cropOffsetLeft ?? 0) / (sw - ancho)) : 0.5,
+      y: sh > alto ? acotar(-(info.cropOffsetTop ?? 0) / (sh - alto)) : 0.5,
+    };
+  }
+
+  if (radio <= 0) return { png: await base.png().toBuffer(), foco: usado };
 
   const mascara = Buffer.from(
     `<svg width="${ancho}" height="${alto}"><rect width="${ancho}" height="${alto}" rx="${radio}" ry="${radio}" fill="#fff"/></svg>`,
   );
-  return base.composite([{ input: mascara, blend: "dest-in" }]).png().toBuffer();
+  return {
+    png: await base.composite([{ input: mascara, blend: "dest-in" }]).png().toBuffer(),
+    foco: usado,
+  };
 }
 
 /** El dibujo de satori, ya rasterizado. */
@@ -79,7 +122,7 @@ async function capaDibujo(
   const svg = await satori(dibujar({ plantilla, formato, ancho, alto, d }), {
     width: ancho,
     height: alto,
-    fonts: await fuentes(),
+    fonts: await fuentesSatori(),
   });
   // sharp rasteriza el SVG sin necesitar fuentes en el sistema: satori ya
   // convirtió las letras en trazos.
@@ -88,22 +131,31 @@ async function capaDibujo(
 
 // ── El render ───────────────────────────────────────────────────────────────
 
+/** Lo que el llamador sabe del evento. La marca la pone el render. */
+export type DatosPieza = Omit<DatosHistoria, "marca">;
+
 export async function renderHistoria({
   foto,
   plantilla,
   formato,
   datos,
+  foco = null,
 }: {
   /** Los bytes de la foto SIN marca de agua. */
   foto: Buffer;
   plantilla: PlantillaId;
   formato: FormatoId;
-  datos: DatosHistoria;
-}): Promise<Buffer> {
+  datos: DatosPieza;
+  /** El encuadre elegido a mano, o null para el automático. */
+  foco?: Foco | null;
+}): Promise<{ jpeg: Buffer; foco: Foco }> {
   const { ancho, alto } = FORMATOS[formato];
+  const caja = cajaFoto(plantilla, formato);
+  const d: DatosHistoria = { ...datos, marca: await marca() };
 
   const capas: sharp.OverlayOptions[] = [];
   let lienzo: sharp.Sharp;
+  let usado: Foco;
 
   if (plantilla === "placa") {
     lienzo = sharp({
@@ -111,34 +163,28 @@ export async function renderHistoria({
         width: ancho,
         height: alto,
         channels: 4,
-        background: datos.color,
+        background: d.color,
       },
     });
-
-    // La foto ocupa el ancho menos los márgenes y deja abajo el alto que el
-    // texto necesita. Se calcula sobre el alto total y no con un número fijo
-    // porque el posteo es 570px más bajo que la historia: con una caja fija,
-    // en 4:5 el texto quedaba encima de la foto.
-    const margen = Math.round(ancho * (formato === "historia" ? 0.072 : 0.057));
-    const cajaAncho = ancho - margen * 2;
-    const cajaAlto = Math.round(alto * (formato === "historia" ? 0.58 : 0.5));
-    capas.push({
-      input: await recortar(foto, cajaAncho, cajaAlto, Math.round(ancho * 0.028)),
-      top: margen,
-      left: margen,
-    });
+    const r = await recortar(foto, caja.ancho, caja.alto, caja.radio, foco);
+    usado = r.foco;
+    capas.push({ input: r.png, top: caja.top, left: caja.left });
   } else {
-    lienzo = sharp(await recortar(foto, ancho, alto));
+    const r = await recortar(foto, ancho, alto, 0, foco);
+    usado = r.foco;
+    lienzo = sharp(r.png);
   }
 
-  capas.push({ input: await capaDibujo(plantilla, formato, ancho, alto, datos) });
+  capas.push({ input: await capaDibujo(plantilla, formato, ancho, alto, d) });
 
-  return lienzo
+  const jpeg = await lienzo
     .composite(capas)
     // JPEG y no PNG: Instagram recomprime todo lo que sube igual, así que un
     // PNG de 4 MB sólo hace la subida más lenta y termina en el mismo JPEG.
     .jpeg({ quality: 92, chromaSubsampling: "4:4:4" })
     .toBuffer();
+
+  return { jpeg, foco: usado };
 }
 
 export { tintaSobre };

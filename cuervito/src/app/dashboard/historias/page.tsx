@@ -11,10 +11,10 @@ export const dynamic = "force-dynamic";
 /**
  * El estudio de historias.
  *
- * Cerrado por [acceso.ts]: hoy sólo ADMIN, más los ids que estén cargados a
- * mano en Setting. notFound() y no redirect(): para quien no tiene la beta,
- * esta ruta directamente no existe, y eso es más honesto que mandarlo al
- * inicio sin decirle por qué.
+ * Abierto a toda cuenta activa; [acceso.ts] sigue decidiendo por si algún día
+ * hay que cerrarlo. notFound() y no redirect() para quien no lo tiene: la
+ * ruta directamente no existe, y eso es más honesto que mandarlo al inicio
+ * sin decirle por qué.
  */
 export default async function HistoriasPage() {
   const session = await auth();

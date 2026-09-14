@@ -159,8 +159,8 @@ export function SettingsClient({
         )}
       </div>
 
-      {/* Historias para todos. Es la llave gruesa: mientras esté apagada, el
-          estudio se reparte a mano por usuario o lo reparte la campaña. */}
+      {/* Historias para todos. Viene prendida de fábrica; apagarla es la llave
+          de emergencia, y ahí el estudio se reparte a mano o por la campaña. */}
       <div
         style={{
           marginTop: 18,
@@ -184,12 +184,12 @@ export function SettingsClient({
               Historias · abierta a todos
             </div>
             <div style={{ fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.55 }}>
-              Cuando está <strong style={{ color: "var(--success)" }}>activada</strong>, toda cuenta
+              Viene <strong style={{ color: "var(--success)" }}>activada</strong>: toda cuenta
               activa ve el estudio de historias y el aviso al terminar de subir fotos.
               <br />
               <br />
-              Cuando está <strong>desactivada</strong>, lo ven los admins, quien lo tenga habilitado
-              en su ficha, y quien lo recibió por la campaña de mail.
+              Si la <strong>desactivás</strong>, lo ven sólo los admins, quien lo tenga habilitado
+              en su ficha, y quien lo recibió por la campaña de mail. Es la llave de emergencia.
             </div>
           </div>
           <button

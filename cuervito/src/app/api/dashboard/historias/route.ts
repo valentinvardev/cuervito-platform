@@ -32,6 +32,8 @@ const esquema = z.object({
   photoId: z.string().min(1),
   plantilla: z.enum(["cubierta", "placa"]),
   formato: z.enum(["historia", "post"]),
+  /** El encuadre elegido arrastrando; sin él, el automático. */
+  foco: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) }).optional(),
 });
 
 export async function POST(req: Request) {
@@ -45,7 +47,7 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
   }
-  const { photoId, plantilla, formato } = parsed.data;
+  const { photoId, plantilla, formato, foco } = parsed.data;
 
   // La foto tiene que ser suya. El where lleva el ownerId del evento y no sólo
   // el id de la foto: sin eso, cualquiera con la beta habilitada podría armar
@@ -104,10 +106,11 @@ export async function POST(req: Request) {
   }
 
   const ev = foto.event;
-  const imagen = await renderHistoria({
+  const { jpeg: imagen, foco: usado } = await renderHistoria({
     foto: Buffer.from(bytes),
     plantilla,
     formato,
+    foco: foco ?? null,
     datos: {
       evento: ev.name,
       fecha: ev.eventDate
@@ -131,6 +134,10 @@ export async function POST(req: Request) {
       // otra vez tiene que volver a renderizar, porque el evento pudo cambiar
       // de precio o sumar fotos en el medio.
       "cache-control": "no-store",
+      // Dónde quedó la foto. Con el encuadre automático la pantalla no lo
+      // sabe, y lo necesita para que el arrastre arranque desde ahí y no
+      // pegue un salto al centro en el primer píxel.
+      "x-foco": `${usado.x.toFixed(4)},${usado.y.toFixed(4)}`,
       "content-disposition": `inline; filename="${formato}-${FORMATOS[formato].ancho}x${FORMATOS[formato].alto}.jpg"`,
     },
   });

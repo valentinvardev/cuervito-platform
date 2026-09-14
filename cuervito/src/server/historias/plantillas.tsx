@@ -32,6 +32,8 @@ export type DatosHistoria = {
   logo: string | null;
   /** El color de marca, en hex. */
   color: string;
+  /** El logo de encontrate, como data URI, en las dos tintas. Lo pone el render. */
+  marca: { clara: string; tinta: string };
 };
 
 /** Blanco o negro, el que se lea sobre ese fondo. */
@@ -54,25 +56,6 @@ export function tintaSobre(hex: string): string {
   return lum > 0.6 ? "#12110F" : "#FFFFFF";
 }
 
-/**
- * El color de marca, si se lee sobre el degradado oscuro de la cubierta.
- *
- * Un fotógrafo con la marca en bordó o azul noche tiene todo el derecho, pero
- * ese color sobre un degradado casi negro no se ve, y el volanta es justo el
- * renglón que tiene que frenar el pulgar. Cuando no llega, gana el blanco: es
- * preferible perder el color de marca en dos palabras que perder las dos
- * palabras.
- */
-function acentoSobreOscuro(hex: string): string {
-  const c = hex.replace("#", "");
-  const n = c.length === 3 ? c.split("").map((x) => x + x).join("") : c;
-  const r = parseInt(n.slice(0, 2), 16) || 0;
-  const g = parseInt(n.slice(2, 4), 16) || 0;
-  const b = parseInt(n.slice(4, 6), 16) || 0;
-  const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-  return lum < 0.34 ? "#FFFFFF" : hex;
-}
-
 /** Los renglones sueltos de abajo de todo, separados por puntos. */
 function meta(d: DatosHistoria): string {
   return [d.disciplina, d.fecha, d.lugar].filter(Boolean).join(" · ");
@@ -81,39 +64,25 @@ function meta(d: DatosHistoria): string {
 /**
  * El bloque de texto que comparten las dos plantillas.
  *
- * El orden no es decorativo. Primero el dato que hace parar el pulgar —"ya
- * están tus fotos"—, después de qué evento, y al final cómo llegar. Al revés
- * el atleta lee el nombre de una carrera que no corrió y sigue de largo.
+ * El orden no es decorativo. Primero la marca —que dice de qué se trata—,
+ * después de qué evento, y al final cómo llegar. Al revés el atleta lee el
+ * nombre de una carrera que no corrió y sigue de largo.
+ *
+ * Arriba iba un volanta de color, "ya están tus fotos". Ahora va el logo de
+ * encontrate en la tinta que se lea sobre ese fondo: la pieza la publica el
+ * fotógrafo, y el logo es lo que hace que quien la ve sepa dónde buscar.
  */
-function Texto({
-  d,
-  tinta,
-  acento,
-  escala,
-}: {
-  d: DatosHistoria;
-  tinta: string;
-  /** El color del volanta. Lo decide la plantilla: sobre el color de marca no
-   *  puede ser el color de marca. */
-  acento: string;
-  escala: number;
-}) {
+function Texto({ d, tinta, escala }: { d: DatosHistoria; tinta: string; escala: number }) {
   const tenue = tinta === "#FFFFFF" ? "rgba(255,255,255,.72)" : "rgba(18,17,15,.66)";
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      <div
-        style={{
-          display: "flex",
-          fontFamily: "Outfit",
-          fontSize: 26 * escala,
-          fontWeight: 600,
-          letterSpacing: 4 * escala,
-          textTransform: "uppercase",
-          color: acento,
-        }}
-      >
-        Ya están tus fotos
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={tinta === "#FFFFFF" ? d.marca.clara : d.marca.tinta}
+        alt=""
+        height={44 * escala}
+        style={{ objectFit: "contain", objectPosition: "left" }}
+      />
 
       <div
         style={{
@@ -234,10 +203,7 @@ export function dibujar({
           backgroundColor: "transparent",
         }}
       >
-        {/* Sobre el color de marca el volanta va en la misma tinta que el
-            resto: pintarlo del color de marca sería pintarlo del color del
-            fondo. La marca ya está puesta, es el fondo entero. */}
-        <Texto d={d} tinta={tinta} acento={tinta} escala={escala} />
+        <Texto d={d} tinta={tinta} escala={escala} />
         <Pie d={d} tinta={tinta} escala={escala} />
       </div>
     );
@@ -259,7 +225,7 @@ export function dibujar({
           "linear-gradient(to bottom, rgba(10,9,8,0) 38%, rgba(10,9,8,.62) 62%, rgba(10,9,8,.94) 100%)",
       }}
     >
-      <Texto d={d} tinta="#FFFFFF" acento={acentoSobreOscuro(d.color)} escala={escala} />
+      <Texto d={d} tinta="#FFFFFF" escala={escala} />
       <Pie d={d} tinta="#FFFFFF" escala={escala} />
     </div>
   );

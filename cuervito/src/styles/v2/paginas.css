@@ -2034,6 +2034,7 @@
    cambiara de forma al cambiar de formato, la vista previa estaría mintiendo
    sobre lo único que el formato decide. */
 .hist-lienzo {
+  position: relative;
   aspect-ratio: var(--pv, 9 / 16);
   border-radius: var(--r-3);
   overflow: hidden;
@@ -2042,12 +2043,56 @@
   display: grid; place-items: center;
   transition: aspect-ratio 240ms cubic-bezier(.2, .8, .3, 1);
 }
-.hist-lienzo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.hist-lienzo > img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
 /* Mientras renderiza queda la imagen anterior, atenuada. Vaciar la caja hace
    que la columna salte de alto y que uno pierda la referencia de lo que estaba
    comparando, que es justo lo que vino a hacer. */
-.hist-lienzo[data-cargando="1"] img { opacity: .38; }
+.hist-lienzo[data-cargando="1"] > img { opacity: .38; }
+
+/* ── El encuadre ──────────────────────────────────────────────────────────── */
+/* La zona que se arrastra ocupa exactamente la caja de la foto dentro de la
+   pieza (la posición la calcula la pantalla con cajaFoto). Es invisible hasta
+   que se agarra; ahí muestra la foto sola con la misma regla de recorte que
+   usa el servidor, y se queda hasta que llega el render nuevo. */
+.hist-arr {
+  position: absolute;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.hist-lienzo[data-arr="1"] .hist-arr { cursor: grabbing; }
+.hist-arr img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+}
+.hist-arr[data-viva="1"] img { opacity: 1; }
+.hist-arr[data-viva="1"] { background: var(--paper-3); }
+
+/* El aviso de que se puede arrastrar. Abajo y chico, sobre la foto, porque
+   nadie adivina que una vista previa se agarra; desaparece mientras se
+   arrastra para no tapar lo que se está encuadrando. */
+.hist-pista {
+  position: absolute;
+  left: 50%; bottom: 10px;
+  transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 11px;
+  border-radius: 100px;
+  background: rgba(18, 17, 15, .72);
+  color: #fff;
+  font-size: 11.5px; font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.hist-pista svg { width: 13px; height: 13px; }
 
 .hist-vacio {
   padding: var(--s-5); text-align: center;
@@ -2055,17 +2100,6 @@
 }
 
 .hist-acc { display: grid; gap: 8px; }
-
-/* La marca de beta. Va arriba de todo y dice qué esperar, porque lo que se
-   está probando es si las imágenes sirven para publicar, y eso sólo se puede
-   contestar mirándolas. */
-.hist-beta {
-  display: flex; align-items: flex-start; gap: 10px;
-  padding: 11px var(--s-4);
-  border: 1px dashed var(--line-strong); border-radius: var(--r-2);
-  font-size: 12.5px; color: var(--ink-2); line-height: 1.5;
-}
-.hist-beta svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; color: var(--ink-3); }
 
 @media (max-width: 1080px) {
   .hist { grid-template-columns: minmax(0, 1fr); }
