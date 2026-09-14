@@ -19,7 +19,8 @@
         "preview": "next build && next start",
         "start": "next start",
         "typecheck": "tsc --noEmit",
-        "css:v2": "node scripts/armar-paginas.mjs"
+        "css:v2": "node scripts/armar-paginas.mjs",
+    "css:admin": "node scripts/envolver-admin-css.mjs"
     },
     "dependencies": {
         "@auth/prisma-adapter": "^2.7.2",

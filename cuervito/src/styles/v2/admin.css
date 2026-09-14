@@ -23,6 +23,9 @@
    A la izquierda los nombres que usa el prototipo; a la derecha los tokens de
    encontrate, que ya traen tema claro y oscuro. Con esto el admin acompaña el
    toggle de tema como el resto del producto, que antes no hacía. */
+/* Ojo: .adm ya no es la página, es el contenedor del contenido ADENTRO del
+   canvas del armazón compartido. Por eso acá no hay ni alto mínimo ni fondo:
+   los pone el canvas, y ponerlos de nuevo sumaba un scroll interno. */
 .adm {
   --bg-base:        var(--paper);
   --bg-surface:     var(--paper-2);
@@ -65,15 +68,12 @@
   --hover-shadow:        var(--shadow-card);
   --hover-shadow-strong: var(--shadow-obj);
   --hover-shadow-accent: var(--shadow-card);
-
-  background: var(--paper);
   color: var(--ink);
   font-family: var(--sans);
 
   /* Cubre la pantalla entera. El <body> lo pinta styles.css con el fondo
      oscuro del prototipo, así que sin esto queda una franja negra abajo de
      todo apenas el contenido no llega al pie. */
-  min-height: 100dvh;
 }
 
 /* El logotipo, como máscara y no como imagen de fondo.

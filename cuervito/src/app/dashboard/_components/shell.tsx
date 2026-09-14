@@ -3,18 +3,26 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ArrowLeft,
+  BarChart3,
   CalendarDays,
+  Droplets,
   Images,
   LayoutGrid,
   LifeBuoy,
+  Mail,
   Menu,
   Moon,
+  Palette,
   Plus,
   ReceiptText,
+  Settings,
+  ShieldCheck,
   Sparkles,
   Store,
   Sun,
   UserRound,
+  Users,
   Wallet,
   X,
 } from "lucide-react";
@@ -47,6 +55,32 @@ const CUENTA = [
   { id: "ayuda", href: "/dashboard/ayuda", icono: LifeBuoy, texto: "Ayuda" },
 ];
 
+// Sólo para quien tiene el rol. Va en Cuenta y no en el riel principal: el
+// admin es una puerta a otro lugar, no una sección del panel.
+const ADMIN_ITEM = { id: "admin", href: "/admin/users", icono: ShieldCheck, texto: "Admin" };
+
+/**
+ * El riel del panel de administración.
+ *
+ * El admin tenía su propio armazón —barra arriba, pestañas debajo— heredado
+ * del prototipo de cuervito, con otra fuente, otro tema y otro ritmo. Ahora
+ * es EL MISMO componente que el panel del fotógrafo con otra lista de
+ * destinos: la marca, el buscador, el tema y el aviso de ventas se comparten
+ * y no hay dos maneras de hacer lo mismo.
+ */
+const NAV_ADMIN = [
+  { id: "users", href: "/admin/users", icono: Users, texto: "Usuarios" },
+  { id: "eventos", href: "/admin/eventos", icono: CalendarDays, texto: "Eventos" },
+  { id: "sales", href: "/admin/sales", icono: ReceiptText, texto: "Ventas" },
+  { id: "metricas", href: "/admin/metricas", icono: BarChart3, texto: "Métricas" },
+  { id: "correos", href: "/admin/correos", icono: Mail, texto: "Correos" },
+];
+const NAV_ADMIN_HERRAMIENTAS = [
+  { id: "watermark", href: "/admin/watermark", icono: Droplets, texto: "Marca de agua" },
+  { id: "editor", href: "/admin/editor", icono: Palette, texto: "Editor" },
+  { id: "settings", href: "/admin/settings", icono: Settings, texto: "Configuración" },
+];
+
 // Se anuncian antes de existir para que se vea hacia dónde va esto. No llevan a
 // ningún lado a propósito: un ítem que se ve igual que los demás y no hace nada
 // se prueba una vez, no pasa nada, y se prueba de nuevo.
@@ -70,11 +104,14 @@ const BUSCAR: Record<string, string> = {
 
 function idDeRuta(p: string) {
   if (p === "/dashboard") return "inicio";
+  if (p.startsWith("/admin/")) return p.replace("/admin/", "").split("/")[0] ?? "users";
   return p.replace("/dashboard/", "").split("/")[0] ?? "inicio";
 }
 
 export function Shell({
   historias = false,
+  esAdmin = false,
+  modo = "panel",
   nombre,
   slug,
   iniciales,
@@ -82,6 +119,10 @@ export function Shell({
 }: {
   /** Si el usuario tiene la beta del estudio de historias. */
   historias?: boolean;
+  /** Tiene el rol: aparece la entrada al panel de administración. */
+  esAdmin?: boolean;
+  /** "admin" dibuja el riel de administración en vez del del fotógrafo. */
+  modo?: "panel" | "admin";
   nombre: string;
   slug: string;
   iniciales: string;
@@ -138,6 +179,8 @@ export function Shell({
     }
   }
 
+  const admin = modo === "admin";
+
   const item = (i: (typeof NAV)[number]) => (
     <Link
       key={i.id}
@@ -161,31 +204,70 @@ export function Shell({
     <div className="app">
       <aside className="rail">
         <div className="rail-top">
-          <Link href="/dashboard" className="mark">
+          <Link href={admin ? "/admin/users" : "/dashboard"} className="mark">
             encontrate.app
+            {admin && (
+              <span
+                style={{
+                  display: "block",
+                  fontSize: 10,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: "var(--accent)",
+                  marginTop: 2,
+                }}
+              >
+                admin
+              </span>
+            )}
           </Link>
         </div>
 
-        <nav className="rail-nav">{(historias ? [...NAV, HISTORIAS] : NAV).map(item)}</nav>
+        {admin ? (
+          <>
+            <nav className="rail-nav">{NAV_ADMIN.map(item)}</nav>
 
-        <div>
-          <div className="rail-sep" />
-          <div className="rail-cap">Cuenta</div>
-          <nav className="rail-nav">{CUENTA.map(item)}</nav>
-        </div>
+            <div>
+              <div className="rail-sep" />
+              <div className="rail-cap">Herramientas</div>
+              <nav className="rail-nav">{NAV_ADMIN_HERRAMIENTAS.map(item)}</nav>
+            </div>
 
-        <div>
-          <div className="rail-sep" />
-          <div className="rail-cap">Próximamente</div>
-          <div className="rail-nav">
-            {(historias ? PRONTO : [...PRONTO, HISTORIAS_PRONTO]).map((i) => (
-              <span className="rl pronto" key={i.id} aria-disabled="true">
-                <i.icono /> {i.texto}
-                <span className="rl-pronto">Pronto</span>
-              </span>
-            ))}
-          </div>
-        </div>
+            <div>
+              <div className="rail-sep" />
+              <nav className="rail-nav">
+                <Link href="/dashboard" className="rl" prefetch onClick={() => setCajon(false)}>
+                  <ArrowLeft /> Volver al panel
+                </Link>
+              </nav>
+            </div>
+          </>
+        ) : (
+          <>
+            <nav className="rail-nav">{(historias ? [...NAV, HISTORIAS] : NAV).map(item)}</nav>
+
+            <div>
+              <div className="rail-sep" />
+              <div className="rail-cap">Cuenta</div>
+              <nav className="rail-nav">
+                {(esAdmin ? [...CUENTA, ADMIN_ITEM] : CUENTA).map(item)}
+              </nav>
+            </div>
+
+            <div>
+              <div className="rail-sep" />
+              <div className="rail-cap">Próximamente</div>
+              <div className="rail-nav">
+                {(historias ? PRONTO : [...PRONTO, HISTORIAS_PRONTO]).map((i) => (
+                  <span className="rl pronto" key={i.id} aria-disabled="true">
+                    <i.icono /> {i.texto}
+                    <span className="rl-pronto">Pronto</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="rail-bot">
           {/* Acá y no sólo dentro de Ayuda: cuando algo no funciona nadie busca
@@ -236,7 +318,9 @@ export function Shell({
               riel y repetirla sería decir lo mismo dos veces. */}
           <Link href="/dashboard" className="mark-ico" aria-label="encontrate.app" prefetch />
 
-          <Buscador placeholder={BUSCAR[actual] ?? "Buscar evento, dorsal o venta"} />
+          <Buscador
+            placeholder={admin ? "Buscar en tus eventos y ventas" : (BUSCAR[actual] ?? "Buscar evento, dorsal o venta")}
+          />
 
           <div className="top-r">
             <button
@@ -252,9 +336,15 @@ export function Shell({
                 <Sun />
               </span>
             </button>
-            <Link href="/dashboard/nuevo" className="btn btn-pri" prefetch>
-              <Plus /> Nuevo evento
-            </Link>
+            {admin ? (
+              <Link href="/dashboard" className="btn btn-pri" prefetch>
+                <LayoutGrid /> Mi panel
+              </Link>
+            ) : (
+              <Link href="/dashboard/nuevo" className="btn btn-pri" prefetch>
+                <Plus /> Nuevo evento
+              </Link>
+            )}
           </div>
         </header>
 
