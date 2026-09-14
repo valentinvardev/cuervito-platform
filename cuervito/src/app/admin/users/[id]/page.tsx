@@ -10,6 +10,7 @@ import {
   setUserRoleAction,
   suspendUserAction,
   toggleGiftAction,
+  toggleHistoriasAction,
 } from "../actions";
 import { QuotaOverrideForm } from "./quota-override-form";
 import { SuspendDialog } from "./suspend-dialog";
@@ -46,6 +47,8 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
           storageQuotaBytes: true,
           recognitionQuotaMonthly: true,
           giftEnabled: true,
+          historiasEnabled: true,
+          emailsPromocionales: true,
           _count: { select: { eventsOwned: true, sales: true, photosOwned: true } },
         },
       }),
@@ -268,6 +271,56 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
               {user.giftEnabled ? "Sacarle el permiso" : "Habilitar regalos"}
             </button>
           </form>
+        </div>
+      </section>
+
+      {/* Historias */}
+      <section className="section">
+        <div className="section-head">
+          <h2>Estudio de historias</h2>
+          <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+            {user.emailsPromocionales ? "Recibe mails de campaña" : "Se dio de baja de los mails de campaña"}
+          </div>
+        </div>
+        <div
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: 14,
+            padding: 22,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ minWidth: 240, flex: 1 }}>
+            <div style={{ fontWeight: 500, color: user.historiasEnabled ? "var(--accent)" : undefined }}>
+              {user.role === "ADMIN"
+                ? "Tiene el estudio por ser admin"
+                : user.historiasEnabled
+                  ? "Tiene el estudio de historias"
+                  : "No tiene el estudio de historias"}
+            </div>
+            <div style={{ fontSize: 13, color: "var(--text-tertiary)", marginTop: 4 }}>
+              Con el estudio ve la sección Historias en su panel y, al terminar de subir fotos, se le
+              ofrece armar una con una foto del evento. La campaña de mail &ldquo;historias&rdquo; se
+              lo da sola al invitarlo.
+            </div>
+          </div>
+          {user.role !== "ADMIN" && (
+            <form action={toggleHistoriasAction}>
+              <input type="hidden" name="userId" value={user.id} />
+              <input type="hidden" name="enabled" value={user.historiasEnabled ? "0" : "1"} />
+              <button
+                type="submit"
+                className={user.historiasEnabled ? "btn btn-outline" : "btn btn-primary"}
+              >
+                {user.historiasEnabled ? "Sacarle el estudio" : "Darle el estudio"}
+              </button>
+            </form>
+          )}
         </div>
       </section>
 

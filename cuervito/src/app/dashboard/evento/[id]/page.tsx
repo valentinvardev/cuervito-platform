@@ -4,6 +4,8 @@ import { env } from "~/env";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 
+import { puedeUsarHistorias } from "~/server/historias/acceso";
+
 import { pesos, sesionPanel } from "../../_components/sesion";
 import { Pantalla } from "./_pantalla";
 
@@ -16,7 +18,10 @@ const TOPE = 600;
 
 export default async function V2Evento({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { userId, slug, nombre } = await sesionPanel();
+  const { userId, slug, nombre, rol, historiasEnabled } = await sesionPanel();
+  // Para el modal de "subí una a tu historia" al terminar de subir. Con la
+  // llave que sesionPanel ya trajo: cero consultas de más.
+  const historias = await puedeUsarHistorias({ id: userId, role: rol, historiasEnabled });
 
   const e = await db.event.findUnique({
     where: { id },
@@ -195,6 +200,7 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
         recaudado: pesos(e.sales.reduce((a, s) => a + s.sellerNetCents, 0)),
       }}
       fotos={conUrl}
+      historias={historias}
       colaboradores={colaboradores}
       publico={e.isPublished && e.slug ? `/${slug}/${e.slug}` : null}
       yo={nombre}

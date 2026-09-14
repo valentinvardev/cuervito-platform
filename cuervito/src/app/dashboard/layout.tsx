@@ -22,14 +22,14 @@ import { sesionPanel } from "./_components/sesion";
  * del armazón en vez de reemplazar la pantalla entera.
  */
 export default async function V2Layout({ children }: { children: React.ReactNode }) {
-  const { userId, rol, nombre, slug, iniciales } = await sesionPanel();
+  const { userId, rol, nombre, slug, iniciales, historiasEnabled } = await sesionPanel();
   // El riel se arma con lo que el usuario puede abrir: así el ítem no aparece
   // para quien al entrar se comería un 404.
   //
   // Con el rol que sesionPanel ya trajo, y NO con otro auth(). Con auth() esto
   // costaba una consulta más a Supabase en todas las pantallas del panel, y en
   // serie: primero terminaba sesionPanel y recién ahí salía la segunda.
-  const historias = await puedeUsarHistorias({ id: userId, role: rol });
+  const historias = await puedeUsarHistorias({ id: userId, role: rol, historiasEnabled });
 
   // Las tipografías NO se declaran acá: las decide tokens.css, que apunta a las
   // variables de next/font con el nombre literal como respaldo. Estaban
@@ -47,7 +47,13 @@ export default async function V2Layout({ children }: { children: React.ReactNode
         } as React.CSSProperties
       }
     >
-      <Shell historias={historias} nombre={nombre} slug={slug} iniciales={iniciales}>
+      <Shell
+        historias={historias}
+        esAdmin={rol === "ADMIN"}
+        nombre={nombre}
+        slug={slug}
+        iniciales={iniciales}
+      >
         {children}
       </Shell>
       {/* Escucha data-tip en todo el árbol y pinta el globito con un portal a

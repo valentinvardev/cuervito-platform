@@ -27,6 +27,33 @@ export const getMpTestMode = unstable_cache(
   { revalidate: 5, tags: [`setting:${TEST_MODE_KEY}`] },
 );
 
+/**
+ * Una bandera cualquiera de Setting, leída con caché y escrita con upsert.
+ *
+ * getMpTestMode era la única y estaba escrita a mano. Con los interruptores de
+ * los correos y el de historias iban a ser cinco copias del mismo par de
+ * funciones, y cinco copias es exactamente cómo una termina sin el
+ * revalidateTag y muestra el valor viejo durante cinco segundos.
+ */
+export function leerBandera(key: string, porDefecto = false): Promise<boolean> {
+  return unstable_cache(
+    async () => {
+      const fila = await db.setting.findUnique({ where: { key }, select: { value: true } });
+      return fila ? fila.value === "true" : porDefecto;
+    },
+    ["setting", key],
+    { revalidate: 5, tags: [`setting:${key}`] },
+  )();
+}
+
+export async function escribirBandera(key: string, valor: boolean): Promise<void> {
+  const value = valor ? "true" : "false";
+  await db.setting.upsert({ where: { key }, update: { value }, create: { key, value } });
+}
+
+/** Historias abierta a todas las cuentas activas, sin lista ni invitación. */
+export const HISTORIAS_ABIERTA = "historias_abierta";
+
 export async function setMpTestMode(enabled: boolean): Promise<void> {
   const value = enabled ? "true" : "false";
   await db.setting.upsert({

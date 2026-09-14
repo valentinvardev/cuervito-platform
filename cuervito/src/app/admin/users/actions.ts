@@ -134,6 +134,35 @@ export async function toggleGiftAction(formData: FormData): Promise<void> {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// Estudio de historias
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Darle (o sacarle) el estudio de historias a esta cuenta.
+ *
+ * Es la tercera llave además del rol ADMIN y de la lista en Setting, y la
+ * que usa la campaña de mail que invita a probarlo. Existe porque las otras
+ * dos no sirven para repartir: promover a ADMIN da el panel entero, y la
+ * lista en Setting es una cadena separada por comas que nadie debería editar
+ * desde un formulario.
+ */
+export async function toggleHistoriasAction(formData: FormData): Promise<void> {
+  const actorId = await assertAdmin();
+  const targetId = String(formData.get("userId") ?? "");
+  const enabled = String(formData.get("enabled") ?? "") === "1";
+  if (!targetId) return;
+
+  await db.user.update({
+    where: { id: targetId },
+    data: { historiasEnabled: enabled },
+  });
+  await logAction(actorId, enabled ? "ENABLE_HISTORIAS" : "DISABLE_HISTORIAS", "User", targetId);
+
+  revalidatePath(`/admin/users/${targetId}`);
+  revalidatePath("/admin/users");
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Quota overrides
 // ──────────────────────────────────────────────────────────────────────────
 

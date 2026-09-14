@@ -132,6 +132,17 @@ model User {
      *  de un 502 de Mercado Pago. Lo prende un admin desde /admin/users/[id]. */
     giftEnabled      Boolean   @default(false)
 
+    /** Tiene el estudio de historias. Es la tercera llave además del rol ADMIN
+     *  y de la lista en Setting: la que reparte una campaña de mail cuando
+     *  invita a alguien a probarlo. Una invitación a una función que después
+     *  devuelve 404 es peor que no invitar. */
+    historiasEnabled Boolean   @default(false)
+
+    /** Acepta mails que no son de su cuenta: promociones, invitaciones a
+     *  funciones. Los transaccionales —ventas, entregas, contraseña— no pasan
+     *  por acá. Se apaga desde el link de baja que va al pie de cada uno. */
+    emailsPromocionales Boolean @default(true)
+
     // Storefront customization
     storefrontBrandColor String?  // hex, e.g. "#F5820A"
     storefrontTemplate   String?  // template id from frontend catalog
@@ -166,6 +177,30 @@ model User {
     collaboratedIn    EventCollaborator[] @relation("CollaboratorUser")
     collaboratorsInvited EventCollaborator[] @relation("CollaboratorInviter")
     commissionsEarned SaleCommission[]    @relation("CommissionEarner")
+    correos           EmailEnvio[]
+}
+
+// =============================================================================
+// Correos por campaña
+// =============================================================================
+
+/// Un mail de campaña que se le mandó a alguien. Una fila por (persona,
+/// campaña): la restricción única ES la garantía de que nadie recibe dos veces
+/// el mismo, y se escribe ANTES de mandar —es el reclamo—, así dos pasadas que
+/// se crucen no pueden mandarlo las dos.
+model EmailEnvio {
+    id        String   @id @default(cuid())
+    userId    String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    /// "sin-mp", "historias", "promo-1", "promo-2", "promo-3".
+    campana   String
+    /// El id que devuelve Resend. Null mientras se está mandando; si el envío
+    /// falla, la fila se borra y la próxima pasada lo vuelve a intentar.
+    resendId  String?
+    createdAt DateTime @default(now())
+
+    @@unique([userId, campana])
+    @@index([campana, createdAt])
 }
 
 // =============================================================================

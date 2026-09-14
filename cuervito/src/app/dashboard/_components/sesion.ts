@@ -28,7 +28,15 @@ export async function sesionPanel() {
   const userId = session.user.id;
   const yo = await db.user.findUnique({
     where: { id: userId },
-    select: { name: true, slug: true, image: true, bio: true, mpConnectedAt: true },
+    select: {
+      name: true,
+      slug: true,
+      image: true,
+      bio: true,
+      mpConnectedAt: true,
+      // Para puedeUsarHistorias, sin una consulta más en el layout.
+      historiasEnabled: true,
+    },
   });
 
   const nombre = yo?.name ?? "fotógrafo";
@@ -43,6 +51,7 @@ export async function sesionPanel() {
     // rol y estado, así que una segunda llamada no es leer una cookie: es un
     // viaje entero a Supabase, y encima en serie después de éste.
     rol: session.user.role,
+    historiasEnabled: yo?.historiasEnabled ?? false,
   };
 }
 

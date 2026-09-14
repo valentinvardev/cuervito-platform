@@ -3,6 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 
 import { db } from "~/server/db";
+import { HISTORIAS_ABIERTA, leerBandera } from "~/server/settings";
 
 /**
  * Quién ve el estudio de historias.
@@ -41,10 +42,39 @@ const getBeta = unstable_cache(leerBeta, ["setting", CLAVE], {
   tags: [`setting:${CLAVE}`],
 });
 
+/**
+ * Cuatro llaves, en orden de costo.
+ *
+ * Las dos nuevas son las que hacen falta para abrir el estudio más allá de
+ * nosotros sin promover a nadie a ADMIN: `historiasEnabled` en la fila del
+ * usuario —la reparte la campaña de mail que lo invita— y la bandera global
+ * `historias_abierta`, que es el día que se abre para todos.
+ *
+ * `historiasEnabled` viene por parámetro cuando el llamador ya tiene la fila
+ * (sesionPanel la trae) y se consulta sólo si no. Es una consulta chica, pero
+ * el layout del panel la haría en cada pantalla, y ya se pagó una vez el error
+ * de hacer una consulta de más en serie ahí.
+ */
 export async function puedeUsarHistorias(
-  usuario: { id: string; role?: string | null } | null | undefined,
+  usuario:
+    | { id: string; role?: string | null; historiasEnabled?: boolean | null }
+    | null
+    | undefined,
 ): Promise<boolean> {
   if (!usuario?.id) return false;
   if (usuario.role === "ADMIN") return true;
+  if (await leerBandera(HISTORIAS_ABIERTA)) return true;
+
+  const propia =
+    usuario.historiasEnabled ??
+    (
+      await db.user.findUnique({
+        where: { id: usuario.id },
+        select: { historiasEnabled: true },
+      })
+    )?.historiasEnabled ??
+    false;
+  if (propia) return true;
+
   return (await getBeta()).includes(usuario.id);
 }

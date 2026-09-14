@@ -84,6 +84,7 @@ export function Pantalla({
   yo,
   fotosDelDueno,
   simulado = false,
+  historias = false,
 }: {
   evento: {
     id: string;
@@ -125,6 +126,8 @@ export function Pantalla({
    * un álbum sin tocar la red ni crear fotos de verdad.
    */
   simulado?: boolean;
+  /** Tiene el estudio de historias: al terminar de subir se le ofrece armar una. */
+  historias?: boolean;
 }) {
   const sinCobrar = colaboradores.filter((c) => c.estado !== "PENDING" && !c.cobra);
   const [publicando, empezarPub] = useTransition();
@@ -536,7 +539,13 @@ export function Pantalla({
 
         {solapa === "fotos" && (
           <section className="panel-s" data-activo="1">
-            <Soltador eventId={evento.id} maxBytes={evento.maxFoto} simulado={simulado} />
+            <Soltador
+              eventId={evento.id}
+              eventoNombre={evento.nombre}
+              maxBytes={evento.maxFoto}
+              simulado={simulado}
+              historias={historias}
+            />
 
             <div className="barra">
               <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center", flexWrap: "wrap" }}>

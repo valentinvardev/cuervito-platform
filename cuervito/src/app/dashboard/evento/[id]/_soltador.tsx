@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { ACEPTADOS, useSubida } from "~/app/dashboard/_usar-subida";
 
+import { HistoriaModal } from "./_historia-modal";
+
 /**
  * Soltar fotos, arriba de la grilla del evento.
  *
@@ -23,16 +25,26 @@ import { ACEPTADOS, useSubida } from "~/app/dashboard/_usar-subida";
  */
 export function Soltador({
   eventId,
+  eventoNombre = "",
   maxBytes,
   simulado = false,
+  historias = false,
 }: {
   eventId: string;
+  eventoNombre?: string;
   maxBytes: number;
   /** Modo demo: la subida recorre sus estados sin tocar la red. Ver /demo/subida. */
   simulado?: boolean;
+  /** Con el estudio de historias: al terminar una tanda se ofrece armar una. */
+  historias?: boolean;
 }) {
   const entrada = useRef<HTMLInputElement>(null);
   const [encima, setEncima] = useState(false);
+  const [modal, setModal] = useState(false);
+  // Una vez por tanda: se ofrece al cerrar la subida y no otra vez hasta que
+  // arranque una tanda nueva. Sin esto, cerrar el modal y que vuelva a abrirse
+  // en el siguiente render es la definición de un modal que no se puede cerrar.
+  const ofrecido = useRef(false);
   const [afuera, setAfuera] = useState(0);
   const [grandes, setGrandes] = useState(0);
 
@@ -77,9 +89,32 @@ export function Soltador({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [simulado]);
 
+  /* El momento de ofrecer la historia es cuando la tanda cerró con al menos
+     una foto arriba. No en la demo —ahí las fotos las revela el guion— y no si
+     todo falló: ofrecerle publicar una historia a quien no pudo subir nada es
+     burlarse. */
+  useEffect(() => {
+    if (fase === "idle") {
+      ofrecido.current = false;
+      return;
+    }
+    if (cerrado && hechas > 0 && historias && !simulado && !ofrecido.current) {
+      ofrecido.current = true;
+      setModal(true);
+    }
+  }, [fase, cerrado, hechas, historias, simulado]);
+
   if (fase !== "idle") {
     const todoMal = cerrado && fallidas === total;
     return (
+      <>
+      {modal && (
+        <HistoriaModal
+          eventId={eventId}
+          eventoNombre={eventoNombre}
+          alCerrar={() => setModal(false)}
+        />
+      )}
       <section className="card">
         <div className="proc">
           <div className={`etapa ${cerrado ? "" : "lenta"}`}>
@@ -171,6 +206,7 @@ export function Soltador({
           )}
         </div>
       </section>
+      </>
     );
   }
 

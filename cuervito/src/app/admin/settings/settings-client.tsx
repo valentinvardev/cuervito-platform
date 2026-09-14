@@ -2,12 +2,36 @@
 
 import { useState, useTransition } from "react";
 
-import { toggleMpTestModeAction } from "./actions";
+import { toggleHistoriasAbiertaAction, toggleMpTestModeAction } from "./actions";
 
-export function SettingsClient({ mpTestMode }: { mpTestMode: boolean }) {
+export function SettingsClient({
+  mpTestMode,
+  historiasAbierta,
+}: {
+  mpTestMode: boolean;
+  historiasAbierta: boolean;
+}) {
   const [enabled, setEnabled] = useState(mpTestMode);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  const [historias, setHistorias] = useState(historiasAbierta);
+  const [pendingH, startH] = useTransition();
+  const [errorH, setErrorH] = useState<string | null>(null);
+
+  function toggleHistorias() {
+    const next = !historias;
+    setHistorias(next);
+    setErrorH(null);
+    startH(async () => {
+      try {
+        await toggleHistoriasAbiertaAction(next);
+      } catch (err) {
+        setHistorias(!next);
+        setErrorH(err instanceof Error ? err.message : "Error al guardar.");
+      }
+    });
+  }
 
   function toggle() {
     const next = !enabled;
@@ -129,6 +153,66 @@ export function SettingsClient({ mpTestMode }: { mpTestMode: boolean }) {
             }}
           >
             <i className="ti ti-alert-circle" /> {error}
+          </div>
+        )}
+      </div>
+
+      {/* Historias para todos. Es la llave gruesa: mientras esté apagada, el
+          estudio se reparte a mano por usuario o lo reparte la campaña. */}
+      <div
+        style={{
+          marginTop: 18,
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: 14,
+          padding: 24,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 18, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <div
+              style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 700,
+                fontSize: 17,
+                letterSpacing: "-0.02em",
+                marginBottom: 6,
+              }}
+            >
+              Historias · abierta a todos
+            </div>
+            <div style={{ fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.55 }}>
+              Cuando está <strong style={{ color: "var(--success)" }}>activada</strong>, toda cuenta
+              activa ve el estudio de historias y el aviso al terminar de subir fotos.
+              <br />
+              <br />
+              Cuando está <strong>desactivada</strong>, lo ven los admins, quien lo tenga habilitado
+              en su ficha, y quien lo recibió por la campaña de mail.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={toggleHistorias}
+            disabled={pendingH}
+            aria-pressed={historias}
+            className={`toggle-switch ${historias ? "on" : ""}`}
+          >
+            <span className="thumb" />
+          </button>
+        </div>
+        {errorH && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: "8px 12px",
+              fontSize: 12.5,
+              color: "var(--error)",
+              background: "rgba(224,85,85,0.08)",
+              border: "1px solid rgba(224,85,85,0.4)",
+              borderRadius: 8,
+            }}
+          >
+            <i className="ti ti-alert-circle" /> {errorH}
           </div>
         )}
       </div>
