@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Legado } from "~/app/admin/_components/legado";
 
 import {
   createFolder,
@@ -75,7 +76,8 @@ export function FoldersShell({
       : null;
 
   return (
-    <main className="wrap-narrow" style={{ paddingTop: 16 }}>
+    <Legado>
+      <div className="wrap-narrow" style={{ paddingTop: 16 }}>
       <div className="head">
         <div>
           <h1>Editor</h1>
@@ -229,7 +231,8 @@ export function FoldersShell({
           pending={pending}
         />
       )}
-    </main>
+    </div>
+    </Legado>
   );
 }
 

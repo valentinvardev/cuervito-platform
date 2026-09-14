@@ -67,7 +67,7 @@ export default async function EditorProjectPage(props: {
   };
 
   return (
-    <>
+    <div className="adm">
       {/* Google Fonts — only on the editor route so other admin pages stay light. */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
@@ -81,6 +81,6 @@ export default async function EditorProjectPage(props: {
         initialSourceUrl={sourceUrl}
         initialMetadata={parseMetadata(project.metadata)}
       />
-    </>
+    </div>
   );
 }

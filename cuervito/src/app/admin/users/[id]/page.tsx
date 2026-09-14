@@ -14,6 +14,7 @@ import {
 } from "../actions";
 import { QuotaOverrideForm } from "./quota-override-form";
 import { SuspendDialog } from "./suspend-dialog";
+import { Legado } from "~/app/admin/_components/legado";
 
 export default async function AdminUserDetail(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
@@ -104,7 +105,8 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
     : [];
 
   return (
-    <main className="wrap-narrow">
+    <Legado>
+      <div className="wrap-narrow">
       <div className="head">
         <div>
           <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8 }}>
@@ -642,7 +644,8 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
         <i className="ti ti-arrow-left" />
         Volver a la lista
       </Link>
-    </main>
+    </div>
+    </Legado>
   );
 }
 

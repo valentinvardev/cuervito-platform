@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CalendarDays, ExternalLink, ImageOff, Settings2 } from "lucide-react";
 
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
@@ -13,9 +14,10 @@ export const dynamic = "force-dynamic";
  * revisar una tienda había que entrar al usuario, sacar su slug y armar la URL
  * a mano.
  *
- * Cada tarjeta abre la tienda pública en una pestaña nueva. Es una vista
- * previa de verdad —la página que ve el atleta, no una maqueta— porque lo que
- * se quiere chequear es justamente eso.
+ * Son las mismas tarjetas que ve el fotógrafo en Eventos (.evs / .ec), con dos
+ * diferencias: el dueño en la meta, y dos destinos al pie —la tienda pública,
+ * que es lo que se quiere chequear, y la edición— en vez de una tarjeta que
+ * es un solo link.
  */
 
 /** Cuántos se traen. El VPS mueve pocos datos por segundo; 60 portadas ya son
@@ -69,98 +71,106 @@ export default async function AdminEventos() {
   );
 
   return (
-    <div className="wrap-narrow">
-      <div className="head">
-        <h1>Eventos</h1>
-        <p className="sub">
-          {eventos.length} más recientes · cada uno abre la tienda como la ve el atleta
-        </p>
-      </div>
-
-      {eventos.length === 0 ? (
-        <div className="section">
-          <p className="sub">Todavía no hay eventos en la plataforma.</p>
+    <main className="canvas">
+      <div className="canvas-in">
+        <div className="head">
+          <div>
+            <h1>Eventos</h1>
+            <p>{eventos.length} más recientes · cada uno abre la tienda como la ve el atleta.</p>
+          </div>
         </div>
-      ) : (
-        <div className="adm-ev-grid">
-          {eventos.map((e) => {
-            const portada = portadas.get(e.id) ?? null;
-            const vendido = vendidoPor.get(e.id) ?? 0;
-            const publico = e.owner.slug && e.slug ? `/${e.owner.slug}/${e.slug}` : null;
 
-            return (
-              <div key={e.id} className="adm-ev">
-                <div className="adm-ev-portada">
-                  {portada ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={portada} alt="" loading="lazy" />
+        {eventos.length === 0 ? (
+          <div className="empty">
+            <div className="empty-i">
+              <CalendarDays />
+            </div>
+            <h3>Todavía no hay eventos</h3>
+            <p>Cuando un fotógrafo cree el primero, aparece acá.</p>
+          </div>
+        ) : (
+          <section className="evs">
+            {eventos.map((e) => {
+              const portada = portadas.get(e.id) ?? null;
+              const vendido = vendidoPor.get(e.id) ?? 0;
+              const publico = e.owner.slug && e.slug ? `/${e.owner.slug}/${e.slug}` : null;
+
+              return (
+                <div key={e.id} className="ec">
+                  <div
+                    className="ec-cv"
+                    style={portada ? { backgroundImage: `url(${portada})`, backgroundSize: "cover" } : undefined}
+                  >
+                    {!portada && (
+                      <div className="ec-none">
+                        <ImageOff />
+                        <span>Sin portada</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* El estado va sobre la portada: en una grilla de sesenta,
+                      saber cuáles están sin publicar es lo primero que se busca. */}
+                  {e.status === "ARCHIVED" ? (
+                    <span className="pill bad">
+                      <i /> Archivado
+                    </span>
+                  ) : e.isPublished ? (
+                    <span className="pill live">
+                      <i /> Publicado
+                    </span>
                   ) : (
-                    <span className="adm-ev-sin">
-                      <i className="ti ti-photo-off" />
-                      Sin portada
+                    <span className="pill draft">
+                      <i /> Borrador
                     </span>
                   )}
-                  {/* El estado va SOBRE la portada: en una grilla de sesenta,
-                      saber cuáles están sin publicar es lo primero que se
-                      busca, y abajo del nombre se pierde entre el resto. */}
-                  <span className="adm-ev-estado" data-pub={e.isPublished ? "1" : undefined}>
-                    {e.status === "ARCHIVED"
-                      ? "Archivado"
-                      : e.isPublished
-                        ? "Publicado"
-                        : "Borrador"}
-                  </span>
-                </div>
 
-                <div className="adm-ev-cuerpo">
-                  <b>{e.name}</b>
-                  <div className="adm-ev-meta">
-                    <span>{e.owner.name ?? "sin nombre"}</span>
-                    {e.eventDate && (
-                      <>
-                        <i />
-                        <span>
-                          {e.eventDate.toLocaleDateString("es-AR", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </span>
-                      </>
-                    )}
+                  <div className="ec-b">
+                    <h3>{e.name}</h3>
+                    <div className="ec-meta">
+                      <span>{e.owner.name ?? "sin nombre"}</span>
+                      {e.eventDate && (
+                        <>
+                          <i />
+                          <span>
+                            {e.eventDate.toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="adm-ev-nums">
-                    <span>{e._count.photos.toLocaleString("es-AR")} fotos</span>
-                    <i />
-                    <span>{vendido > 0 ? pesos(vendido) : "sin ventas"}</span>
+                  <div className="ec-st">
+                    <div>
+                      <span>Fotos</span>
+                      <b className="tnum">{e._count.photos.toLocaleString("es-AR")}</b>
+                    </div>
+                    <div>
+                      <span>Vendido</span>
+                      {vendido > 0 ? <b className="tnum">{pesos(vendido)}</b> : <b className="pale">—</b>}
+                    </div>
                   </div>
 
-                  <div className="adm-ev-acc">
+                  <div className="ec-acc">
                     {publico ? (
-                      <a
-                        href={publico}
-                        target="_blank"
-                        rel="noopener"
-                        className="btn btn-outline btn-sm"
-                      >
-                        <i className="ti ti-external-link" /> Ver tienda
+                      <a href={publico} target="_blank" rel="noopener" className="btn btn-ghost btn-sm">
+                        <ExternalLink /> Ver tienda
                       </a>
                     ) : (
-                      // Sin slug del fotógrafo o del evento no hay URL pública
-                      // que armar. Decirlo evita que parezca que el botón falla.
-                      <span className="adm-ev-nota">Sin dirección pública</span>
+                      // Sin slug del fotógrafo o del evento no hay URL pública que
+                      // armar. Decirlo evita que parezca que el botón falla.
+                      <span className="ec-nota">Sin dirección pública</span>
                     )}
                     <Link href={`/dashboard/evento/${e.id}`} className="btn btn-ghost btn-sm">
-                      <i className="ti ti-settings" /> Editar
+                      <Settings2 /> Editar
                     </Link>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+              );
+            })}
+          </section>
+        )}
+      </div>
+    </main>
   );
 }

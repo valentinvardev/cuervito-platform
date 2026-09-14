@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ShoppingCart } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
-
-import { Select } from "~/app/_components/select";
 
 import { loadMoreAdminSalesAction } from "./actions";
 
@@ -45,15 +44,15 @@ function timeAgo(iso: string): string {
   });
 }
 
-const STATUS_PILL: Record<string, { label: string; color: string }> = {
-  PAID: { label: "Pagada", color: "var(--success)" },
-  PENDING: { label: "Pendiente", color: "var(--warning)" },
-  FAILED: { label: "Falló", color: "var(--error)" },
-  REFUNDED: { label: "Reembolsada", color: "var(--text-tertiary)" },
-  EXPIRED: { label: "Expirada", color: "var(--text-tertiary)" },
-  // Entregada sin cobrar. Va en el acento y no en verde: verde acá significa
-  // "entró plata", y por un regalo no entró ninguna.
-  GIFT: { label: "Regalo", color: "var(--accent)" },
+/* Estado → píldora del panel. "live" es plata que entró; "draft" es el acento,
+   para lo que está en curso o se regaló; "bad" para lo que no va a cobrarse. */
+const ESTADO: Record<string, { txt: string; cls: string }> = {
+  PAID: { txt: "Pagada", cls: "live" },
+  PENDING: { txt: "Pendiente", cls: "draft" },
+  FAILED: { txt: "Falló", cls: "bad" },
+  REFUNDED: { txt: "Reembolsada", cls: "bad" },
+  EXPIRED: { txt: "Expirada", cls: "bad" },
+  GIFT: { txt: "Regalo", cls: "draft" },
 };
 
 export function AdminSalesClient({
@@ -173,292 +172,185 @@ export function AdminSalesClient({
     applyFilter("q", search.trim());
   }
 
-  return (
-    <main className="wrap-ventas">
-      <div className="head">
-        <h1>Ventas · admin</h1>
-        <div className="sub">
-          Vista global de la plataforma. Filtros aplican sobre los últimos
-          {" "}{range === "all" ? "todos los registros" : `últimos ${range}`}.
-        </div>
-      </div>
-
-      {/* KPI tiles */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: 12,
-          marginBottom: 22,
-        }}
-      >
-        <KpiTile label="Total bruto cobrado" value={formatARS(totals.paidGross)} accent />
-        <KpiTile
-          label="Comisión encontrate.app"
-          value={formatARS(totals.platformFee)}
-        />
-        <KpiTile
-          label="Ventas pagadas"
-          value={totals.paidCount.toLocaleString("es-AR")}
-        />
-        <KpiTile
-          label="Total registros"
-          value={totals.total.toLocaleString("es-AR")}
-        />
-      </div>
-
-      {/* Filters */}
-      <div
-        className="filters"
-        style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}
-      >
-        <form onSubmit={onSearchSubmit} style={{ flex: 1, minWidth: 220 }}>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar email, evento, fotógrafo, id..."
-            style={{
-              width: "100%",
-              padding: "8px 12px",
-              borderRadius: 8,
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
-              color: "var(--text-primary)",
-              fontSize: 13,
-            }}
-          />
-        </form>
-        <Select
-          ariaLabel="Filtrar por estado"
-          tip="Filtrar por estado de pago de la venta"
-          icon="ti-filter"
-          value={status}
-          onChange={(v) => applyFilter("status", v)}
-          options={[
-            { value: "all", label: "Todas" },
-            { value: "PAID", label: "Pagadas" },
-            { value: "PENDING", label: "Pendientes" },
-            { value: "FAILED", label: "Fallaron" },
-            { value: "REFUNDED", label: "Reembolsadas" },
-            { value: "EXPIRED", label: "Expiradas" },
-            { value: "GIFT", label: "Regaladas" },
-          ]}
-        />
-        <Select
-          ariaLabel="Filtrar por rango"
-          tip="Acotar el período de las ventas mostradas"
-          icon="ti-calendar-stats"
-          value={range}
-          onChange={(v) => applyFilter("range", v)}
-          options={[
-            { value: "today", label: "Hoy" },
-            { value: "7d", label: "Últimos 7 días", meta: "7d" },
-            { value: "30d", label: "Últimos 30 días", meta: "30d" },
-            { value: "all", label: "Todo" },
-          ]}
-        />
-        {pending && (
-          <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-            cargando…
-          </span>
-        )}
-      </div>
-
-      {/* Table */}
-      {rows.length === 0 ? (
-        <div className="sales-empty">
-          <i className="ti ti-shopping-cart-off" style={{ fontSize: 32 }} />
-          <div className="ttl">Sin ventas en este rango</div>
-          <div className="sub">Probá cambiar los filtros.</div>
-        </div>
-      ) : (
-        <div
-          className="sales-card"
-          style={{ overflowX: "auto", padding: "4px 0" }}
+  const n = (x: number) => x.toLocaleString("es-AR");
+  const seg = (
+    actual: string,
+    clave: string,
+    opciones: { v: string; t: string }[],
+    rotulo: string,
+  ) => (
+    <div className="seg" role="group" aria-label={rotulo}>
+      {opciones.map((o) => (
+        <button
+          key={o.v}
+          type="button"
+          aria-pressed={actual === o.v}
+          onClick={() => applyFilter(clave, o.v)}
+          disabled={pending}
         >
-          <table className="admin-sales-table">
-            <thead>
-              <tr>
-                <th>Estado</th>
-                <th>Fecha</th>
-                <th>Fotógrafo</th>
-                <th>Evento</th>
-                <th>Comprador</th>
-                <th style={{ textAlign: "right" }}>Total</th>
-                <th style={{ textAlign: "right" }}>Comisión</th>
-                <th style={{ textAlign: "right" }}>Neto</th>
-              </tr>
-            </thead>
-            <tbody>
+          {o.t}
+        </button>
+      ))}
+    </div>
+  );
+  return (
+    <main className="canvas">
+      <div className="canvas-in">
+        <div className="head">
+          <div>
+            <h1>Ventas</h1>
+            <p>
+              Toda la plataforma ·{" "}
+              {range === "all" ? "desde el principio" : range === "today" ? "hoy" : `últimos ${range.replace("d", " días")}`}
+              {q && ` · buscando “${q}”`}
+            </p>
+          </div>
+        </div>
+
+        <section className="sum k4">
+          <div className="card neto">
+            <div className="k-lab">Bruto cobrado</div>
+            <div className="k-n tnum">{formatARS(totals.paidGross)}</div>
+            <div className="k-sub">{n(totals.paidCount)} ventas pagadas</div>
+          </div>
+          <div className="card">
+            <div className="k-lab">Comisión</div>
+            <div className="k-n tnum">{formatARS(totals.platformFee)}</div>
+          </div>
+          <div className="card">
+            <div className="k-lab">Ventas pagadas</div>
+            <div className="k-n tnum">{n(totals.paidCount)}</div>
+          </div>
+          <div className="card">
+            <div className="k-lab">Registros</div>
+            <div className="k-n tnum">{n(totals.total)}</div>
+            <div className="k-sub">con los filtros de abajo</div>
+          </div>
+        </section>
+
+        <div className="filtros">
+          <form onSubmit={onSearchSubmit} style={{ flex: 1, minWidth: 220, maxWidth: 420 }}>
+            <input
+              type="search"
+              className="inp"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por email, evento, fotógrafo o id"
+            />
+          </form>
+          {seg(status, "status", [
+            { v: "all", t: "Todas" },
+            { v: "PAID", t: "Pagadas" },
+            { v: "PENDING", t: "Pendientes" },
+            { v: "GIFT", t: "Regaladas" },
+            { v: "FAILED", t: "Fallaron" },
+            { v: "REFUNDED", t: "Reembolsadas" },
+            { v: "EXPIRED", t: "Expiradas" },
+          ], "Filtrar por estado")}
+          {seg(range, "range", [
+            { v: "today", t: "Hoy" },
+            { v: "7d", t: "7 días" },
+            { v: "30d", t: "30 días" },
+            { v: "all", t: "Todo" },
+          ], "Filtrar por período")}
+          {pending && <span style={{ fontSize: 12, color: "var(--ink-3)" }}>cargando…</span>}
+        </div>
+
+        <section className="card">
+          {rows.length === 0 ? (
+            <div className="empty">
+              <div className="empty-i">
+                <ShoppingCart />
+              </div>
+              <h3>Sin ventas en este rango</h3>
+              <p>Probá cambiar los filtros.</p>
+            </div>
+          ) : (
+            <>
+              <div className="row row-h at">
+                <span />
+                <span className="oc">Cuándo</span>
+                <span className="oc">Fotógrafo</span>
+                <span className="oc">Evento</span>
+                <span>Comprador</span>
+                <span className="num oc">Total</span>
+                <span className="num oc">Comisión</span>
+                <span className="num">Neto</span>
+              </div>
+
               {rows.map((s) => {
-                const pill = STATUS_PILL[s.status] ?? {
-                  label: s.status,
-                  color: "var(--text-tertiary)",
-                };
+                const e = ESTADO[s.status] ?? { txt: s.status, cls: "" };
                 return (
-                  <tr key={s.id}>
-                    <td>
-                      <span
-                        className="status-pill"
-                        style={{ color: pill.color, borderColor: pill.color }}
-                      >
-                        {pill.label}
+                  <div key={s.id} className="row at">
+                    <span>
+                      <span className={`pill ${e.cls}`}>
+                        <i /> {e.txt}
                       </span>
-                    </td>
-                    <td title={s.createdAt}>{timeAgo(s.createdAt)}</td>
-                    <td>
+                    </span>
+                    <span className="num soft oc" style={{ textAlign: "left" }} title={s.createdAt}>
+                      {timeAgo(s.createdAt)}
+                    </span>
+                    <span className="v-ev oc">
                       {s.sellerSlug ? (
-                        <Link
-                          href={`/${s.sellerSlug}`}
-                          target="_blank"
-                          rel="noopener"
-                          style={{ color: "var(--accent)" }}
-                        >
+                        <Link href={`/${s.sellerSlug}`} target="_blank" rel="noopener" className="v-link">
                           {s.sellerName}
                         </Link>
                       ) : (
                         s.sellerName
                       )}
-                    </td>
-                    <td>
-                      {s.eventName}{" "}
-                      <span style={{ color: "var(--text-tertiary)", fontSize: 12 }}>
-                        ·{" "}{s.itemCount}{" "}
-                        {s.itemCount === 1 ? "foto" : "fotos"}
+                    </span>
+                    <span className="v-ev oc">
+                      {s.eventName}
+                      <span style={{ color: "var(--ink-3)" }}>
+                        {" "}· {s.itemCount} {s.itemCount === 1 ? "foto" : "fotos"}
                       </span>
-                    </td>
-                    <td>
-                      <div>{s.buyerName ?? "—"}</div>
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: "var(--text-tertiary)",
-                          fontFamily: "var(--font-mono)",
-                        }}
-                      >
-                        {s.buyerEmail}
-                      </div>
-                    </td>
-                    <td style={{ textAlign: "right", fontFamily: "var(--font-mono)" }}>
-                      {formatARS(s.totalCents)}
-                    </td>
-                    <td
-                      style={{
-                        textAlign: "right",
-                        fontFamily: "var(--font-mono)",
-                        color: "var(--text-secondary)",
-                      }}
-                    >
-                      {formatARS(s.platformFeeCents)}
-                    </td>
-                    <td
-                      style={{
-                        textAlign: "right",
-                        fontFamily: "var(--font-mono)",
-                        color: "var(--accent)",
-                      }}
-                    >
-                      {formatARS(s.sellerNetCents)}
-                    </td>
-                  </tr>
+                    </span>
+                    <span className="v-who">
+                      <b>{s.buyerName ?? "—"}</b>
+                      <span>{s.buyerEmail}</span>
+                    </span>
+                    <span className="num tnum oc">{formatARS(s.totalCents)}</span>
+                    <span className="num soft tnum oc">{formatARS(s.platformFeeCents)}</span>
+                    <span className="num tnum neto">{formatARS(s.sellerNetCents)}</span>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-      )}
+            </>
+          )}
+        </section>
 
-      {rows.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-            marginTop: 18,
-            padding: "12px 4px",
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ fontSize: 12.5, color: "var(--text-tertiary)" }}>
-            Mostrando <strong style={{ color: "var(--text-primary)" }}>{rows.length.toLocaleString("es-AR")}</strong>{" "}
-            de <strong style={{ color: "var(--text-primary)" }}>{totals.total.toLocaleString("es-AR")}</strong>{" "}
-            registros
-            {loadAllProgress != null && (
-              <> · cargando… ({loadAllProgress.toLocaleString("es-AR")})</>
+        {rows.length > 0 && (
+          <div className="filtros">
+            <span style={{ fontSize: 13, color: "var(--ink-3)" }}>
+              Mostrando <b className="tnum" style={{ color: "var(--ink)", fontWeight: 500 }}>{n(rows.length)}</b> de{" "}
+              <b className="tnum" style={{ color: "var(--ink)", fontWeight: 500 }}>{n(totals.total)}</b>
+              {loadAllProgress != null && <> · cargando… ({n(loadAllProgress)})</>}
+            </span>
+            {hasMore && (
+              <div className="sp" style={{ display: "flex", gap: "var(--s-2)" }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  data-tip="Traer la siguiente tanda"
+                >
+                  {loadingMore && loadAllProgress == null ? "Cargando…" : `Cargar ${pageSize} más`}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-pri btn-sm"
+                  onClick={loadAll}
+                  disabled={loadingMore}
+                  data-tip="Trae todo lo que falta de una vez. Con muchos datos puede tardar."
+                >
+                  Cargar todas
+                </button>
+              </div>
             )}
           </div>
-          {hasMore && (
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={loadMore}
-                disabled={loadingMore}
-                data-tip="Traer la siguiente tanda de ventas"
-              >
-                {loadingMore && loadAllProgress == null
-                  ? "Cargando…"
-                  : `Cargar ${pageSize} más`}
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={loadAll}
-                disabled={loadingMore}
-                data-tip="Trae todos los registros restantes de una vez. Con muchos datos puede ralentizar la vista."
-              >
-                Cargar todas
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </main>
-  );
-}
-
-function KpiTile({
-  label,
-  value,
-  accent = false,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-}) {
-  return (
-    <div
-      style={{
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border-subtle)",
-        borderRadius: 12,
-        padding: "14px 16px",
-      }}
-    >
-      <div
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 10.5,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: "var(--text-tertiary)",
-          marginBottom: 6,
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          fontFamily: "var(--font-display)",
-          fontWeight: 800,
-          fontSize: 22,
-          letterSpacing: "-0.02em",
-          color: accent ? "var(--accent)" : "var(--text-primary)",
-        }}
-      >
-        {value}
-      </div>
-    </div>
   );
 }

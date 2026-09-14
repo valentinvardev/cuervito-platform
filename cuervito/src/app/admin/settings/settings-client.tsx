@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import { toggleHistoriasAbiertaAction, toggleMpTestModeAction } from "./actions";
+import { Legado } from "~/app/admin/_components/legado";
 
 export function SettingsClient({
   mpTestMode,
@@ -48,7 +49,8 @@ export function SettingsClient({
   }
 
   return (
-    <main className="wrap-narrower">
+    <Legado>
+      <div className="wrap-narrower">
       <div className="head">
         <h1>Settings</h1>
         <div className="sub">Configuración global de la plataforma.</div>
@@ -216,6 +218,7 @@ export function SettingsClient({
           </div>
         )}
       </div>
-    </main>
+    </div>
+    </Legado>
   );
 }

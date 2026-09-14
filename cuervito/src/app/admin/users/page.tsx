@@ -1,9 +1,22 @@
 import Link from "next/link";
+import { ChevronRight, Search, ShieldCheck, Users } from "lucide-react";
 
 import { db } from "~/server/db";
 
-const PAGE_SIZE = 25;
+import { hace, iniciales } from "~/app/dashboard/_components/formato";
 
+export const dynamic = "force-dynamic";
+
+const PAGINA = 25;
+
+/**
+ * Los fotógrafos, con lo que hace falta para decidir a quién mirar.
+ *
+ * Es la misma lista de siempre, escrita con el vocabulario del panel —fila,
+ * píldora, tarjeta, segmentado— y no con las clases del prototipo de
+ * cuervito. Lo que se ve es lo que ve el fotógrafo en Ventas, con otras
+ * columnas.
+ */
 export default async function AdminUsersPage(props: {
   searchParams: Promise<{ q?: string; page?: string; mp?: string }>;
 }) {
@@ -22,23 +35,19 @@ export default async function AdminUsersPage(props: {
       }
     : {};
 
-  // El filtro de MP se aplica al listado, pero los contadores de arriba
-  // se calculan solo sobre la búsqueda — así el "X de Y conectados"
-  // sigue teniendo sentido mientras filtrás.
+  // El filtro de MP se aplica al listado, pero los contadores de arriba se
+  // calculan sólo sobre la búsqueda: así el "X de Y conectados" sigue
+  // teniendo sentido mientras filtrás.
   const mpWhere =
-    mp === "yes"
-      ? { mpConnectedAt: { not: null } }
-      : mp === "no"
-        ? { mpConnectedAt: null }
-        : {};
+    mp === "yes" ? { mpConnectedAt: { not: null } } : mp === "no" ? { mpConnectedAt: null } : {};
   const where = { ...searchWhere, ...mpWhere };
 
-  const [users, total, connectedCount, searchTotal] = await Promise.all([
+  const [users, total, conMp, enBusqueda] = await Promise.all([
     db.user.findMany({
       where,
       orderBy: { createdAt: "desc" },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
+      skip: (page - 1) * PAGINA,
+      take: PAGINA,
       select: {
         id: true,
         name: true,
@@ -56,225 +65,175 @@ export default async function AdminUsersPage(props: {
     db.user.count({ where: searchWhere }),
   ]);
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const paginas = Math.max(1, Math.ceil(total / PAGINA));
+  const url = (cambios: Record<string, string | undefined>) => {
+    const p = new URLSearchParams();
+    const todo = { q: q || undefined, mp: mp !== "all" ? mp : undefined, ...cambios };
+    for (const [k, v] of Object.entries(todo)) if (v) p.set(k, v);
+    const s = p.toString();
+    return `/admin/users${s ? `?${s}` : ""}`;
+  };
 
   return (
-    <main className="wrap-narrow">
-      <div className="head">
-        <div>
-          <h1>Usuarios</h1>
-          <div className="sub">
-            {searchTotal.toLocaleString("es-AR")} cuentas ·{" "}
-            <strong style={{ color: "var(--success)" }}>
-              {connectedCount.toLocaleString("es-AR")}
-            </strong>{" "}
-            con Mercado Pago ·{" "}
-            <strong style={{ color: "var(--warning)" }}>
-              {(searchTotal - connectedCount).toLocaleString("es-AR")}
-            </strong>{" "}
-            sin conectar
+    <main className="canvas">
+      <div className="canvas-in">
+        <div className="head">
+          <div>
+            <h1>Usuarios</h1>
+            <p>
+              {enBusqueda.toLocaleString("es-AR")} cuentas · {conMp.toLocaleString("es-AR")} con
+              Mercado Pago · {(enBusqueda - conMp).toLocaleString("es-AR")} sin conectar
+            </p>
           </div>
         </div>
-      </div>
 
-      <form className="filters" action="/admin/users" method="get">
-        {mp !== "all" && <input type="hidden" name="mp" value={mp} />}
-        <div className="search">
-          <i className="ti ti-search" />
-          <input
-            type="text"
-            name="q"
-            defaultValue={q}
-            placeholder="Buscar por email, nombre o usuario…"
-          />
+        <div className="filtros">
+          <form action="/admin/users" method="get" style={{ flex: 1, minWidth: 220, maxWidth: 420 }}>
+            {mp !== "all" && <input type="hidden" name="mp" value={mp} />}
+            <div style={{ position: "relative" }}>
+              <Search
+                style={{
+                  position: "absolute",
+                  left: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: 15,
+                  height: 15,
+                  color: "var(--ink-3)",
+                }}
+              />
+              <input
+                type="search"
+                name="q"
+                className="inp"
+                defaultValue={q}
+                placeholder="Buscar por email, nombre o usuario"
+                style={{ paddingLeft: 36 }}
+              />
+            </div>
+          </form>
+
+          {/* Segmentado con links y no botones: la lista filtra por URL, y una
+              URL con filtro se puede guardar y mandar. */}
+          <div className="seg" role="group" aria-label="Filtrar por Mercado Pago">
+            <Link href={url({ mp: undefined, page: undefined })} aria-current={mp === "all" ? "true" : undefined}>
+              Todos
+            </Link>
+            <Link href={url({ mp: "yes", page: undefined })} aria-current={mp === "yes" ? "true" : undefined}>
+              Con Mercado Pago
+            </Link>
+            <Link href={url({ mp: "no", page: undefined })} aria-current={mp === "no" ? "true" : undefined}>
+              Sin conectar
+            </Link>
+          </div>
+
           {q && (
-            <Link href="/admin/users" style={{ color: "var(--text-tertiary)", fontSize: 12 }}>
-              Limpiar
+            <Link href={url({ q: undefined, page: undefined })} className="btn btn-ghost btn-sm sp">
+              Limpiar búsqueda
             </Link>
           )}
         </div>
-      </form>
 
-      <div className="mp-filter" role="group" aria-label="Filtrar por Mercado Pago">
-        {(
-          [
-            { v: "all", label: "Todos", icon: "ti-users" },
-            { v: "yes", label: "Con Mercado Pago", icon: "ti-circle-check" },
-            { v: "no", label: "Sin conectar", icon: "ti-alert-circle" },
-          ] as const
-        ).map((o) => (
-          <Link
-            key={o.v}
-            href={`/admin/users?${new URLSearchParams({
-              ...(q ? { q } : {}),
-              ...(o.v !== "all" ? { mp: o.v } : {}),
-            }).toString()}`}
-            className={`mp-filter-btn ${mp === o.v ? "active" : ""}`}
-          >
-            <i className={`ti ${o.icon}`} />
-            {o.label}
-          </Link>
-        ))}
-      </div>
+        <section className="card">
+          {users.length === 0 ? (
+            <div className="empty">
+              <div className="empty-i">
+                <Users />
+              </div>
+              <h3>No encontramos usuarios</h3>
+              <p>Probá con otro nombre, mail o usuario.</p>
+            </div>
+          ) : (
+            <>
+              <div className="row row-h ut">
+                <span />
+                <span>Cuenta</span>
+                <span className="num oc">Eventos</span>
+                <span className="num oc">Ventas</span>
+                <span className="num oc">Fotos</span>
+                <span className="oc" />
+                <span className="oc" />
+                <span className="num oc">Alta</span>
+                <span />
+              </div>
 
-      <div className="event-list">
-        {users.map((u) => (
-          <Link key={u.id} href={`/admin/users/${u.id}`} className="event-item">
-            <div
-              className="ev-thumb"
-              style={{
-                background:
-                  u.role === "ADMIN"
-                    ? "linear-gradient(135deg, rgba(245,130,10,0.4), rgba(245,130,10,0.1))"
-                    : undefined,
-              }}
-            >
-              <i
-                className={u.role === "ADMIN" ? "ti ti-shield-check" : "ti ti-user"}
-                style={{ fontSize: 24 }}
-              />
-            </div>
-            <div className="ev-info">
-              <div className="title">{u.name ?? "(sin nombre)"}</div>
-              <div className="sub">
-                <span>{u.email ?? "—"}</span>
-                <span className="sep" />
-                <span>{u._count.eventsOwned} eventos</span>
-                <span className="sep" />
-                <span>{u._count.sales} ventas</span>
-                <span className="sep" />
-                <RolePill role={u.role} />
-                <span className="sep" />
-                <MpPill connectedAt={u.mpConnectedAt} />
-                {u.status !== "ACTIVE" && (
-                  <>
-                    <span className="sep" />
-                    <StatusPill status={u.status} />
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="ev-revenue">
-              <div className="amt">{u.slug ? `@${u.slug}` : "—"}</div>
-              <div className="photos">
-                {u.createdAt.toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "2-digit" })}
-              </div>
-            </div>
-            <i className="ti ti-chevron-right ev-arrow" />
-          </Link>
-        ))}
-        {users.length === 0 && (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "32px 16px",
-              color: "var(--text-tertiary)",
-              fontSize: 14,
-            }}
-          >
-            No encontramos usuarios.
+              {users.map((u) => (
+                <Link key={u.id} href={`/admin/users/${u.id}`} className="row ut">
+                  <span className="v-av" style={u.role === "ADMIN" ? { color: "var(--accent)" } : undefined}>
+                    {u.role === "ADMIN" ? (
+                      <ShieldCheck style={{ width: 14, height: 14 }} />
+                    ) : (
+                      iniciales(u.name ?? u.email ?? "?")
+                    )}
+                  </span>
+                  <span className="v-who">
+                    <b>
+                      {u.name ?? "(sin nombre)"}
+                      {u.slug && (
+                        <span style={{ fontWeight: 400, color: "var(--ink-3)", marginLeft: 6 }}>
+                          @{u.slug}
+                        </span>
+                      )}
+                    </b>
+                    <span>{u.email ?? "—"}</span>
+                  </span>
+                  <span className="num soft oc tnum">{u._count.eventsOwned}</span>
+                  <span className="num soft oc tnum">{u._count.sales}</span>
+                  <span className="num soft oc tnum">{u._count.photosOwned.toLocaleString("es-AR")}</span>
+                  <span className="oc">
+                    {u.mpConnectedAt ? (
+                      <span className="pill live" title={`Conectado el ${u.mpConnectedAt.toLocaleDateString("es-AR")}`}>
+                        <i /> MP
+                      </span>
+                    ) : (
+                      <span className="pill draft" title="No puede cobrar hasta conectar Mercado Pago">
+                        <i /> Sin MP
+                      </span>
+                    )}
+                  </span>
+                  <span className="oc">
+                    {u.status === "SUSPENDED" ? (
+                      <span className="pill bad">
+                        <i /> Suspendido
+                      </span>
+                    ) : u.role === "ADMIN" ? (
+                      <span className="pill draft">
+                        <i /> Admin
+                      </span>
+                    ) : (
+                      <span className="pill">
+                        <i /> Fotógrafo
+                      </span>
+                    )}
+                  </span>
+                  <span className="num soft oc" title={u.createdAt.toLocaleDateString("es-AR")}>
+                    {hace(u.createdAt)}
+                  </span>
+                  <ChevronRight className="go" style={{ width: 16, height: 16, color: "var(--ink-3)" }} />
+                </Link>
+              ))}
+            </>
+          )}
+        </section>
+
+        {paginas > 1 && (
+          <div className="filtros" style={{ justifyContent: "center" }}>
+            {page > 1 && (
+              <Link href={url({ page: String(page - 1) })} className="btn btn-ghost btn-sm">
+                Anterior
+              </Link>
+            )}
+            <span style={{ fontSize: 13, color: "var(--ink-3)" }}>
+              Página {page} de {paginas}
+            </span>
+            {page < paginas && (
+              <Link href={url({ page: String(page + 1) })} className="btn btn-ghost btn-sm">
+                Siguiente
+              </Link>
+            )}
           </div>
         )}
       </div>
-
-      {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 22 }}>
-          {page > 1 && (
-            <Link
-              href={`/admin/users?${new URLSearchParams({ ...(q ? { q } : {}), ...(mp !== "all" ? { mp } : {}), page: String(page - 1) }).toString()}`}
-              className="btn btn-outline"
-              style={{ height: 36, padding: "0 14px", fontSize: 13 }}
-            >
-              <i className="ti ti-arrow-left" />
-              Anterior
-            </Link>
-          )}
-          <span
-            style={{
-              alignSelf: "center",
-              fontSize: 13,
-              color: "var(--text-tertiary)",
-              padding: "0 12px",
-            }}
-          >
-            Página {page} de {totalPages}
-          </span>
-          {page < totalPages && (
-            <Link
-              href={`/admin/users?${new URLSearchParams({ ...(q ? { q } : {}), ...(mp !== "all" ? { mp } : {}), page: String(page + 1) }).toString()}`}
-              className="btn btn-outline"
-              style={{ height: 36, padding: "0 14px", fontSize: 13 }}
-            >
-              Siguiente
-              <i className="ti ti-arrow-right" />
-            </Link>
-          )}
-        </div>
-      )}
     </main>
   );
-}
-
-/** Estado de conexión con Mercado Pago. Sin conectar el fotógrafo no
- *  puede cobrar, así que ese estado se marca en ámbar para que salte. */
-function MpPill({ connectedAt }: { connectedAt: Date | null }) {
-  if (connectedAt) {
-    return (
-      <span
-        className="status-pill"
-        style={{ color: "var(--success)" }}
-        title={`Conectado el ${connectedAt.toLocaleDateString("es-AR")}`}
-      >
-        <i className="ti ti-circle-check-filled" style={{ fontSize: 12 }} />
-        MP
-      </span>
-    );
-  }
-  return (
-    <span
-      className="status-pill"
-      style={{ color: "var(--warning)", borderColor: "rgba(245,200,66,0.4)" }}
-      title="No puede cobrar hasta conectar Mercado Pago"
-    >
-      <i className="ti ti-alert-circle" style={{ fontSize: 12 }} />
-      Sin MP
-    </span>
-  );
-}
-
-function RolePill({ role }: { role: string }) {
-  if (role === "ADMIN") {
-    return (
-      <span className="status-pill" style={{ color: "var(--accent)" }}>
-        <i className="ti ti-shield-check" />
-        Admin
-      </span>
-    );
-  }
-  return (
-    <span className="status-pill">
-      <i className="ti ti-user" />
-      Fotógrafo
-    </span>
-  );
-}
-
-function StatusPill({ status }: { status: string }) {
-  if (status === "SUSPENDED") {
-    return (
-      <span className="status-pill" style={{ color: "var(--error)", borderColor: "rgba(224,85,85,0.4)" }}>
-        <i className="ti ti-ban" />
-        Suspendido
-      </span>
-    );
-  }
-  if (status === "DELETED") {
-    return (
-      <span className="status-pill" style={{ color: "var(--text-tertiary)" }}>
-        <i className="ti ti-trash" />
-        Eliminado
-      </span>
-    );
-  }
-  return null;
 }

@@ -1,0 +1,76 @@
+/* ═══════════════════════════ ADMIN · LISTAS ══════════════════════════════
+   Lo que las pantallas del admin necesitan y el panel no tiene: sus columnas.
+   Todo lo demás —filas, píldoras, tarjetas, filtros, vacíos— es el mismo
+   vocabulario de panel.css y paginas.css, sin una segunda definición.
+
+   Las columnas van UNA vez por lista, en una clase que usan el encabezado y
+   las filas: con dos plantillas, cualquier retoque desalinea los títulos de
+   los números y se ve recién al mirar.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Usuarios: avatar · quién · eventos · ventas · fotos · MP · rol · alta · ir */
+.ut { grid-template-columns: 30px minmax(0, 1.6fr) 62px 62px 62px 84px 90px 86px 16px; }
+
+/* Ventas (admin): estado · cuándo · fotógrafo · evento · comprador · total · comisión · neto */
+.at { grid-template-columns: 92px 82px minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1.25fr) 92px 84px 92px; }
+
+/* Métricas: fotógrafo · eventos · fotos · ventas · vendidas · conv · recaudado */
+.mt { grid-template-columns: minmax(0, 1.5fr) 68px 96px 68px 96px 88px 104px; }
+
+/* Correos: quién · campaña · cuándo */
+.ct { grid-template-columns: minmax(0, 1fr) 104px 124px; }
+
+/* Las cifras y las fechas no quiebran: "hace 12 d" en dos líneas desalinea la
+   fila entera para ahorrar diez píxeles. */
+.ut .num, .at .num, .mt .num, .ct .num { white-space: nowrap; }
+
+/* Los links dentro de una fila no se pintan de acento: la fila entera es el
+   destino y el acento es para lo que hay que ver primero. */
+.row a.v-link { color: inherit; text-decoration: none; }
+.row a.v-link:hover { text-decoration: underline; }
+
+/* Resúmenes de varias cifras. En el panel .sum es una sola tarjeta; acá son
+   cuatro o seis. */
+.sum.k4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.sum.k6 { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); }
+.sum.k4 .k-n, .sum.k6 .k-n { font-size: 26px; }
+.sum.k4 .neto .k-n { font-size: 30px; }
+
+/* El segmentado también con links: las listas del servidor filtran por URL. */
+.seg a {
+  display: inline-block;
+  padding: 4px 9px; border-radius: 4px;
+  font-family: var(--sans); font-size: 12px; font-weight: 500;
+  color: var(--ink-3); text-decoration: none;
+  transition: background 140ms ease, color 140ms ease;
+}
+.seg a:hover { color: var(--ink); }
+.seg a[aria-current="true"] {
+  background: var(--paper-2); color: var(--ink);
+  box-shadow: 0 1px 2px rgba(18, 17, 15, .07);
+}
+
+/* Acciones al pie de una tarjeta de evento. En el panel la tarjeta entera es
+   un link; en el admin hay dos destinos —la tienda y la edición— y por eso
+   son botones. */
+.ec-acc {
+  display: flex; gap: var(--s-2); flex-wrap: wrap;
+  padding: 0 var(--s-4) var(--s-4);
+  margin-top: -4px;
+}
+.ec-nota { font-size: 12px; color: var(--ink-3); align-self: center; }
+
+/* Barra de proporción: el origen de las ventas, los porcentajes. */
+.barra-p { height: 6px; border-radius: 3px; background: var(--paper-3); overflow: hidden; }
+.barra-p > i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+
+/* En teléfono las listas del admin se quedan con lo que entra: quién, el
+   número que importa y la píldora. Las columnas .oc desaparecen. */
+@media (max-width: 900px) {
+  .ut { grid-template-columns: 30px minmax(0, 1fr) 84px; }
+  .at { grid-template-columns: 92px minmax(0, 1fr) 92px; }
+  .mt { grid-template-columns: minmax(0, 1fr) 88px 104px; }
+  .ct { grid-template-columns: minmax(0, 1fr) 104px; }
+  .oc { display: none; }
+  .sum.k4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

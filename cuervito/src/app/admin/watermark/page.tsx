@@ -2,6 +2,7 @@ import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 
 import { WatermarkAdminUI } from "./watermark-ui";
+import { Legado } from "~/app/admin/_components/legado";
 
 export default async function AdminWatermarkPage() {
   const [setting, photosNeedingPreview, totalPhotos, photographers] =
@@ -37,7 +38,8 @@ export default async function AdminWatermarkPage() {
     : null;
 
   return (
-    <main className="wrap-narrower">
+    <Legado>
+      <div className="wrap-narrower">
       <div className="head">
         <h1>Watermark</h1>
         <div className="sub">
@@ -56,6 +58,7 @@ export default async function AdminWatermarkPage() {
           photoCount: p._count.photosOwned,
         }))}
       />
-    </main>
+    </div>
+    </Legado>
   );
 }
