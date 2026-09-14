@@ -1,0 +1,123 @@
+/* ═══════════════════════ ADMIN · MARCA DE AGUA ═══════════════════════════
+   El editor de la marca de agua: la unidad y el patrón a la izquierda, la
+   foto con la marca puesta a la derecha. Es la misma disposición que el
+   estudio de historias —opciones a un lado, resultado al otro— y por la misma
+   razón: cada control se prueba mirando, y con el resultado abajo de los
+   controles hay que scrollear después de cada movimiento.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.ma {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 46%);
+  gap: var(--s-5);
+  align-items: start;
+}
+
+/* ── Los controles ────────────────────────────────────────────────────────── */
+.ma-op { display: grid; gap: var(--s-3); }
+.ma-op > .card { padding: var(--s-4); }
+.ma-op .hist-tit { margin-bottom: var(--s-3); }
+
+/* Un deslizador por renglón: qué es, la barra, cuánto. El número a la
+   derecha con ancho fijo para que las barras queden alineadas entre sí. */
+.ma-r {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 5px 0;
+}
+.ma-r > span { font-size: 13px; color: var(--ink-2); }
+.ma-r input[type="range"] { width: 100%; margin: 0; accent-color: var(--ink); }
+.ma-r > b {
+  font-size: 13px; font-weight: 500; text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.ma-r[data-off="1"] { opacity: .38; pointer-events: none; }
+
+.ma-campo { display: grid; gap: 6px; margin-top: var(--s-3); }
+.ma-campo > label { font-size: 13px; color: var(--ink-2); }
+
+/* El PNG subido, sobre un damero para que se vea la transparencia. */
+.ma-png {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: 10px;
+  border: 1px dashed var(--line-strong); border-radius: var(--r-2);
+  margin-top: var(--s-3);
+}
+.ma-png .caja {
+  width: 112px; height: 64px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: 6px;
+  background-color: #6b6964;
+  background-image:
+    linear-gradient(45deg, rgba(255,255,255,.14) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255,255,255,.14) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255,255,255,.14) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,.14) 75%);
+  background-size: 14px 14px;
+  background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+}
+.ma-png .caja img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.ma-png .t { flex: 1; min-width: 0; font-size: 12.5px; color: var(--ink-3); line-height: 1.45; }
+.ma-png .t b { display: block; font-weight: 500; color: var(--ink); font-size: 13px; }
+.ma-png .acc { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* "Así queda una": la unidad sola. El fondo cambia con la tinta elegida,
+   porque blanco sobre papel no se ve y tinta sobre gris oscuro tampoco. */
+.ma-unidad {
+  display: grid; place-items: center;
+  min-height: 120px;
+  padding: var(--s-4);
+  margin-top: var(--s-3);
+  border-radius: var(--r-2);
+  background: #2b2a27;
+}
+.ma-unidad[data-fondo="claro"] { background: var(--paper-3); border: 1px solid var(--line-soft); }
+.ma-unidad img { max-width: min(100%, 360px); max-height: 140px; object-fit: contain; }
+.ma-unidad .hist-vacio { color: rgba(255,255,255,.5); }
+.ma-unidad[data-fondo="claro"] .hist-vacio { color: var(--ink-3); }
+
+/* ── La vista previa ──────────────────────────────────────────────────────── */
+.ma-pv { position: sticky; top: calc(62px + var(--s-4)); display: grid; gap: var(--s-3); }
+
+.ma-lienzo {
+  position: relative;
+  border-radius: var(--r-3);
+  overflow: hidden;
+  background: var(--paper-3);
+  border: 1px solid var(--line-soft);
+  min-height: 220px;
+  display: grid; place-items: center;
+}
+.ma-lienzo > img { width: 100%; height: auto; display: block; }
+.ma-lienzo[data-cargando="1"] > img { opacity: .45; }
+.ma-lienzo .hist-vacio { position: absolute; inset: 0; display: grid; place-items: center; }
+
+/* Las fotos de muestra: cuadraditos, para que la fila tenga un alto fijo sin
+   importar si la foto es vertical o apaisada. */
+.ma-fotos { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.ma-fotos .ft { aspect-ratio: 1; }
+.ma-fotos .ft[data-sel="1"] { outline: 2px solid var(--ink); outline-offset: 2px; }
+.ma-fotos img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ma-nota { font-size: 12px; color: var(--ink-3); line-height: 1.45; }
+
+/* La barra de "guardar", que se queda a la vista al pie de los controles. */
+.ma-guardar {
+  display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap;
+  padding: var(--s-3) var(--s-4);
+}
+.ma-guardar .sp { margin-left: auto; display: flex; gap: var(--s-2); }
+.ma-guardar .aviso { font-size: 12.5px; color: var(--ink-3); }
+.ma-guardar .aviso[data-tipo="ok"] { color: var(--ok-txt); }
+.ma-guardar .aviso[data-tipo="mal"] { color: var(--bad-txt); }
+
+@media (max-width: 1080px) {
+  .ma { grid-template-columns: minmax(0, 1fr); }
+  .ma-pv { position: static; order: -1; }
+}
+@media (max-width: 560px) {
+  .ma-r { grid-template-columns: 84px minmax(0, 1fr) 48px; }
+  .ma-fotos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}

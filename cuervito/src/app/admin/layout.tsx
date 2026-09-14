@@ -4,8 +4,10 @@ import "~/styles/v2/base.css";
 import "~/styles/v2/panel.css";
 import "~/styles/v2/dashboard.css";
 import "~/styles/v2/paginas.css";
-/* Las columnas de las listas del admin. Es lo único propio. */
+/* Las columnas de las listas del admin y el editor de la marca de agua. Es
+   lo único propio. */
 import "~/styles/v2/admin-listas.css";
+import "~/styles/v2/admin-marca.css";
 
 /* Las hojas del prototipo, ENVUELTAS en .adm (ver scripts/envolver-admin-css),
    para las pantallas que todavía no se portaron. Sólo alcanzan a lo que va

@@ -3,8 +3,8 @@ import "server-only";
 import sharp from "sharp";
 
 import { db } from "~/server/db";
+import { capaParaFoto, leerConfigMarca } from "~/server/marca-agua";
 import {
-  createCFInvalidation,
   deleteS3Objects,
   getS3ObjectBytes,
   platformWatermarkKey,
@@ -54,7 +54,6 @@ export const MAX_CONCURRENT = 3;
    de 3. Seis decodes de 24 MP a la vez es exactamente el escenario que el
    comentario de arriba dice que hizo OOM y 502. */
 declare global {
-  // eslint-disable-next-line no-var
   var __cuervito_sharp__: { active: number; waitQueue: Array<() => void> } | undefined;
 }
 const sem = (globalThis.__cuervito_sharp__ ??= { active: 0, waitQueue: [] });
@@ -80,7 +79,7 @@ let platformCache: CacheEntry | null = null;
 const userCacheMap = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 60_000;
 
-async function loadPlatformWatermark(): Promise<Buffer | null> {
+export async function loadPlatformWatermark(): Promise<Buffer | null> {
   if (platformCache && Date.now() - platformCache.loadedAt < CACHE_TTL_MS) {
     return platformCache.bytes;
   }
@@ -94,7 +93,7 @@ async function loadPlatformWatermark(): Promise<Buffer | null> {
   }
 }
 
-async function loadUserWatermark(userId: string): Promise<Buffer | null> {
+export async function loadUserWatermark(userId: string): Promise<Buffer | null> {
   const cached = userCacheMap.get(userId);
   if (cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) return cached.bytes;
   try {
@@ -117,48 +116,31 @@ export function invalidateUserWatermarkCache(userId: string) {
   userCacheMap.delete(userId);
 }
 
+/**
+ * La capa de marca de agua para una foto de este tamaño.
+ *
+ * La marca propia del fotógrafo, si subió una, va sola: es su logo y no lleva
+ * el texto de la plataforma debajo. Si no, va la de la plataforma con la
+ * configuración del admin: el PNG subido o el logo de encontrate, el texto, y
+ * el patrón. Todo lo que antes estaba fijo acá (40 % del lado menor, -35°,
+ * mosaico) ahora está en [marca-agua.ts] y se edita desde /admin/watermark.
+ */
 async function buildComposite(
   imageWidth: number,
   imageHeight: number,
   ownerId?: string,
-): Promise<{ input: Buffer; tile: boolean; blend: "over" }> {
-  // Prefer the per-user watermark; fall back to the platform-wide one.
-  const wm =
-    (ownerId ? await loadUserWatermark(ownerId) : null) ??
-    (await loadPlatformWatermark());
-
-  if (wm) {
-    const meta = await sharp(wm).metadata();
-    const wmW = meta.width ?? 300;
-    const wmH = meta.height ?? 100;
-    const targetW = Math.round(Math.min(imageWidth, imageHeight) * 0.4);
-    const targetH = Math.round((wmH / wmW) * targetW);
-
-    const scaled = await sharp(wm)
-      .resize(targetW, targetH, {
-        fit: "contain",
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-      })
-      .rotate(-35, { background: { r: 0, g: 0, b: 0, alpha: 0 } })
-      .png()
-      .toBuffer();
-
-    return { input: scaled, tile: true, blend: "over" };
-  }
-
-  // Fallback: tiled PREVIEW text in a translucent SVG. Used when the admin
-  // hasn't uploaded a watermark yet.
-  const tileSize = 220;
-  const half = tileSize / 2;
-  const svg = Buffer.from(
-    `<svg width="${tileSize}" height="${tileSize}" xmlns="http://www.w3.org/2000/svg">
-      <text x="${half}" y="${half}" text-anchor="middle" dominant-baseline="middle"
-        font-family="Arial, sans-serif" font-size="22" font-weight="bold" letter-spacing="3"
-        fill="rgba(255,255,255,0.38)"
-        transform="rotate(-35, ${half}, ${half})">CUERVITO</text>
-    </svg>`,
-  );
-  return { input: svg, tile: true, blend: "over" };
+): Promise<sharp.OverlayOptions> {
+  const propia = ownerId ? await loadUserWatermark(ownerId) : null;
+  const cfg = await leerConfigMarca();
+  const imagen =
+    propia ?? (cfg.fuente === "subida" ? await loadPlatformWatermark() : null);
+  return capaParaFoto({
+    anchoFoto: imageWidth,
+    altoFoto: imageHeight,
+    imagen,
+    cfg,
+    conTexto: !propia,
+  });
 }
 
 /**
