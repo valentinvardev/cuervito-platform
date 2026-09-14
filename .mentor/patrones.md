@@ -25,6 +25,11 @@ existir: una vez es un descuido, dos es una tendencia.
   estaba escrita a mano; con los interruptores de correos e historias iban a
   ser cinco copias. Se generalizó ANTES de copiarla (leerBandera/escribirBandera).
   Primera vez que el patrón se ve venir en vez de encontrarse después.
+- 2026-09-14, evitado otra vez: el arrastre del encuadre en historias necesita
+  saber dónde va la foto dentro de la pieza, y el render también. En vez de
+  repetir los márgenes en el cliente, `cajaFoto()` en `formatos.ts` los dice una
+  vez y los usan los dos lados. Misma jugada con `marca-agua-config.ts`: la
+  forma de la config, sin server-only, importada por el editor y el servidor.
 - Estado: activo
 
 ## Estado derivado que se calcula una vez y nunca se reconcilia

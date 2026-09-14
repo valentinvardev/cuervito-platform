@@ -1,9 +1,22 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  ArrowLeft,
+  Banknote,
+  CreditCard,
+  Download,
+  ExternalLink,
+  Eye,
+  Hash,
+  ScanFace,
+  ShoppingCart,
+} from "lucide-react";
 
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
-import { getQuotaUsage, formatBytes } from "~/server/quotas";
+import { formatBytes, getQuotaUsage } from "~/server/quotas";
+
+import { hace } from "~/app/dashboard/_components/formato";
 
 import {
   reactivateUserAction,
@@ -14,23 +27,26 @@ import {
 } from "../actions";
 import { QuotaOverrideForm } from "./quota-override-form";
 import { SuspendDialog } from "./suspend-dialog";
-import { Legado } from "~/app/admin/_components/legado";
 
+export const dynamic = "force-dynamic";
+
+/**
+ * La ficha de un usuario.
+ *
+ * Arriba lo que es: rol, estado, MP, y las cuatro cifras. Después lo que se
+ * puede hacer con la cuenta, en una sola tarjeta de renglones —rol, regalos,
+ * historias, acceso—: cada uno con su explicación y su botón, porque los
+ * cuatro son decisiones que se toman de a una y con contexto. Abajo, lo que
+ * pasó: uso de reconocimiento, descargas, actividad en la tienda y el
+ * registro de lo que hicimos nosotros.
+ */
 export default async function AdminUserDetail(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
   const session = await auth();
-  const isSelf = session?.user?.id === id;
+  const soyYo = session?.user?.id === id;
 
-  const [
-    user,
-    quota,
-    recentActions,
-    recognitionUsage,
-    recentDownloads,
-    ownedEventIds,
-    eventosGratis,
-    regalados,
-  ] = await Promise.all([
+  const [user, quota, acciones, reconocimiento, descargas, eventos, eventosGratis, regalados] =
+    await Promise.all([
       db.user.findUnique({
         where: { id },
         select: {
@@ -70,19 +86,10 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
         orderBy: { createdAt: "desc" },
         take: 15,
         include: {
-          sale: {
-            select: {
-              id: true,
-              buyerEmail: true,
-              event: { select: { name: true, slug: true } },
-            },
-          },
+          sale: { select: { id: true, buyerEmail: true, event: { select: { name: true, slug: true } } } },
         },
       }),
-      db.event.findMany({
-        where: { ownerId: id },
-        select: { id: true, name: true, slug: true },
-      }),
+      db.event.findMany({ where: { ownerId: id }, select: { id: true, name: true, slug: true } }),
       // Cuántos eventos suyos están hoy a precio cero. Es el número que hace
       // falta para decidir: prender el permiso no elige eventos, habilita
       // todos los que ya tengan el precio en cero, y sin este dato se prende
@@ -93,665 +100,392 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
 
   if (!user) notFound();
 
-  // AnalyticsEvent doesn't have a direct FK to Event in Prisma (it's a loose
-  // eventId String?), so we filter by the photographer's owned event IDs.
-  const eventNameById = new Map(ownedEventIds.map((e) => [e.id, e]));
-  const analyticsEvents = ownedEventIds.length
+  // AnalyticsEvent no tiene FK a Event (es un eventId suelto), así que se
+  // filtra por los eventos del fotógrafo.
+  const nombreEvento = new Map(eventos.map((e) => [e.id, e.name]));
+  const actividad = eventos.length
     ? await db.analyticsEvent.findMany({
-        where: { eventId: { in: ownedEventIds.map((e) => e.id) } },
+        where: { eventId: { in: eventos.map((e) => e.id) } },
         orderBy: { createdAt: "desc" },
         take: 15,
       })
     : [];
 
+  const n = (x: number) => x.toLocaleString("es-AR");
+  const cuando = (d: Date) => d.toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" });
+  const esAdmin = user.role === "ADMIN";
+  const suspendido = user.status === "SUSPENDED";
+
   return (
-    <Legado>
-      <div className="wrap-narrow">
-      <div className="head">
-        <div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8 }}>
-            <RolePill role={user.role} />
-            <StatusPill status={user.status} />
-            {user.mpConnectedAt && (
-              <span className="status-pill" style={{ color: "var(--success)" }}>
-                <i className="ti ti-circle-check-filled" />
-                MP conectado
-              </span>
-            )}
-          </div>
-          <h1>{user.name ?? "(sin nombre)"}</h1>
-          <div className="sub" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <span>{user.email ?? "—"}</span>
-            {user.slug && (
-              <>
-                <span className="sep" />
-                <span style={{ fontFamily: "var(--font-mono)", color: "var(--accent)" }}>@{user.slug}</span>
-              </>
-            )}
-            <span className="sep" />
-            <span title={user.lastLoginAt ? user.lastLoginAt.toISOString() : undefined}>
-              <i className="ti ti-login-2" style={{ marginRight: 4 }} />
-              {user.lastLoginAt
-                ? `Último login ${formatRelative(user.lastLoginAt)}`
-                : "Nunca inició sesión"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <section className="section">
-        <div className="action-grid">
-          <StatCard icon="ti-calendar-event" label="Eventos" value={user._count.eventsOwned.toLocaleString("es-AR")} />
-          <StatCard icon="ti-photo" label="Fotos" value={user._count.photosOwned.toLocaleString("es-AR")} />
-          <StatCard icon="ti-chart-bar" label="Ventas" value={user._count.sales.toLocaleString("es-AR")} />
-          <StatCard
-            icon="ti-database"
-            label="Storage"
-            value={quota ? formatBytes(quota.storage.usedBytes) : "—"}
-            subValue={quota ? `${quota.storage.pct}% de ${formatBytes(quota.storage.limitBytes)}` : undefined}
-          />
-        </div>
-      </section>
-
-      {/* Role */}
-      <section className="section">
-        <div className="section-head">
-          <h2>Rol</h2>
-        </div>
-        <div
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: 14,
-            padding: 22,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
+    <main className="canvas">
+      <div className="canvas-in">
+        <div className="head">
           <div>
-            <div style={{ fontWeight: 500 }}>
-              {user.role === "ADMIN" ? "Administrador" : "Fotógrafo"}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+              <span className={`pill ${esAdmin ? "draft" : ""}`}>
+                <i /> {esAdmin ? "Admin" : "Fotógrafo"}
+              </span>
+              <span className={`pill ${suspendido ? "bad" : user.status === "DELETED" ? "" : "live"}`}>
+                <i /> {suspendido ? "Suspendido" : user.status === "DELETED" ? "Eliminado" : "Activo"}
+              </span>
+              {user.mpConnectedAt ? (
+                <span className="pill live">
+                  <i /> Mercado Pago
+                </span>
+              ) : (
+                <span className="pill">
+                  <i /> Sin Mercado Pago
+                </span>
+              )}
             </div>
-            <div style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-              {user.role === "ADMIN"
-                ? "Tiene acceso al panel admin."
-                : "Acceso de fotógrafo (default)."}
+            <h1>{user.name ?? "(sin nombre)"}</h1>
+            <p>
+              {user.email ?? "—"}
+              {user.slug && <> · @{user.slug}</>}
+              {" · "}
+              {user.lastLoginAt ? `último ingreso ${hace(user.lastLoginAt)}` : "nunca inició sesión"}
+              {" · "}alta {hace(user.createdAt)}
+            </p>
+          </div>
+          <div className="head-r">
+            <Link href="/admin/users" className="btn btn-ghost">
+              <ArrowLeft /> Usuarios
+            </Link>
+            {user.slug && (
+              <a href={`/${user.slug}`} target="_blank" rel="noopener" className="btn btn-ghost">
+                <ExternalLink /> Ver su tienda
+              </a>
+            )}
+          </div>
+        </div>
+
+        <section className="sum k4">
+          <div className="card">
+            <div className="k-lab">Eventos</div>
+            <div className="k-n tnum">{n(user._count.eventsOwned)}</div>
+          </div>
+          <div className="card">
+            <div className="k-lab">Fotos</div>
+            <div className="k-n tnum">{n(user._count.photosOwned)}</div>
+          </div>
+          <div className="card">
+            <div className="k-lab">Ventas</div>
+            <div className="k-n tnum">{n(user._count.sales)}</div>
+            {regalados > 0 && <div className="k-sub">{n(regalados)} regaladas</div>}
+          </div>
+          <div className="card">
+            <div className="k-lab">Almacenamiento</div>
+            <div className="k-n tnum">{quota ? formatBytes(quota.storage.usedBytes) : "—"}</div>
+            {quota && (
+              <div className="k-sub">
+                {quota.storage.pct} % de {formatBytes(quota.storage.limitBytes)}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── Permisos ── */}
+        <section className="card">
+          <div className="card-h">
+            <div>
+              <h2>Permisos y acceso</h2>
+              <div className="sub">Lo que esta cuenta puede hacer. Cada cambio queda en el registro de abajo.</div>
             </div>
           </div>
-          {isSelf ? (
-            <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-              No podés cambiar tu propio rol acá.
-            </span>
-          ) : (
-            <form action={setUserRoleAction}>
+
+          <div className="aj">
+            <div className="aj-t">
+              <b>{esAdmin ? "Administrador" : "Fotógrafo"}</b>
+              <span>
+                {esAdmin
+                  ? "Tiene el panel de administración entero."
+                  : "Acceso de fotógrafo, que es el de todos."}
+              </span>
+            </div>
+            {soyYo ? (
+              <span className="ec-nota">No podés cambiar tu propio rol.</span>
+            ) : (
+              <form action={setUserRoleAction}>
+                <input type="hidden" name="userId" value={user.id} />
+                <input type="hidden" name="role" value={esAdmin ? "PHOTOGRAPHER" : "ADMIN"} />
+                <button
+                  type="submit"
+                  className="btn btn-ghost btn-sm"
+                  data-tip={
+                    esAdmin
+                      ? "Le saca el panel de administración"
+                      : "Le da el panel de administración entero"
+                  }
+                >
+                  {esAdmin ? "Pasar a fotógrafo" : "Hacer admin"}
+                </button>
+              </form>
+            )}
+          </div>
+
+          <div className="aj">
+            <div className="aj-t">
+              <b>{user.giftEnabled ? "Puede regalar fotos" : "No puede regalar fotos"}</b>
+              <span>
+                {user.giftEnabled
+                  ? "Cualquier compra suya que dé $0 se entrega sin Mercado Pago y queda como regalo, fuera de la facturación."
+                  : "Con el permiso, sus eventos a $0 entregan las fotos directo. Sin él, un evento en $0 no se puede comprar."}
+                {eventosGratis > 0 && (
+                  <>
+                    {" "}
+                    <b style={{ color: "var(--acento-txt)", fontWeight: 500 }}>
+                      Tiene {n(eventosGratis)} {eventosGratis === 1 ? "evento" : "eventos"} a $0
+                      {user.giftEnabled ? " que ya se regalan." : "; al prender esto pasan a ser gratis."}
+                    </b>
+                  </>
+                )}
+              </span>
+            </div>
+            <form action={toggleGiftAction}>
               <input type="hidden" name="userId" value={user.id} />
-              <input
-                type="hidden"
-                name="role"
-                value={user.role === "ADMIN" ? "PHOTOGRAPHER" : "ADMIN"}
-              />
+              <input type="hidden" name="enabled" value={user.giftEnabled ? "0" : "1"} />
               <button
                 type="submit"
-                className="btn btn-outline"
+                className={user.giftEnabled ? "btn btn-ghost btn-sm" : "btn btn-pri btn-sm"}
                 data-tip={
-                  user.role === "ADMIN"
-                    ? "Le saca acceso al panel de administración"
-                    : "Le da acceso completo al panel de administración"
+                  user.giftEnabled
+                    ? "Sus eventos en $0 vuelven a no poder comprarse"
+                    : "Sus eventos en $0 pasan a entregarse gratis"
                 }
               >
-                {user.role === "ADMIN" ? "Degradar a fotógrafo" : "Promover a admin"}
+                {user.giftEnabled ? "Sacar el permiso" : "Habilitar regalos"}
               </button>
             </form>
-          )}
-        </div>
-      </section>
-
-      {/* Regalar fotos */}
-      <section className="section">
-        <div className="section-head">
-          <h2>Regalar fotos</h2>
-          <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-            {regalados > 0
-              ? `${regalados.toLocaleString("es-AR")} ${regalados === 1 ? "entrega regalada" : "entregas regaladas"} hasta hoy`
-              : "Todavía no regaló ninguna"}
           </div>
-        </div>
-        <div
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: 14,
-            padding: 22,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ minWidth: 240, flex: 1 }}>
-            <div style={{ fontWeight: 500, color: user.giftEnabled ? "var(--accent)" : undefined }}>
-              {user.giftEnabled ? "Puede regalar fotos" : "No puede regalar fotos"}
+
+          <div className="aj">
+            <div className="aj-t">
+              <b>
+                {esAdmin
+                  ? "Estudio de historias, por ser admin"
+                  : user.historiasEnabled
+                    ? "Estudio de historias habilitado en su ficha"
+                    : "Estudio de historias, el de todos"}
+              </b>
+              <span>
+                Historias está abierta para todas las cuentas. Este permiso sólo cuenta si un día se cierra
+                la llave global en Configuración.
+                {" "}
+                {user.emailsPromocionales ? "Recibe los mails de campaña." : "Se dio de baja de los mails de campaña."}
+              </span>
             </div>
-            <div style={{ fontSize: 13, color: "var(--text-tertiary)", marginTop: 4 }}>
-              {user.giftEnabled ? (
-                <>
-                  Cualquier compra suya que dé <strong>$0</strong> se entrega sin pasar por Mercado
-                  Pago y queda registrada como regalo, fuera de las cuentas de facturación.
-                </>
-              ) : (
-                <>
-                  Con el permiso puesto, sus eventos a precio $0 entregan las fotos directo, sin
-                  Mercado Pago. Sin el permiso, un evento en $0 no se puede comprar.
-                </>
-              )}
-              {eventosGratis > 0 && (
-                <div style={{ marginTop: 6, color: "var(--warning)" }}>
-                  <i className="ti ti-alert-triangle" style={{ marginRight: 5 }} />
-                  Tiene {eventosGratis} {eventosGratis === 1 ? "evento" : "eventos"} a precio $0
-                  {user.giftEnabled ? " que ya se están regalando." : ". Al prender esto pasan a ser gratis."}
+            {!esAdmin && (
+              <form action={toggleHistoriasAction}>
+                <input type="hidden" name="userId" value={user.id} />
+                <input type="hidden" name="enabled" value={user.historiasEnabled ? "0" : "1"} />
+                <button type="submit" className="btn btn-ghost btn-sm">
+                  {user.historiasEnabled ? "Sacar de la ficha" : "Fijar en la ficha"}
+                </button>
+              </form>
+            )}
+          </div>
+
+          <div className="aj">
+            {suspendido ? (
+              <>
+                <div className="aj-t">
+                  <b style={{ color: "var(--bad-txt)" }}>Cuenta suspendida</b>
+                  <span>
+                    {user.suspendedReason ?? "Sin motivo registrado."}
+                    {user.suspendedAt && <> · desde {user.suspendedAt.toLocaleDateString("es-AR")}</>}
+                  </span>
                 </div>
-              )}
-            </div>
+                <form action={reactivateUserAction}>
+                  <input type="hidden" name="userId" value={user.id} />
+                  <button
+                    type="submit"
+                    className="btn btn-pri btn-sm"
+                    data-tip="Vuelve a poder iniciar sesión y operar"
+                  >
+                    Reactivar
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <div className="aj-t">
+                  <b>Cuenta activa</b>
+                  <span>Puede iniciar sesión y operar normalmente.</span>
+                </div>
+                {soyYo ? (
+                  <span className="ec-nota">No podés suspender tu propia cuenta.</span>
+                ) : (
+                  <SuspendDialog
+                    userId={user.id}
+                    userName={user.name ?? user.email ?? "este usuario"}
+                    action={suspendUserAction}
+                  />
+                )}
+              </>
+            )}
           </div>
-          <form action={toggleGiftAction}>
-            <input type="hidden" name="userId" value={user.id} />
-            <input type="hidden" name="enabled" value={user.giftEnabled ? "0" : "1"} />
-            <button
-              type="submit"
-              className={user.giftEnabled ? "btn btn-outline" : "btn btn-primary"}
-              data-tip={
-                user.giftEnabled
-                  ? "Sus eventos en $0 vuelven a no poder comprarse"
-                  : "Sus eventos en $0 pasan a entregarse gratis"
-              }
-            >
-              {user.giftEnabled ? "Sacarle el permiso" : "Habilitar regalos"}
-            </button>
-          </form>
-        </div>
-      </section>
+        </section>
 
-      {/* Historias */}
-      <section className="section">
-        <div className="section-head">
-          <h2>Estudio de historias</h2>
-          <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-            {user.emailsPromocionales ? "Recibe mails de campaña" : "Se dio de baja de los mails de campaña"}
-          </div>
-        </div>
-        <div
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: 14,
-            padding: 22,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ minWidth: 240, flex: 1 }}>
-            <div style={{ fontWeight: 500, color: user.historiasEnabled ? "var(--accent)" : undefined }}>
-              {user.role === "ADMIN"
-                ? "Tiene el estudio por ser admin"
-                : user.historiasEnabled
-                  ? "Tiene el estudio de historias"
-                  : "No tiene el estudio de historias"}
-            </div>
-            <div style={{ fontSize: 13, color: "var(--text-tertiary)", marginTop: 4 }}>
-              Con el estudio ve la sección Historias en su panel y, al terminar de subir fotos, se le
-              ofrece armar una con una foto del evento. La campaña de mail &ldquo;historias&rdquo; se
-              lo da sola al invitarlo.
-            </div>
-          </div>
-          {user.role !== "ADMIN" && (
-            <form action={toggleHistoriasAction}>
-              <input type="hidden" name="userId" value={user.id} />
-              <input type="hidden" name="enabled" value={user.historiasEnabled ? "0" : "1"} />
-              <button
-                type="submit"
-                className={user.historiasEnabled ? "btn btn-outline" : "btn btn-primary"}
-              >
-                {user.historiasEnabled ? "Sacarle el estudio" : "Darle el estudio"}
-              </button>
-            </form>
-          )}
-        </div>
-      </section>
-
-      {/* Quotas */}
-      <section className="section">
-        <div className="section-head">
-          <h2>Cuotas</h2>
-        </div>
         <QuotaOverrideForm
           userId={user.id}
           currentStorageBytes={user.storageQuotaBytes?.toString() ?? null}
           currentRecognitionMonthly={user.recognitionQuotaMonthly}
           usage={quota}
         />
-      </section>
 
-      {/* Suspend / reactivate */}
-      <section className="section">
-        <div className="section-head">
-          <h2>Acceso</h2>
-        </div>
-        <div
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: 14,
-            padding: 22,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          {user.status === "SUSPENDED" ? (
-            <>
-              <div>
-                <div style={{ fontWeight: 500, color: "var(--error)" }}>Cuenta suspendida</div>
-                <div style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-                  {user.suspendedReason ?? "Sin motivo registrado."}
-                  {user.suspendedAt && (
-                    <> · desde {user.suspendedAt.toLocaleDateString("es-AR")}</>
-                  )}
-                </div>
+        {/* ── Reconocimiento ── */}
+        <section className="card">
+          <div className="card-h">
+            <div>
+              <h2>Uso de reconocimiento</h2>
+              <div className="sub">
+                Cuota mensual: {user.recognitionQuotaMonthly ? n(user.recognitionQuotaMonthly) : "la de todos"}.
               </div>
-              <form action={reactivateUserAction}>
-                <input type="hidden" name="userId" value={user.id} />
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  data-tip="Vuelve a habilitar el login y la operación normal"
-                >
-                  Reactivar cuenta
-                </button>
-              </form>
-            </>
+            </div>
+          </div>
+          {reconocimiento.length === 0 ? (
+            <div className="ec-nota">Nunca corrió reconocimiento.</div>
           ) : (
             <>
-              <div>
-                <div style={{ fontWeight: 500 }}>Cuenta activa</div>
-                <div style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-                  El usuario puede iniciar sesión y operar normalmente.
-                </div>
+              <div className="row row-h rt">
+                <span>Mes</span>
+                <span className="num">Caras indexadas</span>
+                <span className="num oc">Búsquedas</span>
+                <span className="num oc">OCR</span>
               </div>
-              {isSelf ? (
-                <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-                  No podés suspender tu propia cuenta.
-                </span>
-              ) : (
-                <SuspendDialog userId={user.id} userName={user.name ?? user.email ?? "este usuario"} action={suspendUserAction} />
-              )}
+              {reconocimiento.map((u) => (
+                <div key={u.id} className="row rt">
+                  <span className="tnum">
+                    {u.year}-{String(u.month).padStart(2, "0")}
+                  </span>
+                  <span className="num tnum">{n(u.indexedFaces)}</span>
+                  <span className="num soft tnum oc">{n(u.searchedFaces)}</span>
+                  <span className="num soft tnum oc">{n(u.ocrCalls)}</span>
+                </div>
+              ))}
             </>
           )}
-        </div>
-      </section>
+        </section>
 
-      {/* Rekognition usage */}
-      <section className="section">
-        <div className="section-head">
-          <h2>Uso de reconocimiento</h2>
-          <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-            Cuota mensual: {user.recognitionQuotaMonthly?.toLocaleString("es-AR") ?? "default"}
-          </div>
-        </div>
-        {recognitionUsage.length === 0 ? (
-          <EmptyRow text="Este usuario nunca corrió reconocimiento." />
-        ) : (
-          <div
-            style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: 12,
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1.2fr 1fr 1fr 1fr",
-                gap: 12,
-                padding: "10px 16px",
-                fontSize: 11,
-                textTransform: "uppercase",
-                color: "var(--text-tertiary)",
-                letterSpacing: 0.5,
-                borderBottom: "1px solid var(--border-subtle)",
-              }}
-            >
-              <span>Mes</span>
-              <span>Caras indexadas</span>
-              <span>Búsquedas</span>
-              <span>OCR</span>
+        {/* ── Descargas ── */}
+        <section className="card">
+          <div className="card-h">
+            <div>
+              <h2>Descargas recientes</h2>
+              <div className="sub">Compradores bajando fotos que vendió.</div>
             </div>
-            {recognitionUsage.map((u, i) => (
-              <div
-                key={u.id}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1.2fr 1fr 1fr 1fr",
-                  gap: 12,
-                  padding: "12px 16px",
-                  borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)",
-                  fontSize: 13,
-                }}
-              >
-                <span style={{ fontFamily: "var(--font-mono)" }}>
-                  {u.year}-{String(u.month).padStart(2, "0")}
-                </span>
-                <span>{u.indexedFaces.toLocaleString("es-AR")}</span>
-                <span>{u.searchedFaces.toLocaleString("es-AR")}</span>
-                <span>{u.ocrCalls.toLocaleString("es-AR")}</span>
+          </div>
+          {descargas.length === 0 ? (
+            <div className="ec-nota">Sin descargas registradas.</div>
+          ) : (
+            <>
+              <div className="row row-h dt">
+                <span>Comprador</span>
+                <span className="oc">Evento</span>
+                <span className="num">Cuándo</span>
               </div>
-            ))}
-          </div>
-        )}
-      </section>
+              {descargas.map((d) => (
+                <div key={d.id} className="row dt">
+                  <span className="v-who">
+                    <b>{d.sale.buyerEmail}</b>
+                    {d.photoId && <span>foto …{d.photoId.slice(-8)}</span>}
+                  </span>
+                  <span className="v-ev oc">{d.sale.event?.name ?? "—"}</span>
+                  <span className="num soft">{cuando(d.createdAt)}</span>
+                </div>
+              ))}
+            </>
+          )}
+        </section>
 
-      {/* Recent downloads */}
-      <section className="section">
-        <div className="section-head">
-          <h2>Descargas recientes</h2>
-          <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-            Compradores bajando fotos vendidas por este usuario.
+        {/* ── Actividad en la tienda ── */}
+        <section className="card">
+          <div className="card-h">
+            <div>
+              <h2>Actividad en su tienda</h2>
+              <div className="sub">Lo que hizo la gente en sus páginas públicas.</div>
+            </div>
           </div>
-        </div>
-        {recentDownloads.length === 0 ? (
-          <EmptyRow text="Sin descargas registradas." />
-        ) : (
-          <div
-            style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: 12,
-              overflow: "hidden",
-            }}
-          >
-            {recentDownloads.map((d, i) => (
-              <div
-                key={d.id}
-                style={{
-                  padding: "12px 16px",
-                  borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: 13,
-                  gap: 12,
-                  flexWrap: "wrap",
-                }}
-              >
-                <div style={{ minWidth: 0, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                  <i className="ti ti-download" style={{ color: "var(--accent)" }} />
-                  <span>{d.sale.buyerEmail}</span>
-                  {d.sale.event?.name && (
-                    <>
-                      <span style={{ color: "var(--text-tertiary)" }}>·</span>
-                      <span style={{ color: "var(--text-tertiary)" }}>{d.sale.event.name}</span>
-                    </>
-                  )}
-                  {d.photoId && (
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-tertiary)" }}>
-                      #{d.photoId.slice(-8)}
+          {actividad.length === 0 ? (
+            <div className="ec-nota">Sin actividad registrada.</div>
+          ) : (
+            <>
+              <div className="row row-h dt">
+                <span>Qué</span>
+                <span className="oc">Evento</span>
+                <span className="num">Cuándo</span>
+              </div>
+              {actividad.map((a) => {
+                const t = ACTIVIDAD[a.type] ?? { icono: Eye, texto: a.type, cls: "" };
+                return (
+                  <div key={a.id} className="row dt">
+                    <span>
+                      <span className={`pill ${t.cls}`}>
+                        <t.icono style={{ width: 12, height: 12 }} /> {t.texto}
+                      </span>
                     </span>
-                  )}
-                </div>
-                <span
-                  style={{
-                    color: "var(--text-tertiary)",
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 11,
-                    flexShrink: 0,
-                  }}
-                >
-                  {d.createdAt.toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Storefront analytics */}
-      <section className="section">
-        <div className="section-head">
-          <h2>Actividad en storefront</h2>
-          <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-            Eventos capturados en las páginas públicas de este fotógrafo.
-          </div>
-        </div>
-        {analyticsEvents.length === 0 ? (
-          <EmptyRow text="Sin actividad registrada en el storefront." />
-        ) : (
-          <div
-            style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: 12,
-              overflow: "hidden",
-            }}
-          >
-            {analyticsEvents.map((a, i) => {
-              const ev = a.eventId ? eventNameById.get(a.eventId) : null;
-              return (
-                <div
-                  key={a.id}
-                  style={{
-                    padding: "12px 16px",
-                    borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontSize: 13,
-                    gap: 12,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                    <AnalyticsPill type={a.type} />
-                    {ev && (
-                      <span style={{ color: "var(--text-tertiary)" }}>en {ev.name}</span>
-                    )}
+                    <span className="v-ev oc">{a.eventId ? (nombreEvento.get(a.eventId) ?? "—") : "—"}</span>
+                    <span className="num soft">{cuando(a.createdAt)}</span>
                   </div>
-                  <span
-                    style={{
-                      color: "var(--text-tertiary)",
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 11,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {a.createdAt.toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+                );
+              })}
+            </>
+          )}
+        </section>
 
-      {/* Audit log */}
-      <section className="section">
-        <div className="section-head">
-          <h2>Acciones recientes</h2>
-        </div>
-        {recentActions.length === 0 ? (
-          <div
-            style={{
-              padding: 20,
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: 12,
-              color: "var(--text-tertiary)",
-              fontSize: 13,
-            }}
-          >
-            Sin acciones registradas.
+        {/* ── Registro ── */}
+        <section className="card">
+          <div className="card-h">
+            <div>
+              <h2>Lo que hicimos con esta cuenta</h2>
+              <div className="sub">Las últimas diez acciones de administración.</div>
+            </div>
           </div>
-        ) : (
-          <div
-            style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: 12,
-              overflow: "hidden",
-            }}
-          >
-            {recentActions.map((a, i) => (
-              <div
-                key={a.id}
-                style={{
-                  padding: "12px 16px",
-                  borderTop: i === 0 ? "none" : "1px solid var(--border-subtle)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: 13,
-                  gap: 12,
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <span style={{ fontFamily: "var(--font-mono)", color: "var(--accent)", fontSize: 12 }}>
-                    {a.action}
-                  </span>
-                  <span style={{ color: "var(--text-tertiary)", marginLeft: 10 }}>
-                    por {a.actor.name ?? a.actor.email}
-                  </span>
-                </div>
-                <span style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)", fontSize: 11, flexShrink: 0 }}>
-                  {a.createdAt.toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}
-                </span>
+          {acciones.length === 0 ? (
+            <div className="ec-nota">Sin acciones registradas.</div>
+          ) : (
+            <>
+              <div className="row row-h lt">
+                <span>Acción</span>
+                <span className="oc">Quién</span>
+                <span className="num">Cuándo</span>
               </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <Link
-        href="/admin/users"
-        className="btn btn-ghost"
-        style={{ marginTop: 18 }}
-      >
-        <i className="ti ti-arrow-left" />
-        Volver a la lista
-      </Link>
-    </div>
-    </Legado>
-  );
-}
-
-function StatCard({ icon, label, value, subValue }: { icon: string; label: string; value: string; subValue?: string }) {
-  return (
-    <div className="action-card" style={{ minHeight: 0, cursor: "default" }}>
-      <div className="action-icon">
-        <i className={`ti ${icon}`} />
+              {acciones.map((a) => (
+                <div key={a.id} className="row lt">
+                  <span>
+                    <span className="pill">
+                      <i /> {ACCION[a.action] ?? a.action.toLowerCase().replace(/_/g, " ")}
+                    </span>
+                  </span>
+                  <span className="v-ev oc">{a.actor.name ?? a.actor.email}</span>
+                  <span className="num soft">{cuando(a.createdAt)}</span>
+                </div>
+              ))}
+            </>
+          )}
+        </section>
       </div>
-      <div>
-        <h3 style={{ fontSize: 22, marginBottom: 2 }}>{value}</h3>
-        <p>{label}</p>
-        {subValue && (
-          <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 4 }}>{subValue}</p>
-        )}
-      </div>
-    </div>
+    </main>
   );
 }
 
-function RolePill({ role }: { role: string }) {
-  return (
-    <span className="status-pill" style={role === "ADMIN" ? { color: "var(--accent)" } : undefined}>
-      <i className={role === "ADMIN" ? "ti ti-shield-check" : "ti ti-user"} />
-      {role === "ADMIN" ? "Admin" : "Fotógrafo"}
-    </span>
-  );
-}
+const ACTIVIDAD: Record<string, { icono: typeof Eye; texto: string; cls: string }> = {
+  VISIT: { icono: Eye, texto: "Visita", cls: "" },
+  SEARCH_BIB: { icono: Hash, texto: "Buscó un dorsal", cls: "draft" },
+  SEARCH_FACE: { icono: ScanFace, texto: "Buscó una cara", cls: "draft" },
+  CART_ADD: { icono: ShoppingCart, texto: "Agregó al carrito", cls: "draft" },
+  CHECKOUT_START: { icono: CreditCard, texto: "Empezó a pagar", cls: "draft" },
+  PURCHASE: { icono: Banknote, texto: "Compró", cls: "live" },
+  DOWNLOAD: { icono: Download, texto: "Descargó", cls: "live" },
+};
 
-function EmptyRow({ text }: { text: string }) {
-  return (
-    <div
-      style={{
-        padding: 20,
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border-subtle)",
-        borderRadius: 12,
-        color: "var(--text-tertiary)",
-        fontSize: 13,
-      }}
-    >
-      {text}
-    </div>
-  );
-}
-
-function AnalyticsPill({ type }: { type: string }) {
-  const map: Record<string, { icon: string; label: string; color: string }> = {
-    VISIT: { icon: "ti-eye", label: "Visita", color: "var(--text-secondary)" },
-    SEARCH_BIB: { icon: "ti-hash", label: "Búsqueda dorsal", color: "var(--accent)" },
-    SEARCH_FACE: { icon: "ti-user-search", label: "Búsqueda facial", color: "var(--accent)" },
-    CART_ADD: { icon: "ti-shopping-cart-plus", label: "Agregado al carrito", color: "var(--accent)" },
-    CHECKOUT_START: { icon: "ti-credit-card", label: "Checkout iniciado", color: "var(--accent)" },
-    PURCHASE: { icon: "ti-cash", label: "Compra", color: "var(--success)" },
-  };
-  const meta = map[type] ?? { icon: "ti-circle", label: type, color: "var(--text-tertiary)" };
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        fontSize: 12,
-        color: meta.color,
-        fontFamily: "var(--font-mono)",
-      }}
-    >
-      <i className={`ti ${meta.icon}`} />
-      {meta.label}
-    </span>
-  );
-}
-
-function formatRelative(d: Date) {
-  const diffMs = Date.now() - d.getTime();
-  const min = Math.floor(diffMs / 60_000);
-  if (min < 1) return "hace instantes";
-  if (min < 60) return `hace ${min} min`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return `hace ${h} h`;
-  const days = Math.floor(h / 24);
-  if (days < 30) return `hace ${days} d`;
-  return d.toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-function StatusPill({ status }: { status: string }) {
-  if (status === "SUSPENDED") {
-    return (
-      <span className="status-pill" style={{ color: "var(--error)", borderColor: "rgba(224,85,85,0.4)" }}>
-        <i className="ti ti-ban" />
-        Suspendido
-      </span>
-    );
-  }
-  if (status === "DELETED") {
-    return (
-      <span className="status-pill" style={{ color: "var(--text-tertiary)" }}>
-        <i className="ti ti-trash" />
-        Eliminado
-      </span>
-    );
-  }
-  return (
-    <span className="status-pill" style={{ color: "var(--success)" }}>
-      <i className="ti ti-circle-check-filled" />
-      Activo
-    </span>
-  );
-}
+const ACCION: Record<string, string> = {
+  SUSPEND_USER: "suspendida",
+  REACTIVATE_USER: "reactivada",
+  SET_ROLE: "cambio de rol",
+  OVERRIDE_QUOTA: "cuotas cambiadas",
+  ENABLE_GIFT: "regalos habilitados",
+  DISABLE_GIFT: "regalos quitados",
+  ENABLE_HISTORIAS: "historias habilitadas",
+  DISABLE_HISTORIAS: "historias quitadas",
+};

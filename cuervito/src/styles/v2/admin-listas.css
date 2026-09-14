@@ -74,3 +74,37 @@
   .oc { display: none; }
   .sum.k4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ── Ficha de usuario ─────────────────────────────────────────────────────── */
+/* Reconocimiento: mes · caras · búsquedas · ocr */
+.rt { grid-template-columns: minmax(0, 1fr) 120px 96px 72px; }
+/* Descargas y actividad: quién/qué · evento · cuándo */
+.dt { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 128px; }
+/* Registro: acción · quién · cuándo */
+.lt { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 128px; }
+.rt .num, .dt .num, .lt .num { white-space: nowrap; }
+/* Las listas de la ficha van adentro de una tarjeta con encabezado: la
+   primera fila no necesita el borde de arriba. */
+.card > .row-h { margin-top: calc(var(--s-4) * -1 + 8px); }
+
+/* Las cuotas: dos bloques, cada uno con su barra y su campo. */
+.cuotas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4); }
+.cuota { display: grid; gap: 10px; }
+.cuota-h {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3);
+  font-size: 13px; color: var(--ink-3);
+}
+.cuota-h > b { font-weight: 500; color: var(--ink); font-size: 13.5px; }
+.cuota-in { display: flex; align-items: center; gap: 8px; }
+.cuota-in .inp { flex: 1; min-width: 0; }
+.cuota-in > span { font-size: 12.5px; color: var(--ink-3); flex-shrink: 0; }
+
+@media (max-width: 900px) {
+  .rt { grid-template-columns: minmax(0, 1fr) 120px; }
+  .dt, .lt { grid-template-columns: minmax(0, 1fr) 128px; }
+  .cuotas { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Una píldora al lado del nombre en un renglón de ajuste. .aj-t pone cada
+   span en bloque (es el renglón de abajo); la píldora no es ese renglón. */
+.aj-t .pill { display: inline-flex; margin-top: 0; }

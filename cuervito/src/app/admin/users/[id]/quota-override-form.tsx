@@ -1,10 +1,18 @@
 "use client";
 
+import { RotateCcw } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 
 import { setQuotasAction, type QuotaState } from "../actions";
 import { formatBytes, type QuotaUsage } from "~/lib/quotas-shared";
 
+/**
+ * Las cuotas de la cuenta: almacenamiento y reconocimientos por mes.
+ *
+ * Vacío es "el valor de todos". Un número es una excepción para esta cuenta,
+ * y se muestra como tal, con la píldora, para que se vea de reojo quién tiene
+ * algo distinto al resto.
+ */
 export function QuotaOverrideForm({
   userId,
   currentStorageBytes,
@@ -20,287 +28,135 @@ export function QuotaOverrideForm({
     error: null,
   });
 
-  const storageGBPrefill = currentStorageBytes
+  const gbInicial = currentStorageBytes
     ? (Number(currentStorageBytes) / (1024 * 1024 * 1024)).toString()
     : "";
-  const recPrefill = currentRecognitionMonthly?.toString() ?? "";
+  const [gb, setGb] = useState(gbInicial);
+  const [rec, setRec] = useState(currentRecognitionMonthly?.toString() ?? "");
 
-  const [storageVal, setStorageVal] = useState(storageGBPrefill);
-  const [recVal, setRecVal] = useState(recPrefill);
-
-  const [savedToast, setSavedToast] = useState(false);
+  const [guardado, setGuardado] = useState(false);
   useEffect(() => {
     if (state.saved) {
-      setSavedToast(true);
-      const t = setTimeout(() => setSavedToast(false), 2500);
+      setGuardado(true);
+      const t = setTimeout(() => setGuardado(false), 2500);
       return () => clearTimeout(t);
     }
   }, [state.saved]);
 
   return (
-    <form
-      action={action}
-      style={{
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border-subtle)",
-        borderRadius: 14,
-        padding: 22,
-        display: "grid",
-        gap: 18,
-      }}
-    >
+    <form action={action} className="card">
       <input type="hidden" name="userId" value={userId} />
-
-      <QuotaRow
-        icon="ti-database"
-        label="Almacenamiento"
-        unitLabel="GB"
-        inputName="storageGB"
-        value={storageVal}
-        onChange={setStorageVal}
-        defaultPlaceholder="100"
-        usedText={usage ? formatBytes(usage.storage.usedBytes) : "—"}
-        limitText={usage ? formatBytes(usage.storage.limitBytes) : "—"}
-        pct={usage?.storage.pct ?? 0}
-        overrideActive={usage?.storage.overrideActive ?? false}
-      />
-
-      <QuotaRow
-        icon="ti-scan-eye"
-        label="Reconocimientos / mes"
-        unitLabel="calls"
-        inputName="recognitionMonthly"
-        value={recVal}
-        onChange={setRecVal}
-        defaultPlaceholder="10000"
-        usedText={usage ? usage.recognitions.used.toLocaleString("es-AR") : "—"}
-        limitText={usage ? usage.recognitions.limit.toLocaleString("es-AR") : "—"}
-        pct={usage?.recognitions.pct ?? 0}
-        overrideActive={usage?.recognitions.overrideActive ?? false}
-      />
-
-      {state.error && (
-        <div
-          className="field-error"
-          style={{
-            padding: "10px 14px",
-            border: "1px solid rgba(224,85,85,0.4)",
-            borderRadius: 8,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            fontSize: 13,
-            color: "var(--error)",
-          }}
-        >
-          <i className="ti ti-alert-circle" />
-          {state.error}
+      <div className="card-h">
+        <div>
+          <h2>Cuotas</h2>
+          <div className="sub">Vacío es el valor de todos; un número es una excepción para esta cuenta.</div>
         </div>
-      )}
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--s-3)" }}>
+          {guardado && <span style={{ fontSize: 12.5, color: "var(--ok-txt)" }}>Guardado</span>}
+          {state.error && <span style={{ fontSize: 12.5, color: "var(--bad-txt)" }}>{state.error}</span>}
+          <button type="submit" className="btn btn-pri btn-sm" disabled={pending}>
+            {pending ? "Guardando…" : "Guardar"}
+          </button>
+        </div>
+      </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          alignItems: "center",
-          justifyContent: "flex-end",
-          paddingTop: 4,
-          borderTop: "1px solid var(--border-subtle)",
-          marginTop: 4,
-          paddingBlockStart: 14,
-        }}
-      >
-        {savedToast && (
-          <span
-            style={{
-              color: "var(--success)",
-              fontSize: 13,
-              marginRight: "auto",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <i className="ti ti-circle-check-filled" /> Guardado
-          </span>
-        )}
-        <button type="submit" className="btn btn-primary" disabled={pending}>
-          {pending ? "Guardando…" : "Guardar overrides"}
-        </button>
+      <div className="cuotas">
+        <Cuota
+          nombre="Almacenamiento"
+          unidad="GB"
+          inputName="storageGB"
+          valor={gb}
+          alCambiar={setGb}
+          porDefecto="100"
+          usado={usage ? formatBytes(usage.storage.usedBytes) : "—"}
+          limite={usage ? formatBytes(usage.storage.limitBytes) : "—"}
+          pct={usage?.storage.pct ?? 0}
+          excepcion={usage?.storage.overrideActive ?? false}
+        />
+        <Cuota
+          nombre="Reconocimientos por mes"
+          unidad="llamadas"
+          inputName="recognitionMonthly"
+          valor={rec}
+          alCambiar={setRec}
+          porDefecto="10000"
+          usado={usage ? usage.recognitions.used.toLocaleString("es-AR") : "—"}
+          limite={usage ? usage.recognitions.limit.toLocaleString("es-AR") : "—"}
+          pct={usage?.recognitions.pct ?? 0}
+          excepcion={usage?.recognitions.overrideActive ?? false}
+        />
       </div>
     </form>
   );
 }
 
-function QuotaRow({
-  icon,
-  label,
-  unitLabel,
+function Cuota({
+  nombre,
+  unidad,
   inputName,
-  value,
-  onChange,
-  defaultPlaceholder,
-  usedText,
-  limitText,
+  valor,
+  alCambiar,
+  porDefecto,
+  usado,
+  limite,
   pct,
-  overrideActive,
+  excepcion,
 }: {
-  icon: string;
-  label: string;
-  unitLabel: string;
+  nombre: string;
+  unidad: string;
   inputName: string;
-  value: string;
-  onChange: (v: string) => void;
-  defaultPlaceholder: string;
-  usedText: string;
-  limitText: string;
+  valor: string;
+  alCambiar: (v: string) => void;
+  porDefecto: string;
+  usado: string;
+  limite: string;
   pct: number;
-  overrideActive: boolean;
+  excepcion: boolean;
 }) {
-  const clamped = Math.max(0, Math.min(100, pct));
-  const color =
-    clamped >= 90 ? "var(--error)" : clamped >= 70 ? "var(--warning)" : "var(--accent)";
-
+  const p = Math.max(0, Math.min(100, pct));
   return (
-    <div
-      style={{
-        background: "var(--bg-base)",
-        border: "1px solid var(--border-subtle)",
-        borderRadius: 12,
-        padding: "16px 18px",
-        display: "grid",
-        gap: 12,
-      }}
-    >
-      {/* Header: icon + label + usage */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-          <span
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 9,
-              background: "var(--accent-deep)",
-              border: "1px solid var(--border-accent)",
-              color: "var(--accent)",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 16,
-              flexShrink: 0,
-            }}
-          >
-            <i className={`ti ${icon}`} />
-          </span>
-          <span style={{ fontWeight: 500, fontSize: 14, color: "var(--text-primary)" }}>
-            {label}
-          </span>
-          <Badge active={overrideActive} />
-        </div>
-        <span
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 12.5,
-            color: "var(--text-tertiary)",
-          }}
-        >
-          <span style={{ color: "var(--text-primary)" }}>{usedText}</span> / {limitText}{" "}
-          <span style={{ color }}>({clamped}%)</span>
+    <div className="cuota">
+      <div className="cuota-h">
+        <b>
+          {nombre}
+          {excepcion && (
+            <span className="pill draft" style={{ marginLeft: 8, verticalAlign: 1 }}>
+              <i /> excepción
+            </span>
+          )}
+        </b>
+        <span className="tnum">
+          <b style={{ fontWeight: 500, color: "var(--ink)" }}>{usado}</b> de {limite}{" "}
+          <span style={{ color: p >= 90 ? "var(--bad-txt)" : "var(--ink-3)" }}>({p} %)</span>
         </span>
       </div>
-
-      {/* Progress bar */}
-      <div
-        style={{
-          height: 6,
-          background: "var(--bg-elevated)",
-          borderRadius: 999,
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            height: "100%",
-            width: `${clamped}%`,
-            background: color,
-            borderRadius: 999,
-            transition: "width 240ms ease",
-          }}
-        />
+      <div className="barra-p">
+        <i style={{ width: `${p}%`, background: p >= 90 ? "var(--bad)" : undefined }} />
       </div>
-
-      {/* Override input */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          flexWrap: "wrap",
-        }}
-      >
-        <label
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 10.5,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "var(--text-tertiary)",
-            flexShrink: 0,
-          }}
-        >
-          Override
-        </label>
+      <div className="cuota-in">
         <input
           type="number"
           name={inputName}
           min={0}
           step="1"
-          placeholder={`${defaultPlaceholder} (default)`}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="input"
-          style={{ flex: 1, minWidth: 140 }}
+          placeholder={`${porDefecto} (el de todos)`}
+          value={valor}
+          onChange={(e) => alCambiar(e.target.value)}
+          className="inp"
+          aria-label={`${nombre}, en ${unidad}`}
         />
-        <span style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>
-          {unitLabel}
-        </span>
-        {value && (
+        <span>{unidad}</span>
+        {valor && (
           <button
             type="button"
-            onClick={() => onChange("")}
-            className="btn btn-ghost"
-            style={{ height: 32, padding: "0 10px", fontSize: 12 }}
-            title="Volver al default del sistema"
+            className="btn btn-ghost btn-sm"
+            onClick={() => alCambiar("")}
+            data-tip="Volver al valor de todos"
           >
-            <i className="ti ti-rotate-clockwise" /> Reset
+            <RotateCcw /> Quitar
           </button>
         )}
       </div>
     </div>
-  );
-}
-
-function Badge({ active }: { active: boolean }) {
-  return (
-    <span
-      className="status-pill"
-      style={{
-        fontSize: 10,
-        padding: "2px 7px",
-        color: active ? "var(--accent)" : "var(--text-tertiary)",
-        borderColor: active ? "var(--border-accent)" : undefined,
-        background: active ? "var(--accent-deep)" : undefined,
-      }}
-    >
-      {active ? "Override" : "Default"}
-    </span>
   );
 }

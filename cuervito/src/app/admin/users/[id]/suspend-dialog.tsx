@@ -1,7 +1,15 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
+/**
+ * Suspender una cuenta, con motivo.
+ *
+ * Es un diálogo y no un botón directo porque no se deshace con un click: la
+ * persona deja de poder entrar hasta que alguien la reactive, y el motivo
+ * queda en la ficha para quien la mire después.
+ */
 export function SuspendDialog({
   userId,
   userName,
@@ -11,108 +19,82 @@ export function SuspendDialog({
   userName: string;
   action: (fd: FormData) => Promise<void>;
 }) {
-  const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState("");
+  const [abierto, setAbierto] = useState(false);
+  const [motivo, setMotivo] = useState("");
 
   useEffect(() => {
-    if (!open) return;
-    document.body.style.overflow = "hidden";
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = "";
-      document.removeEventListener("keydown", onKey);
+    if (!abierto) return;
+    document.documentElement.dataset.modal = "open";
+    const alTecla = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setAbierto(false);
     };
-  }, [open]);
+    window.addEventListener("keydown", alTecla);
+    return () => {
+      window.removeEventListener("keydown", alTecla);
+      document.documentElement.dataset.modal = "";
+    };
+  }, [abierto]);
 
   return (
     <>
       <button
         type="button"
-        className="btn"
-        style={{
-          color: "var(--error)",
-          border: "1px solid rgba(224,85,85,0.45)",
-          background: "transparent",
-        }}
-        onClick={() => setOpen(true)}
+        className="btn btn-ghost btn-sm"
+        style={{ color: "var(--bad-txt)" }}
+        onClick={() => setAbierto(true)}
       >
         Suspender
       </button>
 
-      {open && (
+      {abierto && (
         <div
-          onClick={() => setOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(8, 6, 5, 0.72)",
-            backdropFilter: "blur(8px)",
-            zIndex: 100,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 24,
+          className="modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Suspender a ${userName}`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setAbierto(false);
           }}
         >
-          <form
-            onClick={(e) => e.stopPropagation()}
-            action={action}
-            style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: 16,
-              width: "100%",
-              maxWidth: 480,
-              padding: 26,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.55)",
-            }}
-          >
+          <form action={action} className="modal-caja" style={{ maxWidth: 460 }}>
             <input type="hidden" name="userId" value={userId} />
-            <h3
-              style={{
-                fontFamily: "var(--font-display)",
-                fontWeight: 700,
-                fontSize: 19,
-                letterSpacing: "-0.02em",
-                marginBottom: 8,
-              }}
-            >
-              Suspender a {userName}
-            </h3>
-            <p style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 1.55, marginBottom: 18 }}>
-              No va a poder iniciar sesión hasta que reactivés la cuenta.
-              Las fotos y ventas se conservan.
-            </p>
-
-            <div className="field" style={{ marginBottom: 22 }}>
-              <label className="label">Motivo (opcional)</label>
-              <textarea
-                name="reason"
-                className="input"
-                placeholder="Razón interna para la suspensión…"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                rows={3}
-                maxLength={500}
-              />
+            <div className="modal-h">
+              <div>
+                <h2>Suspender a {userName}</h2>
+                <div className="sub">
+                  No va a poder iniciar sesión hasta que alguien reactive la cuenta. Las fotos y las ventas
+                  se conservan.
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost btn-icon"
+                onClick={() => setAbierto(false)}
+                aria-label="Cerrar"
+              >
+                <X />
+              </button>
             </div>
-
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button type="button" className="btn btn-outline" onClick={() => setOpen(false)}>
+            <div className="modal-b">
+              <div className="ma-campo" style={{ marginTop: 0 }}>
+                <label htmlFor="susp-motivo">Motivo (opcional, queda en la ficha)</label>
+                <textarea
+                  id="susp-motivo"
+                  name="reason"
+                  className="inp ta"
+                  placeholder="Por qué se suspende…"
+                  value={motivo}
+                  onChange={(e) => setMotivo(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                />
+              </div>
+            </div>
+            <div className="modal-f">
+              <button type="button" className="btn btn-ghost" onClick={() => setAbierto(false)}>
                 Cancelar
               </button>
-              <button
-                type="submit"
-                className="btn"
-                style={{
-                  color: "var(--error)",
-                  border: "1px solid rgba(224,85,85,0.45)",
-                  background: "rgba(224,85,85,0.08)",
-                }}
-              >
+              <button type="submit" className="btn btn-pri" style={{ background: "var(--bad)", color: "#fff" }}>
                 Suspender
               </button>
             </div>

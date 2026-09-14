@@ -86,8 +86,9 @@ const NAV_ADMIN_HERRAMIENTAS = [
 // se prueba una vez, no pasa nada, y se prueba de nuevo.
 const PRONTO = [{ id: "portfolio", icono: Images, texto: "Portfolio" }];
 
-// Historias existe pero está cerrada. Para quien no la tiene sigue siendo un
-// anuncio; para quien sí, es un ítem más del riel y no una sección aparte:
+// Historias está abierta para todos desde septiembre de 2026. Si la llave de
+// emergencia la cierra, para quien no la tiene vuelve a ser un anuncio; para
+// quien sí, es un ítem más del riel y no una sección aparte:
 // el día que se abra a todos no cambia nada de lugar.
 const HISTORIAS = {
   id: "historias",
@@ -206,20 +207,6 @@ export function Shell({
         <div className="rail-top">
           <Link href={admin ? "/admin/users" : "/dashboard"} className="mark">
             encontrate.app
-            {admin && (
-              <span
-                style={{
-                  display: "block",
-                  fontSize: 10,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  color: "var(--accent)",
-                  marginTop: 2,
-                }}
-              >
-                admin
-              </span>
-            )}
           </Link>
         </div>
 

@@ -259,6 +259,47 @@ levanta la próxima pasada. Ésa es la diferencia con lo de antes, que era un
 Ritmo real: ~5 s por foto, 3 en paralelo (semáforo de sharp) ≈ **30 fotos por
 minuto**.
 
+### La marca de agua
+
+Es configurable desde `/admin/watermark` y vive en `Setting` como JSON
+(`watermark:config`, forma en `src/server/marca-agua-config.ts`). Son dos cosas
+separadas (`src/server/marca-agua.ts`):
+
+- **La unidad**: la imagen —el PNG subido por el admin (`Setting "watermark"`,
+  clave de S3) o el logo de encontrate de `public/marca/`— más un texto debajo,
+  renderizado con satori y las fuentes del repo. Se cachea por (imagen, texto,
+  ancho) en `globalThis`.
+- **El patrón**: cómo se reparte. Es un SVG del tamaño de la foto con un
+  `<pattern>` (mosaico con filas corridas, diagonal con la trama rotada) o una
+  sola `<image>` (centro, esquina). Escala, opacidad, rotación, separación y
+  margen son atributos del SVG, no bucles de composites.
+
+Un fotógrafo con PNG propio (`User.watermarkKey`) lleva el suyo solo, con el
+patrón de la plataforma pero sin el texto. La config se lee con un TTL de 15 s
+en memoria y no con `unstable_cache`: la pide el procesador fuera de cualquier
+request, donde `unstable_cache` no tiene dónde guardar.
+
+Cambiarla vale desde la próxima foto. Lo ya procesado se regenera desde la
+misma pantalla (`/api/admin/watermark/regenerate`, por cursor, de a 20) y al
+terminar se invalida CloudFront con `/*`: las claves de las vistas previas no
+cambian y el CDN las guarda un día.
+
+### Historias
+
+Abiertas a toda cuenta activa desde el 14/9/2026: `puedeUsarHistorias` lee la
+bandera `historias_abierta` con `true` por defecto, así que sin fila en
+`Setting` está abierto; apagarla en `/admin/settings` es la llave de
+emergencia. La pieza lleva el logo de encontrate arriba del título (los dos
+PNG de `public/marca/` como data URI, satori no sale a la red).
+
+El encuadre se arrastra en el estudio. La regla del recorte es una sola y es
+la de CSS: `object-fit: cover` + `object-position` con un punto `{x, y}` en
+fracciones de la foto. El navegador la aplica a la foto sola mientras se
+arrastra; el servidor la aplica en `recortar()` al soltar. `cajaFoto()` en
+`formatos.ts` dice dónde va la foto en cada plantilla, y la usan los dos lados.
+Sin foco, sharp elige con `strategy.attention` y devuelve dónde quedó en el
+header `x-foco`, para que el arrastre arranque de ahí.
+
 ### Cron
 
 `POST /api/cron/cleanup` (con `Authorization: Bearer $CRON_SECRET`), diario:
@@ -336,6 +377,18 @@ defecto son 1,6 s, y una marca de agua tarda 5. Así se perdieron 160 fotos —
 cobrables e invisibles en un evento publicado— la noche de tres deploys
 seguidos. Por eso el trabajo diferido vive en la tabla `Photo` y no en promesas
 sueltas, y por eso `ecosystem.config.cjs` sube el `kill_timeout` a 30 s.
+
+**`info.cropOffsetLeft` de sharp es negativo.** Con `position: strategy.attention`,
+`toBuffer({ resolveWithObject: true })` devuelve cuánto se CORRIÓ la imagen
+escalada, no dónde empieza el recorte: `-740` significa que el recorte empieza
+en 740. Leído sin el signo, el encuadre automático de las historias decía
+"borde izquierdo" para una foto centrada, y el arrastre arrancaba con un salto.
+
+**`unstable_cache` fuera de un request lanza.** Vale para todo lo que pida el
+procesador de fotos o el remitente de correos, que arrancan desde
+`instrumentation.ts` antes de que exista ningún request. La config de la marca
+de agua se cachea a mano en `globalThis` por eso. `leerBandera` (que sí usa
+`unstable_cache`) sólo se llama desde páginas y rutas.
 
 **`instrumentation.ts` se compila en otra capa de webpack que los route
 handlers.** Un módulo importado desde los dos lados se evalúa DOS veces, así que
