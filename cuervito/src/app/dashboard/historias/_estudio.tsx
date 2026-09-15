@@ -13,6 +13,7 @@ import {
   type PlantillaId,
 } from "~/server/historias/formatos";
 
+import { Armando } from "../_components/armando";
 import { Desplegable } from "../_components/desplegable";
 
 type EventoOp = { id: string; nombre: string; fecha: string | null; fotos: number };
@@ -336,11 +337,18 @@ export function Estudio({ eventos }: { eventos: EventoOp[] }) {
           {salida ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={salida} alt="Vista previa de la historia" />
+          ) : generando ? (
+            <Armando />
           ) : (
-            <div className="hist-vacio">
-              {error ?? (generando ? "Armando la pieza…" : "Elegí una foto para empezar.")}
-            </div>
+            <div className="hist-vacio">{error ?? "Elegí una foto para empezar."}</div>
           )}
+
+          {/* Mientras se rerenderiza queda la anterior atenuada y el loader
+              encima. Después de arrastrar no: ahí lo que se ve es la foto
+              sola en la posición nueva, y taparla sería esconder justo lo
+              que se acaba de elegir; el aviso de abajo dice que se está
+              actualizando. */}
+          {salida && generando && !capa && <Armando titulo="Armando la pieza" sobre />}
 
           {/* La zona que se arrastra: exactamente donde está la foto en la
               pieza. Adentro va la foto sola, que sólo se ve mientras la capa
@@ -376,7 +384,13 @@ export function Estudio({ eventos }: { eventos: EventoOp[] }) {
             </div>
           )}
 
-          {fotoSel && salida && !arrastrando && (
+          {fotoSel && salida && !arrastrando && generando && capa && (
+            <div className="hist-pista" role="status">
+              <span className="armando-anillo" aria-hidden="true" />
+              Actualizando el encuadre…
+            </div>
+          )}
+          {fotoSel && salida && !arrastrando && !generando && (
             <div className="hist-pista" aria-hidden="true">
               <Move />
               {encuadrado ? "Arrastrá para ajustar el encuadre" : "Arrastrá la foto para encuadrarla"}

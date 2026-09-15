@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Download, RefreshCw, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { Armando } from "~/app/dashboard/_components/armando";
+
 type Foto = { id: string; url: string };
 
 type Estado =
@@ -156,44 +158,19 @@ export function HistoriaModal({
         </div>
 
         <div className="modal-b">
-          {/* 9:16, como la historia. Con un alto tope para que en una laptop
-              chica no se coma la pantalla entera. */}
-          <div
-            style={{
-              aspectRatio: "9 / 16",
-              maxHeight: "52dvh",
-              margin: "0 auto",
-              borderRadius: "var(--r-2, 12px)",
-              overflow: "hidden",
-              background: "var(--paper-3, #f0efe9)",
-              display: "grid",
-              placeItems: "center",
-              width: "100%",
-              maxWidth: 260,
-            }}
-          >
+          {/* 9:16, como la historia, y entera: el alto manda y el ancho sale
+              de la proporción (ver .hist-modal-pv). */}
+          <div className="hist-modal-pv">
             {lista ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={estado.url}
-                alt="Tu historia"
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-              />
+              <img src={estado.url} alt="Tu historia" />
+            ) : estado.tipo === "cargando" || estado.tipo === "generando" ? (
+              <Armando />
             ) : (
-              <div
-                style={{
-                  padding: 20,
-                  textAlign: "center",
-                  fontSize: 13,
-                  lineHeight: 1.5,
-                  color: "var(--ink-3)",
-                }}
-              >
-                {estado.tipo === "cargando" || estado.tipo === "generando"
-                  ? "Armando tu historia…"
-                  : estado.tipo === "sin-fotos"
-                    ? "Tus fotos todavía se están procesando. En un ratito vas a poder armarla."
-                    : estado.mensaje}
+              <div className="hist-vacio">
+                {estado.tipo === "sin-fotos"
+                  ? "Tus fotos todavía se están procesando. En un ratito vas a poder armarla."
+                  : estado.mensaje}
               </div>
             )}
           </div>

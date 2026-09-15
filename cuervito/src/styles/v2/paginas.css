@@ -2093,6 +2093,111 @@
   -webkit-backdrop-filter: blur(6px);
 }
 .hist-pista svg { width: 13px; height: 13px; }
+.hist-pista .armando-anillo { width: 12px; height: 12px; border-width: 2px; border-color: rgba(255,255,255,.35); border-top-color: #fff; }
+
+/* ── Armando la pieza ─────────────────────────────────────────────────────── */
+/* Tapa la caja entera. Con data-sobre hay una imagen anterior abajo y el
+   fondo es translúcido; sin él es el esqueleto de una historia. */
+.armando {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  padding: var(--s-4);
+  background: var(--paper-3);
+  overflow: hidden;
+}
+.armando[data-sobre="1"] {
+  background: color-mix(in srgb, var(--paper) 62%, transparent);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+.armando-c {
+  position: relative;
+  display: grid; justify-items: center; gap: 10px;
+  text-align: center;
+  animation: armando-aparece 320ms ease both;
+}
+.armando-anillo {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 2.5px solid var(--line);
+  border-top-color: var(--accent);
+  animation: armando-gira 850ms linear infinite;
+}
+.armando-t { font-size: 13.5px; font-weight: 500; color: var(--ink); margin-top: 4px; }
+.armando-s {
+  font-size: 12px; color: var(--ink-3);
+  min-height: 16px;
+  animation: armando-aparece 360ms ease both;
+}
+.armando-barra {
+  width: 132px; height: 3px;
+  margin-top: 2px;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+.armando-barra > i {
+  display: block; height: 100%; width: 0;
+  border-radius: 2px;
+  background: var(--accent);
+  /* Avanza rápido al principio y frena cerca del final sin llegar: no
+     sabemos cuánto falta, y una barra que llega al 100 % y sigue esperando
+     es peor que ninguna. */
+  animation: armando-llena 9s cubic-bezier(.12, .72, .2, 1) forwards;
+}
+
+/* El esqueleto: el degradado de abajo y las barras del título, con un brillo
+   que recorre de izquierda a derecha. */
+.armando-esq { position: absolute; inset: 0; }
+.armando-esq::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, transparent 45%, rgba(18, 17, 15, .10) 100%);
+}
+.armando-esq > i {
+  position: absolute; left: 9%;
+  height: 4.5%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--line-soft) 0%, var(--paper-2) 40%, var(--line-soft) 80%);
+  background-size: 220% 100%;
+  animation: armando-brillo 1.6s ease-in-out infinite;
+}
+.armando-esq > i:nth-child(1) { top: 66%; width: 28%; height: 3%; border-radius: 100px; }
+.armando-esq > i:nth-child(2) { top: 72%; width: 74%; height: 6.5%; animation-delay: 120ms; }
+.armando-esq > i:nth-child(3) { top: 80.5%; width: 52%; height: 6.5%; animation-delay: 240ms; }
+.armando-esq > i:nth-child(4) { top: 90%; width: 40%; height: 3%; animation-delay: 360ms; }
+
+@keyframes armando-gira { to { transform: rotate(360deg); } }
+@keyframes armando-llena { from { width: 0; } to { width: 93%; } }
+@keyframes armando-aparece { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes armando-brillo { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .armando-esq > i { animation: none; }
+  .armando-c, .armando-s { animation: none; }
+}
+
+/* ── La caja del modal "subí una a tu historia" ───────────────────────────── */
+/* 9:16 de verdad: el alto manda y el ancho sale de la proporción, así que la
+   pieza se ve ENTERA. Antes el ancho mandaba y el alto tenía un tope, la caja
+   dejaba de ser 9:16 y la imagen se recortaba con cover. */
+.hist-modal-pv {
+  position: relative;
+  /* El ancho sale del alto que entra en pantalla, y si la pantalla es más
+     angosta que eso, manda el ancho y el alto lo sigue: la caja es 9:16 en
+     los dos casos, nunca más ancha con bandas ni recortada. */
+  width: min(100%, calc(min(58dvh, 520px) * 9 / 16));
+  aspect-ratio: 9 / 16;
+  margin: 0 auto;
+  /* .modal-b es una grilla y estira a sus hijos al ancho entero. */
+  justify-self: center;
+  border-radius: var(--r-2);
+  overflow: hidden;
+  background: var(--paper-3);
+  display: grid; place-items: center;
+}
+.hist-modal-pv > img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.hist-modal-pv .hist-vacio { padding: var(--s-4); }
 
 .hist-vacio {
   padding: var(--s-5); text-align: center;
