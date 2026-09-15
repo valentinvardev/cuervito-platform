@@ -2094,6 +2094,56 @@
 }
 .hist-pista svg { width: 13px; height: 13px; }
 .hist-pista .armando-anillo { width: 12px; height: 12px; border-width: 2px; border-color: rgba(255,255,255,.35); border-top-color: #fff; }
+/* Mientras se arrastra el aviso cambia a "soltá para fijar": es el momento en
+   que hay que decir qué hace soltar. Y al fijarse, se pinta de listo. */
+.hist-pista[data-tipo="soltar"] { background: rgba(18, 17, 15, .82); }
+.hist-pista[data-tipo="ok"] {
+  background: var(--ok);
+  color: #fff;
+  animation: pista-ok 260ms cubic-bezier(.2, .8, .3, 1) both;
+}
+@keyframes pista-ok { from { opacity: 0; transform: translate(-50%, 6px) scale(.96); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+
+/* Al soltar, el borde de la zona de la foto parpadea una vez con el acento:
+   es el "clic" visual de que el encuadre quedó tomado. */
+.hist-arr[data-fijado="1"] { animation: arr-fijado 700ms ease-out both; }
+@keyframes arr-fijado {
+  0% { box-shadow: inset 0 0 0 3px var(--accent); }
+  100% { box-shadow: inset 0 0 0 0 transparent; }
+}
+
+/* El chip de arriba: dice que el encuadre es manual y ofrece volver al
+   automático. Está mientras haya un encuadre fijado, porque sin él nada en
+   la pantalla dice que la foto no está donde sharp la puso. */
+.hist-chip {
+  position: absolute;
+  top: 10px; right: 10px;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 6px 5px 11px;
+  border-radius: 100px;
+  background: rgba(18, 17, 15, .72);
+  color: #fff;
+  font-size: 11.5px; font-weight: 500;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: pista-aparece 220ms ease both;
+}
+.hist-chip svg { width: 12px; height: 12px; }
+.hist-chip button {
+  border: 0; cursor: pointer;
+  padding: 3px 8px; border-radius: 100px;
+  background: rgba(255, 255, 255, .16);
+  color: #fff;
+  font-family: var(--sans); font-size: 11px; font-weight: 500;
+  transition: background 140ms ease;
+}
+.hist-chip button:hover { background: rgba(255, 255, 255, .28); }
+@keyframes pista-aparece { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hist-arr[data-fijado="1"], .hist-pista[data-tipo="ok"], .hist-chip { animation: none; }
+}
 
 /* ── Armando la pieza ─────────────────────────────────────────────────────── */
 /* Tapa la caja entera. Con data-sobre hay una imagen anterior abajo y el

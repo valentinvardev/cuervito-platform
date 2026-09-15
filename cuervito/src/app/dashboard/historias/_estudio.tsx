@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, ImageOff, Move } from "lucide-react";
+import { Check, Download, ImageOff, Lock, Move } from "lucide-react";
 
 import {
   cajaFoto,
@@ -53,7 +53,14 @@ export function Estudio({ eventos }: { eventos: EventoOp[] }) {
   // hasta que llega el render nuevo: si se apagara al soltar, la foto pegaría
   // un salto a la posición vieja y volvería un segundo después.
   const [capa, setCapa] = useState(false);
-  const [encuadrado, setEncuadrado] = useState(false);
+  // Soltar es fijar, y tiene que verse: "fijando" desde que se suelta hasta
+  // que llega el render con ese punto, "fijado" un par de segundos después,
+  // y el borde parpadea una vez al soltar. Sin esto, soltar no hace nada
+  // visible hasta que aparece la pieza nueva, y parece que no tomó.
+  const [fijado, setFijado] = useState<"no" | "fijando" | "fijado">("no");
+  const [parpadeo, setParpadeo] = useState(false);
+  const esperandoFijar = useRef(false);
+  const timerFijado = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [salida, setSalida] = useState<string | null>(null);
   const [generando, setGenerando] = useState(false);
@@ -106,7 +113,8 @@ export function Estudio({ eventos }: { eventos: EventoOp[] }) {
     setFoco(null);
     setFocoAuto(null);
     setFocoVivo(null);
-    setEncuadrado(false);
+    setFijado("no");
+    esperandoFijar.current = false;
   }, [fotoId]);
 
   // ── El render ─────────────────────────────────────────────────────────────
@@ -139,6 +147,13 @@ export function Estudio({ eventos }: { eventos: EventoOp[] }) {
       if (blobAnterior.current) URL.revokeObjectURL(blobAnterior.current);
       blobAnterior.current = url;
       setSalida(url);
+      // Llegó la pieza con el encuadre que se soltó: ahora sí está fijado.
+      if (esperandoFijar.current) {
+        esperandoFijar.current = false;
+        setFijado("fijado");
+        if (timerFijado.current) clearTimeout(timerFijado.current);
+        timerFijado.current = setTimeout(() => setFijado("no"), 2400);
+      }
     } catch {
       if (turno.current === mio) setError("No pudimos armar la historia.");
     } finally {
@@ -158,6 +173,7 @@ export function Estudio({ eventos }: { eventos: EventoOp[] }) {
   useEffect(() => {
     return () => {
       if (blobAnterior.current) URL.revokeObjectURL(blobAnterior.current);
+      if (timerFijado.current) clearTimeout(timerFijado.current);
     };
   }, []);
 
@@ -210,16 +226,26 @@ export function Estudio({ eventos }: { eventos: EventoOp[] }) {
     if (!arrastre.current) return;
     arrastre.current = null;
     setArrastrando(false);
-    setEncuadrado(true);
     // Soltar es pedir el render con ese punto. Si no se movió nada, `foco`
-    // no cambia y no se pide nada.
-    setFoco((actual) => {
-      const nuevo = focoVivo;
-      if (!nuevo) return actual;
-      if (actual?.x === nuevo.x && actual?.y === nuevo.y) return actual;
-      return nuevo;
-    });
-    if (!focoVivo || (foco?.x === focoVivo.x && foco?.y === focoVivo.y)) setCapa(false);
+    // no cambia, no se pide nada y no hay nada que fijar.
+    const cambio = !!focoVivo && !(foco?.x === focoVivo.x && foco?.y === focoVivo.y);
+    if (!cambio) {
+      setCapa(false);
+      return;
+    }
+    setFoco(focoVivo);
+    esperandoFijar.current = true;
+    setFijado("fijando");
+    setParpadeo(true);
+    setTimeout(() => setParpadeo(false), 750);
+  }
+
+  /** Volver a dejar que sharp elija el encuadre. */
+  function volverAutomatico() {
+    esperandoFijar.current = false;
+    setFoco(null);
+    setFocoVivo(null);
+    setFijado("no");
   }
 
   if (eventos.length === 0) {
@@ -358,6 +384,7 @@ export function Estudio({ eventos }: { eventos: EventoOp[] }) {
             <div
               className="hist-arr"
               data-viva={capa ? "1" : undefined}
+              data-fijado={parpadeo ? "1" : undefined}
               style={{
                 left: pct(caja.left / f.ancho),
                 top: pct(caja.top / f.alto),
@@ -384,16 +411,43 @@ export function Estudio({ eventos }: { eventos: EventoOp[] }) {
             </div>
           )}
 
-          {fotoSel && salida && !arrastrando && generando && capa && (
-            <div className="hist-pista" role="status">
-              <span className="armando-anillo" aria-hidden="true" />
-              Actualizando el encuadre…
+          {/* El aviso de abajo, en cuatro momentos: qué hacer, qué hace
+              soltar, que se está fijando, y que quedó fijado. */}
+          {fotoSel && salida && arrastrando && (
+            <div className="hist-pista" data-tipo="soltar" aria-hidden="true">
+              <Move />
+              Soltá para fijar el encuadre
             </div>
           )}
-          {fotoSel && salida && !arrastrando && !generando && (
+          {fotoSel && salida && !arrastrando && fijado === "fijando" && (
+            <div className="hist-pista" role="status">
+              <span className="armando-anillo" aria-hidden="true" />
+              Fijando el encuadre…
+            </div>
+          )}
+          {fotoSel && salida && !arrastrando && fijado === "fijado" && (
+            <div className="hist-pista" data-tipo="ok" role="status">
+              <Check />
+              Encuadre fijado
+            </div>
+          )}
+          {fotoSel && salida && !arrastrando && !generando && fijado === "no" && (
             <div className="hist-pista" aria-hidden="true">
               <Move />
-              {encuadrado ? "Arrastrá para ajustar el encuadre" : "Arrastrá la foto para encuadrarla"}
+              {foco ? "Arrastrá para ajustar el encuadre" : "Arrastrá la foto para encuadrarla"}
+            </div>
+          )}
+
+          {/* Mientras haya un encuadre a mano, se dice, y se puede volver al
+              automático. Va después de la zona de arrastre para quedar
+              encima y que el botón reciba el click. */}
+          {fotoSel && salida && foco && !arrastrando && (
+            <div className="hist-chip">
+              <Lock />
+              Encuadre manual
+              <button type="button" onClick={volverAutomatico} disabled={generando}>
+                Automático
+              </button>
             </div>
           )}
         </div>
