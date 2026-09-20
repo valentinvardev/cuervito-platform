@@ -40,11 +40,26 @@ const THUMB_QUALITY = 72;
  */
 const OPC_SHARP = { limitInputPixels: 60_000_000, failOn: "error" as const };
 
+/* libvips abre un hilo por núcleo POR OPERACIÓN, y acá hay varias a la vez.
+
+   En una máquina de 16 núcleos eso son 16 hilos por foto y hasta 48 a la vez,
+   peleándose por un VPS que además sirve el sitio. El trabajo por foto es
+   chico —un resize y cuatro encodes— así que repartirlo en más hilos no lo
+   hace más rápido, sólo agrega cambios de contexto y picos de memoria. El
+   paralelismo que sí queremos es entre fotos, y ése lo gobierna el semáforo
+   de más abajo.
+
+   La caché de libvips también se acota: guarda operaciones y buffers, y en una
+   tanda de cuatrocientas fotos distintas no reusa nada, así que son 50 MB
+   retenidos para nada. */
+sharp.concurrency(1);
+sharp.cache({ memory: 32, files: 0, items: 50 });
+
 // ── Concurrency limiter ───────────────────────────────────────────────────────
 // Sharp is CPU + memory intensive. Without a cap, uploading 50 photos at once
 // fires 50 concurrent resize+watermark+S3-upload operations, which OOMs the
 // VPS and produces 502s. Queue extras and process at most 3 at a time.
-export const MAX_CONCURRENT = 3;
+export const MAX_CONCURRENT = 2;
 
 /* El contador vive en globalThis, como el bus de ventas y el cliente de Prisma.
 
@@ -160,14 +175,24 @@ export type PreviewResult = {
   error?: { mensaje: string; permanente: boolean };
 };
 
-export async function generatePreview(photoId: string): Promise<PreviewResult> {
+export async function generatePreview(
+  photoId: string,
+  signal?: AbortSignal,
+): Promise<PreviewResult> {
   await tomarSlotSharp();
   try {
-    return await _generatePreview(photoId);
+    return await _generatePreview(photoId, signal);
   } finally {
     soltarSlotSharp();
   }
 }
+
+/** Abandonada por quien la pidió: no tiene sentido seguir gastando en ella. */
+const ABORTADO: PreviewResult = {
+  watermarkedKey: null,
+  rekognitionBytes: null,
+  error: { mensaje: "abandonado por tiempo", permanente: false },
+};
 
 /**
  * Este fallo, reintentado, da lo mismo?
@@ -182,7 +207,10 @@ function esPermanente(err: unknown): boolean {
   return /unsupported image format|VipsJpeg|premature end|input buffer|pixel limit|unsupported/i.test(m);
 }
 
-async function _generatePreview(photoId: string): Promise<PreviewResult> {
+async function _generatePreview(
+  photoId: string,
+  signal?: AbortSignal,
+): Promise<PreviewResult> {
   const photo = await db.photo.findUnique({
     where: { id: photoId },
     select: {
@@ -203,10 +231,13 @@ async function _generatePreview(photoId: string): Promise<PreviewResult> {
     };
   }
 
+  if (signal?.aborted) return ABORTADO;
+
   let raw: Uint8Array;
   try {
-    raw = await getS3ObjectBytes(photo.storageKey);
+    raw = await getS3ObjectBytes(photo.storageKey, { signal });
   } catch (err) {
+    if (signal?.aborted) return ABORTADO;
     console.error("[watermark] download failed:", photo.storageKey, err);
     // Transitorio salvo que el objeto de verdad no esté: la red se cae, S3
     // tiene un mal momento. Si no está, no va a aparecer reintentando.
@@ -221,7 +252,11 @@ async function _generatePreview(photoId: string): Promise<PreviewResult> {
     };
   }
 
-  const buf = Buffer.from(raw);
+  /* Sin copiar: Buffer.from(Uint8Array) duplica, y son 16 MB por foto que
+     quedan vivos hasta que termina todo. Envolver el mismo ArrayBuffer no
+     copia nada, y sharp no escribe sobre lo que le entra. */
+  const buf = Buffer.from(raw.buffer, raw.byteOffset, raw.byteLength);
+  if (signal?.aborted) return ABORTADO;
 
   try {
     /* metadata() ADENTRO del try.
@@ -280,6 +315,11 @@ async function _generatePreview(photoId: string): Promise<PreviewResult> {
     const rekognitionBytes = await sharp(Buffer.from(resized), OPC_SHARP)
       .jpeg({ quality: PREVIEW_QUALITY })
       .toBuffer();
+
+    /* El trabajo pesado terminó. Si quien la pidió ya se cansó, no se sube
+       nada ni se toca la base: la foto queda como estaba y la próxima pasada
+       la vuelve a tomar entera. */
+    if (signal?.aborted) return ABORTADO;
 
     // Delete stale previews before writing new ones
     const stale: string[] = [];

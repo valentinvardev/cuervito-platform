@@ -435,7 +435,7 @@ async function elegir(n: number): Promise<string[]> {
 
 /* ── Procesar una ───────────────────────────────────────────────────────── */
 
-async function procesarUna(id: string): Promise<Salida> {
+async function procesarUna(id: string, signal?: AbortSignal): Promise<Salida> {
   const foto = await db.photo.findUnique({
     where: { id },
     select: {
@@ -455,7 +455,7 @@ async function procesarUna(id: string): Promise<Salida> {
   if (!foto || foto.deletedAt || foto.fileSize === null) return { tipo: "ok" };
 
   if (!foto.previewKey) {
-    const r = await generatePreview(foto.id);
+    const r = await generatePreview(foto.id, signal);
     if (!r.watermarkedKey) {
       const m = r.error?.mensaje ?? "no se pudo generar el preview";
       return r.error?.permanente
@@ -521,19 +521,32 @@ async function procesarUna(id: string): Promise<Salida> {
  * terminar bien, y dejarlo correr retiene un permiso del semáforo de sharp.
  */
 async function procesarConTope(id: string): Promise<Salida> {
+  /* El tope avisa, además de dejar de esperar.
+
+     Antes era sólo un Promise.race: el trabajo perdedor seguía corriendo, con
+     su original de 16 MB en memoria y su permiso del semáforo tomado, hasta
+     que terminaba solo. Con cuatro fotos en vuelo eso se acumula, el servidor
+     se queda sin memoria, todo se vuelve más lento, y más fotos pasan el tope.
+     Se alimenta a sí mismo y no se recupera hasta que alguien reinicia; fue lo
+     que dejó dos álbumes de German con las fotos invisibles.
+
+     Interrumpir una operación de sharp que ya arrancó no se puede. Lo que sí
+     se puede es cortar la descarga de S3 y no arrancar lo que falta, que es
+     casi todo: los encodes que quedan y las tres subidas. */
+  const corte = new AbortController();
   let reloj: ReturnType<typeof setTimeout> | undefined;
   const tope = new Promise<Salida>((resolve) => {
-    reloj = setTimeout(
-      () => resolve({ tipo: "transitorio", motivo: "tope: pasó el tiempo máximo" }),
-      TOPE_UNIDAD_MS,
-    );
+    reloj = setTimeout(() => {
+      corte.abort();
+      resolve({ tipo: "transitorio", motivo: "tope: pasó el tiempo máximo" });
+    }, TOPE_UNIDAD_MS);
     reloj.unref?.();
   });
   try {
-    // La perdedora no se cancela —no hay cómo— pero su rechazo no puede quedar
+    // La perdedora no termina en el acto, pero su rechazo no puede quedar
     // suelto: un unhandledRejection en Next tumba el proceso entero.
     return await Promise.race([
-      procesarUna(id).catch((e: unknown) => ({
+      procesarUna(id, corte.signal).catch((e: unknown) => ({
         tipo: "transitorio" as const,
         motivo: `error: ${e instanceof Error ? e.message : String(e)}`,
       })),
@@ -541,6 +554,7 @@ async function procesarConTope(id: string): Promise<Salida> {
     ]);
   } finally {
     clearTimeout(reloj);
+    corte.abort();
   }
 }
 

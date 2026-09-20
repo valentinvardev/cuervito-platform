@@ -32,6 +32,23 @@ existir: una vez es un descuido, dos es una tendencia.
   forma de la config, sin server-only, importada por el editor y el servidor.
 - Estado: activo
 
+## Trabajo en vuelo que nadie gobierna
+- Primera vez: 2026-09-20 (registrado; la primera aparición fue anterior)
+- Ocurrencias: 2 (el `void (async …)` del commit, que moría con el proceso;
+  el `Promise.race` del tope, que abandona pero no corta)
+- Qué pasa: se lanza trabajo pesado y después se deja de mirarlo. La primera
+  vez se dejó de mirarlo porque no se esperaba; la segunda porque se cansó de
+  esperar. En los dos casos el trabajo siguió existiendo, consumiendo memoria
+  y permisos, sin que nadie lo cuente ni lo pueda parar.
+- Por qué importa: el costo no aparece en la prueba, aparece bajo carga. Y no
+  es lineal: el trabajo abandonado hace más lento al que queda, que entonces
+  también se abandona. Las dos veces terminó en fotos cobrables e invisibles
+  en un evento publicado, y las dos veces se descubrió por una queja.
+- Señal temprana: si lanzás algo que tarda y no guardás la forma de
+  cancelarlo, no lo lanzaste, lo soltaste. Un `Promise.race` con un timeout es
+  la versión que más se disfraza de correcta.
+- Estado: activo
+
 ## Estado derivado que se calcula una vez y nunca se reconcilia
 - Primera vez: 2026-09-08 (registrado; la primera aparición fue el relleno de miniaturas)
 - Ocurrencias: 2 (thumbKey → hizo falta `rellenar-miniaturas.mjs`; previewGeneratedAt → 160 fotos cobrables invisibles en un evento publicado)

@@ -40,9 +40,15 @@ export const env = createEnv({
       .enum(["true", "false"])
       .default(process.env.NODE_ENV === "production" ? "true" : "false")
       .transform((v) => v === "true"),
-    /* Cuántas fotos a la vez. El techo real es sharp: cada decode de 24 MP son
-       cientos de MB, y el semáforo de watermark.ts ya lo acota a 3. */
-    PROCESADOR_A_LA_VEZ: z.coerce.number().int().min(1).max(12).default(4),
+    /* Cuántas fotos a la vez, a la par de los permisos de sharp.
+
+       Estaba en 4 contra 3 permisos, y sobraba un obrero. Sobrar no es
+       gratis: el que espera un permiso lo espera CON el reloj del tope
+       corriendo, así que bajo carga gastaba sus cuatro minutos sin tocar la
+       foto, la marcaba como fallida y le sumaba un intento. A los cuatro
+       intentos la cola la aparta. Fotos que nunca se intentaron quedaban
+       apartadas por no haber conseguido turno. */
+    PROCESADOR_A_LA_VEZ: z.coerce.number().int().min(1).max(12).default(2),
     /* Si pm2 corre en fork con UNA instancia, un lease vivo al arrancar es de
        un proceso muerto y se puede liberar: eso repara en minutos en vez de
        esperar el vencimiento. En cluster hay que ponerlo en false. */

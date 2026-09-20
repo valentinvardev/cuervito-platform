@@ -378,6 +378,37 @@ cobrables e invisibles en un evento publicado— la noche de tres deploys
 seguidos. Por eso el trabajo diferido vive en la tabla `Photo` y no en promesas
 sueltas, y por eso `ecosystem.config.cjs` sube el `kill_timeout` a 30 s.
 
+**`Promise.race` no cancela a la perdedora.** El tope de cuatro minutos por
+foto dejaba de ESPERAR el trabajo, pero el trabajo seguía: con su original de
+16 MB en memoria y su permiso del semáforo tomado, hasta que terminaba solo.
+Con cuatro fotos en vuelo eso se acumula, el servidor se queda sin memoria,
+todo tarda más, y más fotos pasan el tope. Se realimenta y no se recupera
+hasta que alguien reinicia. El 19/9 dejó dos álbumes de un fotógrafo con 42 de
+472 fotos visibles, a 0,5 fotos por minuto contra las 13 a 20 de siempre. Hoy
+el tope aborta de verdad: corta la descarga de S3 y no arranca lo que falta.
+Lo que ya está adentro de sharp no se puede interrumpir, y eso sigue siendo
+cierto.
+
+**libvips abre un hilo por núcleo POR OPERACIÓN.** `sharp.concurrency()` da el
+número de núcleos por defecto: en una máquina de 16, con tres fotos a la vez,
+son 48 hilos peleándose por un VPS que además sirve el sitio. Medido, no
+cambia nada el tiempo por foto (494 ms con un hilo, 548 ms con dieciséis:
+repartir un resize y tres encodes en más hilos sólo agrega coordinación). Se
+fija en 1 en `watermark.ts`, y el paralelismo que importa —entre fotos— lo
+gobierna el semáforo.
+
+**Rasterizar un SVG del tamaño de la foto cuesta por foto.** La marca de agua
+se arma como un `<pattern>` de SVG y se rasteriza a los píxeles de la foto.
+Hacerlo en cada foto eran 800 ms y 25 MB de pico que se repetían 472 veces
+para dar exactamente el mismo resultado, porque las fotos de un evento miden
+todas lo mismo. Se rasteriza una vez por tamaño y se guarda en crudo en
+`globalThis` (dos entradas: apaisado y vertical).
+
+**Un semáforo limita a los que TRABAJAN, no a los que ESPERAN.** `Promise.all`
+sobre una tanda de veinte fotos arranca veinte descargas de S3 y retiene
+veinte originales de 16 MB mientras hacen cola por un permiso. Son 320 MB para
+un trabajo que igual va a salir de a dos. Las tandas van en serie.
+
 **`info.cropOffsetLeft` de sharp es negativo.** Con `position: strategy.attention`,
 `toBuffer({ resolveWithObject: true })` devuelve cuánto se CORRIÓ la imagen
 escalada, no dónde empieza el recorte: `-740` significa que el recorte empieza

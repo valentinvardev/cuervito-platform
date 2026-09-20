@@ -60,10 +60,15 @@ declare global {
     | {
         cfg: { valor: ConfigMarca; leidaEn: number } | null;
         unidades: Map<string, Unidad>;
+        capas: Map<string, Capa>;
       }
     | undefined;
 }
-const estado = (globalThis.__cuervito_marca__ ??= { cfg: null, unidades: new Map<string, Unidad>() });
+const estado = (globalThis.__cuervito_marca__ ??= {
+  cfg: null,
+  unidades: new Map<string, Unidad>(),
+  capas: new Map<string, Capa>(),
+});
 const CFG_TTL_MS = 15_000;
 
 export function analizarConfig(crudo: unknown): ConfigMarca {
@@ -98,11 +103,13 @@ export async function guardarConfigMarca(cfg: ConfigMarca): Promise<void> {
   });
   estado.cfg = null;
   estado.unidades.clear();
+  estado.capas.clear();
 }
 
 export function vaciarCacheMarca(): void {
   estado.cfg = null;
   estado.unidades.clear();
+  estado.capas.clear();
 }
 
 /* ── La unidad ──────────────────────────────────────────────────────────── */
@@ -281,12 +288,29 @@ export function capaMarca(opts: {
   return { input: Buffer.from(svg), blend: "over" };
 }
 
+/* ── La capa, armada una sola vez ───────────────────────────────────────── */
+
+/** La capa ya rasterizada: píxeles crudos, lista para apoyar sobre la foto. */
+export type Capa = { datos: Buffer; ancho: number; alto: number };
+
+/* Dos entradas: un evento son fotos apaisadas y verticales, y nada más. Cada
+   una ocupa ancho×alto×4 bytes —unos 15 MB para 2400×1600— y eso es barato
+   comparado con lo que costaba rasterizarla de nuevo en cada foto. */
+const CAPAS_MAX = 2;
+
 /**
  * Todo junto: la capa lista para una foto de este tamaño.
  *
  * `imagen` es el PNG subido (de la plataforma o del fotógrafo) o null para
  * usar el logo de encontrate. `conTexto` va en false para la marca de un
  * fotógrafo: su logo con "encontrate.app" debajo no es de nadie.
+ *
+ * La capa se rasteriza UNA vez por tamaño de foto y se guarda en píxeles
+ * crudos. Antes se rasterizaba el SVG en cada foto, y eso costaba 800 ms y 25
+ * MB de pico POR FOTO: con cuatro fotos en vuelo era lo que empujaba al
+ * servidor a quedarse sin memoria, y una vez que empieza a swapear todo tarda
+ * treinta veces más. Las fotos de un evento miden todas lo mismo, así que la
+ * primera paga y las otras cuatrocientas no pagan nada.
  */
 export async function capaParaFoto(opts: {
   anchoFoto: number;
@@ -295,12 +319,38 @@ export async function capaParaFoto(opts: {
   cfg: ConfigMarca;
   conTexto: boolean;
 }): Promise<sharp.OverlayOptions> {
-  const ancho = Math.round(opts.anchoFoto * opts.cfg.escala);
+  const { anchoFoto: W, altoFoto: H, cfg } = opts;
+  const clave = createHash("sha1")
+    .update(opts.imagen ? opts.imagen.subarray(0, 4096) : Buffer.from("logo"))
+    .update(`|${opts.imagen?.length ?? 0}|${W}x${H}|${opts.conTexto ? 1 : 0}|`)
+    .update(JSON.stringify(cfg))
+    .digest("hex");
+
+  const guardada = estado.capas.get(clave);
+  if (guardada) {
+    return {
+      input: guardada.datos,
+      raw: { width: guardada.ancho, height: guardada.alto, channels: 4 },
+      blend: "over",
+    };
+  }
+
+  const ancho = Math.round(W * cfg.escala);
   const unidad = await armarUnidad({
     imagen: opts.imagen,
-    cfg: opts.cfg,
+    cfg,
     ancho,
     conTexto: opts.conTexto,
   });
-  return capaMarca({ anchoFoto: opts.anchoFoto, altoFoto: opts.altoFoto, unidad, cfg: opts.cfg });
+  const svg = capaMarca({ anchoFoto: W, altoFoto: H, unidad, cfg });
+  const datos = await sharp(svg.input as Buffer).ensureAlpha().raw().toBuffer();
+
+  if (estado.capas.size >= CAPAS_MAX) {
+    // La más vieja primero: Map conserva el orden de inserción.
+    const vieja = estado.capas.keys().next().value;
+    if (vieja !== undefined) estado.capas.delete(vieja);
+  }
+  estado.capas.set(clave, { datos, ancho: W, alto: H });
+
+  return { input: datos, raw: { width: W, height: H, channels: 4 }, blend: "over" };
 }

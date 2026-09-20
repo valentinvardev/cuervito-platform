@@ -58,11 +58,21 @@ export async function POST(req: NextRequest) {
     select: { id: true },
   });
 
-  // generatePreview toma su propio turno del semáforo de sharp, así que
-  // lanzarlas juntas no abre más de tres a la vez.
-  const resultados = await Promise.all(fotos.map((p) => generatePreview(p.id)));
-  const done = resultados.filter((r) => r.watermarkedKey).length;
-  const failed = resultados.length - done;
+  /* De a una, en serie.
+
+     Estaba con Promise.all sobre la tanda entera. El semáforo de sharp limita
+     cuántas se PROCESAN a la vez, pero no cuántas ESPERAN: veinte llamadas
+     arrancan sus veinte descargas de S3 y retienen veinte originales de 16 MB
+     mientras hacen cola. Son 320 MB por tanda, encima de lo que ya está
+     haciendo el procesador. En serie tarda lo mismo de punta a punta —el
+     cuello es el semáforo igual— y no acumula nada. */
+  let done = 0;
+  let failed = 0;
+  for (const p of fotos) {
+    const r = await generatePreview(p.id);
+    if (r.watermarkedKey) done++;
+    else failed++;
+  }
 
   const cursor = fotos.length === TANDA ? fotos[fotos.length - 1]!.id : null;
 
