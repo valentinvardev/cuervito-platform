@@ -23,6 +23,14 @@ if (!bucket) {
 }
 
 export const s3 = new S3Client({
+  /* Dos intentos, no tres.
+
+     Con descargas de seis minutos, tres intentos son dieciocho minutos
+     gastados antes de darse por vencido, y el tope de la cola corta mucho
+     antes: el reintento del SDK nunca llega a servir y sólo quema tiempo del
+     presupuesto. Reintentar una vez cubre el corte de red pasajero, que es
+     para lo que está. */
+  maxAttempts: 2,
   region,
   requestChecksumCalculation: "WHEN_REQUIRED",
   responseChecksumValidation: "WHEN_REQUIRED",
@@ -42,11 +50,23 @@ export const s3 = new S3Client({
        solo error en el log. Ya pasó en este VPS: scripts/rellenar-miniaturas.mjs
        tiene el mismo arreglo escrito a mano.
 
-       socketTimeout es el que importa acá: requestTimeout sólo cubre hasta los
-       encabezados, y lo que se cuelga es el cuerpo. */
-    connectionTimeout: 10_000,
-    requestTimeout: 60_000,
-    socketTimeout: 60_000,
+       socketTimeout es el que importa acá, y es de INACTIVIDAD: cuenta el
+       tiempo sin recibir datos, no lo que dura la descarga. Eso es justo lo
+       que hace falta, porque distingue una conexión colgada de una lenta.
+
+       Estaban los dos en 60 s, y eso no distinguía nada: mataba a las dos. El
+       20/9 el VPS bajaba a 43 KB/s y un original de 15 MB necesita seis
+       minutos; moría a los 6 MB, el SDK reintentaba, y volvía a morir. La
+       foto no se procesaba NUNCA, con el núcleo al 4 % esperando. Un evento
+       de 472 fotos quedó con 57 visibles.
+
+       Ahora el corte por inactividad son dos minutos —una conexión que no
+       manda un byte en dos minutos está muerta— y la duración total tiene
+       aire para una descarga lenta. El tope de la cola, que sí sabe cuánto
+       vale la pena esperar, es el que manda arriba de esto. */
+    connectionTimeout: 15_000,
+    requestTimeout: 600_000,
+    socketTimeout: 120_000,
     throwOnRequestTimeout: true,
   }),
   ...(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY
