@@ -2,6 +2,7 @@ import "server-only";
 
 import sharp from "sharp";
 
+import { cronometro } from "~/server/diagnostico";
 import { db } from "~/server/db";
 import { capaParaFoto, leerConfigMarca } from "~/server/marca-agua";
 import {
@@ -231,12 +232,17 @@ async function _generatePreview(
     };
   }
 
+  const reloj = cronometro();
+  reloj.marca("base");
   if (signal?.aborted) return ABORTADO;
 
   let raw: Uint8Array;
   try {
     raw = await getS3ObjectBytes(photo.storageKey, { signal });
   } catch (err) {
+    reloj.cerrar(photoId, signal?.aborted ? "abortada" : "error", {
+      detalle: err instanceof Error ? err.message : String(err),
+    });
     if (signal?.aborted) return ABORTADO;
     console.error("[watermark] download failed:", photo.storageKey, err);
     // Transitorio salvo que el objeto de verdad no esté: la red se cae, S3
@@ -255,8 +261,12 @@ async function _generatePreview(
   /* Sin copiar: Buffer.from(Uint8Array) duplica, y son 16 MB por foto que
      quedan vivos hasta que termina todo. Envolver el mismo ArrayBuffer no
      copia nada, y sharp no escribe sobre lo que le entra. */
+  reloj.marca("descarga");
   const buf = Buffer.from(raw.buffer, raw.byteOffset, raw.byteLength);
-  if (signal?.aborted) return ABORTADO;
+  if (signal?.aborted) {
+    reloj.cerrar(photoId, "abortada", { bytes: raw.byteLength });
+    return ABORTADO;
+  }
 
   try {
     /* metadata() ADENTRO del try.
@@ -267,6 +277,7 @@ async function _generatePreview(
        con error, así que el llamador —que trata esto como "devuelve nulls"—
        se comía un rechazo que nadie atrapa. */
     const meta = await sharp(buf, OPC_SHARP).metadata();
+    reloj.marca("metadata");
     const w = meta.width ?? 1200;
     const h = meta.height ?? 800;
 
@@ -277,6 +288,7 @@ async function _generatePreview(
             .toBuffer()
         : buf;
     const resizedMeta = w > PREVIEW_MAX_WIDTH ? await sharp(resized).metadata() : { width: w, height: h };
+    reloj.marca("achicar");
 
     // Generate watermarked preview FIRST so the public-facing image is
     // guaranteed correct before anything else touches state. Each pipeline
@@ -287,16 +299,19 @@ async function _generatePreview(
       resizedMeta.height ?? h,
       photo.ownerId,
     );
+    reloj.marca("capa-marca");
     const watermarkedOut = await sharp(Buffer.from(resized), OPC_SHARP)
       .composite([composite])
       .webp({ quality: PREVIEW_QUALITY })
       .toBuffer();
+    reloj.marca("estampar");
 
     // Clean preview (same dimensions/quality, no watermark) for the
     // photographer's own dashboard.
     const cleanOut = await sharp(Buffer.from(resized), OPC_SHARP)
       .webp({ quality: PREVIEW_QUALITY })
       .toBuffer();
+    reloj.marca("limpia");
 
     /* La miniatura sale de la imagen YA MARCADA y no del original.
 
@@ -308,6 +323,7 @@ async function _generatePreview(
       .resize({ width: THUMB_WIDTH, withoutEnlargement: true })
       .webp({ quality: THUMB_QUALITY })
       .toBuffer();
+    reloj.marca("miniatura");
 
     // Derivado JPEG para Rekognition. No se sube a S3: viaja en memoria
     // hasta runOcr/runFaceIndex y se descarta. Reusa `resized`, así que
@@ -315,11 +331,15 @@ async function _generatePreview(
     const rekognitionBytes = await sharp(Buffer.from(resized), OPC_SHARP)
       .jpeg({ quality: PREVIEW_QUALITY })
       .toBuffer();
+    reloj.marca("jpeg-rek");
 
     /* El trabajo pesado terminó. Si quien la pidió ya se cansó, no se sube
        nada ni se toca la base: la foto queda como estaba y la próxima pasada
        la vuelve a tomar entera. */
-    if (signal?.aborted) return ABORTADO;
+    if (signal?.aborted) {
+      reloj.cerrar(photoId, "abortada", { bytes: raw.byteLength });
+      return ABORTADO;
+    }
 
     // Delete stale previews before writing new ones
     const stale: string[] = [];
@@ -329,6 +349,7 @@ async function _generatePreview(
     if (stale.length > 0) {
       await deleteS3Objects(stale).catch(() => undefined);
     }
+    reloj.marca("borrar-viejas");
 
     const cleanKey = previewCleanPhotoKey(photo.ownerId, photo.eventId, photo.id);
     const watermarkedKey = previewPhotoKey(photo.ownerId, photo.eventId, photo.id);
@@ -338,6 +359,7 @@ async function _generatePreview(
       putS3Object(watermarkedKey, watermarkedOut, "image/webp", CACHE_MOSTRAR),
       putS3Object(thumbKey, thumbOut, "image/webp", CACHE_MOSTRAR),
     ]);
+    reloj.marca("subir");
 
     await db.photo.update({
       where: { id: photo.id },
@@ -356,8 +378,13 @@ async function _generatePreview(
       },
     });
 
+    reloj.cerrar(photoId, "ok", { bytes: raw.byteLength });
     return { watermarkedKey, rekognitionBytes: new Uint8Array(rekognitionBytes) };
   } catch (err) {
+    reloj.cerrar(photoId, signal?.aborted ? "abortada" : "error", {
+      bytes: raw.byteLength,
+      detalle: err instanceof Error ? err.message : String(err),
+    });
     const permanente = esPermanente(err);
     console.error(
       `[watermark] error for photoId=${photo.id} permanente=${permanente}:`,

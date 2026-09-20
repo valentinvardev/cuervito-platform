@@ -6,6 +6,7 @@ import type { Prisma } from "../../generated/prisma";
 
 import { env } from "~/env";
 import { db } from "~/server/db";
+import { ultimosTiempos } from "~/server/diagnostico";
 import { evaluarDorsales } from "~/server/dorsales";
 import { bytesParaRekognition, runFaceIndex, runOcr } from "~/server/rekognition";
 import { deleteS3Objects, headObject } from "~/server/s3";
@@ -46,7 +47,7 @@ import { hasRecognitionQuota } from "~/server/quotas";
 const A_LA_VEZ = env.PROCESADOR_A_LA_VEZ;
 
 /** Cuánto dura la posesión de una foto. */
-const LEASE_MS = 10 * 60_000;
+const LEASE_MS = 25 * 60_000;
 /**
  * Tope de una unidad de trabajo. ESTRICTAMENTE menor que LEASE_MS.
  *
@@ -54,7 +55,14 @@ const LEASE_MS = 10 * 60_000;
  * reclamar la misma foto mientras la primera sigue escribiendo, y las dos
  * borrarían y reescribirían las mismas tres claves de S3.
  */
-const TOPE_UNIDAD_MS = 4 * 60_000;
+/* Subido de 4 a 12 minutos el 20/9.
+
+   Con el tope en cuatro, dos álbumes enteros no avanzaban NADA: cada foto
+   pasaba el tope, se soltaba con error, y la siguiente pasada volvía a
+   empezar de cero. Cero fotos por hora es peor que lentas. Doce deja
+   terminar a la que tarda de más, y el diagnóstico de abajo dice por qué
+   tarda. */
+const TOPE_UNIDAD_MS = 12 * 60_000;
 
 /** Intentos antes de dejarla quieta. */
 const MAX_INTENTOS = 4;
@@ -784,6 +792,10 @@ export async function estadoCola() {
       ? Math.round((Date.now() - estado.ultimaPasadaAt) / 1000)
       : null,
     resumen: await resumen(),
+    // Los tiempos por etapa de las últimas fotos. También quedan en
+    // Setting "procesador:tiempos", que es lo que se puede mirar sin entrar
+    // al servidor.
+    tiempos: ultimosTiempos(),
   };
 }
 
