@@ -536,7 +536,7 @@ async function procesarConTope(id: string): Promise<Salida> {
      que terminaba solo. Con cuatro fotos en vuelo eso se acumula, el servidor
      se queda sin memoria, todo se vuelve más lento, y más fotos pasan el tope.
      Se alimenta a sí mismo y no se recupera hasta que alguien reinicia; fue lo
-     que dejó dos álbumes de German con las fotos invisibles.
+     que dejó dos álbumes de un fotógrafo con las fotos invisibles.
 
      Interrumpir una operación de sharp que ya arrancó no se puede. Lo que sí
      se puede es cortar la descarga de S3 y no arrancar lo que falta, que es
