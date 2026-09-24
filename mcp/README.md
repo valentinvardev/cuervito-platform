@@ -47,6 +47,7 @@ Los períodos se cuentan en días calendario de `METRICS_TZ` (Buenos Aires por d
 | `get_usage` | período | Eventos creados, fotos subidas, búsquedas. |
 | `get_sales` | período | Totales de ventas, por moneda. |
 | `get_weekly_snapshot` | `week_start?`, `include_previous_week?` | Todo lo anterior para una semana, con deltas contra la anterior. |
+| `get_aws_costs` | `month?` | Gasto de AWS del mes: estimado de encontrate y, si está activado, el medido de la cuenta. |
 
 **Período**, para las que lo aceptan:
 
@@ -198,6 +199,62 @@ Una compra es una venta pagada, por la fecha de pago: la misma definición que e
 
 `health_now` es la salud de **ahora**, no la de esa semana: no hay historia de salud guardada, y armarla sería inventarla. `change_pct` es `null` cuando la semana anterior es cero.
 
+### `get_aws_costs`
+
+| Campo | Valores |
+|---|---|
+| `month` | Mes en **UTC**, `YYYY-MM`, que es como factura AWS. Sin esto, el mes en curso. Hasta 24 meses atrás. |
+
+```json
+{
+  "month": { "label": "month", "from": "2026-09-01", "to": "2026-09-30", "timezone": "UTC", "days_elapsed": 23.2, "days_in_month": 30, "is_current_month": true },
+  "estimated": {
+    "scope": "encontrate",
+    "total_usd": 9.8,
+    "projected_month_usd": 12.7,
+    "components": [
+      { "service": "rekognition", "item": "detect_text", "quantity": 1500, "unit": "images", "unit_price_usd": 0.001, "cost_usd": 1.5, "basis": "counted" },
+      { "service": "s3", "item": "storage", "quantity": 80, "unit": "GB-months", "unit_price_usd": 0.023, "cost_usd": 1.84, "basis": "estimated" },
+      { "service": "s3", "item": "transfer_out_processing", "quantity": 22, "unit": "GB", "unit_price_usd": 0.09, "cost_usd": 1.98, "basis": "estimated" }
+    ],
+    "not_included": [{ "item": "cloudfront", "reason": "Los bytes que sirve CloudFront no quedan en la base. …" }],
+    "assumptions": ["Precios de lista de us-east-2, del primer escalón y sin capa gratuita: …"],
+    "prices_verified_on": "2026-09-24",
+    "price_region": "us-east-2"
+  },
+  "measured": { "available": false, "unavailable_reason": "Cost Explorer no está activado en este servidor: …" },
+  "generated_at": "2026-09-23T18:00:00.000Z"
+}
+```
+
+Son dos números distintos, y a propósito:
+
+- **`estimated`** es sólo de encontrate. Es el uso que registra la base por los precios de lista de us-east-2. Cada componente dice su calidad en `basis`: `counted` si la cantidad está contada una por una (los llamados a Rekognition, que la app cuenta antes de hacerlos) o `estimated` si sale de tamaños y supuestos (almacenamiento, pedidos y transferencia de S3). `projected_month_usd` proyecta el mes en curso al ritmo de lo que va, y es `null` en meses pasados.
+- **`measured`** es la factura real, de Cost Explorer. Es de **toda la cuenta de AWS**, que comparte encontrate con otro proyecto, así que no se compara uno a uno con el estimado. Cuando está, `comparison` dice qué parte de la cuenta es de encontrate (`estimated_share_of_account`) y si lo medido de Rekognition coincide con lo contado (`rekognition_ratio`): un valor muy por encima de 1 indica llamados que la app no está contando.
+
+Los precios son del primer escalón y **sin capa gratuita**. Las franquicias gratuitas de AWS (100 GB de salida por mes, 1 TB de CloudFront) son por cuenta, y con la cuenta compartida no se puede saber cuánto le toca a encontrate. Los precios se verificaron el 24/9/2026 contra la API pública de precios de AWS y las páginas oficiales; están con su SKU en `src/costos/precios.ts`.
+
+Lo que no se puede saber desde la base va en `not_included`, con la razón: los bytes que sirve CloudFront, el cómputo de la Lambda, los objetos chicos (portadas, logos) y lo que gasta el otro proyecto.
+
+**Transfer Acceleration.** El recargo es una parte grande del gasto, así que `S3_TRANSFER_ACCELERATION` acepta la fecha en que se prendió: con `2026-09-20`, septiembre la paga sólo desde ese día. La proyección supone que lo que falta del mes va todo acelerado.
+
+**Activar el gasto medido.** Hace falta un usuario de IAM con esta política y nada más, y sus claves en el `.env`:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{ "Effect": "Allow", "Action": ["ce:GetCostAndUsage", "ce:GetCostForecast"], "Resource": "*" }]
+}
+```
+
+```
+AWS_COST_EXPLORER=true
+AWS_ACCESS_KEY_ID=…
+AWS_SECRET_ACCESS_KEY=…
+```
+
+Cost Explorer tiene que estar habilitado en la cuenta: si nunca se abrió, se abre una vez desde la consola de facturación y tarda hasta 24 horas en tener datos. Cada consulta cuesta USD 0,01, así que el resultado se guarda seis horas por mes y los errores cinco minutos: aunque un agente pregunte en loop, son unos centavos por día.
+
 ### Errores
 
 Un error sale con `isError: true` y este cuerpo:
@@ -226,6 +283,7 @@ No se inventan. Salen como `null`, con la razón en `unavailable_reason`:
 | `payments_rejected` | El webhook de Mercado Pago guarda `rejected` y `cancelled` los dos como `FAILED`. Están adentro de `payments_failed`. |
 | `timings` | Sólo si hubo menos de 3 fotos procesadas en las últimas 6 horas. |
 | `aws` | Sólo si CloudWatch no está configurado. |
+| `measured` en `get_aws_costs` | Sólo si Cost Explorer no está activado, no tiene permiso o no tiene datos. La razón dice cuál. |
 
 ## Variables de entorno
 
@@ -243,6 +301,9 @@ No se inventan. Salen como `null`, con la razón en `unavailable_reason`:
 | `TRUST_PROXY` | | `false` | `true` detrás de nginx, Railway o Fly, para leer la IP de `X-Forwarded-For`. |
 | `AWS_REGION` | | — | Con la siguiente, activa las alarmas de CloudWatch. |
 | `CLOUDWATCH_ALARM_PREFIX` | | — | Prefijo de las alarmas a informar. Necesita `cloudwatch:DescribeAlarms`. |
+| `S3_TRANSFER_ACCELERATION` | | `false` | `true`, `false` o la fecha `YYYY-MM-DD` desde la que la app usa Transfer Acceleration. |
+| `PHOTO_RETENTION_DAYS` | | `30` | Días que una foto borrada sigue en S3. El mismo valor que la app. |
+| `AWS_COST_EXPLORER` | | `false` | `true` para leer el gasto medido. Necesita un usuario de IAM (ver `get_aws_costs`). |
 
 El servidor **no arranca** si falta `DATABASE_URL`, si `MCP_TOKEN` tiene menos de 32 caracteres, o si la zona horaria no existe. Es a propósito: un servidor de métricas que levanta sin token queda abierto.
 
@@ -271,12 +332,18 @@ alter role mcp_lectura set statement_timeout = '10s';
 grant usage on schema public to mcp_lectura;
 grant select (id, role, "createdAt") on "User" to mcp_lectura;
 grant select (id, "ownerId", "createdAt") on "Event" to mcp_lectura;
-grant select ("ownerId", "createdAt", "fileSize", "deletedAt", "previewKey",
+grant select (id, "ownerId", "createdAt", "fileSize", "deletedAt", "previewKey",
               "previewGeneratedAt", "processAttempts", "processError", "processLeaseUntil")
   on "Photo" to mcp_lectura;
 grant select (status, currency, "createdAt", "paidAt", "totalCents") on "Sale" to mcp_lectura;
 grant select ("createdAt") on "FaceSearchLog" to mcp_lectura;
 grant select (key, value) on "Setting" to mcp_lectura;
+
+-- Para get_aws_costs.
+grant select (year, month, "ocrCalls", "indexRequests", "searchedFaces") on "RecognitionUsage" to mcp_lectura;
+grant select ("createdAt") on "FaceRecord" to mcp_lectura;
+grant select ("photoId", "saleId", "createdAt") on "DownloadLog" to mcp_lectura;
+grant select ("saleId", "photoId") on "SaleItem" to mcp_lectura;
 ```
 
 Con el pooler de Supabase, el usuario de la URL lleva el ID del proyecto:
@@ -365,7 +432,7 @@ curl -s https://DOMINIO/_ops/mcp \
 ## Probar
 
 ```bash
-npm test                                   # 390 tests, sin base ni red
+npm test                                   # más de 600 tests, sin base ni red
 npm run probar                             # levanta el servidor y lo recorre con el cliente MCP oficial
 MCP_URL=https://… npm run probar           # lo mismo contra un servidor ya deployado
 ```

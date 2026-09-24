@@ -1,4 +1,5 @@
 import { leerConfig } from "./config.js";
+import { lectorCostosCompartido } from "./costos/cost-explorer.js";
 import { crearLector, crearPool } from "./db.js";
 import { registrarHerramientas } from "./herramientas.js";
 import { crearServidorHttp } from "./http.js";
@@ -28,6 +29,7 @@ const servidor = crearServidorHttp({
     registrarHerramientas(server, {
       lector,
       cfg: config,
+      costosMedidos: lectorCostosCompartido(config.costExplorer),
       alFallar: (herramienta, codigo) => console.error(JSON.stringify({ t: new Date().toISOString(), tool: herramienta, error: codigo })),
     }),
 });

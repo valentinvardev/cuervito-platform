@@ -14,7 +14,7 @@ import { ErrorHerramienta } from "./errores.js";
 
 export type Fecha = { y: number; m: number; d: number };
 
-export type EtiquetaPeriodo = "today" | "last_7d" | "last_30d" | "custom" | "week";
+export type EtiquetaPeriodo = "today" | "last_7d" | "last_30d" | "custom" | "week" | "month";
 
 export type Periodo = {
   etiqueta: EtiquetaPeriodo;
@@ -196,5 +196,56 @@ export function describir(p: Periodo) {
     from: fechaISO(p.primerDia),
     to: fechaISO(p.ultimoDia),
     timezone: p.zona,
+  };
+}
+
+// ── Meses de facturación ────────────────────────────────────────────────────
+
+export type Mes = Periodo & {
+  /** Hasta dónde hay datos: ahora si es el mes en curso, el fin del mes si ya pasó. */
+  hastaMedido: Date;
+  esActual: boolean;
+};
+
+const MESES_ATRAS_MAX = 24;
+
+/**
+ * Un mes calendario en UTC, que es como factura AWS y como cuenta la base
+ * los llamados a Rekognition (RecognitionUsage guarda año y mes en UTC). No
+ * se usa la zona del negocio: un mes de Buenos Aires empieza tres horas
+ * después que el de AWS, y los dos números no se podrían comparar.
+ */
+export function resolverMes(mes: string | undefined, ahora: Date = new Date()): Mes {
+  const actualY = ahora.getUTCFullYear();
+  const actualM = ahora.getUTCMonth() + 1;
+  let y = actualY;
+  let m = actualM;
+  if (mes) {
+    const r = /^(\d{4})-(\d{2})$/.exec(mes);
+    if (!r || Number(r[2]) < 1 || Number(r[2]) > 12) {
+      throw new ErrorHerramienta("invalid_period", "month tiene que ser YYYY-MM, por ejemplo 2026-09.");
+    }
+    y = Number(r[1]);
+    m = Number(r[2]);
+    const diferencia = (actualY - y) * 12 + (actualM - m);
+    if (diferencia < 0) throw new ErrorHerramienta("invalid_period", "El mes pedido todavía no empezó.");
+    if (diferencia > MESES_ATRAS_MAX) {
+      throw new ErrorHerramienta("invalid_period", `Se pueden pedir hasta ${MESES_ATRAS_MAX} meses para atrás.`);
+    }
+  }
+  const primerDia: Fecha = { y, m, d: 1 };
+  const siguiente = new Date(Date.UTC(y, m, 1));
+  const ultimoDia = sumarDias({ y: siguiente.getUTCFullYear(), m: siguiente.getUTCMonth() + 1, d: 1 }, -1);
+  const desde = new Date(Date.UTC(y, m - 1, 1));
+  const esActual = y === actualY && m === actualM;
+  return {
+    etiqueta: "month",
+    primerDia,
+    ultimoDia,
+    desde,
+    hasta: siguiente,
+    zona: "UTC",
+    hastaMedido: esActual ? ahora : siguiente,
+    esActual,
   };
 }

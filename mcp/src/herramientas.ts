@@ -4,14 +4,16 @@ import * as z from "zod";
 
 import { leerAlarmas, type Alarmas } from "./aws.js";
 import type { Config } from "./config.js";
+import { lectorCostosCompartido, type CostosMedidos } from "./costos/cost-explorer.js";
 import type { Lector } from "./db.js";
 import { aErrorSeguro, cuerpoError } from "./errores.js";
 import { activacion } from "./metricas/activacion.js";
+import { costos } from "./metricas/costos.js";
 import { peor, salud } from "./metricas/salud.js";
 import { semana } from "./metricas/semana.js";
 import { uso } from "./metricas/uso.js";
 import { ventas } from "./metricas/ventas.js";
-import { describir, resolverPeriodo, resolverSemana, semanaAnterior } from "./periodo.js";
+import { describir, resolverMes, resolverPeriodo, resolverSemana, semanaAnterior, type Mes } from "./periodo.js";
 import { verificarSalida } from "./privacidad.js";
 import { SERVICIO, VERSION } from "./version.js";
 
@@ -29,6 +31,8 @@ export type Dependencias = {
   cfg: Config;
   ahora?: () => Date;
   alarmas?: () => Promise<Alarmas>;
+  /** El gasto medido de Cost Explorer. Se inyecta en los tests; en producción es uno por proceso. */
+  costosMedidos?: (mes: Mes) => Promise<CostosMedidos>;
   /** Para el registro: nombre de la herramienta y código de error, nunca los argumentos. */
   alFallar?: (herramienta: string, codigo: string) => void;
 };
@@ -54,6 +58,7 @@ const entradaPeriodo = {
 export function registrarHerramientas(server: McpServer, deps: Dependencias): void {
   const ahora = deps.ahora ?? (() => new Date());
   const alarmas = deps.alarmas ?? (() => leerAlarmas(deps.cfg.aws));
+  const costosMedidos = deps.costosMedidos ?? lectorCostosCompartido(deps.cfg.costExplorer);
 
   async function responder(herramienta: string, trabajo: () => Promise<object>): Promise<CallToolResult> {
     try {
@@ -177,6 +182,32 @@ export function registrarHerramientas(server: McpServer, deps: Dependencias): vo
         const p = resolverPeriodo(args, deps.cfg.zona, ahora());
         const r = await deps.lector((q) => ventas(q, p, deps.cfg.grupoMinimo));
         return { period: describir(p), ...r };
+      }),
+  );
+
+  // ── get_aws_costs ─────────────────────────────────────────────────────────
+  server.registerTool(
+    "get_aws_costs",
+    {
+      title: "Gasto de AWS",
+      description: [
+        "Gasto de AWS de un mes calendario en UTC (así factura AWS). Sin month, el mes en curso. Todo en dólares.",
+        "estimated: sólo de encontrate, con el uso que registra la base por precios de lista de us-east-2, sin capa gratuita. Cada componente dice su basis: counted (cantidad contada una por una, como los llamados a Rekognition) o estimated (sale de tamaños y supuestos, como el almacenamiento y la transferencia de S3). projected_month_usd proyecta el mes en curso al ritmo de lo que va.",
+        "not_included dice qué no se puede saber desde la base (CloudFront, el cómputo de la Lambda, el otro proyecto de la cuenta) y por qué. assumptions lista los supuestos.",
+        "measured: el gasto real de Cost Explorer, si está activado. Es de TODA la cuenta de AWS, que se comparte con otro proyecto, así que no es comparable uno a uno con estimated. comparison dice qué parte de la cuenta es de encontrate y si lo medido de Rekognition coincide con lo contado; un rekognition_ratio muy por encima de 1 indica llamados que la app no está contando.",
+      ].join(" "),
+      inputSchema: {
+        month: z.string().regex(/^\d{4}-\d{2}$/).optional().describe("Mes en UTC, YYYY-MM. Sin esto, el mes en curso. Hasta 24 meses atrás."),
+      },
+      annotations: SOLO_LECTURA,
+    },
+    async (args) =>
+      responder("get_aws_costs", async () => {
+        const mes = resolverMes(args.month, ahora());
+        const medidos = await costosMedidos(mes);
+        return deps.lector((q) =>
+          costos(q, mes, { retencionDias: deps.cfg.retencionDias, aceleracionDesde: deps.cfg.aceleracionDesde, medidos }),
+        );
       }),
   );
 

@@ -25,6 +25,8 @@ const LLAMADAS: [string, Record<string, unknown>][] = [
   ["get_sales", { period: "today" }],
   ["get_weekly_snapshot", {}],
   ["get_weekly_snapshot", { include_previous_week: false }],
+  ["get_aws_costs", {}],
+  ["get_aws_costs", { month: "2026-08" }],
 ];
 
 const CLAVES_PII = /email|name|phone|user_?id|owner|seller|buyer|visitor|photo_?id|photo_?ids|^id$|url|slug|key|token|ip$|embedding|face_?id|bib|last4|password|address/i;
@@ -324,11 +326,11 @@ describe("errores", () => {
 });
 
 describe("las herramientas se anuncian como de sólo lectura", () => {
-  it("todas, y ninguna más que las seis pedidas", async () => {
+  it("todas, y ninguna más que las siete", async () => {
     cliente = await clienteConectado();
     const { tools } = await cliente.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
-      ["get_activation", "get_health", "get_sales", "get_usage", "get_weekly_snapshot", "ping"],
+      ["get_activation", "get_aws_costs", "get_health", "get_sales", "get_usage", "get_weekly_snapshot", "ping"],
     );
     for (const t of tools) {
       expect(t.annotations, t.name).toMatchObject({ readOnlyHint: true, destructiveHint: false });

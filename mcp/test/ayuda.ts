@@ -3,10 +3,18 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import type { Alarmas } from "../src/aws.js";
+import type { CostosMedidos } from "../src/costos/cost-explorer.js";
 import type { Config } from "../src/config.js";
 import type { Consulta, Lector } from "../src/db.js";
 import { registrarHerramientas } from "../src/herramientas.js";
 import { SQL_ACTIVACION } from "../src/metricas/activacion.js";
+import {
+  SQL_COSTOS_ALMACENAMIENTO,
+  SQL_COSTOS_CARAS,
+  SQL_COSTOS_DESCARGAS,
+  SQL_COSTOS_REKOGNITION,
+  SQL_COSTOS_TRAFICO,
+} from "../src/metricas/costos.js";
 import { SQL_ERRORES_FOTOS, SQL_FOTOS, SQL_PAGOS, SQL_TIEMPOS } from "../src/metricas/salud.js";
 import { SQL_USO } from "../src/metricas/uso.js";
 import { SQL_VENTAS } from "../src/metricas/ventas.js";
@@ -26,12 +34,23 @@ export const CFG: Config = {
   timeoutConsultaMs: 5000,
   confiarEnProxy: false,
   aws: null,
+  costExplorer: false,
+  aceleracionDesde: null,
+  retencionDias: 30,
 };
 
 /** Un instante fijo: miércoles 23/9/2026 a las 15:00 en Buenos Aires. */
 export const AHORA = new Date("2026-09-23T18:00:00Z");
 
-export type Filas = Partial<Record<"activacion" | "uso" | "ventas" | "fotos" | "errores" | "pagos" | "tiempos", unknown[]>>;
+export type Filas = Partial<
+  Record<
+    | "activacion" | "uso" | "ventas" | "fotos" | "errores" | "pagos" | "tiempos"
+    | "costosRek" | "costosAlm" | "costosCaras" | "costosTrafico" | "costosDescargas",
+    unknown[]
+  >
+>;
+
+const GB = 1_073_741_824;
 
 /** Filas agregadas plausibles, como las que devuelve la base de verdad. */
 export const FILAS_NORMALES: Filas = {
@@ -42,6 +61,15 @@ export const FILAS_NORMALES: Filas = {
   errores: [],
   pagos: [{ pagadas: 6, fallidas: 0, sin_confirmar: 0, abandonadas: 3 }],
   tiempos: [],
+  // Números redondos para que las cuentas de los tests se puedan hacer a mano.
+  costosRek: [{ texto: 1000, indexado: 1000, busquedas: 50 }],
+  costosAlm: [{ byte_segundos: 100 * GB * 30 * 86_400, bytes_al_final: 120 * GB }],
+  costosCaras: [{ cara_segundos: 10_000 * 30 * 86_400, caras_al_final: 12_000 }],
+  costosTrafico: [{
+    subidas: 1000, bytes_subidos: 15 * GB, bytes_subidos_acel: 5 * GB,
+    procesadas: 1000, bytes_procesados: 15 * GB, bytes_procesados_acel: 5 * GB,
+  }],
+  costosDescargas: [{ sueltas: 200, bytes_sueltas: 3 * GB, fotos_en_zip: 100, bytes_zip: 2 * GB, bytes_descargas_acel: 1 * GB }],
 };
 
 /**
@@ -58,6 +86,11 @@ export function lectorFalso(filas: Filas, registro?: string[]): Lector {
     [SQL_ERRORES_FOTOS, "errores"],
     [SQL_PAGOS, "pagos"],
     [SQL_TIEMPOS, "tiempos"],
+    [SQL_COSTOS_REKOGNITION, "costosRek"],
+    [SQL_COSTOS_ALMACENAMIENTO, "costosAlm"],
+    [SQL_COSTOS_CARAS, "costosCaras"],
+    [SQL_COSTOS_TRAFICO, "costosTrafico"],
+    [SQL_COSTOS_DESCARGAS, "costosDescargas"],
   ]);
   const q: Consulta = async <T>(sql: string) => {
     const clave = porSql.get(sql);
@@ -71,13 +104,21 @@ export function lectorFalso(filas: Filas, registro?: string[]): Lector {
 const SIN_ALARMAS: Alarmas = { available: false, unavailable_reason: "no configurado en el test" };
 
 /** Un cliente MCP conectado en memoria a un servidor con la base falsa. */
-export async function clienteConectado(filas: Filas = FILAS_NORMALES, alarmas: Alarmas = SIN_ALARMAS) {
+const SIN_MEDICION: CostosMedidos = { available: false, unavailable_reason: "no configurado en el test" };
+
+export async function clienteConectado(
+  filas: Filas = FILAS_NORMALES,
+  alarmas: Alarmas = SIN_ALARMAS,
+  medidos: CostosMedidos = SIN_MEDICION,
+  cfg: Config = CFG,
+) {
   const server = new McpServer({ name: "test", version: "0" });
   registrarHerramientas(server, {
     lector: lectorFalso(filas),
-    cfg: CFG,
+    cfg,
     ahora: () => AHORA,
     alarmas: async () => alarmas,
+    costosMedidos: async () => medidos,
   });
   const [lado1, lado2] = InMemoryTransport.createLinkedPair();
   const cliente = new Client({ name: "test", version: "0" });

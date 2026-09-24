@@ -89,7 +89,7 @@ describe("autenticación", () => {
       new StreamableHTTPClientTransport(new URL(`${base}/mcp`), { requestInit: { headers: { Authorization: `Bearer ${TOKEN}` } } }),
     );
     const { tools } = await c.listTools();
-    expect(tools).toHaveLength(6);
+    expect(tools).toHaveLength(7);
     const r = await c.callTool({ name: "ping", arguments: {} });
     expect(JSON.parse((r.content as { text: string }[])[0]!.text)).toMatchObject({ ok: true, version: VERSION });
     await c.close();

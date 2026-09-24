@@ -18,6 +18,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 
 import { leerConfig } from "../src/config.js";
 import { crearLector, crearPool } from "../src/db.js";
+import { lectorCostosCompartido } from "../src/costos/cost-explorer.js";
 import { registrarHerramientas } from "../src/herramientas.js";
 import { crearServidorHttp } from "../src/http.js";
 
@@ -45,7 +46,7 @@ if (!url) {
 
   const servidor = crearServidorHttp({
     cfg,
-    registrar: (s) => registrarHerramientas(s, { lector, cfg }),
+    registrar: (s) => registrarHerramientas(s, { lector, cfg, costosMedidos: lectorCostosCompartido(cfg.costExplorer) }),
     log: () => undefined,
   });
   await new Promise<void>((r) => servidor.listen(0, "127.0.0.1", r));
@@ -77,6 +78,7 @@ const llamadas: [string, Record<string, unknown>][] = [
   ["get_sales", { period: "last_30d" }],
   ["get_sales", { period: "today" }],
   ["get_weekly_snapshot", {}],
+  ["get_aws_costs", {}],
   // Errores esperados: el servidor tiene que contestarlos bien, no romperse.
   ["get_usage", { period: "custom", from: "2026-09-10" }],
   ["get_weekly_snapshot", { week_start: "2026-09-16" }],

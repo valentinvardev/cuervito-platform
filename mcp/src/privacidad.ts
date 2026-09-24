@@ -50,6 +50,14 @@ export const CLAVES_PERMITIDAS: ReadonlySet<string> = new Set([
   "current", "previous", "change", "change_pct", "alerts_count",
   // ping
   "ok", "service", "version", "timestamp",
+  // costos de AWS
+  "month", "days_elapsed", "days_in_month", "is_current_month",
+  "estimated", "scope", "total_usd", "projected_month_usd", "components",
+  "item", "quantity", "unit", "unit_price_usd", "cost_usd", "basis",
+  "not_included", "reason", "assumptions", "prices_verified_on", "price_region",
+  "measured", "by_service", "forecast_month_end_usd", "age_s", "note",
+  "comparison", "rekognition_estimated_usd", "rekognition_measured_usd", "rekognition_ratio",
+  "estimated_share_of_account",
 ]);
 
 const PATRONES_VALOR: ReadonlyArray<RegExp> = [
