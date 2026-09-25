@@ -16,8 +16,10 @@
  *
  * Ahora el trabajo pendiente vive en la base y se recupera solo, así que esto
  * ya no es la diferencia entre perder y no perder: es la diferencia entre
- * terminar lo empezado y tener que rehacerlo. Treinta segundos alcanzan para
- * que las cuatro fotos en vuelo terminen y suelten su lease.
+ * terminar lo empezado y tener que rehacerlo. Aunque en la práctica casi nunca
+ * se llega a esperar: Next atiende el SIGINT cerrando el servidor HTTP y sale
+ * apenas terminan los pedidos, sin esperar a la cola. Lo que queda a medias lo
+ * repara el arranque siguiente (liberarLeasesHuerfanos en cola-fotos.ts).
  *
  * ── exec_mode: fork, instances: 1 ────────────────────────────────────────
  * No es "todavía no lo escalamos": es un requisito de cómo se recupera el
@@ -26,8 +28,9 @@
  * En cluster esa suposición es falsa: el lease podría ser de otra instancia
  * trabajando en ese mismo momento, y liberarlo pondría dos procesos sobre la
  * misma foto. Si algún día hace falta cluster, hay que poner
- * PROCESADOR_UNICA_INSTANCIA=false y aceptar esperar los diez minutos del lease
- * después de cada deploy.
+ * PROCESADOR_UNICA_INSTANCIA=false y aceptar esperar los veinticinco minutos
+ * del lease después de cada deploy, con la reparación de reclamos a medias
+ * recién cuando el lease vence.
  *
  * Tampoco se usa `reload` con drenado ni NEXT_MANUAL_SIG_HANDLE. En cluster el
  * master sigue mandando conexiones nuevas al worker viejo hasta que su handle

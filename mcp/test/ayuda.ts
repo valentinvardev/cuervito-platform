@@ -15,6 +15,11 @@ import {
   SQL_COSTOS_REKOGNITION,
   SQL_COSTOS_TRAFICO,
 } from "../src/metricas/costos.js";
+import {
+  SQL_ERRORES_RECONOCIMIENTO,
+  SQL_FRENO_RECONOCIMIENTO,
+  SQL_RECONOCIMIENTO,
+} from "../src/metricas/reconocimiento.js";
 import { SQL_ERRORES_FOTOS, SQL_FOTOS, SQL_PAGOS, SQL_TIEMPOS } from "../src/metricas/salud.js";
 import { SQL_USO } from "../src/metricas/uso.js";
 import { SQL_VENTAS } from "../src/metricas/ventas.js";
@@ -44,7 +49,7 @@ export const AHORA = new Date("2026-09-23T18:00:00Z");
 
 export type Filas = Partial<
   Record<
-    | "activacion" | "uso" | "ventas" | "fotos" | "errores" | "pagos" | "tiempos"
+    | "activacion" | "uso" | "ventas" | "fotos" | "errores" | "pagos" | "tiempos" | "reconocimiento" | "erroresRek" | "freno"
     | "costosRek" | "costosAlm" | "costosCaras" | "costosTrafico" | "costosDescargas",
     unknown[]
   >
@@ -57,8 +62,20 @@ export const FILAS_NORMALES: Filas = {
   activacion: [{ registrados: 20, con_evento: 8, con_fotos: 5 }],
   uso: [{ eventos: 6, fotos: 2400, busquedas_cara: 150 }],
   ventas: [{ moneda: "ARS", pagadas: 57, bruto_centavos: "17100000", fallidas: 2, regalos: 1 }],
-  fotos: [{ pendientes: 0, pendientes_1h: 0, en_vuelo: 0, apartadas: 0, trabajables: 0, trabajables_1h: 0, ultima_hora: 40, edad_ultimo_exito_s: 35 }],
+  fotos: [{
+    pendientes: 0, pendientes_1h: 0, en_vuelo: 0, colgadas: 0, apartadas: 0, reintentando: 0,
+    reintentando_despacio: 0, libres: 0, libres_15m: 0, trabajables_1h: 0, ultima_hora: 40,
+    edad_ultimo_exito_s: 35, edad_actividad_s: 35,
+  }],
   errores: [],
+  reconocimiento: [{
+    faltan: 0, apartadas: 0, esperando_cuota: 0, reintentando: 0, reintentando_despacio: 0,
+    en_vuelo: 0, colgadas: 0, en_cola: 0, en_cola_15m: 0, en_cola_3h: 0, rechazadas: 0,
+    rechazadas_7d: 0, apagado_fotos: 0, apagado_eventos: 0, reconocidas_7d: 500, sin_caras_7d: 40,
+    edad_ultimo_s: 120,
+  }],
+  erroresRek: [],
+  freno: [],
   pagos: [{ pagadas: 6, fallidas: 0, sin_confirmar: 0, abandonadas: 3 }],
   tiempos: [],
   // Números redondos para que las cuentas de los tests se puedan hacer a mano.
@@ -84,6 +101,9 @@ export function lectorFalso(filas: Filas, registro?: string[]): Lector {
     [SQL_VENTAS, "ventas"],
     [SQL_FOTOS, "fotos"],
     [SQL_ERRORES_FOTOS, "errores"],
+    [SQL_RECONOCIMIENTO, "reconocimiento"],
+    [SQL_ERRORES_RECONOCIMIENTO, "erroresRek"],
+    [SQL_FRENO_RECONOCIMIENTO, "freno"],
     [SQL_PAGOS, "pagos"],
     [SQL_TIEMPOS, "tiempos"],
     [SQL_COSTOS_REKOGNITION, "costosRek"],
@@ -93,6 +113,8 @@ export function lectorFalso(filas: Filas, registro?: string[]): Lector {
     [SQL_COSTOS_DESCARGAS, "costosDescargas"],
   ]);
   const q: Consulta = async <T>(sql: string) => {
+    // Los savepoints de la salud (ver leerReconocimiento): no traen filas.
+    if (/^(savepoint|release savepoint|rollback to savepoint) /i.test(sql)) return [] as T[];
     const clave = porSql.get(sql);
     if (!clave) throw new Error(`Consulta desconocida en el test: ${sql.slice(0, 60)}`);
     registro?.push(clave);

@@ -42,7 +42,7 @@ Los períodos se cuentan en días calendario de `METRICS_TZ` (Buenos Aires por d
 | Herramienta | Entrada | Para qué |
 |---|---|---|
 | `ping` | — | Saber que el servidor responde y qué versión corre. No toca la base. |
-| `get_health` | — | Estado de ahora del procesamiento de fotos y de los pagos, con alertas. |
+| `get_health` | — | Estado de ahora del procesamiento de fotos, del reconocimiento y de los pagos, con alertas. |
 | `get_activation` | período | Embudo de la cohorte de fotógrafos registrados en el período. |
 | `get_usage` | período | Eventos creados, fotos subidas, búsquedas. |
 | `get_sales` | período | Totales de ventas, por moneda. |
@@ -61,7 +61,7 @@ Los números de los ejemplos son **inventados**.
 ### `ping`
 
 ```json
-{ "ok": true, "service": "encontrate-ops-mcp", "version": "1.0.0", "timestamp": "2026-09-23T18:00:00.000Z", "generated_at": "2026-09-23T18:00:00.000Z" }
+{ "ok": true, "service": "encontrate-ops-mcp", "version": "1.2.0", "timestamp": "2026-09-23T18:00:00.000Z", "generated_at": "2026-09-23T18:00:00.000Z" }
 ```
 
 ### `get_health`
@@ -74,10 +74,31 @@ Los números de los ejemplos son **inventados**.
     "pending": 12,
     "pending_over_1h": 3,
     "in_flight": 2,
-    "parked_after_retries": 3,
+    "retrying": 3,
+    "retrying_slowly": 3,
+    "parked_after_retries": 0,
     "processed_last_hour": 180,
     "last_success_age_s": 14,
     "timings": { "samples": 20, "median_total_ms": 12400, "p90_total_ms": 15100, "median_download_ms": 8900 }
+  },
+  "recognition": {
+    "status": "ok",
+    "missing": 24,
+    "queued": 20,
+    "queued_over_3h": 0,
+    "in_flight": 2,
+    "retrying": 2,
+    "retrying_slowly": 0,
+    "waiting_quota": 0,
+    "parked_after_retries": 0,
+    "rejected_by_rekognition": 1,
+    "paused_until": null,
+    "last_recognition_age_s": 9,
+    "recognized_last_7d": 900,
+    "without_faces_last_7d": 80,
+    "no_faces_share_last_7d": 0.0889,
+    "recognition_off_events": 1,
+    "recognition_off_photos": 60
   },
   "payments": {
     "status": "ok",
@@ -93,23 +114,36 @@ Los números de los ejemplos son **inventados**.
     { "source": "payments", "code": "payment_failed", "count": 1 }
   ],
   "alerts": [
-    { "severity": "warning", "code": "photos_parked", "message": "3 fotos quedaron apartadas después de 4 intentos fallidos: la cola ya no las toma y no se ven en las tiendas hasta reintentarlas a mano." }
+    { "severity": "warning", "code": "photos_retrying", "message": "3 fotos siguen sin vista previa: fallaron 4 veces seguidas y la cola las reintenta cada vez más espaciado, durante unas 175 horas. No se ven en las tiendas mientras tanto." }
   ],
   "aws": { "available": false, "unavailable_reason": "CloudWatch no está configurado: faltan AWS_REGION y CLOUDWATCH_ALARM_PREFIX." },
   "generated_at": "2026-09-23T18:00:00.000Z"
 }
 ```
 
-Cada `status` es `ok`, `degraded` (mirarlo hoy) o `down` (hacer algo ya). El general es el peor de los dos.
+Cada `status` es `ok`, `degraded` (mirarlo hoy) o `down` (hacer algo ya). El general es el peor de los tres.
+
+**Cómo reintenta la cola.** Una foto que falla se reintenta cuatro veces seguidas, a cinco minutos. Después sigue, cada vez más espaciado (1, 2, 4, 8, 16 horas y después una vez por día), durante unos 7 días. Recién a los 15 intentos queda *apartada* y hace falta reintentarla a mano. Un reinicio del servidor en medio de una foto le cuesta un intento. Los números viven en `cuervito/src/server/cola-fotos.ts` y están copiados en `src/metricas/cola.ts`; un test falla si se desalinean.
 
 **Procesamiento de fotos.** Una foto está *pendiente* si se subió y todavía no tiene vista previa con marca de agua: hasta tenerla, no aparece en la tienda.
 
 | Estado | Cuándo |
 |---|---|
-| `down` | Hay fotos que la cola todavía va a tomar y no terminó ninguna en 30 minutos. |
-| `degraded` | Alguna lleva más de una hora esperando, quedó apartada tras 4 intentos, o bajar un original de S3 tarda más de 30 s de mediana. |
+| `down` | Hay fotos libres hace más de 15 minutos, o una unidad colgada, y la cola no hizo nada en 30 minutos (`processing_stalled`). O hay 10 o más fotos que fallaron recién (en la etapa rápida) y ninguna terminó en 30 minutos (`processing_failing`). |
+| `degraded` | Alguna lleva más de una hora sin vista previa, está en los reintentos lentos (`photos_retrying`), quedó apartada (`photos_parked`), o bajar un original de S3 tarda más de 30 s de mediana. |
 
-Las fotos *apartadas* no cuentan para `down`: la cola deja de intentarlas a propósito. Diez fotos apartadas con la cola ociosa no es "el procesador se cayó", es "hay diez fotos para reintentar". `timings` sale de las últimas 20 fotos procesadas en las últimas 6 horas; con menos de 3, es `null` y la razón va en `unavailable_reason`.
+El atasco no se mide con "hace cuánto que no termina nada": en una semana sin carreras eso son días, y la primera foto que se libera haría decir `down` hasta que la cola se despierte (duerme hasta 10 minutos cuando no tiene trabajo). Por eso cuenta sólo lo que la cola ya tendría que haber tomado, y como actividad vale cualquier cosa que hizo: una vista previa, un reconocimiento o un reclamo de hace menos de 15 minutos. Las fotos *apartadas* no cuentan para `down`: la cola dejó de intentarlas a propósito. Las que esperan un reintento lento tampoco: después de una falla ya arreglada pueden pasar horas hasta su próximo intento, y eso es `photos_retrying`, no una caída. `timings` sale de las últimas 20 fotos procesadas en las últimas 6 horas; con menos de 3, es `null` y la razón va en `unavailable_reason`.
+
+**Reconocimiento.** Una foto con vista previa se ve y se vende, pero si le faltan las caras nadie la encuentra con una selfie, y si le falta el OCR nadie la encuentra por dorsal. `missing` cuenta las fotos visibles de eventos con reconocimiento prendido a las que les falta alguna de las dos. Cada una está en exactamente un grupo, y los grupos suman `missing`: `queued` (esperando turno), `in_flight`, `retrying` (fallaron y esperan; `retrying_slowly` es la parte que ya va por los reintentos lentos), `waiting_quota` y `parked_after_retries`.
+
+| Estado | Cuándo |
+|---|---|
+| `down` | La cola frenó el reconocimiento porque Rekognition falla entero (`recognition_paused`, con `paused_until`). O, sin vistas previas esperando, hay fotos libres hace más de 15 minutos y no se reconoció nada en 30 (`recognition_stalled`). O hay 10 o más que fallaron recién y ninguna se reconoció en 30 minutos (`recognition_failing`). |
+| `degraded` | Hay fotos en los reintentos lentos (`recognition_retrying`) o apartadas (`recognition_parked`); algún fotógrafo llegó al tope de gasto (`recognition_waiting_quota`); Rekognition rechazó alguna en la semana (`recognition_rejected`); más del 30 % de las reconocidas en 7 días no tiene ninguna cara, con al menos 100 (`recognition_no_faces`; lo normal es menos del 15 % y ningún evento pasó del 22 %); o no se pudo leer el reconocimiento (`recognition_unavailable`). |
+
+`recognition_waiting_quota` quiere decir que un fotógrafo llegó a `RECOGNITION_HARD_CAP_MONTHLY`, el cortacircuitos de costo de la app (cinco veces el pico real), no la cuota comercial del panel. Llegar ahí es una anomalía —un loop, un abuso— y sus fotos quedan sin reconocer hasta el mes que viene: si fue legítimo, se sube el tope y se reintentan con la clase `cuota`. Con vistas previas pendientes, que el reconocimiento espere es lo normal: la cola hace primero lo que no se ve. `recognition_off_*` son los eventos con el reconocimiento apagado, sólo para saberlo.
+
+**El freno.** Si Rekognition falla diez veces seguidas sin un éxito en el medio (credenciales vencidas, un permiso, un problema de AWS), la app deja de tomar reconocimientos media hora y sigue sólo con las vistas previas. Sin esto, los reintentos de cada foto se comerían la cuota mensual del fotógrafo, que se cuenta antes de cada llamada. El freno queda anotado en `Setting` y sale acá como `paused_until`. Al vencer, la app prueba con una foto en el momento; los 10 minutos siguientes no cuentan como atasco, por si la cola tarda en despertarse. Un reinicio de la app borra el freno: suele ser alguien que acaba de arreglar las credenciales, y si sigue roto vuelve a frenar a los diez fallos.
 
 **Pagos.** Ventana de 24 horas. `failure_rate` es fallidas sobre pagadas más fallidas.
 
@@ -120,7 +154,7 @@ Las fotos *apartadas* no cuentan para `down`: la cola deja de intentarlas a prop
 
 `abandoned_checkouts` son ventas sin confirmar de más de 24 horas en los últimos 30 días: gente que abrió el checkout y se fue. Es normal y no dispara alertas.
 
-**Errores.** Los de procesamiento son los **vigentes**: fotos que hoy siguen sin vista previa y con error. No hay una fecha de cuándo falló cada una (en los fallos permanentes la base no la guarda), así que se cuentan las que siguen rotas en vez de inventar una ventana. Se agrupan por código (`tope`, `s3`, `corrupta`, `cuota`, `rek`, `error`, y `otro` para cualquier otro). El texto del error nunca se lee. Los de pagos son los de las últimas 24 horas.
+**Errores.** Los de procesamiento son los **vigentes**: fotos que hoy siguen sin vista previa y con error. No hay una fecha de cuándo falló cada una (en los fallos permanentes la base no la guarda), así que se cuentan las que siguen rotas en vez de inventar una ventana. Se agrupan por código (`tope`, `s3`, `corrupta`, `cuota`, `rek`, `error`, `reinicio` si un reinicio la cortó a la mitad, `rekperm` si Rekognition la rechazó, y `otro` para cualquier otro). El texto del error nunca se lee. Van con `source: "photo_processing"` los de fotos sin vista previa y con `source: "recognition"` los de fotos sin reconocer. Los de pagos son los de las últimas 24 horas.
 
 ### `get_activation`
 
@@ -283,6 +317,7 @@ No se inventan. Salen como `null`, con la razón en `unavailable_reason`:
 | `payments_rejected` | El webhook de Mercado Pago guarda `rejected` y `cancelled` los dos como `FAILED`. Están adentro de `payments_failed`. |
 | `timings` | Sólo si hubo menos de 3 fotos procesadas en las últimas 6 horas. |
 | `aws` | Sólo si CloudWatch no está configurado. |
+| `recognition` | Sólo si la consulta del reconocimiento falla: un permiso que le falta al rol de sólo lectura, o el tope de tiempo. La razón sale del código de Postgres, nunca de su mensaje. El resto de `get_health` (y de `get_weekly_snapshot`) sale igual, y el estado pasa a `degraded` con `recognition_unavailable`: que no se pueda mirar no es "todo bien". |
 | `measured` en `get_aws_costs` | Sólo si Cost Explorer no está activado, no tiene permiso o no tiene datos. La razón dice cuál. |
 
 ## Variables de entorno
@@ -335,6 +370,11 @@ grant select (id, "ownerId", "createdAt") on "Event" to mcp_lectura;
 grant select (id, "ownerId", "createdAt", "fileSize", "deletedAt", "previewKey",
               "previewGeneratedAt", "processAttempts", "processError", "processLeaseUntil")
   on "Photo" to mcp_lectura;
+
+-- Para el reconocimiento en get_health.
+grant select ("eventId", "faceProcessedAt", "ocrProcessedAt") on "Photo" to mcp_lectura;
+grant select (recognition, "bibDetection") on "Event" to mcp_lectura;
+grant select ("photoId") on "FaceRecord" to mcp_lectura;
 grant select (status, currency, "createdAt", "paidAt", "totalCents") on "Sale" to mcp_lectura;
 grant select ("createdAt") on "FaceSearchLog" to mcp_lectura;
 grant select (key, value) on "Setting" to mcp_lectura;
@@ -357,6 +397,8 @@ Después corré `npm run probar`: si falta algún permiso, la herramienta que lo
 > Si algún día se activa RLS en estas tablas, este rol vería **cero filas** y las métricas saldrían en cero, que parece un número válido. Habría que agregarle una política de lectura.
 
 ## Deploy
+
+> **Con la app, primero la app.** El MCP lee las columnas que escribe la cola de la app, con los mismos números de intentos. Si el MCP nuevo sale antes que la app nueva, puede leer como "reintentando" fotos que la app vieja ya dio por perdidas. Deployá la app, esperá en `pm2 logs` la línea `[cola] arranca`, y después el MCP.
 
 Cualquier lugar que corra Node 20+ o Docker y dé HTTPS. Tres opciones.
 

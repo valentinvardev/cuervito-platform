@@ -50,8 +50,9 @@ export const env = createEnv({
        apartadas por no haber conseguido turno. */
     PROCESADOR_A_LA_VEZ: z.coerce.number().int().min(1).max(12).default(2),
     /* Si pm2 corre en fork con UNA instancia, un lease vivo al arrancar es de
-       un proceso muerto y se puede liberar: eso repara en minutos en vez de
-       esperar el vencimiento. En cluster hay que ponerlo en false. */
+       un proceso muerto y se puede liberar: eso repara al arrancar en vez de
+       esperar los 25 minutos del vencimiento. En cluster hay que ponerlo en
+       false, y la reparación de lo que quedó a medias espera a que venza. */
     PROCESADOR_UNICA_INSTANCIA: z
       .enum(["true", "false"])
       .default("true")

@@ -47,6 +47,7 @@ export async function semana(
   const health_now = {
     status: s.status,
     photo_processing: s.photo_processing.status,
+    recognition: s.recognition?.status ?? null,
     payments: s.payments.status,
     alerts_count: s.alerts.length,
   };

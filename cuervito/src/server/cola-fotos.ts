@@ -8,7 +8,7 @@ import { env } from "~/env";
 import { db } from "~/server/db";
 import { ultimosTiempos } from "~/server/diagnostico";
 import { evaluarDorsales } from "~/server/dorsales";
-import { bytesParaRekognition, runFaceIndex, runOcr } from "~/server/rekognition";
+import { bytesParaRekognition, runFaceIndex, runOcr, type EstadoRek } from "~/server/rekognition";
 import { deleteS3Objects, headObject } from "~/server/s3";
 import { generatePreview } from "~/server/watermark";
 import { hasRecognitionQuota } from "~/server/quotas";
@@ -64,10 +64,70 @@ const LEASE_MS = 25 * 60_000;
    tarda. */
 const TOPE_UNIDAD_MS = 12 * 60_000;
 
-/** Intentos antes de dejarla quieta. */
-const MAX_INTENTOS = 4;
-/** Cuánto espera una foto que falló por algo transitorio. */
+/**
+ * Cuántas veces se intenta una foto, y cuánto se espera entre una y otra.
+ *
+ * Cuatro seguidas, a cinco minutos, como siempre: un deploy o un timeout
+ * suelto de S3 se arreglan ahí. Después la cola no se rinde: sigue, cada vez
+ * más espaciado, durante una semana, y recién ahí la deja quieta.
+ *
+ * Antes se rendía a la cuarta, y quieta quería decir para siempre, hasta que
+ * alguien la destrabara a mano. Del 16 al 20 de septiembre la ruta del VPS a
+ * S3 anduvo a pocos KB/s: todas las fotos de esos días se pasaron del tope
+ * cuatro veces en quince minutos y quedaron quietas, algunas sin marca de agua
+ * y muchas más sin reconocimiento —se veían, pero nadie las encontraba por
+ * selfie ni por dorsal—. La falla duró cuatro días; los reintentos, un cuarto
+ * de hora. Una semana cubre una falla así con margen: lo que se rompe por días
+ * se recupera solo cuando vuelve.
+ *
+ * Reintentar no es gratis en la etapa de reconocimiento, y por eso hay techo:
+ * una foto que falla siempre hace quince intentos en total, no infinitos. Lo
+ * que cuesta cada uno depende de dónde falla —el tope casi siempre corta antes
+ * de llamar a Rekognition—. Cuando lo que falla es Rekognition mismo, para
+ * todas las fotos a la vez, no es la foto la que tiene que esperar: eso lo
+ * frena el freno de más abajo, antes de que los reintentos se coman la cuota
+ * del mes del fotógrafo.
+ *
+ * El MCP de operaciones copia INTENTOS_RAPIDOS, MAX_INTENTOS y las horas para
+ * distinguir "se está reintentando" de "se rindió"; un test de mcp/ falla si
+ * cambian acá y no allá. Y el panel del fotógrafo usa dondeApartadaPreview():
+ * nada fuera de este archivo tiene que saber el número.
+ */
+const INTENTOS_RAPIDOS = 4;
+/** Cuánto espera una foto que falló por algo transitorio, en la etapa rápida. */
 const ESPERA_FALLO_MS = 5 * 60_000;
+/** Las esperas de la etapa lenta, en horas. Suman 175: poco más de siete días. */
+const ESPERAS_LENTAS_H = [1, 2, 4, 8, 16, 24, 24, 24, 24, 24, 24];
+/** Intentos antes de dejarla quieta: 4 rápidos + 11 lentos. */
+const MAX_INTENTOS = INTENTOS_RAPIDOS + ESPERAS_LENTAS_H.length;
+
+/** Cuánto esperar después de que falle el intento número `intentos`. */
+function esperaTrasFallo(intentos: number): number {
+  if (intentos < INTENTOS_RAPIDOS) return ESPERA_FALLO_MS;
+  const i = Math.min(intentos - INTENTOS_RAPIDOS, ESPERAS_LENTAS_H.length - 1);
+  return ESPERAS_LENTAS_H[i]! * 3_600_000;
+}
+
+/**
+ * El freno del reconocimiento: cuando lo que falla es Rekognition, no la foto.
+ *
+ * Los reintentos son por foto, y eso está bien para una foto rara. Pero si se
+ * vencen las credenciales, falta un permiso o AWS tiene un problema, fallan
+ * TODAS, y cada intento cuenta en la cuota mensual del fotógrafo antes de
+ * hacerse (billedCall). Con quince intentos por foto, un evento grande se come
+ * la cuota del mes sin reconocer ni una foto, y con la cuota agotada se le
+ * apaga la búsqueda por selfie hasta fin de mes.
+ *
+ * Así que después de FRENO_FALLOS fallos seguidos de Rekognition, sin ningún
+ * éxito en el medio, la cola deja de tomar reconocimientos durante
+ * FRENO_PAUSA_MS y sigue sólo con las vistas previas, que no cuestan. Al volver
+ * prueba con una: si falla, frena de nuevo. Las fotos esperan sin gastar
+ * intentos, y el freno queda anotado en Setting para que el MCP de operaciones
+ * lo informe aunque siga habiendo subidas.
+ */
+const FRENO_FALLOS = 10;
+const FRENO_PAUSA_MS = 30 * 60_000;
+const CLAVE_FRENO = "procesador:freno-reconocimiento";
 
 const TICK_TRABAJO_MS = 2_000;
 const TICK_OCIOSO_MS = 20_000;
@@ -90,7 +150,12 @@ type Resumen = {
   pendientesRek: number;
   enVuelo: number;
   enfriandose: number;
+  /** Fallaron las cuatro rápidas y esperan un reintento lento (horas). */
+  reintentandoDespacio: number;
+  /** Se rindió la cola: sin marca de agua, invisibles en la tienda. */
   venenosas: number;
+  /** Se rindió la cola: se ven, pero no se encuentran por selfie ni dorsal. */
+  venenosasRek: number;
   masViejaMin: number | null;
 };
 
@@ -107,6 +172,10 @@ type EstadoCola = {
   ultimoResumen: Resumen | null;
   /** ownerId → { sinCuota, hasta }. Una consulta por dueño por minuto, no por foto. */
   cuotas: Map<string, { sinCuota: boolean; hasta: number }>;
+  /** Fallos seguidos de Rekognition, sin un éxito en el medio. */
+  rekFallosSeguidos: number;
+  /** Hasta cuándo no se toman reconocimientos (epoch ms; 0 si no hay freno). */
+  rekPausaHasta: number;
 };
 
 /* En globalThis y no en un `let` de módulo, con el mismo idioma que
@@ -133,6 +202,8 @@ const estado: EstadoCola = (globalThis.__cuervito_cola__ ??= {
   ultimaPasadaAt: 0,
   ultimoResumen: null,
   cuotas: new Map(),
+  rekFallosSeguidos: 0,
+  rekPausaHasta: 0,
 });
 
 /* ── Los predicados, definidos una sola vez ─────────────────────────────── */
@@ -187,6 +258,25 @@ export function dondePendienteRek(
   };
 }
 
+/**
+ * Fotos sin marca de agua que la cola ya no va a tomar.
+ *
+ * Es lo que el panel del fotógrafo le muestra como "no se pudieron procesar",
+ * con el consejo de volver a subirlas. Vive acá porque depende de
+ * MAX_INTENTOS: con el número escrito en el panel, una foto que todavía está
+ * en los reintentos lentos aparecía como perdida, el fotógrafo la volvía a
+ * subir, el reintento salía bien, y la misma foto quedaba dos veces en la
+ * tienda.
+ */
+export function dondeApartadaPreview(): Prisma.PhotoWhereInput {
+  return {
+    deletedAt: null,
+    fileSize: { not: null },
+    previewKey: null,
+    processAttempts: { gte: MAX_INTENTOS },
+  };
+}
+
 /* ── Posesión ───────────────────────────────────────────────────────────── */
 
 /**
@@ -201,8 +291,8 @@ export function dondePendienteRek(
  * processAttempts se incrementa ACÁ y no al fallar. Si se incrementara al
  * fallar, una foto que mata al proceso —sharp con una imagen enorme— nunca
  * llegaría a sumar el intento, y al reiniciar la volvería a tomar, y a matarlo,
- * para siempre. Contando al reclamar, cada muerte cuesta un intento y a la
- * cuarta la foto queda quieta.
+ * para siempre. Contando al reclamar, cada muerte cuesta un intento y al
+ * llegar a MAX_INTENTOS la foto queda quieta.
  */
 async function reclamar(id: string, hasta: Date): Promise<boolean> {
   const ahora = new Date();
@@ -221,15 +311,15 @@ async function reclamar(id: string, hasta: Date): Promise<boolean> {
 }
 
 type Salida =
-  | { tipo: "ok" }
+  /** aviso: algo que no se reintenta pero hay que poder ver (ver procesarUna). */
+  | { tipo: "ok"; aviso?: string }
   | { tipo: "transitorio"; motivo: string }
   | { tipo: "permanente"; motivo: string }
   | { tipo: "sin_cuota"; motivo: string };
 
-/** El primer instante del mes que viene, en UTC. */
-function meseQueViene(): Date {
-  const a = new Date();
-  return new Date(Date.UTC(a.getUTCFullYear(), a.getUTCMonth() + 1, 1));
+/** El primer instante del mes siguiente al de `desde`, en UTC. */
+function meseQueViene(desde = new Date()): Date {
+  return new Date(Date.UTC(desde.getUTCFullYear(), desde.getUTCMonth() + 1, 1));
 }
 
 /**
@@ -241,35 +331,61 @@ function meseQueViene(): Date {
  * lease de las manos a la que está trabajando de verdad.
  */
 async function soltar(id: string, hasta: Date, r: Salida): Promise<void> {
-  const data =
-    r.tipo === "ok"
-      ? { processLeaseUntil: null, processAttempts: 0, processError: null }
-      : r.tipo === "permanente"
-        ? {
-            // Se deja en el tope: no se vuelve a mirar, pero queda visible para
-            // el panel y se puede desbloquear a mano.
-            processLeaseUntil: null,
-            processAttempts: MAX_INTENTOS,
-            processError: r.motivo.slice(0, 200),
-          }
-        : r.tipo === "sin_cuota"
+  try {
+    const data =
+      r.tipo === "ok"
+        ? // El aviso es para quien mira, no para la cola: los predicados no
+          // leen processError, así que una foto soltada con aviso queda tan
+          // terminada como una sin él.
+          { processLeaseUntil: null, processAttempts: 0, processError: r.aviso ?? null }
+        : r.tipo === "permanente"
           ? {
-              // Quedarse sin cuota no es culpa de la foto: se le devuelve el
-              // intento y se la deja dormida hasta el mes que viene.
-              processLeaseUntil: meseQueViene(),
-              processAttempts: { decrement: 1 },
+              // Se deja en el tope: no se vuelve a mirar, pero queda visible para
+              // el panel y se puede desbloquear a mano.
+              processLeaseUntil: null,
+              processAttempts: MAX_INTENTOS,
               processError: r.motivo.slice(0, 200),
             }
-          : {
-              // El lease en el futuro ES el backoff: mientras esté vigente, el
-              // predicado no la trae.
-              processLeaseUntil: new Date(Date.now() + ESPERA_FALLO_MS),
-              processError: r.motivo.slice(0, 200),
-            };
+          : r.tipo === "sin_cuota"
+            ? {
+                // Quedarse sin cuota no es culpa de la foto: se le devuelve el
+                // intento y se la deja dormida hasta el mes que viene.
+                processLeaseUntil: meseQueViene(),
+                processAttempts: { decrement: 1 },
+                processError: r.motivo.slice(0, 200),
+              }
+            : { processLeaseUntil: esperaDe(await intentosDe(id)), processError: r.motivo.slice(0, 200) };
 
-  await db.photo
-    .updateMany({ where: { id, processLeaseUntil: hasta }, data })
-    .catch((e: unknown) => console.error("[cola] soltar falló", id, e));
+    await db.photo.updateMany({ where: { id, processLeaseUntil: hasta }, data });
+  } catch (e) {
+    console.error("[cola] soltar falló", id, e);
+  }
+}
+
+/**
+ * El lease de una foto que falló por algo transitorio. El lease en el futuro
+ * ES el backoff: mientras esté vigente, el predicado no la trae.
+ *
+ * En el último intento, null: la foto queda quieta igual —el predicado corta
+ * por processAttempts—, y así "quieta" se lee igual en todos lados, con o sin
+ * este fallo, sin un lease de un día que la haga parecer en espera.
+ */
+function esperaDe(intentos: number): Date | null {
+  if (intentos >= MAX_INTENTOS) return null;
+  return new Date(Date.now() + esperaTrasFallo(intentos));
+}
+
+/**
+ * Cuántas veces se reclamó. Una lectura más, sólo cuando algo falla. Mientras
+ * esta unidad tenga el lease nadie más cambia el contador, así que el valor es
+ * el que dejó su propio reclamo. Si la lectura falla, la espera corta: mejor
+ * reintentar pronto que no soltar.
+ */
+async function intentosDe(id: string): Promise<number> {
+  const f = await db.photo
+    .findUnique({ where: { id }, select: { processAttempts: true } })
+    .catch(() => null);
+  return f?.processAttempts ?? 0;
 }
 
 /* ── Arranque ───────────────────────────────────────────────────────────── */
@@ -280,22 +396,102 @@ async function soltar(id: string, hasta: Date, r: Salida): Promise<void> {
  * Con pm2 en fork y UNA instancia, todo lease vigente en el instante del
  * arranque es de un proceso muerto: nadie más pudo haberlo tomado. Sin esto,
  * las fotos que estaban en vuelo cuando se hizo el deploy esperan a que venza
- * el lease —diez minutos— antes de que alguien las vuelva a mirar.
+ * el lease —veinticinco minutos— antes de que alguien las vuelva a mirar.
  *
- * El decrement devuelve el intento: lo consumió un deploy, no la foto. Sin él,
- * cuatro deploys en medio de una tanda dejarían fotos marcadas como venenosas
- * sin que nada esté roto.
+ * Y pasa en casi todos los deploys, no sólo cuando pm2 se cansa de esperar:
+ * Next atiende el SIGTERM cerrando el servidor HTTP y, apenas terminan los
+ * pedidos, llama a process.exit sin esperar a la cola. Lo que estaba a medias
+ * se corta.
+ *
+ * El intento NO se devuelve. Antes se devolvía —"lo consumió un deploy, no la
+ * foto"—, y eso tenía un agujero: una foto que voltea al proceso también deja
+ * su lease sin soltar, así que al arrancar se le devolvía el intento, se la
+ * volvía a tomar, y volvía a voltearlo, para siempre, con el sitio entero
+ * cayéndose en cada vuelta. Con quince intentos, unos cuantos deploys en medio
+ * de una tanda sobran; y una foto que mata al proceso ahora sigue el mismo
+ * camino que una que falla: los rápidos seguidos, después las esperas largas,
+ * y quieta al final.
  *
  * En cluster esto NO se puede hacer —el lease vivo puede ser de otra instancia
- * que está trabajando ahora mismo—, por eso PROCESADOR_UNICA_INSTANCIA.
+ * que está trabajando ahora mismo—, por eso PROCESADOR_UNICA_INSTANCIA. Lo que
+ * sí se hace siempre es reparar los reclamos de los leases VENCIDOS: el tope
+ * de una unidad (12 min) es menor que su lease (25), así que un lease vencido
+ * sin soltar no puede ser de nadie vivo.
+ *
+ * Lease puesto y processError nulo es exactamente "una unidad que nunca soltó":
+ * soltar() deja el lease en null o un error puesto. Por eso se miran también
+ * los vencidos: si el servidor estuvo caído más que un lease, la foto igual
+ * quedó a medias y el reclamo de reconocimiento igual hay que repararlo.
  */
 async function liberarLeasesHuerfanos(): Promise<void> {
-  if (!env.PROCESADOR_UNICA_INSTANCIA) return;
-  const r = await db.photo.updateMany({
-    where: { processLeaseUntil: { gt: new Date() }, processError: null },
-    data: { processLeaseUntil: null, processAttempts: { decrement: 1 } },
+  if (!env.PROCESADOR_UNICA_INSTANCIA) {
+    await repararReclamosHuerfanos({ soloVencidos: true });
+    return;
+  }
+  // Primero la reparación: es el lease lo que dice qué unidad quedó a medias
+  // y desde cuándo, y liberar lo borra.
+  await repararReclamosHuerfanos({ soloVencidos: false });
+
+  const huerfanas = await db.photo.findMany({
+    where: { processLeaseUntil: { not: null }, processError: null },
+    select: { id: true, processAttempts: true, processLeaseUntil: true },
   });
-  if (r.count > 0) console.log(`[cola] leases huérfanos liberados=${r.count}`);
+  for (const f of huerfanas) {
+    // Las de la etapa rápida vuelven ya, como si hubieran fallado recién. Las
+    // de la etapa lenta esperan lo que les toca, con el motivo anotado.
+    const data =
+      f.processAttempts < INTENTOS_RAPIDOS
+        ? { processLeaseUntil: null }
+        : { processLeaseUntil: esperaDe(f.processAttempts), processError: "reinicio: se cortó en vuelo" };
+    await db.photo.updateMany({
+      where: { id: f.id, processLeaseUntil: f.processLeaseUntil, processError: null },
+      data,
+    });
+  }
+  if (huerfanas.length > 0) console.log(`[cola] leases huérfanos liberados=${huerfanas.length}`);
+}
+
+/**
+ * Deshacer los reclamos de reconocimiento que dejó una unidad a medias.
+ *
+ * runOcr y runFaceIndex ponen su columna AL RECLAMAR, antes de llamar a
+ * Rekognition, para que dos procesos no paguen dos veces la misma foto. Si el
+ * proceso se muere entre el reclamo y el resultado, la columna queda puesta sin
+ * caras ni dorsales, y para la cola eso es "hecha": la foto no se reintenta
+ * nunca y nadie la encuentra por selfie. Como los deploys cortan lo que está en
+ * vuelo (ver liberarLeasesHuerfanos), esto no es raro.
+ *
+ * Se deshace sólo lo que se reclamó DURANTE esa unidad —desde que se tomó el
+ * lease— y no dejó resultado. Si la llamada llegó a hacerse y no encontró
+ * caras, se paga otra vez: una llamada por foto, como mucho tantas fotos como
+ * PROCESADOR_A_LA_VEZ por reinicio, y cada reinicio le gasta un intento a la
+ * foto, así que tampoco se repite sin fin. Si llegó a guardar alguna cara, no
+ * se toca: reindexarla duplicaría las caras en la colección.
+ *
+ * Si el proceso se muere entre estas sentencias y la liberación, el próximo
+ * arranque las repite: son idempotentes, y el lease sigue ahí para decir qué
+ * unidad era.
+ */
+async function repararReclamosHuerfanos(opts: { soloVencidos: boolean }): Promise<void> {
+  const leaseS = LEASE_MS / 1000;
+  // Vencido: el lease ya pasó. Con una sola instancia no hace falta —todo lease
+  // del arranque es de un muerto—, pero en cluster es lo único seguro.
+  const todos = !opts.soloVencidos;
+  const caras = await db.$executeRaw`
+    update "Photo" p set "faceProcessedAt" = null
+     where p."processLeaseUntil" is not null and p."processError" is null
+       and (${todos}::boolean or p."processLeaseUntil" < (now() at time zone 'utc'))
+       and p."faceProcessedAt" >= p."processLeaseUntil" - ${leaseS}::double precision * interval '1 second'
+       and not exists (select 1 from "FaceRecord" f where f."photoId" = p.id)`;
+  const dorsales = await db.$executeRaw`
+    update "Photo" p set "ocrProcessedAt" = null
+     where p."processLeaseUntil" is not null and p."processError" is null
+       and (${todos}::boolean or p."processLeaseUntil" < (now() at time zone 'utc'))
+       and p."ocrProcessedAt" >= p."processLeaseUntil" - ${leaseS}::double precision * interval '1 second'
+       and p."bibNumbers" is null`;
+  if (caras + dorsales > 0) {
+    console.log(`[cola] reclamos a medias deshechos caras=${caras} dorsales=${dorsales}`);
+  }
 }
 
 /**
@@ -310,12 +506,13 @@ export function arrancarCola(): void {
   estado.arrancada = true;
   console.log(`[cola] arranca id=${estado.id} aLaVez=${A_LA_VEZ}`);
 
-  /* SIGTERM no mata nada: deja de tomar trabajo nuevo.
+  /* SIGTERM no mata nada desde acá: deja de tomar trabajo nuevo.
 
      No se llama a process.exit ni se toca el handler de Next. Lo único que
-     cambia es que la próxima pasada no reclama: lo que está en vuelo termina y
-     suelta su lease como corresponde. Si pm2 mata antes, esas fotos quedan con
-     el lease vigente y las libera el arranque siguiente. */
+     cambia es que la próxima pasada no reclama. Lo que está en vuelo termina y
+     suelta su lease si le da el tiempo; casi nunca le da, porque Next sale
+     apenas cierra el servidor HTTP. Esas fotos quedan con el lease puesto y
+     las repara y libera el arranque siguiente. */
   const cerrar = () => {
     estado.aceptando = false;
     console.log("[cola] no se toma más trabajo (señal de cierre)");
@@ -324,11 +521,26 @@ export function arrancarCola(): void {
   process.once("SIGINT", cerrar);
 
   void (async () => {
-    try {
-      await liberarLeasesHuerfanos();
-    } catch (e) {
-      console.error("[cola] no se pudieron liberar los leases:", e);
+    /* Con reintentos antes de arrancar el bucle. Si la reparación falla y el
+       bucle arranca igual, cuando venza el lease la cola vuelve a tomar la
+       foto, el reclamo nuevo pisa al viejo, y el reclamo a medias queda fuera
+       de la ventana que lo identifica: perdido. Un error de conexión al
+       arrancar —en este VPS pasa— no puede costar eso. */
+    for (let intento = 1; intento <= 5; intento++) {
+      try {
+        await liberarLeasesHuerfanos();
+        break;
+      } catch (e) {
+        console.error(`[cola] no se pudieron liberar los leases (intento ${intento}):`, e);
+        if (intento < 5) await new Promise((r) => setTimeout(r, 2_000 * 2 ** intento));
+      }
     }
+    /* El freno vive en memoria y un proceso nuevo arranca sin él. Se borra
+       también el anotado, para que el MCP no informe una pausa que ya no rige.
+       Un reinicio en medio de una caída de Rekognition suele ser alguien que
+       acaba de arreglar las credenciales: que pruebe ya. Si sigue roto, diez
+       fallos lo vuelven a frenar. */
+    anotarFreno(new Date().toISOString(), 0);
     void bucle();
     void ciclarHuerfanas();
   })();
@@ -389,10 +601,44 @@ async function duenosSinCuota(ownerIds: string[]): Promise<string[]> {
       continue;
     }
     const tiene = await hasRecognitionQuota(id, 1).catch(() => true);
-    estado.cuotas.set(id, { sinCuota: !tiene, hasta: ahora + 60_000 });
+    // El caché no cruza el cambio de mes: un "sin cuota" de las 23:59 del 30
+    // no puede dormir las fotos hasta el mes siguiente al que recién empezó.
+    const hasta = Math.min(ahora + 60_000, meseQueViene(new Date(ahora)).getTime());
+    estado.cuotas.set(id, { sinCuota: !tiene, hasta });
     if (!tiene) sin.push(id);
   }
   return sin;
+}
+
+/**
+ * Anotar en la base que las fotos de estos dueños esperan al mes que viene.
+ *
+ * Es lo mismo que hace soltar() cuando una unidad se encuentra con el tope a
+ * mitad de camino, pero para las que ni se llegaron a tomar. Sin esto, las
+ * fotos de un fotógrafo sin cuota quedaban como pendientes comunes: la cola
+ * las traía en cada pasada para descartarlas una por una, y mirando la base
+ * —que es lo que hace el MCP de operaciones— eran indistinguibles de una cola
+ * trabada. Anotadas, dicen por qué esperan y hasta cuándo.
+ *
+ * No toca processAttempts: nadie las intentó. El tope que se alcanzó es el
+ * cortacircuitos de costo (RECOGNITION_HARD_CAP_MONTHLY, ver quotas.ts), no la
+ * cuota comercial: si fue legítimo y se sube, reintentarVenenosas() con la
+ * clase 'cuota' las despierta.
+ */
+async function dormirHastaElMesQueViene(ownerIds: string[], ahora: Date): Promise<void> {
+  // Sólo las libres: el predicado deja afuera las que tienen un lease vigente,
+  // así que esto nunca pisa una unidad en vuelo. Si falla, la pasada sigue
+  // igual: las de ese dueño se descartan abajo como antes.
+  const r = await db.photo
+    .updateMany({
+      where: { ...dondePendienteRek(ahora), ownerId: { in: ownerIds } },
+      data: { processLeaseUntil: meseQueViene(ahora), processError: "cuota: tope mensual de reconocimiento" },
+    })
+    .catch((e: unknown) => {
+      console.error("[cola] no se pudieron anotar las fotos sin cuota:", e);
+      return { count: 0 };
+    });
+  if (r.count > 0) console.log(`[cola] sin cuota hasta el mes que viene=${r.count}`);
 }
 
 /* ── Elegir ─────────────────────────────────────────────────────────────── */
@@ -423,6 +669,8 @@ async function elegir(n: number): Promise<string[]> {
     orderBy: { createdAt: orden },
   });
   if (previews.length >= n) return previews.map((p) => p.id);
+  // Con el freno puesto, sólo vistas previas: ver FRENO_FALLOS.
+  if (Date.now() < estado.rekPausaHasta) return previews.map((p) => p.id);
 
   // Sólo si sobran lugares. Y con los dueños sin cuota afuera, para no traer
   // filas que se van a descartar una por una.
@@ -433,6 +681,7 @@ async function elegir(n: number): Promise<string[]> {
     orderBy: { createdAt: orden },
   });
   const sinCuota = new Set(await duenosSinCuota(candidatos.map((c) => c.ownerId)));
+  if (sinCuota.size > 0) await dormirHastaElMesQueViene([...sinCuota], ahora);
   const reks = candidatos
     .filter((c) => !sinCuota.has(c.ownerId))
     .slice(0, n - previews.length)
@@ -443,7 +692,7 @@ async function elegir(n: number): Promise<string[]> {
 
 /* ── Procesar una ───────────────────────────────────────────────────────── */
 
-async function procesarUna(id: string, signal?: AbortSignal): Promise<Salida> {
+async function procesarUna(id: string, hasta: Date, signal?: AbortSignal): Promise<Salida> {
   const foto = await db.photo.findUnique({
     where: { id },
     select: {
@@ -486,15 +735,34 @@ async function procesarUna(id: string, signal?: AbortSignal): Promise<Salida> {
   const faltaOcr = foto.event.bibDetection && foto.ocrProcessedAt === null;
   if (!faltaCaras && !faltaOcr) return { tipo: "ok" };
 
+  /* Si el tope ya cortó esta unidad, no se reclama nada más.
+
+     Cuando el tope gana la carrera, soltar() ya escribió el fallo y la espera,
+     pero esta función sigue corriendo: no hay forma de matarla. Si seguía
+     hasta Rekognition, reclamaba las columnas FUERA de cualquier lease, y si
+     el proceso se moría en ese momento —un deploy— el reclamo quedaba puesto
+     sin resultado, en una fila con error, que la reparación del arranque no
+     mira. La foto quedaba "hecha" sin caras para siempre.
+
+     Dos cercos. La señal, que corta antes de bajar bytes o de llamar. Y el
+     lease en el propio reclamo (ver UnidadCola en rekognition.ts): después de
+     que soltar() lo cambia, reclamar es imposible, atómicamente. Lo único que
+     queda es una llamada que ya había salido cuando saltó el tope y un proceso
+     que se muere antes de que vuelva: un minuto de ventana, como mucho. */
+  const unidad = { lease: hasta, signal };
+  const cortada = (): Salida | null =>
+    signal?.aborted ? { tipo: "transitorio", motivo: "tope: pasó el tiempo máximo" } : null;
+
   // Una sola preparación de bytes para las dos etapas: bajar el preview limpio
   // y reencodearlo cuesta, y hacerlo dos veces no aporta nada.
-  const bytes = await bytesParaRekognition(foto);
-  if (!bytes) return { tipo: "transitorio", motivo: "s3: no se pudieron leer los bytes" };
+  const bytes = await bytesParaRekognition(foto, signal);
+  if (!bytes) return cortada() ?? { tipo: "transitorio", motivo: "s3: no se pudieron leer los bytes" };
 
-  const estados: string[] = [];
+  let ocr: EstadoRek | null = null;
+  let caras: EstadoRek | null = null;
   if (faltaOcr) {
-    const r = await runOcr(foto.id, bytes);
-    estados.push(r.estado);
+    const r = await runOcr(foto.id, bytes, unidad);
+    ocr = r.estado;
     // evaluarDorsales sólo cuando de verdad hubo lectura: es lo que decide
     // apagar el OCR del evento, y decidir con una muestra de fallos apagaría
     // la búsqueda por dorsal de un evento que sí los tiene.
@@ -504,21 +772,106 @@ async function procesarUna(id: string, signal?: AbortSignal): Promise<Salida> {
       );
     }
   }
-  if (faltaCaras) {
-    const r = await runFaceIndex(foto.id, foto.eventId, bytes);
-    estados.push(r.estado);
+  if (faltaCaras && ocr !== "cortada") {
+    const r = await runFaceIndex(foto.id, foto.eventId, bytes, unidad);
+    caras = r.estado;
   }
+  const estados = [ocr, caras].filter((e): e is EstadoRek => e !== null);
+  anotarRek(estados);
 
+  if (estados.includes("cortada")) return cortada() ?? { tipo: "transitorio", motivo: "tope: pasó el tiempo máximo" };
   // Sin cuota manda sobre todo lo demás: no es un fallo de la foto.
   if (estados.includes("sin_cuota")) {
     return { tipo: "sin_cuota", motivo: "cuota: tope mensual de reconocimiento" };
   }
   if (estados.includes("error")) {
+    await asegurarReclamosSueltos(foto.id, hasta, { ocr: ocr === "error", caras: caras === "error" });
     return { tipo: "transitorio", motivo: "rek: falló una llamada" };
   }
-  // Un 'permanente' de Rekognition NO bloquea la foto: la columna quedó puesta
-  // y esa etapa no se vuelve a intentar, pero la foto ya se ve y se vende.
+  /* Un 'permanente' de Rekognition NO bloquea la foto: la columna quedó puesta
+     y esa etapa no se vuelve a intentar, pero la foto ya se ve y se vende.
+
+     Sí se anota. Sin la anotación, una foto que Rekognition rechaza es
+     idéntica en la base a una foto sin caras ni dorsal, y nadie se entera de
+     que no se puede encontrar. El prefijo "rekperm:" es lo que cuenta el MCP de
+     operaciones; la cola no lo lee. Si en la misma unidad la otra etapa falla,
+     el aviso se pierde —reclamar borra processError— y la foto sale sólo por
+     la proporción sin caras del MCP. */
+  if (estados.includes("permanente")) {
+    return { tipo: "ok", aviso: "rekperm: Rekognition rechazó la imagen" };
+  }
   return { tipo: "ok" };
+}
+
+/**
+ * Soltar de nuevo los reclamos de las etapas que fallaron.
+ *
+ * runOcr y runFaceIndex ya sueltan su columna cuando la llamada falla, pero esa
+ * escritura se traga su propio error. Si la llamada a Rekognition falló por la
+ * red, es justo cuando más probable es que la escritura también falle; y una
+ * columna que queda puesta sin resultado es, para la cola, una foto "hecha":
+ * no se reintenta nunca y nadie la encuentra. Acá se repite, con el lease de
+ * esta unidad en el where —si ya no es nuestra, no se toca—. Como los reclamos
+ * también llevan el lease, mientras esta unidad lo tenga nadie más pudo haber
+ * reclamado, así que la columna puesta sólo puede ser la nuestra.
+ */
+async function asegurarReclamosSueltos(
+  id: string,
+  hasta: Date,
+  etapas: { ocr: boolean; caras: boolean },
+): Promise<void> {
+  try {
+    if (etapas.caras) {
+      await db.photo.updateMany({
+        where: { id, processLeaseUntil: hasta, faceProcessedAt: { not: null }, faceRecords: { none: {} } },
+        data: { faceProcessedAt: null },
+      });
+    }
+    if (etapas.ocr) {
+      await db.photo.updateMany({
+        where: { id, processLeaseUntil: hasta, ocrProcessedAt: { not: null } },
+        data: { ocrProcessedAt: null },
+      });
+    }
+  } catch (e) {
+    // Si esto también falla, la base no contesta: soltar() va a fallar igual,
+    // el lease queda puesto con processError nulo, y el próximo arranque lo
+    // repara con repararReclamosHuerfanos.
+    console.error("[cola] no se pudieron soltar los reclamos", id, e);
+  }
+}
+
+/** Lleva la cuenta del freno con lo que devolvieron las etapas de una foto. */
+function anotarRek(estados: EstadoRek[]): void {
+  if (estados.includes("hecha")) {
+    estado.rekFallosSeguidos = 0;
+    return;
+  }
+  if (!estados.includes("error")) return;
+  estado.rekFallosSeguidos++;
+  if (estado.rekFallosSeguidos < FRENO_FALLOS) return;
+
+  estado.rekPausaHasta = Date.now() + FRENO_PAUSA_MS;
+  // Al volver prueba con una: un solo fallo más vuelve a frenar.
+  estado.rekFallosSeguidos = FRENO_FALLOS - 1;
+  const hasta = new Date(estado.rekPausaHasta).toISOString();
+  console.error(`[cola] freno del reconocimiento: ${FRENO_FALLOS} fallos seguidos de Rekognition, pausa hasta ${hasta}`);
+  // Nunca puede tirar: que no se pueda anotar no cambia que el freno está puesto.
+  anotarFreno(hasta, FRENO_FALLOS);
+  // Al vencer, la prueba sale en el momento: si no, la cola ociosa podía dormir
+  // hasta diez minutos más, y el MCP veía fotos esperando sin freno puesto.
+  setTimeout(despertar, FRENO_PAUSA_MS + 1_000).unref?.();
+}
+
+/**
+ * Lo que ve el MCP de operaciones. Nunca puede tirar: que no se pueda anotar no
+ * cambia lo que la cola hace.
+ */
+function anotarFreno(hasta: string, fallos: number): void {
+  const value = JSON.stringify({ hasta, fallos });
+  void db.setting
+    .upsert({ where: { key: CLAVE_FRENO }, update: { value }, create: { key: CLAVE_FRENO, value } })
+    .catch(() => undefined);
 }
 
 /**
@@ -528,7 +881,7 @@ async function procesarUna(id: string, signal?: AbortSignal): Promise<Salida> {
  * pero esto es el cinturón: lo que sea que tarde más de cuatro minutos no va a
  * terminar bien, y dejarlo correr retiene un permiso del semáforo de sharp.
  */
-async function procesarConTope(id: string): Promise<Salida> {
+async function procesarConTope(id: string, hasta: Date): Promise<Salida> {
   /* El tope avisa, además de dejar de esperar.
 
      Antes era sólo un Promise.race: el trabajo perdedor seguía corriendo, con
@@ -554,7 +907,7 @@ async function procesarConTope(id: string): Promise<Salida> {
     // La perdedora no termina en el acto, pero su rechazo no puede quedar
     // suelto: un unhandledRejection en Next tumba el proceso entero.
     return await Promise.race([
-      procesarUna(id, corte.signal).catch((e: unknown) => ({
+      procesarUna(id, hasta, corte.signal).catch((e: unknown) => ({
         tipo: "transitorio" as const,
         motivo: `error: ${e instanceof Error ? e.message : String(e)}`,
       })),
@@ -583,7 +936,7 @@ async function unaPasada(): Promise<number> {
       if (!(await reclamar(id, hasta))) return;
       estado.enVuelo.set(id, hasta.getTime());
       try {
-        const r = await procesarConTope(id);
+        const r = await procesarConTope(id, hasta);
         if (r.tipo !== "ok") {
           console.warn(`[cola] photo=${id} ${r.tipo}: ${r.motivo}`);
         }
@@ -648,35 +1001,68 @@ async function latir(): Promise<void> {
   console.log(
     `[cola] latido id=${estado.id} pendientesPreview=${r.pendientesPreview} ` +
       `pendientesRek=${r.pendientesRek} enVuelo=${r.enVuelo} ` +
-      `enfriandose=${r.enfriandose} venenosas=${r.venenosas} masViejaMin=${r.masViejaMin ?? "-"}`,
+      `enfriandose=${r.enfriandose} despacio=${r.reintentandoDespacio} ` +
+      `venenosas=${r.venenosas} venenosasRek=${r.venenosasRek} masViejaMin=${r.masViejaMin ?? "-"}`,
   );
 }
 
 async function resumen(): Promise<Resumen> {
   const ahora = new Date();
-  const [pendientesPreview, pendientesRek, enfriandose, venenosas, masVieja] =
-    await Promise.all([
-      db.photo.count({ where: dondePendientePreview(ahora) }),
-      db.photo.count({ where: dondePendienteRek(ahora) }),
-      db.photo.count({
-        where: { processLeaseUntil: { gt: ahora }, processError: { not: null } },
-      }),
-      db.photo.count({
-        where: { processAttempts: { gte: MAX_INTENTOS }, previewKey: null, deletedAt: null },
-      }),
-      db.photo.findFirst({
-        where: dondePendientePreview(ahora),
-        orderBy: { createdAt: "asc" },
-        select: { createdAt: true },
-      }),
-    ]);
+  // En una transacción y no en un Promise.all: son siete consultas por minuto,
+  // y en paralelo ocupaban siete de las diez conexiones del pool que comparte
+  // con el sitio. Así usan una, una atrás de la otra.
+  const [
+    pendientesPreview,
+    pendientesRek,
+    enfriandose,
+    reintentandoDespacio,
+    venenosas,
+    venenosasRek,
+    masVieja,
+  ] = await db.$transaction([
+    db.photo.count({ where: dondePendientePreview(ahora) }),
+    db.photo.count({ where: dondePendienteRek(ahora) }),
+    db.photo.count({
+      where: { processLeaseUntil: { gt: ahora }, processError: { not: null } },
+    }),
+    db.photo.count({
+      where: {
+        processAttempts: { gte: INTENTOS_RAPIDOS, lt: MAX_INTENTOS },
+        processLeaseUntil: { gt: ahora },
+        processError: { not: null },
+        NOT: { processError: { startsWith: "cuota" } },
+        deletedAt: null,
+      },
+    }),
+    db.photo.count({ where: dondeApartadaPreview() }),
+    db.photo.count({
+      where: {
+        processAttempts: { gte: MAX_INTENTOS },
+        previewKey: { not: null },
+        fileSize: { not: null },
+        deletedAt: null,
+        event: { recognition: true },
+        OR: [
+          { faceProcessedAt: null },
+          { AND: [{ event: { bibDetection: true } }, { ocrProcessedAt: null }] },
+        ],
+      },
+    }),
+    db.photo.findFirst({
+      where: dondePendientePreview(ahora),
+      orderBy: { createdAt: "asc" },
+      select: { createdAt: true },
+    }),
+  ]);
 
   return {
     pendientesPreview,
     pendientesRek,
     enVuelo: estado.enVuelo.size,
     enfriandose,
+    reintentandoDespacio,
     venenosas,
+    venenosasRek,
     masViejaMin: masVieja
       ? Math.round((ahora.getTime() - masVieja.createdAt.getTime()) / 60_000)
       : null,
@@ -792,6 +1178,8 @@ export async function estadoCola() {
       ? Math.round((Date.now() - estado.ultimaPasadaAt) / 1000)
       : null,
     resumen: await resumen(),
+    frenoReconocimientoHasta:
+      estado.rekPausaHasta > Date.now() ? new Date(estado.rekPausaHasta).toISOString() : null,
     // Los tiempos por etapa de las últimas fotos. También quedan en
     // Setting "procesador:tiempos", que es lo que se puede mirar sin entrar
     // al servidor.
@@ -811,12 +1199,14 @@ export async function reintentarVenenosas(opts: {
   eventId?: string;
   clase?: string;
 }): Promise<number> {
-  const clase = opts.clase ?? "cuota";
+  // Con los dos puntos: la clase es el prefijo hasta ':', y sin ellos 'rek'
+  // también se llevaba las 'rekperm:', que no se reintentan.
+  const clase = (opts.clase ?? "cuota").replace(/:$/, "");
   const r = await db.photo.updateMany({
     where: {
       ...(opts.eventId ? { eventId: opts.eventId } : {}),
       deletedAt: null,
-      processError: { startsWith: clase },
+      processError: { startsWith: `${clase}:` },
     },
     data: { processAttempts: 0, processLeaseUntil: null, processError: null },
   });
@@ -838,7 +1228,12 @@ export async function reconocerEvento(eventId: string): Promise<number> {
       deletedAt: null,
       fileSize: { not: null },
       previewKey: { not: null },
-      faceProcessedAt: null,
+      // Lo mismo que le falta a una foto según dondePendienteRek: también las
+      // que tienen las caras pero no el dorsal, que si no quedaban afuera.
+      OR: [
+        { faceProcessedAt: null },
+        { AND: [{ event: { bibDetection: true } }, { ocrProcessedAt: null }] },
+      ],
     },
     data: { processAttempts: 0, processLeaseUntil: null, processError: null },
   });

@@ -96,11 +96,12 @@ export function registrarHerramientas(server: McpServer, deps: Dependencias): vo
     {
       title: "Salud técnica",
       description: [
-        "Estado de ahora mismo del procesamiento de fotos y de los pagos, con alertas accionables.",
+        "Estado de ahora mismo del procesamiento de fotos, del reconocimiento y de los pagos, con alertas accionables.",
         "status de cada parte: ok, degraded (mirarlo hoy) o down (hacer algo ya).",
-        "photo_processing: fotos pendientes de vista previa (no se ven en la tienda hasta tenerla), cuántas llevan más de 1 h, cuántas quedaron apartadas tras 4 intentos, cuántas se procesaron en la última hora y hace cuántos segundos terminó la última. timings: mediana y p90 del tiempo por foto de las últimas procesadas.",
+        "photo_processing: fotos pendientes de vista previa (no se ven en la tienda hasta tenerla), cuántas llevan más de 1 h, cuántas fallaron y esperan reintento (retrying; retrying_slowly las que ya van por los reintentos lentos, que duran unos 7 días), cuántas quedaron apartadas tras 15 intentos, cuántas se procesaron en la última hora y hace cuántos segundos terminó la última. timings: mediana y p90 del tiempo por foto de las últimas procesadas.",
+        "recognition: fotos que ya se ven pero todavía no se pueden encontrar por selfie o por dorsal, en eventos con reconocimiento prendido. missing es el total y se reparte en queued (esperando turno), in_flight, retrying (fallaron y esperan reintento; retrying_slowly las que ya van por los reintentos lentos), waiting_quota (el fotógrafo llegó al tope de gasto de reconocimiento, una anomalía: espera al mes que viene) y parked_after_retries (la cola se rindió). rejected_by_rekognition: fotos que Rekognition rechazó y no se reintentan. paused_until: si la cola frenó el reconocimiento porque Rekognition falla entero, hasta cuándo. no_faces_share_last_7d: qué parte de las reconocidas en 7 días no tiene ninguna cara (lo normal es menos del 15 %). recognition_off_*: eventos con el reconocimiento apagado, informativo. recognition es null si no se pudo leer, con la razón en unavailable_reason.",
         "payments: últimas 24 h. failure_rate = fallidas / (pagadas + fallidas). pending_unconfirmed: ventas de más de 1 h sin confirmar; abandoned_checkouts: sin confirmar de más de 24 h en los últimos 30 días (checkouts abandonados, normal).",
-        "errors: errores de procesamiento VIGENTES (fotos que hoy siguen sin vista previa y con error), agrupados por código; y pagos fallidos de las últimas 24 h. Nunca incluye mensajes ni identificadores.",
+        "errors: errores VIGENTES agrupados por código: de fotos que hoy siguen sin vista previa (source photo_processing), de fotos que siguen sin reconocer (source recognition), y pagos fallidos de las últimas 24 h. Nunca incluye mensajes ni identificadores.",
       ].join(" "),
       annotations: SOLO_LECTURA,
     },

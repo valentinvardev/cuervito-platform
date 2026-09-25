@@ -8,6 +8,11 @@ import {
   SQL_COSTOS_REKOGNITION,
   SQL_COSTOS_TRAFICO,
 } from "../src/metricas/costos.js";
+import {
+  SQL_ERRORES_RECONOCIMIENTO,
+  SQL_FRENO_RECONOCIMIENTO,
+  SQL_RECONOCIMIENTO,
+} from "../src/metricas/reconocimiento.js";
 import { SQL_ERRORES_FOTOS, SQL_FOTOS, SQL_PAGOS, SQL_TIEMPOS } from "../src/metricas/salud.js";
 import { SQL_USO } from "../src/metricas/uso.js";
 import { SQL_VENTAS } from "../src/metricas/ventas.js";
@@ -27,6 +32,9 @@ const TODAS: [string, string][] = [
   ["salud: errores", SQL_ERRORES_FOTOS],
   ["salud: pagos", SQL_PAGOS],
   ["salud: tiempos", SQL_TIEMPOS],
+  ["salud: reconocimiento", SQL_RECONOCIMIENTO],
+  ["salud: errores de reconocimiento", SQL_ERRORES_RECONOCIMIENTO],
+  ["salud: freno del reconocimiento", SQL_FRENO_RECONOCIMIENTO],
   ["costos: rekognition", SQL_COSTOS_REKOGNITION],
   ["costos: almacenamiento", SQL_COSTOS_ALMACENAMIENTO],
   ["costos: caras", SQL_COSTOS_CARAS],
@@ -65,8 +73,9 @@ describe.each(TODAS)("la consulta de %s", (_, sql) => {
 });
 
 it("todas las consultas que recorren tablas devuelven agregados, no filas", () => {
-  // Salvo la de tiempos, que lee UNA fila de configuración por clave.
-  for (const [nombre, sql] of TODAS.filter(([n]) => n !== "salud: tiempos")) {
+  // Salvo las que leen UNA fila de configuración por clave.
+  const deConfiguracion = new Set(["salud: tiempos", "salud: freno del reconocimiento"]);
+  for (const [nombre, sql] of TODAS.filter(([n]) => !deConfiguracion.has(n))) {
     expect(sql, nombre).toMatch(/count\(|sum\(|max\(/i);
   }
 });

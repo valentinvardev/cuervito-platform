@@ -180,9 +180,12 @@ export async function deleteRekCollection(rekCollectionId: string): Promise<void
  *  el camino normal de subida los bytes llegan por parámetro y esto no
  *  se ejecuta: evita dos descargas del original (~30MB por foto) y dos
  *  resizes con sharp. */
-async function loadForRekognition(storageKey: string): Promise<Uint8Array | null> {
+async function loadForRekognition(
+  storageKey: string,
+  signal?: AbortSignal,
+): Promise<Uint8Array | null> {
   try {
-    const rawBytes = await getS3ObjectBytes(storageKey);
+    const rawBytes = await getS3ObjectBytes(storageKey, { signal });
     if (rawBytes.byteLength <= REKOGNITION_MAX_BYTES) return rawBytes;
     // Bajo el semáforo de sharp: es un decode de 24 MP como cualquier otro, y
     // fuera del tope se sumaba a los tres que ya están corriendo.
@@ -216,14 +219,20 @@ async function loadForRekognition(storageKey: string): Promise<Uint8Array | null
  * 845 KB y tiene la misma resolución de 2400 px que se le pasa en el camino
  * normal, así que Rekognition ve prácticamente lo mismo por una vigésima parte
  * del tráfico.
+ *
+ * Con la señal del tope de la cola: si la unidad ya se dio por perdida, la
+ * descarga se corta y no se cae al original de 15 MB.
  */
-export async function bytesParaRekognition(foto: {
-  storageKey: string;
-  previewCleanKey: string | null;
-}): Promise<Uint8Array | null> {
+export async function bytesParaRekognition(
+  foto: {
+    storageKey: string;
+    previewCleanKey: string | null;
+  },
+  signal?: AbortSignal,
+): Promise<Uint8Array | null> {
   if (foto.previewCleanKey && !env.REKOGNITION_USE_ORIGINAL) {
     try {
-      const webp = await getS3ObjectBytes(foto.previewCleanKey);
+      const webp = await getS3ObjectBytes(foto.previewCleanKey, { signal });
       // Rekognition no acepta WebP: hay que reencodear a JPEG igual.
       await tomarSlotSharp();
       try {
@@ -235,10 +244,12 @@ export async function bytesParaRekognition(foto: {
         soltarSlotSharp();
       }
     } catch (err) {
+      if (signal?.aborted) return null;
       console.error("[rekognition] preview limpio no se pudo usar:", foto.previewCleanKey, err);
     }
   }
-  return loadForRekognition(foto.storageKey);
+  if (signal?.aborted) return null;
+  return loadForRekognition(foto.storageKey, signal);
 }
 
 /* =============================================================================
@@ -282,13 +293,30 @@ function extractAllBibs(detections: TextDetection[]): string[] {
     .map(([v]) => v);
 }
 
-/** Run DetectText against a single photo, store bibs as comma-separated. */
-export type EstadoRek = "hecha" | "ya" | "sin_cuota" | "error" | "permanente";
+/**
+ * "cortada": la unidad de la cola que la llamó ya perdió su lease (el tope la
+ * dio por perdida) y no se reclamó nada. No es un fallo de Rekognition.
+ */
+export type EstadoRek = "hecha" | "ya" | "sin_cuota" | "error" | "permanente" | "cortada";
 
+/**
+ * Cuando llama la cola: el lease de la unidad y la señal de su tope.
+ *
+ * El reclamo de la columna se hace CON el lease en el where. Cuando el tope da
+ * la unidad por perdida, soltar() cambia el lease, y a partir de ahí esta
+ * unidad ya no puede reclamar nada: el UPDATE no encuentra la fila. Sin esto,
+ * una unidad que seguía corriendo después del tope reclamaba fuera de
+ * cualquier lease, y si el proceso se moría en ese momento el reclamo quedaba
+ * puesto sin resultado, en una fila que nadie iba a reparar.
+ */
+export type UnidadCola = { lease: Date; signal?: AbortSignal };
+
+/** Run DetectText against a single photo, store bibs as comma-separated. */
 export async function runOcr(
   photoId: string,
   /** JPEG ya preparado por generatePreview. Si no viene, se baja el original. */
   preparedBytes?: Uint8Array | null,
+  unidad?: UnidadCola,
 ): Promise<{ bibs: string | null; estado: EstadoRek }> {
   const photo = await db.photo.findUnique({
     where: { id: photoId },
@@ -318,16 +346,23 @@ export async function runOcr(
   // misma foto casi al mismo tiempo: sin esto los dos leen null y los dos
   // pagan. Sólo el UPDATE que encuentra la fila todavía en null se queda con
   // el trabajo.
+  if (unidad?.signal?.aborted) return { bibs: null, estado: "cortada" };
   const claimedAt = new Date();
   const claim = await db.photo.updateMany({
-    where: { id: photoId, ocrProcessedAt: null },
+    where: {
+      id: photoId,
+      ocrProcessedAt: null,
+      ...(unidad ? { processLeaseUntil: unidad.lease } : {}),
+    },
     data: { ocrProcessedAt: claimedAt },
   });
   if (claim.count === 0) {
     const fresh = await db.photo.findUnique({
       where: { id: photoId },
-      select: { bibNumbers: true },
+      select: { bibNumbers: true, ocrProcessedAt: true },
     });
+    // Si la columna sigue vacía, no la ganó nadie: lo que cambió fue el lease.
+    if (unidad && fresh?.ocrProcessedAt === null) return { bibs: null, estado: "cortada" };
     return { bibs: fresh?.bibNumbers ?? null, estado: "ya" };
   }
 
@@ -392,6 +427,7 @@ export async function runFaceIndex(
   eventId: string,
   /** JPEG ya preparado por generatePreview. Si no viene, se baja el original. */
   preparedBytes?: Uint8Array | null,
+  unidad?: UnidadCola,
 ): Promise<{ estado: EstadoRek }> {
   const photo = await db.photo.findUnique({
     where: { id: photoId },
@@ -417,12 +453,22 @@ export async function runFaceIndex(
   // secuencial, esto resuelve la carrera con la Lambda. Indexar dos veces la
   // misma imagen no sólo se paga dos veces — AWS devuelve FaceIds distintos y
   // las caras duplicadas quedan guardadas para siempre.
+  if (unidad?.signal?.aborted) return { estado: "cortada" };
   const claimedAt = new Date();
   const claim = await db.photo.updateMany({
-    where: { id: photoId, faceProcessedAt: null },
+    where: {
+      id: photoId,
+      faceProcessedAt: null,
+      ...(unidad ? { processLeaseUntil: unidad.lease } : {}),
+    },
     data: { faceProcessedAt: claimedAt },
   });
-  if (claim.count === 0) return { estado: "ya" };
+  if (claim.count === 0) {
+    if (!unidad) return { estado: "ya" };
+    const fresh = await db.photo.findUnique({ where: { id: photoId }, select: { faceProcessedAt: true } });
+    // Si la columna sigue vacía, no la ganó nadie: lo que cambió fue el lease.
+    return { estado: fresh?.faceProcessedAt === null ? "cortada" : "ya" };
+  }
 
   const release = () =>
     db.photo

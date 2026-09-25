@@ -259,6 +259,28 @@ levanta la próxima pasada. Ésa es la diferencia con lo de antes, que era un
 Ritmo real: ~5 s por foto, 3 en paralelo (semáforo de sharp) ≈ **30 fotos por
 minuto**.
 
+**Reintentos.** Una foto que falla se reintenta cuatro veces a cinco minutos y
+después cada vez más espaciado (1, 2, 4, 8, 16 h, y después una vez por día)
+durante unos 7 días; a los 15 intentos queda quieta y hay que destrabarla con
+`reintentar-venenosas`. Antes se rendía a la cuarta, y la falla de S3 del 16 al
+20/9 dejó fotos sin reconocer durante días. Dos cosas acompañan a eso:
+
+- **El freno.** Si Rekognition falla diez veces seguidas (credenciales,
+  permisos, AWS), la cola deja de tomar reconocimientos media hora, para que
+  los reintentos no se coman el tope de gasto del fotógrafo
+  (`RECOGNITION_HARD_CAP_MONTHLY`). Queda anotado en `Setting`
+  `procesador:freno-reconocimiento`, y un reinicio lo borra.
+- **Los reinicios.** Next sale apenas cierra el servidor HTTP, sin esperar a la
+  cola, así que casi todo deploy corta lo que estaba a medias. Al arrancar, la
+  cola deshace los reclamos de reconocimiento que quedaron sin resultado (si no,
+  la foto quedaba "reconocida" sin caras para siempre) y le cuenta el intento a
+  la foto, para que una que tumba el proceso no lo tumbe en loop. Además, el
+  reclamo de una columna de reconocimiento lleva el lease de la unidad en el
+  `where`: una unidad que el tope ya dio por perdida no puede reclamar nada.
+
+Todo esto lo informa `get_health` del MCP de operaciones (`mcp/`), en
+`photo_processing` y `recognition`.
+
 ### La marca de agua
 
 Es configurable desde `/admin/watermark` y vive en `Setting` como JSON

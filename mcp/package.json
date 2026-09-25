@@ -1,6 +1,6 @@
 {
   "name": "encontrate-ops-mcp",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "MCP remoto de sólo lectura con métricas agregadas y salud técnica de encontrate.app",
   "type": "module",

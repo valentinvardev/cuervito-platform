@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { env } from "~/env";
+import { dondeApartadaPreview } from "~/server/cola-fotos";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 
@@ -114,9 +115,12 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
       where: { eventId: id, deletedAt: null, fileSize: { not: null }, previewKey: null },
     }),
     /* Las que se dieron por perdidas. El único arreglo posible es que las
-       vuelva a exportar, así que hay que nombrarlas. */
+       vuelva a exportar, así que hay que nombrarlas. Con el predicado de la
+       cola y no con un número: una foto que todavía está en los reintentos
+       lentos no está perdida, y si el fotógrafo la vuelve a subir y el
+       reintento sale bien, queda dos veces en la tienda. */
     db.photo.findMany({
-      where: { eventId: id, deletedAt: null, processAttempts: { gte: 4 }, previewKey: null },
+      where: { eventId: id, ...dondeApartadaPreview() },
       select: { filename: true },
       take: 6,
     }),

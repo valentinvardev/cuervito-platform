@@ -1,8 +1,31 @@
 import type { Consulta } from "../db.js";
 import { tasa } from "../privacidad.js";
+import {
+  AHORA,
+  COLGADA,
+  EN_VUELO_RECIENTE,
+  HORAS_ETAPA_LENTA,
+  INTENTOS_RAPIDOS,
+  LEASE_MIN,
+  MAX_INTENTOS,
+  REINTENTANDO_DESPACIO,
+} from "./cola.js";
+import { peor, type Alerta, type Estado } from "./estado.js";
+import {
+  evaluarReconocimiento,
+  FILA_VACIA,
+  SQL_ERRORES_RECONOCIMIENTO,
+  SQL_RECONOCIMIENTO,
+  leerFreno,
+  SQL_FRENO_RECONOCIMIENTO,
+  type FilaReconocimiento,
+  type Reconocimiento,
+} from "./reconocimiento.js";
+
+export { peor, type Alerta, type Estado };
 
 /**
- * La salud de ahora mismo: el procesador de fotos y los pagos.
+ * La salud de ahora mismo: el procesador de fotos, el reconocimiento y los pagos.
  *
  * Todo sale de la base, porque es ahí donde vive el estado. El procesador no
  * corre en Lambda sino en una cola adentro del servidor de la aplicación, y
@@ -20,26 +43,51 @@ import { tasa } from "../privacidad.js";
 
 /** Una foto pendiente: subida, sin borrar, y todavía sin vista previa con marca. */
 const PENDIENTE = `"fileSize" is not null and "previewKey" is null and "deletedAt" is null`;
-/**
- * Pendiente y que la cola todavía va a tomar. Las que llegaron a 4 intentos
- * quedan apartadas a propósito: la cola deja de intentarlas y alguien las
- * tiene que devolver a mano. Distinguirlas importa para el estado: diez fotos
- * apartadas con la cola ociosa no es "el procesador se cayó", es "hay diez
- * fotos para reintentar".
- */
-const TRABAJABLE = `${PENDIENTE} and "processAttempts" < 4`;
-const AHORA = `(now() at time zone 'utc')`;
+const VIVA = `"processAttempts" < ${MAX_INTENTOS}`;
+const TOMADA = `coalesce("processLeaseUntil" > ${AHORA}, false)`;
 
+/**
+ * Las vistas previas pendientes, en grupos que no se pisan: apartadas (la cola
+ * se rindió), en vuelo, reintentando (fallaron y esperan) y libres (la cola
+ * las puede tomar ya).
+ *
+ * El atasco no se mide con "hace cuánto que no termina nada": en una semana
+ * sin carreras eso son días, y la primera foto que se libera haría decir
+ * "down" hasta que la cola se despierte —duerme hasta diez minutos cuando no
+ * tiene trabajo—. Se mide con fotos que llevan más de un cuarto de hora
+ * libres, o una unidad colgada, sin ninguna actividad de la cola en media
+ * hora. Actividad es cualquier cosa que la cola hizo: una vista previa, un
+ * reconocimiento o un reclamo.
+ */
 export const SQL_FOTOS = `
 select
   count(*) filter (where ${PENDIENTE})::int as pendientes,
   count(*) filter (where ${PENDIENTE} and "createdAt" < ${AHORA} - interval '1 hour')::int as pendientes_1h,
-  count(*) filter (where ${PENDIENTE} and "processLeaseUntil" > ${AHORA} and "processError" is null)::int as en_vuelo,
-  count(*) filter (where ${PENDIENTE} and "processAttempts" >= 4)::int as apartadas,
-  count(*) filter (where ${TRABAJABLE})::int as trabajables,
-  count(*) filter (where ${TRABAJABLE} and "createdAt" < ${AHORA} - interval '1 hour')::int as trabajables_1h,
+  count(*) filter (where ${PENDIENTE} and ${VIVA} and ${TOMADA} and "processError" is null)::int as en_vuelo,
+  count(*) filter (where ${PENDIENTE} and ${VIVA} and ${COLGADA})::int as colgadas,
+  count(*) filter (where ${PENDIENTE} and not (${VIVA}))::int as apartadas,
+  count(*) filter (where ${PENDIENTE} and ${VIVA} and ${TOMADA} and "processError" is not null)::int as reintentando,
+  count(*) filter (where ${PENDIENTE} and ${REINTENTANDO_DESPACIO})::int as reintentando_despacio,
+  count(*) filter (where ${PENDIENTE} and ${VIVA} and not ${TOMADA})::int as libres,
+  count(*) filter (
+    where ${PENDIENTE} and ${VIVA} and not ${TOMADA}
+      and greatest("processLeaseUntil", "createdAt") < ${AHORA} - interval '15 minutes'
+  )::int as libres_15m,
+  -- Las que no se ven hace más de una hora y no están esperando un reintento
+  -- lento: ésas ya tienen su propia alerta.
+  count(*) filter (
+    where ${PENDIENTE} and ${VIVA} and not ${REINTENTANDO_DESPACIO}
+      and "createdAt" < ${AHORA} - interval '1 hour'
+  )::int as trabajables_1h,
   count(*) filter (where "previewGeneratedAt" > ${AHORA} - interval '1 hour')::int as ultima_hora,
-  extract(epoch from (${AHORA} - max("previewGeneratedAt")))::int as edad_ultimo_exito_s
+  extract(epoch from (${AHORA} - max("previewGeneratedAt")))::int as edad_ultimo_exito_s,
+  -- Sin las columnas del reconocimiento: si al rol le faltara ese permiso,
+  -- esta consulta —la primera— se llevaría puesta toda la salud. El reloj del
+  -- reconocimiento se suma después, desde su propia consulta.
+  extract(epoch from (${AHORA} - greatest(
+    max("previewGeneratedAt"),
+    max("processLeaseUntil") filter (where ${EN_VUELO_RECIENTE}) - interval '${LEASE_MIN} minutes'
+  )))::int as edad_actividad_s
 from "Photo"
 `;
 
@@ -84,15 +132,7 @@ export const SQL_TIEMPOS = `select value from "Setting" where key = 'procesador:
 
 // ── Estado ──────────────────────────────────────────────────────────────────
 
-export type Estado = "ok" | "degraded" | "down";
-export type Alerta = { severity: "critical" | "warning"; code: string; message: string };
-
-const CLASES_CONOCIDAS = new Set(["tope", "s3", "corrupta", "cuota", "rek", "error"]);
-
-const PEOR: Record<Estado, number> = { ok: 0, degraded: 1, down: 2 };
-export function peor(...estados: Estado[]): Estado {
-  return estados.reduce<Estado>((a, b) => (PEOR[b] > PEOR[a] ? b : a), "ok");
-}
+const CLASES_CONOCIDAS = new Set(["tope", "s3", "corrupta", "cuota", "rek", "error", "reinicio", "rekperm"]);
 
 // Umbrales. Están acá y no sueltos en el código para poder leerlos de un vistazo.
 const SIN_EXITO_DOWN_S = 30 * 60; // con fotos pendientes y ninguna terminada en media hora
@@ -100,6 +140,8 @@ const SIN_EXITO_DEGRADED_S = 10 * 60;
 const DESCARGA_LENTA_MS = 30_000; // una descarga normal de un original son menos de 15 s
 const TIEMPOS_VIGENCIA_MS = 6 * 3600_000;
 const TIEMPOS_MUESTRA_MINIMA = 3;
+/** Tantas fallando a la vez y ninguna terminada en media hora: es el procesador, no una foto rara. */
+const FALLANDO_A_LA_VEZ = 10;
 const PAGOS_MINIMOS = 5; // con menos intentos, una tasa no dice nada
 const PAGOS_DOWN = 0.5;
 const PAGOS_DEGRADED = 0.2;
@@ -158,19 +200,51 @@ export function resumirTiempos(valor: string | undefined, ahora: Date): { tiempo
   };
 }
 
+/**
+ * Los errores agrupados por clase. Una clase que no conocemos sale como
+ * "otro": el prefijo de processError lo escribe la app, pero si un día trae
+ * otra cosa, su texto no sale.
+ */
+function porClaseConocida(filas: { clase: string; n: number }[], source: string) {
+  const porClase = new Map<string, number>();
+  for (const e of filas) {
+    const clase = CLASES_CONOCIDAS.has(e.clase) ? e.clase : "otro";
+    porClase.set(clase, (porClase.get(clase) ?? 0) + e.n);
+  }
+  return [...porClase].map(([code, count]) => ({ source, code, count }));
+}
+
+/** La menor de dos edades, o la que haya: la actividad más reciente. */
+function masReciente(a: number | null, b: number | null): number | null {
+  if (a === null) return b;
+  if (b === null) return a;
+  return Math.min(a, b);
+}
+
 // ── La salud completa ───────────────────────────────────────────────────────
 
 type FilaFotos = {
   pendientes: number;
   pendientes_1h: number;
   en_vuelo: number;
+  colgadas: number;
   apartadas: number;
-  trabajables: number;
+  reintentando: number;
+  reintentando_despacio: number;
+  libres: number;
+  libres_15m: number;
   trabajables_1h: number;
   ultima_hora: number;
   edad_ultimo_exito_s: number | null;
+  edad_actividad_s: number | null;
 };
 type FilaPagos = { pagadas: number; fallidas: number; sin_confirmar: number; abandonadas: number };
+
+const FOTOS_VACIA: FilaFotos = {
+  pendientes: 0, pendientes_1h: 0, en_vuelo: 0, colgadas: 0, apartadas: 0, reintentando: 0,
+  reintentando_despacio: 0, libres: 0, libres_15m: 0, trabajables_1h: 0, ultima_hora: 0,
+  edad_ultimo_exito_s: null, edad_actividad_s: null,
+};
 
 export type Salud = {
   status: Estado;
@@ -179,11 +253,15 @@ export type Salud = {
     pending: number;
     pending_over_1h: number;
     in_flight: number;
+    retrying: number;
+    retrying_slowly: number;
     parked_after_retries: number;
     processed_last_hour: number;
     last_success_age_s: number | null;
     timings: Tiempos;
   };
+  /** null si la consulta del reconocimiento falló; la razón va en unavailable_reason. */
+  recognition: Reconocimiento | null;
   payments: {
     status: Estado;
     window_hours: number;
@@ -195,43 +273,112 @@ export type Salud = {
   };
   errors: { source: string; code: string; count: number }[];
   alerts: Alerta[];
-  unavailable_reason?: { timings?: string };
+  unavailable_reason?: { timings?: string; recognition?: string };
 };
+
+type LecturaRek =
+  | { ok: true; fila: FilaReconocimiento; errores: { clase: string; n: number }[]; freno: string | undefined }
+  | { ok: false; razon: string };
+
+/**
+ * Las consultas del reconocimiento, aparte.
+ *
+ * Leen columnas que las demás no leen (Event, FaceRecord, las marcas de
+ * reconocimiento de Photo), y la consulta es la más pesada. Si el rol de sólo
+ * lectura no tiene alguno de esos permisos, o se pasa del tope de tiempo, su
+ * falla sale como recognition: null con una alerta, sin llevarse puesta la
+ * salud de las fotos y los pagos.
+ *
+ * Con un SAVEPOINT: en una transacción, un error la deja abortada y todo lo
+ * que viniera después fallaría también —get_weekly_snapshot sigue consultando
+ * la semana anterior después de la salud—. Volver al savepoint la deja usable.
+ */
+async function leerReconocimiento(q: Consulta): Promise<LecturaRek> {
+  await q(SQL_SAVEPOINT);
+  try {
+    const [fila] = await q<FilaReconocimiento>(SQL_RECONOCIMIENTO);
+    const errores = await q<{ clase: string; n: number }>(SQL_ERRORES_RECONOCIMIENTO);
+    const [freno] = await q<{ value: string }>(SQL_FRENO_RECONOCIMIENTO);
+    await q(SQL_SOLTAR_SAVEPOINT);
+    return { ok: true, fila: fila ?? FILA_VACIA, errores, freno: freno?.value };
+  } catch (e) {
+    await q(SQL_VOLVER_AL_SAVEPOINT);
+    const codigo = (e as { code?: unknown }).code;
+    // Al log del servidor el código, nunca al agente el texto: el mensaje de
+    // Postgres puede nombrar columnas y valores.
+    console.error(`[salud] no se pudo leer el reconocimiento: ${typeof codigo === "string" ? codigo : "sin código"}`);
+    return { ok: false, razon: razonSinReconocimiento(codigo) };
+  }
+}
+
+export const SQL_SAVEPOINT = "savepoint reconocimiento";
+export const SQL_SOLTAR_SAVEPOINT = "release savepoint reconocimiento";
+export const SQL_VOLVER_AL_SAVEPOINT = "rollback to savepoint reconocimiento";
+
+function razonSinReconocimiento(codigo: unknown): string {
+  if (codigo === "42501") {
+    return "No se pudo leer el reconocimiento: al rol de sólo lectura le faltan permisos (ver los del README).";
+  }
+  if (codigo === "57014") {
+    return "No se pudo leer el reconocimiento: la consulta se pasó del tope de tiempo.";
+  }
+  return "No se pudo leer el reconocimiento por un error de la base.";
+}
 
 export async function salud(q: Consulta, ahora: Date = new Date()): Promise<Salud> {
   const [fotos] = await q<FilaFotos>(SQL_FOTOS);
   const errFotos = await q<{ clase: string; n: number }>(SQL_ERRORES_FOTOS);
   const [pagos] = await q<FilaPagos>(SQL_PAGOS);
   const [filaTiempos] = await q<{ value: string }>(SQL_TIEMPOS);
+  const rek = await leerReconocimiento(q);
 
-  const f: FilaFotos = fotos ?? {
-    pendientes: 0, pendientes_1h: 0, en_vuelo: 0, apartadas: 0,
-    trabajables: 0, trabajables_1h: 0, ultima_hora: 0, edad_ultimo_exito_s: null,
-  };
+  const f: FilaFotos = fotos ?? FOTOS_VACIA;
   const g: FilaPagos = pagos ?? { pagadas: 0, fallidas: 0, sin_confirmar: 0, abandonadas: 0 };
   const { tiempos, razon: razonTiempos } = resumirTiempos(filaTiempos?.value, ahora);
   const alertas: Alerta[] = [];
 
   // ── Procesamiento de fotos ──
-  // El atasco se mide sobre las TRABAJABLES: si la única pendiente es una
-  // apartada, la cola no la va a tomar nunca y "hace tres días que no termina
-  // nada" es lo esperable, no una caída. Las apartadas tienen su propia alerta.
+  // El atasco se mide con fotos que la cola ya tendría que haber tomado —libres
+  // hace más de un cuarto de hora, o una unidad colgada— y ninguna actividad
+  // de la cola en media hora. Las apartadas no cuentan: la cola no las va a
+  // tomar nunca y tienen su propia alerta.
   let estadoFotos: Estado = "ok";
   const edad = f.edad_ultimo_exito_s;
-  if (f.trabajables > 0) {
-    if (edad === null || edad > SIN_EXITO_DOWN_S) {
+  // La actividad más reciente entre la de las vistas previas y la del
+  // reconocimiento (que sale de su propia consulta).
+  const actividad = masReciente(f.edad_actividad_s, rek.ok ? rek.fila.edad_ultimo_s : null);
+  const esperando = f.libres_15m + f.colgadas;
+  if (esperando > 0) {
+    if (actividad === null || actividad > SIN_EXITO_DOWN_S) {
       estadoFotos = "down";
       alertas.push({
         severity: "critical",
         code: "processing_stalled",
         message:
-          edad === null
-            ? `Hay ${f.trabajables} fotos esperando y el procesador nunca completó ninguna.`
-            : `El procesador no completa fotos hace ${Math.round(edad / 60)} min y hay ${f.trabajables} esperando. Esas fotos no se ven en las tiendas.`,
+          actividad === null
+            ? `Hay ${esperando} fotos esperando y el procesador nunca completó ninguna.`
+            : `El procesador no hace nada hace ${Math.round(actividad / 60)} min y hay ${esperando} fotos esperando que ya tendría que haber tomado. Esas fotos no se ven en las tiendas.`,
       });
-    } else if (edad > SIN_EXITO_DEGRADED_S) {
+    } else if (actividad > SIN_EXITO_DEGRADED_S) {
       estadoFotos = peor(estadoFotos, "degraded");
     }
+  }
+  // Muchas fallando a la vez y ninguna terminada: no es una foto rara, es el
+  // procesador. Sólo las de la etapa rápida: ésas fallaron hace menos de cinco
+  // minutos y el atasco de arriba no las ve porque están casi siempre en su
+  // espera. Las de la etapa lenta pueden llevar horas esperando un reintento
+  // con la causa ya arreglada; ésas son photos_retrying, no una caída.
+  const fallandoRecien = f.reintentando - f.reintentando_despacio;
+  if (fallandoRecien >= FALLANDO_A_LA_VEZ && (edad === null || edad > SIN_EXITO_DOWN_S)) {
+    estadoFotos = "down";
+    alertas.push({
+      severity: "critical",
+      code: "processing_failing",
+      message:
+        `El procesador está fallando: ${fallandoRecien} fotos fallaron recién y esperan reintento` +
+        (edad === null ? ", y nunca terminó ninguna." : `, y ninguna terminó en los últimos ${Math.round(edad / 60)} min.`) +
+        " No se ven en las tiendas.",
+    });
   }
   if (f.trabajables_1h > 0) {
     estadoFotos = peor(estadoFotos, "degraded");
@@ -241,12 +388,24 @@ export async function salud(q: Consulta, ahora: Date = new Date()): Promise<Salu
       message: `${f.trabajables_1h} fotos llevan más de una hora sin vista previa y no aparecen en las tiendas.`,
     });
   }
+  if (f.reintentando_despacio > 0) {
+    estadoFotos = peor(estadoFotos, "degraded");
+    alertas.push({
+      severity: "warning",
+      code: "photos_retrying",
+      message:
+        `${f.reintentando_despacio} fotos siguen sin vista previa: fallaron ${INTENTOS_RAPIDOS} veces seguidas y la cola las ` +
+        `reintenta cada vez más espaciado, durante unas ${HORAS_ETAPA_LENTA} horas. No se ven en las tiendas mientras tanto.`,
+    });
+  }
   if (f.apartadas > 0) {
     estadoFotos = peor(estadoFotos, "degraded");
     alertas.push({
       severity: "warning",
       code: "photos_parked",
-      message: `${f.apartadas} fotos quedaron apartadas después de 4 intentos fallidos: la cola ya no las toma y no se ven en las tiendas hasta reintentarlas a mano.`,
+      message:
+        `${f.apartadas} fotos quedaron apartadas después de ${MAX_INTENTOS} intentos en unos ${Math.round(HORAS_ETAPA_LENTA / 24)} días: ` +
+        "la cola ya no las toma y no se ven en las tiendas hasta reintentarlas a mano.",
     });
   }
   if (tiempos?.median_download_ms != null && tiempos.median_download_ms > DESCARGA_LENTA_MS) {
@@ -256,6 +415,22 @@ export async function salud(q: Consulta, ahora: Date = new Date()): Promise<Salu
       code: "slow_storage_downloads",
       message: `Bajar un original de S3 tarda ${Math.round(tiempos.median_download_ms / 1000)} s de mediana (lo normal es menos de 15 s).`,
     });
+  }
+
+  // ── Reconocimiento ──
+  // Con vistas previas esperando, la cola le da al reconocimiento sólo los
+  // lugares que sobran: que espere es lo normal.
+  const evaluado = rek.ok
+    ? evaluarReconocimiento(rek.fila, {
+        hayPreviewsEsperando: f.libres + f.en_vuelo > 0,
+        freno: leerFreno(rek.freno, ahora),
+      })
+    : null;
+  if (evaluado) alertas.push(...evaluado.alertas);
+  // Que no se pueda mirar no es "todo bien": es lo que el usuario pidió vigilar.
+  const estadoRek: Estado = evaluado ? evaluado.reconocimiento.status : "degraded";
+  if (!rek.ok) {
+    alertas.push({ severity: "warning", code: "recognition_unavailable", message: rek.razon });
   }
 
   // ── Pagos ──
@@ -286,12 +461,10 @@ export async function salud(q: Consulta, ahora: Date = new Date()): Promise<Salu
   }
 
   // ── Errores ──
-  const porClase = new Map<string, number>();
-  for (const e of errFotos) {
-    const clase = CLASES_CONOCIDAS.has(e.clase) ? e.clase : "otro";
-    porClase.set(clase, (porClase.get(clase) ?? 0) + e.n);
-  }
-  const errores: Salud["errors"] = [...porClase].map(([code, count]) => ({ source: "photo_processing", code, count }));
+  const errores: Salud["errors"] = [
+    ...porClaseConocida(errFotos, "photo_processing"),
+    ...porClaseConocida(rek.ok ? rek.errores : [], "recognition"),
+  ];
   if (g.fallidas > 0) errores.push({ source: "payments", code: "payment_failed", count: g.fallidas });
   errores.sort((a, b) => b.count - a.count);
 
@@ -299,17 +472,20 @@ export async function salud(q: Consulta, ahora: Date = new Date()): Promise<Salu
   alertas.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "critical" ? -1 : 1));
 
   return {
-    status: peor(estadoFotos, estadoPagos),
+    status: peor(estadoFotos, estadoRek, estadoPagos),
     photo_processing: {
       status: estadoFotos,
       pending: f.pendientes,
       pending_over_1h: f.pendientes_1h,
       in_flight: f.en_vuelo,
+      retrying: f.reintentando,
+      retrying_slowly: f.reintentando_despacio,
       parked_after_retries: f.apartadas,
       processed_last_hour: f.ultima_hora,
       last_success_age_s: edad,
       timings: tiempos,
     },
+    recognition: evaluado?.reconocimiento ?? null,
     payments: {
       status: estadoPagos,
       window_hours: 24,
@@ -321,6 +497,13 @@ export async function salud(q: Consulta, ahora: Date = new Date()): Promise<Salu
     },
     errors: errores,
     alerts: alertas,
-    ...(razonTiempos ? { unavailable_reason: { timings: razonTiempos } } : {}),
+    ...(razonTiempos || !rek.ok
+      ? {
+          unavailable_reason: {
+            ...(razonTiempos ? { timings: razonTiempos } : {}),
+            ...(!rek.ok ? { recognition: rek.razon } : {}),
+          },
+        }
+      : {}),
   };
 }

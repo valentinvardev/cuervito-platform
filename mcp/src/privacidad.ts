@@ -45,6 +45,11 @@ export const CLAVES_PERMITIDAS: ReadonlySet<string> = new Set([
   "p90_total_ms", "median_download_ms", "window_hours", "payments", "paid", "failed",
   "pending_unconfirmed", "abandoned_checkouts", "errors", "source", "code", "count",
   "alerts", "severity", "message", "aws", "available", "alarms_in_alarm", "alarms", "alarm", "updated_at",
+  // reconocimiento. Nombres específicos a propósito: la lista es una sola para
+  // todas las herramientas, y un "photos" suelto quedaría permitido en todas.
+  "retrying", "retrying_slowly", "recognition", "missing", "queued", "queued_over_3h", "waiting_quota",
+  "rejected_by_rekognition", "paused_until", "last_recognition_age_s", "recognized_last_7d",
+  "without_faces_last_7d", "no_faces_share_last_7d", "recognition_off_events", "recognition_off_photos",
   // semana
   "week", "activation", "usage", "sales", "health_now", "previous_week", "deltas",
   "current", "previous", "change", "change_pct", "alerts_count",
