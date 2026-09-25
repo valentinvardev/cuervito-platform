@@ -188,7 +188,7 @@ describe("estado de salud", () => {
   it("fotos libres hace más de 15 min y la cola sin hacer nada en media hora: down, con alerta crítica", async () => {
     // Y el reconocimiento también quieto: su actividad cuenta como de la cola.
     cliente = await clienteConectado({
-      ...conFotos({ pendientes: 40, libres: 40, libres_15m: 40, edad_ultimo_exito_s: 3_600, edad_actividad_s: 3_600 }),
+      ...conFotos({ pendientes: 40, libres: 40, libres_15m: 40, edad_ultimo_exito_s: 3_600 }),
       reconocimiento: [{ ...(FILAS_NORMALES.reconocimiento![0] as object), edad_ultimo_s: 3_600 }],
     });
     const r = await llamar(cliente, "get_health");
@@ -199,7 +199,7 @@ describe("estado de salud", () => {
   it("sólo fotos apartadas y la cola ociosa: degraded, no down", async () => {
     // El caso real que motivó separar trabajables de apartadas.
     cliente = await clienteConectado(
-      conFotos({ pendientes: 10, pendientes_1h: 10, apartadas: 10, trabajables_1h: 0, edad_ultimo_exito_s: 250_000, edad_actividad_s: 250_000 }),
+      conFotos({ pendientes: 10, pendientes_1h: 10, apartadas: 10, trabajables_1h: 0, edad_ultimo_exito_s: 250_000 }),
     );
     const r = await llamar(cliente, "get_health");
     expect((r.json.photo_processing as { status: string }).status).toBe("degraded");

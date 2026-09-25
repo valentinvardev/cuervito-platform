@@ -3,12 +3,11 @@ import { tasa } from "../privacidad.js";
 import {
   AHORA,
   COLGADA,
-  EN_VUELO_RECIENTE,
   HORAS_ETAPA_LENTA,
   INTENTOS_RAPIDOS,
-  LEASE_MIN,
   MAX_INTENTOS,
   REINTENTANDO_DESPACIO,
+  ULTIMO_FALLO,
 } from "./cola.js";
 import { peor, type Alerta, type Estado } from "./estado.js";
 import {
@@ -51,13 +50,14 @@ const TOMADA = `coalesce("processLeaseUntil" > ${AHORA}, false)`;
  * se rindió), en vuelo, reintentando (fallaron y esperan) y libres (la cola
  * las puede tomar ya).
  *
- * El atasco no se mide con "hace cuánto que no termina nada": en una semana
- * sin carreras eso son días, y la primera foto que se libera haría decir
- * "down" hasta que la cola se despierte —duerme hasta diez minutos cuando no
- * tiene trabajo—. Se mide con fotos que llevan más de un cuarto de hora
- * libres, o una unidad colgada, sin ninguna actividad de la cola en media
- * hora. Actividad es cualquier cosa que la cola hizo: una vista previa, un
- * reconocimiento o un reclamo.
+ * El atasco no se mide sólo con "hace cuánto que no termina nada": en una
+ * semana sin carreras eso son días, y la primera foto que se libera haría
+ * decir "down" hasta que la cola se despierte —duerme hasta diez minutos
+ * cuando no tiene trabajo—. Se mide con fotos que llevan más de un cuarto de
+ * hora libres, o una unidad colgada, y ningún éxito en media hora: ni una
+ * vista previa ni un reconocimiento. Los reclamos no cuentan como actividad:
+ * en una falla como la de septiembre la cola reclama sin parar y no termina
+ * nada, y contar los reclamos la hacía parecer viva.
  */
 export const SQL_FOTOS = `
 select
@@ -68,6 +68,10 @@ select
   count(*) filter (where ${PENDIENTE} and not (${VIVA}))::int as apartadas,
   count(*) filter (where ${PENDIENTE} and ${VIVA} and ${TOMADA} and "processError" is not null)::int as reintentando,
   count(*) filter (where ${PENDIENTE} and ${REINTENTANDO_DESPACIO})::int as reintentando_despacio,
+  count(*) filter (
+    where ${PENDIENTE} and ${VIVA} and ${TOMADA} and "processError" is not null
+      and ${ULTIMO_FALLO} > ${AHORA} - interval '2 hours'
+  )::int as fallaron_2h,
   count(*) filter (where ${PENDIENTE} and ${VIVA} and not ${TOMADA})::int as libres,
   count(*) filter (
     where ${PENDIENTE} and ${VIVA} and not ${TOMADA}
@@ -80,14 +84,10 @@ select
       and "createdAt" < ${AHORA} - interval '1 hour'
   )::int as trabajables_1h,
   count(*) filter (where "previewGeneratedAt" > ${AHORA} - interval '1 hour')::int as ultima_hora,
-  extract(epoch from (${AHORA} - max("previewGeneratedAt")))::int as edad_ultimo_exito_s,
   -- Sin las columnas del reconocimiento: si al rol le faltara ese permiso,
   -- esta consulta —la primera— se llevaría puesta toda la salud. El reloj del
   -- reconocimiento se suma después, desde su propia consulta.
-  extract(epoch from (${AHORA} - greatest(
-    max("previewGeneratedAt"),
-    max("processLeaseUntil") filter (where ${EN_VUELO_RECIENTE}) - interval '${LEASE_MIN} minutes'
-  )))::int as edad_actividad_s
+  extract(epoch from (${AHORA} - max("previewGeneratedAt")))::int as edad_ultimo_exito_s
 from "Photo"
 `;
 
@@ -231,19 +231,19 @@ type FilaFotos = {
   apartadas: number;
   reintentando: number;
   reintentando_despacio: number;
+  fallaron_2h: number;
   libres: number;
   libres_15m: number;
   trabajables_1h: number;
   ultima_hora: number;
   edad_ultimo_exito_s: number | null;
-  edad_actividad_s: number | null;
 };
 type FilaPagos = { pagadas: number; fallidas: number; sin_confirmar: number; abandonadas: number };
 
 const FOTOS_VACIA: FilaFotos = {
   pendientes: 0, pendientes_1h: 0, en_vuelo: 0, colgadas: 0, apartadas: 0, reintentando: 0,
-  reintentando_despacio: 0, libres: 0, libres_15m: 0, trabajables_1h: 0, ultima_hora: 0,
-  edad_ultimo_exito_s: null, edad_actividad_s: null,
+  reintentando_despacio: 0, fallaron_2h: 0, libres: 0, libres_15m: 0, trabajables_1h: 0,
+  ultima_hora: 0, edad_ultimo_exito_s: null,
 };
 
 export type Salud = {
@@ -344,9 +344,9 @@ export async function salud(q: Consulta, ahora: Date = new Date()): Promise<Salu
   // tomar nunca y tienen su propia alerta.
   let estadoFotos: Estado = "ok";
   const edad = f.edad_ultimo_exito_s;
-  // La actividad más reciente entre la de las vistas previas y la del
-  // reconocimiento (que sale de su propia consulta).
-  const actividad = masReciente(f.edad_actividad_s, rek.ok ? rek.fila.edad_ultimo_s : null);
+  // El éxito más reciente entre las vistas previas y el reconocimiento (que
+  // sale de su propia consulta): cualquiera de los dos dice que la cola anda.
+  const actividad = masReciente(edad, rek.ok ? rek.fila.edad_ultimo_s : null);
   const esperando = f.libres_15m + f.colgadas;
   if (esperando > 0) {
     if (actividad === null || actividad > SIN_EXITO_DOWN_S) {
@@ -363,12 +363,12 @@ export async function salud(q: Consulta, ahora: Date = new Date()): Promise<Salu
       estadoFotos = peor(estadoFotos, "degraded");
     }
   }
-  // Muchas fallando a la vez y ninguna terminada: no es una foto rara, es el
-  // procesador. Sólo las de la etapa rápida: ésas fallaron hace menos de cinco
-  // minutos y el atasco de arriba no las ve porque están casi siempre en su
-  // espera. Las de la etapa lenta pueden llevar horas esperando un reintento
-  // con la causa ya arreglada; ésas son photos_retrying, no una caída.
-  const fallandoRecien = f.reintentando - f.reintentando_despacio;
+  // Muchas que fallaron en las últimas dos horas y ninguna terminada: no es
+  // una foto rara, es el procesador. El atasco de arriba no las ve porque
+  // están casi siempre en su espera. Las que esperan un reintento lento de
+  // hace más tiempo no cuentan: puede que la causa ya esté arreglada y
+  // todavía no les tocó; ésas son photos_retrying, no una caída.
+  const fallandoRecien = f.fallaron_2h;
   if (fallandoRecien >= FALLANDO_A_LA_VEZ && (edad === null || edad > SIN_EXITO_DOWN_S)) {
     estadoFotos = "down";
     alertas.push({

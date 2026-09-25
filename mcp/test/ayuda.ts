@@ -64,13 +64,13 @@ export const FILAS_NORMALES: Filas = {
   ventas: [{ moneda: "ARS", pagadas: 57, bruto_centavos: "17100000", fallidas: 2, regalos: 1 }],
   fotos: [{
     pendientes: 0, pendientes_1h: 0, en_vuelo: 0, colgadas: 0, apartadas: 0, reintentando: 0,
-    reintentando_despacio: 0, libres: 0, libres_15m: 0, trabajables_1h: 0, ultima_hora: 40,
-    edad_ultimo_exito_s: 35, edad_actividad_s: 35,
+    reintentando_despacio: 0, fallaron_2h: 0, libres: 0, libres_15m: 0, trabajables_1h: 0,
+    ultima_hora: 40, edad_ultimo_exito_s: 35,
   }],
   errores: [],
   reconocimiento: [{
     faltan: 0, apartadas: 0, esperando_cuota: 0, reintentando: 0, reintentando_despacio: 0,
-    en_vuelo: 0, colgadas: 0, en_cola: 0, en_cola_15m: 0, en_cola_3h: 0, rechazadas: 0,
+    fallaron_2h: 0, en_vuelo: 0, colgadas: 0, en_cola: 0, en_cola_15m: 0, en_cola_3h: 0, rechazadas: 0,
     rechazadas_7d: 0, apagado_fotos: 0, apagado_eventos: 0, reconocidas_7d: 500, sin_caras_7d: 40,
     edad_ultimo_s: 120,
   }],

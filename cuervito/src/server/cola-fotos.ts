@@ -416,7 +416,9 @@ async function intentosDe(id: string): Promise<number> {
  * que está trabajando ahora mismo—, por eso PROCESADOR_UNICA_INSTANCIA. Lo que
  * sí se hace siempre es reparar los reclamos de los leases VENCIDOS: el tope
  * de una unidad (12 min) es menor que su lease (25), así que un lease vencido
- * sin soltar no puede ser de nadie vivo.
+ * sin soltar no puede ser de nadie vivo. En cluster eso cubre poco: sólo lo
+ * que ya venció cuando arranca una instancia, y sólo si nadie volvió a tomar
+ * la foto antes.
  *
  * Lease puesto y processError nulo es exactamente "una unidad que nunca soltó":
  * soltar() deja el lease en null o un error puesto. Por eso se miran también
@@ -540,7 +542,9 @@ export function arrancarCola(): void {
        Un reinicio en medio de una caída de Rekognition suele ser alguien que
        acaba de arreglar las credenciales: que pruebe ya. Si sigue roto, diez
        fallos lo vuelven a frenar. */
-    anotarFreno(new Date().toISOString(), 0);
+    // Con fecha cero y sin fallos: que el MCP no lo confunda con un freno
+    // recién vencido, que le haría callar un atasco durante diez minutos.
+    anotarFreno(new Date(0).toISOString(), 0);
     void bucle();
     void ciclarHuerfanas();
   })();
@@ -780,12 +784,16 @@ async function procesarUna(id: string, hasta: Date, signal?: AbortSignal): Promi
   anotarRek(estados);
 
   if (estados.includes("cortada")) return cortada() ?? { tipo: "transitorio", motivo: "tope: pasó el tiempo máximo" };
+  // Antes de decidir qué se devuelve: una etapa que falló deja su columna
+  // libre, pase lo que pase con la otra (incluso si la otra se quedó sin cuota).
+  if (estados.includes("error")) {
+    await asegurarReclamosSueltos(foto.id, hasta, { ocr: ocr === "error", caras: caras === "error" });
+  }
   // Sin cuota manda sobre todo lo demás: no es un fallo de la foto.
   if (estados.includes("sin_cuota")) {
     return { tipo: "sin_cuota", motivo: "cuota: tope mensual de reconocimiento" };
   }
   if (estados.includes("error")) {
-    await asegurarReclamosSueltos(foto.id, hasta, { ocr: ocr === "error", caras: caras === "error" });
     return { tipo: "transitorio", motivo: "rek: falló una llamada" };
   }
   /* Un 'permanente' de Rekognition NO bloquea la foto: la columna quedó puesta
@@ -811,25 +819,29 @@ async function procesarUna(id: string, hasta: Date, signal?: AbortSignal): Promi
  * red, es justo cuando más probable es que la escritura también falle; y una
  * columna que queda puesta sin resultado es, para la cola, una foto "hecha":
  * no se reintenta nunca y nadie la encuentra. Acá se repite, con el lease de
- * esta unidad en el where —si ya no es nuestra, no se toca—. Como los reclamos
- * también llevan el lease, mientras esta unidad lo tenga nadie más pudo haber
- * reclamado, así que la columna puesta sólo puede ser la nuestra.
+ * esta unidad en el where —si ya no es nuestra, no se toca— y sólo sobre un
+ * reclamo hecho desde que se tomó el lease y sin resultado: las mismas
+ * condiciones que usa repararReclamosHuerfanos al arrancar. Los reclamos de la
+ * cola llevan el lease, así que ninguna otra unidad pudo reclamar mientras
+ * tanto; la Lambda de S3 reclama sin lease, pero no está activa (ninguna foto
+ * de los últimos meses se reconoció antes de tener vista previa).
  */
 async function asegurarReclamosSueltos(
   id: string,
   hasta: Date,
   etapas: { ocr: boolean; caras: boolean },
 ): Promise<void> {
+  const desde = new Date(hasta.getTime() - LEASE_MS);
   try {
     if (etapas.caras) {
       await db.photo.updateMany({
-        where: { id, processLeaseUntil: hasta, faceProcessedAt: { not: null }, faceRecords: { none: {} } },
+        where: { id, processLeaseUntil: hasta, faceProcessedAt: { gte: desde }, faceRecords: { none: {} } },
         data: { faceProcessedAt: null },
       });
     }
     if (etapas.ocr) {
       await db.photo.updateMany({
-        where: { id, processLeaseUntil: hasta, ocrProcessedAt: { not: null } },
+        where: { id, processLeaseUntil: hasta, ocrProcessedAt: { gte: desde }, bibNumbers: null },
         data: { ocrProcessedAt: null },
       });
     }

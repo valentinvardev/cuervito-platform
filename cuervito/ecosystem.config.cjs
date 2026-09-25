@@ -29,8 +29,9 @@
  * trabajando en ese mismo momento, y liberarlo pondría dos procesos sobre la
  * misma foto. Si algún día hace falta cluster, hay que poner
  * PROCESADOR_UNICA_INSTANCIA=false y aceptar esperar los veinticinco minutos
- * del lease después de cada deploy, con la reparación de reclamos a medias
- * recién cuando el lease vence.
+ * del lease después de cada deploy. Y los reclamos de reconocimiento que un
+ * deploy deja a medias se reparan sólo si, al arrancar una instancia, el lease
+ * ya venció y nadie volvió a tomar la foto: casi nunca.
  *
  * Tampoco se usa `reload` con drenado ni NEXT_MANUAL_SIG_HANDLE. En cluster el
  * master sigue mandando conexiones nuevas al worker viejo hasta que su handle

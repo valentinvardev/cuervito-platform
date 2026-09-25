@@ -52,7 +52,8 @@ export const env = createEnv({
     /* Si pm2 corre en fork con UNA instancia, un lease vivo al arrancar es de
        un proceso muerto y se puede liberar: eso repara al arrancar en vez de
        esperar los 25 minutos del vencimiento. En cluster hay que ponerlo en
-       false, y la reparación de lo que quedó a medias espera a que venza. */
+       false, y lo que un deploy deja a medias casi nunca se repara (ver
+       ecosystem.config.cjs). */
     PROCESADOR_UNICA_INSTANCIA: z
       .enum(["true", "false"])
       .default("true")

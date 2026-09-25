@@ -1,5 +1,5 @@
 import { tasa } from "../privacidad.js";
-import { AHORA, COLGADA, HORAS_ETAPA_LENTA, INTENTOS_RAPIDOS, MAX_INTENTOS } from "./cola.js";
+import { AHORA, COLGADA, HORAS_ETAPA_LENTA, INTENTOS_RAPIDOS, MAX_INTENTOS, ULTIMO_FALLO } from "./cola.js";
 import { peor, type Alerta, type Estado } from "./estado.js";
 
 /**
@@ -43,6 +43,8 @@ with visibles as (
     -- previa, o cuando venció la espera de su último fallo.
     greatest(p."processLeaseUntil", coalesce(p."previewGeneratedAt", p."createdAt")) as libre_desde,
     p."processAttempts" >= ${INTENTOS_RAPIDOS} as lenta,
+    -- Sin prefijo, como la colgada: Event no tiene columnas process*.
+    coalesce(${ULTIMO_FALLO} > ${AHORA} - interval '2 hours', false) as fallo_reciente,
     e.recognition as prendido,
     (p."faceProcessedAt" is null or (e."bibDetection" and p."ocrProcessedAt" is null)) as falta,
     greatest(p."faceProcessedAt", p."ocrProcessedAt") > ${AHORA} - interval '7 days' as reciente,
@@ -54,7 +56,7 @@ with visibles as (
   join "Event" e on e.id = p."eventId"
   where p."deletedAt" is null and p."fileSize" is not null and p."previewKey" is not null
 ), clasificadas as (
-  select lenta, colgada, libre_desde, prendido, error, reciente, evento, con_caras_7d,
+  select lenta, fallo_reciente, colgada, libre_desde, prendido, error, reciente, evento, con_caras_7d,
     case
       when not (prendido and falta) then null
       when apartada then 'apartada'
@@ -71,6 +73,7 @@ select
   count(*) filter (where grupo = 'cuota')::int as esperando_cuota,
   count(*) filter (where grupo = 'reintentando')::int as reintentando,
   count(*) filter (where grupo = 'reintentando' and lenta)::int as reintentando_despacio,
+  count(*) filter (where grupo = 'reintentando' and fallo_reciente)::int as fallaron_2h,
   count(*) filter (where grupo = 'en_vuelo')::int as en_vuelo,
   count(*) filter (where grupo = 'en_vuelo' and colgada)::int as colgadas,
   count(*) filter (where grupo = 'en_cola')::int as en_cola,
@@ -124,8 +127,10 @@ export type Freno = { hasta: string; vigente: boolean };
 export function leerFreno(valor: string | undefined, ahora: Date): Freno | null {
   if (!valor) return null;
   try {
-    const v = JSON.parse(valor) as { hasta?: unknown };
+    const v = JSON.parse(valor) as { hasta?: unknown; fallos?: unknown };
     if (typeof v.hasta !== "string") return null;
+    // La app lo borra al arrancar con fallos en cero: eso no es un freno.
+    if (typeof v.fallos !== "number" || v.fallos <= 0) return null;
     const t = Date.parse(v.hasta);
     if (!Number.isFinite(t) || t + GRACIA_FRENO_MS <= ahora.getTime()) return null;
     return { hasta: new Date(t).toISOString(), vigente: t > ahora.getTime() };
@@ -163,6 +168,7 @@ export type FilaReconocimiento = {
   esperando_cuota: number;
   reintentando: number;
   reintentando_despacio: number;
+  fallaron_2h: number;
   en_vuelo: number;
   colgadas: number;
   en_cola: number;
@@ -179,7 +185,7 @@ export type FilaReconocimiento = {
 
 export const FILA_VACIA: FilaReconocimiento = {
   faltan: 0, apartadas: 0, esperando_cuota: 0, reintentando: 0, reintentando_despacio: 0,
-  en_vuelo: 0, colgadas: 0, en_cola: 0, en_cola_15m: 0, en_cola_3h: 0, rechazadas: 0,
+  fallaron_2h: 0, en_vuelo: 0, colgadas: 0, en_cola: 0, en_cola_15m: 0, en_cola_3h: 0, rechazadas: 0,
   rechazadas_7d: 0, apagado_fotos: 0, apagado_eventos: 0, reconocidas_7d: 0, sin_caras_7d: 0,
   edad_ultimo_s: null,
 };
@@ -228,7 +234,7 @@ export function evaluarReconocimiento(
   // Con el freno puesto, o recién vencido, que no se reconozca es lo esperado:
   // eso lo dice recognition_paused, no un atasco.
   const puedeTrabajar = !ctx.hayPreviewsEsperando && !ctx.freno;
-  const fallandoRecien = f.reintentando - f.reintentando_despacio;
+  const fallandoRecien = f.fallaron_2h;
 
   if (ctx.freno?.vigente) {
     estado = "down";
@@ -255,8 +261,8 @@ export function evaluarReconocimiento(
     });
   }
 
-  // Sólo las de la etapa rápida: fallaron hace menos de cinco minutos. Las
-  // lentas pueden llevar horas esperando con la causa ya arreglada; ésas son
+  // Sólo las que fallaron en las últimas dos horas. Las que esperan un
+  // reintento lento de hace más pueden tener la causa ya arreglada; ésas son
   // recognition_retrying, no una caída.
   if (puedeTrabajar && fallandoRecien >= FALLANDO_A_LA_VEZ && sinReconocerHaceRato) {
     estado = "down";

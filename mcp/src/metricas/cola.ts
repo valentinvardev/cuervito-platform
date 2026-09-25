@@ -11,10 +11,14 @@
 
 /** Intentos seguidos, a cinco minutos. Después, reintentos lentos. */
 export const INTENTOS_RAPIDOS = 4;
+/** La espera después de un fallo en la etapa rápida. */
+export const ESPERA_RAPIDA_MIN = 5;
+/** Las esperas de la etapa lenta, en horas, en orden. */
+export const ESPERAS_LENTAS_H: readonly number[] = [1, 2, 4, 8, 16, 24, 24, 24, 24, 24, 24];
 /** En cuántos intentos se rinde la cola y deja la foto quieta. */
-export const MAX_INTENTOS = 15;
+export const MAX_INTENTOS = INTENTOS_RAPIDOS + ESPERAS_LENTAS_H.length;
 /** Cuántas horas cubre la etapa lenta, para decirlo en las alertas. */
-export const HORAS_ETAPA_LENTA = 175;
+export const HORAS_ETAPA_LENTA = ESPERAS_LENTAS_H.reduce((a, b) => a + b, 0);
 /** Cuánto dura la posesión de una foto: una unidad reclamada vence a los 25 min. */
 export const LEASE_MIN = 25;
 /** El tope de una unidad: a los 12 min la cola la da por perdida y la suelta. */
@@ -48,10 +52,17 @@ export const COLGADA = `(
 )`;
 
 /**
- * Una unidad en vuelo que todavía no pasó el tope: eso sí es actividad de la
- * cola. Una colgada no: si contara, una cola trabada con una unidad colgada
- * parecería activa durante todo el lease.
+ * Cuándo falló por última vez una foto que espera reintento.
+ *
+ * La base no lo guarda, pero se deduce: la cola pone el lease en el momento
+ * del fallo más la espera que le toca por sus intentos (esperaTrasFallo en
+ * cola-fotos.ts, igual en el camino del reinicio). Así que el fallo fue el
+ * lease menos esa espera. Sirve para separar "falló hace un rato" —la causa
+ * sigue— de "está esperando un reintento de hace horas" —puede que ya esté
+ * arreglada y todavía no le tocó—.
  */
-export const EN_VUELO_RECIENTE = `(
-  "processError" is null and "processLeaseUntil" >= ${AHORA} + interval '${LEASE_MIN - COLGADA_MIN} minutes'
-)`;
+export const ULTIMO_FALLO = `("processLeaseUntil" - case
+  when "processAttempts" < ${INTENTOS_RAPIDOS} then interval '${ESPERA_RAPIDA_MIN} minutes'
+  else (array[${ESPERAS_LENTAS_H.join(", ")}])[least("processAttempts" - ${INTENTOS_RAPIDOS - 1}, ${ESPERAS_LENTAS_H.length})]
+       * interval '1 hour'
+end)`;

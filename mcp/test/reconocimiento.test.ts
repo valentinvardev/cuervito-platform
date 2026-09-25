@@ -3,7 +3,15 @@ import { existsSync, readFileSync } from "node:fs";
 import type { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { HORAS_ETAPA_LENTA, INTENTOS_RAPIDOS, LEASE_MIN, MAX_INTENTOS, TOPE_MIN } from "../src/metricas/cola.js";
+import {
+  ESPERAS_LENTAS_H,
+  ESPERA_RAPIDA_MIN,
+  HORAS_ETAPA_LENTA,
+  INTENTOS_RAPIDOS,
+  LEASE_MIN,
+  MAX_INTENTOS,
+  TOPE_MIN,
+} from "../src/metricas/cola.js";
 import { leerFreno } from "../src/metricas/reconocimiento.js";
 import { AHORA, FILAS_NORMALES, clienteConectado, llamar, type Filas } from "./ayuda.js";
 
@@ -128,7 +136,7 @@ describe("reconocimiento", () => {
   });
 
   it("muchas fallando recién y ninguna reconocida: down con recognition_failing", async () => {
-    const { rek, codigos } = await salud(conRek({ faltan: 12, reintentando: 12, reintentando_despacio: 0, edad_ultimo_s: 3_600 }));
+    const { rek, codigos } = await salud(conRek({ faltan: 12, reintentando: 12, reintentando_despacio: 0, fallaron_2h: 12, edad_ultimo_s: 3_600 }));
     expect(rek.status).toBe("down");
     expect(codigos).toEqual(["recognition_failing"]);
   });
@@ -136,9 +144,15 @@ describe("reconocimiento", () => {
   it("muchas en los reintentos lentos en una semana tranquila: degraded, no down", async () => {
     // Después de una falla ya arreglada, las fotos esperan su próximo intento
     // lento durante horas. Eso no es una caída.
-    const { rek, codigos } = await salud(conRek({ faltan: 12, reintentando: 12, reintentando_despacio: 12, edad_ultimo_s: 40_000 }));
+    const { rek, codigos } = await salud(conRek({ faltan: 12, reintentando: 12, reintentando_despacio: 12, fallaron_2h: 0, edad_ultimo_s: 40_000 }));
     expect(rek.status).toBe("degraded");
     expect(codigos).toEqual(["recognition_retrying"]);
+  });
+
+  it("muchas en la etapa lenta que fallaron en las últimas dos horas: la falla sigue, down", async () => {
+    const { rek, codigos } = await salud(conRek({ faltan: 30, reintentando: 30, reintentando_despacio: 30, fallaron_2h: 30, edad_ultimo_s: 7_200 }));
+    expect(rek.status).toBe("down");
+    expect(codigos).toEqual(["recognition_failing", "recognition_retrying"]);
   });
 
   it("el freno de la cola puesto: down, con hasta cuándo", async () => {
@@ -167,11 +181,16 @@ describe("reconocimiento", () => {
     expect(codigos).toEqual([]);
   });
 
-  it("el freno que la app borra al arrancar (con fecha de ahora) no es una pausa", async () => {
-    const borrado = { value: JSON.stringify({ hasta: "2026-09-23T18:00:00.000Z", fallos: 0 }) };
-    const { rek, codigos } = await salud(conRek({}, {}, { freno: [borrado] }));
+  it.each([
+    ["con fecha cero", "1970-01-01T00:00:00.000Z"],
+    ["aunque tuviera una fecha reciente", "2026-09-23T17:55:00.000Z"],
+  ])("el freno que la app borra al arrancar no tapa un atasco (%s)", async (_, hasta) => {
+    const borrado = { value: JSON.stringify({ hasta, fallos: 0 }) };
+    const { rek, codigos } = await salud(
+      conRek({ faltan: 30, en_cola: 30, en_cola_15m: 30, edad_ultimo_s: 10_800 }, {}, { freno: [borrado] }),
+    );
     expect(rek.paused_until).toBeNull();
-    expect(codigos).toEqual([]);
+    expect(codigos).toEqual(["recognition_stalled"]);
   });
 
   it("tope de gasto alcanzado: degraded, y dice que es el cortacircuitos, no la cuota del panel", async () => {
@@ -316,7 +335,7 @@ describe("si el reconocimiento no se puede leer", () => {
 describe("vistas previas con los reintentos nuevos", () => {
   it("reintentando despacio: photos_retrying, degraded", async () => {
     const { json, codigos } = await salud(
-      conRek({}, { pendientes: 4, reintentando: 4, reintentando_despacio: 4, edad_ultimo_exito_s: 90_000, edad_actividad_s: 90_000 }),
+      conRek({}, { pendientes: 4, reintentando: 4, reintentando_despacio: 4, edad_ultimo_exito_s: 90_000 }),
     );
     expect((json.photo_processing as { retrying_slowly: number }).retrying_slowly).toBe(4);
     expect(json.status).toBe("degraded");
@@ -325,7 +344,7 @@ describe("vistas previas con los reintentos nuevos", () => {
 
   it("una foto que se liberó recién, con la cola dormida y días sin actividad: no es down", async () => {
     const { json, codigos } = await salud(
-      conRek({}, { pendientes: 1, libres: 1, libres_15m: 0, edad_ultimo_exito_s: 300_000, edad_actividad_s: 300_000 }),
+      conRek({ edad_ultimo_s: 300_000 }, { pendientes: 1, libres: 1, libres_15m: 0, edad_ultimo_exito_s: 300_000 }),
     );
     expect((json.photo_processing as { status: string }).status).toBe("ok");
     expect(codigos).toEqual([]);
@@ -333,28 +352,34 @@ describe("vistas previas con los reintentos nuevos", () => {
 
   it("una unidad colgada, sin actividad en media hora: processing_stalled", async () => {
     const { codigos } = await salud(
-      conRek({ edad_ultimo_s: 3_000 }, { pendientes: 1, en_vuelo: 1, colgadas: 1, edad_ultimo_exito_s: 3_000, edad_actividad_s: 3_000 }),
+      conRek({ edad_ultimo_s: 3_000 }, { pendientes: 1, en_vuelo: 1, colgadas: 1, edad_ultimo_exito_s: 3_000 }),
     );
     expect(codigos).toContain("processing_stalled");
   });
 
-  it("con actividad reciente del reconocimiento, las vistas previas libres no son un atasco todavía", async () => {
-    const { json } = await salud(
-      conRek({}, { pendientes: 5, libres: 5, libres_15m: 5, edad_ultimo_exito_s: 5_000, edad_actividad_s: 60 }),
+  it("una falla como la del 16 al 20/9: todo se corta en el tope y la cola sigue reclamando, down", async () => {
+    // Las unidades en vuelo no cuentan como actividad: la cola reclama sin
+    // parar y no termina nada.
+    const { json, codigos } = await salud(
+      conRek(
+        { edad_ultimo_s: 7_200 },
+        { pendientes: 200, libres: 190, libres_15m: 190, en_vuelo: 2, reintentando: 1, fallaron_2h: 1, trabajables_1h: 150, ultima_hora: 0, edad_ultimo_exito_s: 7_200 },
+      ),
     );
-    expect((json.photo_processing as { status: string }).status).toBe("ok");
+    expect((json.photo_processing as { status: string }).status).toBe("down");
+    expect(codigos).toContain("processing_stalled");
   });
 
   it("muchas fallando recién y ninguna terminada: processing_failing", async () => {
     const { codigos } = await salud(
-      conRek({}, { pendientes: 20, reintentando: 20, edad_ultimo_exito_s: 3_600, edad_actividad_s: 60 }),
+      conRek({}, { pendientes: 20, reintentando: 20, fallaron_2h: 20, edad_ultimo_exito_s: 3_600 }),
     );
     expect(codigos).toContain("processing_failing");
   });
 
   it("muchas en los reintentos lentos en una semana tranquila: degraded, no down", async () => {
     const { json, codigos } = await salud(
-      conRek({}, { pendientes: 12, reintentando: 12, reintentando_despacio: 12, edad_ultimo_exito_s: 40_000, edad_actividad_s: 40_000 }),
+      conRek({}, { pendientes: 12, reintentando: 12, reintentando_despacio: 12, fallaron_2h: 0, edad_ultimo_exito_s: 40_000 }),
     );
     expect((json.photo_processing as { status: string }).status).toBe("degraded");
     expect(codigos).toEqual(["photos_retrying"]);
@@ -364,7 +389,7 @@ describe("vistas previas con los reintentos nuevos", () => {
     // edad_actividad_s de las vistas previas es vieja, pero el reconocimiento
     // trabajó hace un minuto: la cola está viva.
     const { json } = await salud(
-      conRek({ edad_ultimo_s: 60 }, { pendientes: 5, libres: 5, libres_15m: 5, edad_ultimo_exito_s: 5_000, edad_actividad_s: 5_000 }),
+      conRek({ edad_ultimo_s: 60 }, { pendientes: 5, libres: 5, libres_15m: 5, edad_ultimo_exito_s: 5_000 }),
     );
     expect((json.photo_processing as { status: string }).status).toBe("ok");
   });
@@ -409,9 +434,17 @@ describe("las constantes copiadas de la cola de la app", () => {
     expect(m, "no encontré ESPERAS_LENTAS_H en cola-fotos.ts").not.toBeNull();
     const horas = m![1]!.split(",").map((x) => Number(x.trim()));
     expect(horas.every(Number.isFinite)).toBe(true);
+    // El arreglo entero y en orden: el MCP deduce cuándo falló cada foto con él.
+    expect(horas).toEqual([...ESPERAS_LENTAS_H]);
     expect(fuente).toMatch(/const MAX_INTENTOS = INTENTOS_RAPIDOS \+ ESPERAS_LENTAS_H\.length;/);
     expect(INTENTOS_RAPIDOS + horas.length).toBe(MAX_INTENTOS);
     expect(horas.reduce((a, b) => a + b, 0)).toBe(HORAS_ETAPA_LENTA);
+  });
+
+  it.skipIf(!hay)("la espera de la etapa rápida", () => {
+    const m = /const ESPERA_FALLO_MS = (\d+) \* 60_000;/.exec(fuente);
+    expect(m, "no encontré ESPERA_FALLO_MS en cola-fotos.ts").not.toBeNull();
+    expect(Number(m![1])).toBe(ESPERA_RAPIDA_MIN);
   });
 
   it.skipIf(!hay)("LEASE_MS", () => {
