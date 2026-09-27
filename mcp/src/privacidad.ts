@@ -50,6 +50,8 @@ export const CLAVES_PERMITIDAS: ReadonlySet<string> = new Set([
   "retrying", "retrying_slowly", "recognition", "missing", "queued", "queued_over_3h", "waiting_quota",
   "rejected_by_rekognition", "paused_until", "last_recognition_age_s", "recognized_last_7d",
   "without_faces_last_7d", "no_faces_share_last_7d", "recognition_off_events", "recognition_off_photos",
+  // la Lambda de derivados
+  "derivatives_lambda", "last_error", "in_lambda_last_hour", "in_vps_last_hour",
   // semana
   "week", "activation", "usage", "sales", "health_now", "previous_week", "deltas",
   "current", "previous", "change", "change_pct", "alerts_count",

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { SQL_ACTIVACION } from "../src/metricas/activacion.js";
+import { SQL_LAMBDA } from "../src/metricas/lambda.js";
 import {
   SQL_COSTOS_ALMACENAMIENTO,
   SQL_COSTOS_CARAS,
@@ -35,6 +36,7 @@ const TODAS: [string, string][] = [
   ["salud: reconocimiento", SQL_RECONOCIMIENTO],
   ["salud: errores de reconocimiento", SQL_ERRORES_RECONOCIMIENTO],
   ["salud: freno del reconocimiento", SQL_FRENO_RECONOCIMIENTO],
+  ["salud: Lambda de derivados", SQL_LAMBDA],
   ["costos: rekognition", SQL_COSTOS_REKOGNITION],
   ["costos: almacenamiento", SQL_COSTOS_ALMACENAMIENTO],
   ["costos: caras", SQL_COSTOS_CARAS],
@@ -74,7 +76,7 @@ describe.each(TODAS)("la consulta de %s", (_, sql) => {
 
 it("todas las consultas que recorren tablas devuelven agregados, no filas", () => {
   // Salvo las que leen UNA fila de configuración por clave.
-  const deConfiguracion = new Set(["salud: tiempos", "salud: freno del reconocimiento"]);
+  const deConfiguracion = new Set(["salud: tiempos", "salud: freno del reconocimiento", "salud: Lambda de derivados"]);
   for (const [nombre, sql] of TODAS.filter(([n]) => !deConfiguracion.has(n))) {
     expect(sql, nombre).toMatch(/count\(|sum\(|max\(/i);
   }

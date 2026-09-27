@@ -10,6 +10,7 @@ import {
   ULTIMO_FALLO,
 } from "./cola.js";
 import { peor, type Alerta, type Estado } from "./estado.js";
+import { evaluarLambda, SQL_LAMBDA, type DerivadosLambda } from "./lambda.js";
 import {
   evaluarReconocimiento,
   FILA_VACIA,
@@ -259,6 +260,8 @@ export type Salud = {
     processed_last_hour: number;
     last_success_age_s: number | null;
     timings: Tiempos;
+    /** La Lambda de derivados; null si nunca estuvo configurada. */
+    derivatives_lambda: DerivadosLambda | null;
   };
   /** null si la consulta del reconocimiento falló; la razón va en unavailable_reason. */
   recognition: Reconocimiento | null;
@@ -330,6 +333,7 @@ export async function salud(q: Consulta, ahora: Date = new Date()): Promise<Salu
   const errFotos = await q<{ clase: string; n: number }>(SQL_ERRORES_FOTOS);
   const [pagos] = await q<FilaPagos>(SQL_PAGOS);
   const [filaTiempos] = await q<{ value: string }>(SQL_TIEMPOS);
+  const [filaLambda] = await q<{ value: string }>(SQL_LAMBDA);
   const rek = await leerReconocimiento(q);
 
   const f: FilaFotos = fotos ?? FOTOS_VACIA;
@@ -417,6 +421,11 @@ export async function salud(q: Consulta, ahora: Date = new Date()): Promise<Salu
     });
   }
 
+  // ── La Lambda de derivados ──
+  const lambda = evaluarLambda(filaLambda?.value, ahora);
+  estadoFotos = peor(estadoFotos, lambda.estado);
+  alertas.push(...lambda.alertas);
+
   // ── Reconocimiento ──
   // Con vistas previas esperando, la cola le da al reconocimiento sólo los
   // lugares que sobran: que espere es lo normal.
@@ -484,6 +493,7 @@ export async function salud(q: Consulta, ahora: Date = new Date()): Promise<Salu
       processed_last_hour: f.ultima_hora,
       last_success_age_s: edad,
       timings: tiempos,
+      derivatives_lambda: lambda.lambda,
     },
     recognition: evaluado?.reconocimiento ?? null,
     payments: {

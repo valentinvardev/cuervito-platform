@@ -61,7 +61,7 @@ Los números de los ejemplos son **inventados**.
 ### `ping`
 
 ```json
-{ "ok": true, "service": "encontrate-ops-mcp", "version": "1.2.0", "timestamp": "2026-09-23T18:00:00.000Z", "generated_at": "2026-09-23T18:00:00.000Z" }
+{ "ok": true, "service": "encontrate-ops-mcp", "version": "1.3.0", "timestamp": "2026-09-23T18:00:00.000Z", "generated_at": "2026-09-23T18:00:00.000Z" }
 ```
 
 ### `get_health`
@@ -144,6 +144,8 @@ El atasco no se mide con "hace cuánto que no termina nada": en una semana sin c
 `recognition_waiting_quota` quiere decir que un fotógrafo llegó a `RECOGNITION_HARD_CAP_MONTHLY`, el cortacircuitos de costo de la app (cinco veces el pico real), no la cuota comercial del panel. Llegar ahí es una anomalía —un loop, un abuso— y sus fotos quedan sin reconocer hasta el mes que viene: si fue legítimo, se sube el tope y se reintentan con la clase `cuota`. Con vistas previas pendientes, que el reconocimiento espere es lo normal: la cola hace primero lo que no se ve. `recognition_off_*` son los eventos con el reconocimiento apagado, sólo para saberlo.
 
 **El freno.** Si Rekognition falla diez veces seguidas sin un éxito en el medio (credenciales vencidas, un permiso, un problema de AWS), la app deja de tomar reconocimientos media hora y sigue sólo con las vistas previas. Sin esto, los reintentos de cada foto se comerían la cuota mensual del fotógrafo, que se cuenta antes de cada llamada. El freno queda anotado en `Setting` y sale acá como `paused_until`. Al vencer, la app prueba con una foto en el momento; los 10 minutos siguientes no cuentan como atasco, por si la cola tarda en despertarse. Un reinicio de la app borra el freno: suele ser alguien que acaba de arreglar las credenciales, y si sigue roto vuelve a frenar a los diez fallos.
+
+**La Lambda de derivados.** Si la app hace las vistas previas en una Lambda al lado de S3 (`cuervito/lambda-derivados`), `photo_processing.derivatives_lambda` dice si está `active` o `paused` (en pausa después de varios fallos seguidos, con `paused_until`), el nombre del último error y cuántas fotos hizo cada lado en la hora. Avisa con `derivatives_lambda_paused` si está en pausa y con `derivatives_lambda_bypassed` si en la hora la mayoría se hizo en el VPS. En los dos casos las fotos se siguen procesando, pero en el VPS y más lento. Es `null` si la Lambda nunca estuvo configurada.
 
 **Pagos.** Ventana de 24 horas. `failure_rate` es fallidas sobre pagadas más fallidas.
 

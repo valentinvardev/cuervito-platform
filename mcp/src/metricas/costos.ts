@@ -311,7 +311,7 @@ export async function costos(
     `Precios de lista de ${REGION_PRECIOS}, del primer escalón y sin capa gratuita: la cuenta de AWS se comparte con otro proyecto y las franquicias son por cuenta.`,
     "Los llamados a Rekognition salen del contador de la app, que cuenta cada llamado facturable antes de hacerlo, también los de la Lambda.",
     `Las versiones de cada foto (vista previa, limpia y miniatura) pesan el ${(DERIVADOS_SOBRE_ORIGINAL * 100).toFixed(1).replace(".", ",")} % del original, medido sobre fotos reales.`,
-    "Cada vista previa bajó el original una vez desde S3. Los reintentos y las regeneraciones anteriores no quedan registrados, así que la transferencia de procesamiento puede ser mayor.",
+    "Cada vista previa bajó el original una vez desde S3 hasta el VPS. Los reintentos y las regeneraciones anteriores no quedan registrados, así que puede ser mayor; y las que hizo la Lambda de derivados (al lado de S3, sin pagar salida) no se distinguen, así que con la Lambda activa es menor.",
     "Un ZIP de un comprador baja todas las fotos de la venta una vez.",
   ];
   if (aceleracion) {

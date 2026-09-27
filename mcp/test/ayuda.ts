@@ -20,6 +20,7 @@ import {
   SQL_FRENO_RECONOCIMIENTO,
   SQL_RECONOCIMIENTO,
 } from "../src/metricas/reconocimiento.js";
+import { SQL_LAMBDA } from "../src/metricas/lambda.js";
 import { SQL_ERRORES_FOTOS, SQL_FOTOS, SQL_PAGOS, SQL_TIEMPOS } from "../src/metricas/salud.js";
 import { SQL_USO } from "../src/metricas/uso.js";
 import { SQL_VENTAS } from "../src/metricas/ventas.js";
@@ -49,7 +50,7 @@ export const AHORA = new Date("2026-09-23T18:00:00Z");
 
 export type Filas = Partial<
   Record<
-    | "activacion" | "uso" | "ventas" | "fotos" | "errores" | "pagos" | "tiempos" | "reconocimiento" | "erroresRek" | "freno"
+    | "activacion" | "uso" | "ventas" | "fotos" | "errores" | "pagos" | "tiempos" | "reconocimiento" | "erroresRek" | "freno" | "lambda"
     | "costosRek" | "costosAlm" | "costosCaras" | "costosTrafico" | "costosDescargas",
     unknown[]
   >
@@ -76,6 +77,7 @@ export const FILAS_NORMALES: Filas = {
   }],
   erroresRek: [],
   freno: [],
+  lambda: [],
   pagos: [{ pagadas: 6, fallidas: 0, sin_confirmar: 0, abandonadas: 3 }],
   tiempos: [],
   // Números redondos para que las cuentas de los tests se puedan hacer a mano.
@@ -106,6 +108,7 @@ export function lectorFalso(filas: Filas, registro?: string[]): Lector {
     [SQL_FRENO_RECONOCIMIENTO, "freno"],
     [SQL_PAGOS, "pagos"],
     [SQL_TIEMPOS, "tiempos"],
+    [SQL_LAMBDA, "lambda"],
     [SQL_COSTOS_REKOGNITION, "costosRek"],
     [SQL_COSTOS_ALMACENAMIENTO, "costosAlm"],
     [SQL_COSTOS_CARAS, "costosCaras"],
