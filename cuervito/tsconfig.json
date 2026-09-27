@@ -38,5 +38,5 @@
     "**/*.js",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "generated", "public", "lambda"]
+  "exclude": ["node_modules", "generated", "public", "lambda", "lambda-derivados"]
 }

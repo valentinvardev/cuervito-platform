@@ -56,6 +56,14 @@ export function cronometro() {
       etapas[nombre] = (etapas[nombre] ?? 0) + (ahora - ultimo);
       ultimo = ahora;
     },
+    /** Etapas medidas en otro lado (la Lambda de derivados), sumadas tal
+     *  cual; el tiempo transcurrido hasta acá ya queda contado en ellas. */
+    agregar(medidas: Record<string, number>) {
+      for (const [nombre, ms] of Object.entries(medidas)) {
+        if (Number.isFinite(ms)) etapas[nombre] = (etapas[nombre] ?? 0) + ms;
+      }
+      ultimo = Date.now();
+    },
     cerrar(foto: string, final: FilaTiempos["final"], extra?: { bytes?: number; detalle?: string }) {
       anotar({
         foto,

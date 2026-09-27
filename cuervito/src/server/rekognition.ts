@@ -46,20 +46,30 @@ const REKOGNITION_MAX_BYTES = 5 * 1024 * 1024;
 const REK_A_LA_VEZ = 4;
 declare global {
   // eslint-disable-next-line no-var
-  var __cuervito_rek__: { active: number; waitQueue: Array<() => void> } | undefined;
+  var __cuervito_rek__:
+    | { active: number; waitQueue: Array<() => void>; primero: Array<() => void> }
+    | undefined;
 }
-const semRek = (globalThis.__cuervito_rek__ ??= { active: 0, waitQueue: [] });
+const semRek = (globalThis.__cuervito_rek__ ??= { active: 0, waitQueue: [], primero: [] });
 
-function tomarSlotRek(): Promise<void> {
+/* Las búsquedas por selfie pasan primero.
+
+   El turno lo comparten la cola —que con muchas fotos en curso deja varias
+   llamadas esperando— y el comprador que busca sus fotos, que está mirando
+   la pantalla. Una búsqueda no espera detrás del reconocimiento de un evento
+   entero: se la atiende apenas se libera un turno. */
+function tomarSlotRek(primero = false): Promise<void> {
   return new Promise((resolve) => {
-    if (semRek.active < REK_A_LA_VEZ) { semRek.active++; resolve(); }
-    else semRek.waitQueue.push(() => { semRek.active++; resolve(); });
+    if (semRek.active < REK_A_LA_VEZ) { semRek.active++; resolve(); return; }
+    const avisar = () => { semRek.active++; resolve(); };
+    if (primero) semRek.primero.push(avisar);
+    else semRek.waitQueue.push(avisar);
   });
 }
 
 function soltarSlotRek() {
   semRek.active--;
-  semRek.waitQueue.shift()?.();
+  (semRek.primero.shift() ?? semRek.waitQueue.shift())?.();
 }
 
 async function billedCall<T>(
@@ -78,7 +88,7 @@ async function billedCall<T>(
      llena, el contador subía por trabajo que todavía no había salido, y
      hasRecognitionQuota —que lee ese mismo contador— empezaba a rechazar fotos
      por una cuota que en realidad no se había gastado. */
-  await tomarSlotRek();
+  await tomarSlotRek(kind === "search");
   await incrementRecognitionUsage(meta.ownerId, kind, 1).catch(() => undefined);
   console.log(`${tag} state=start`);
 

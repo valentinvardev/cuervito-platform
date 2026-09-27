@@ -53,6 +53,15 @@ export const env = createEnv({
        por foto), así que mientras dos fotos usan sharp otras dos se bajan. Lo
        que se espera por un turno son segundos, no minutos. */
     PROCESADOR_A_LA_VEZ: z.coerce.number().int().min(1).max(12).default(4),
+    /* La Lambda que genera los derivados al lado de S3 (lambda-derivados/):
+       el nombre o el ARN de la función. Sin esto, todo se procesa en el VPS
+       como siempre; con esto, el VPS se la pide primero y, si falla, la hace
+       él. Ver derivados-lambda.ts. */
+    PROCESADOR_LAMBDA: z.string().min(1).optional(),
+    /* Cuántas Lambdas de derivados puede tener en curso el VPS. La cuenta de
+       AWS tiene un límite de ejecuciones simultáneas compartido con otras
+       funciones: esto va por debajo de lo que le quede libre. */
+    PROCESADOR_LAMBDA_A_LA_VEZ: z.coerce.number().int().min(1).max(50).default(8),
     /* Si pm2 corre en fork con UNA instancia, un lease vivo al arrancar es de
        un proceso muerto y se puede liberar: eso repara al arrancar en vez de
        esperar los 25 minutos del vencimiento. En cluster hay que ponerlo en
@@ -144,6 +153,8 @@ export const env = createEnv({
     REKOGNITION_USE_ORIGINAL: process.env.REKOGNITION_USE_ORIGINAL,
     PROCESADOR_ACTIVO: process.env.PROCESADOR_ACTIVO,
     PROCESADOR_A_LA_VEZ: process.env.PROCESADOR_A_LA_VEZ,
+    PROCESADOR_LAMBDA: process.env.PROCESADOR_LAMBDA,
+    PROCESADOR_LAMBDA_A_LA_VEZ: process.env.PROCESADOR_LAMBDA_A_LA_VEZ,
     PROCESADOR_UNICA_INSTANCIA: process.env.PROCESADOR_UNICA_INSTANCIA,
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
     AWS_S3_PREFIX: process.env.AWS_S3_PREFIX,

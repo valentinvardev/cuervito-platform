@@ -10,7 +10,11 @@ import sharp from "sharp";
 
 import { db } from "~/server/db";
 import { fuentesSatori } from "~/server/historias/fuentes";
+import { rasterizarCapa, superponer, type Capa, type Unidad } from "~/server/marca-agua-capa";
 import { CONFIG_POR_DEFECTO, esquemaConfig, type ConfigMarca } from "~/server/marca-agua-config";
+
+// El patrón y la capa viven en un módulo sin servidor, que comparte la Lambda.
+export { capaMarca, type Capa, type Unidad } from "~/server/marca-agua-capa";
 
 /**
  * La marca de agua de la plataforma: qué se estampa y cómo.
@@ -53,8 +57,6 @@ export const CLAVE_CONFIG_MARCA = "watermark:config";
    request, y ahí unstable_cache no tiene dónde guardar y lanza. Es un TTL
    corto a mano; guardar la config la vacía en el acto, y como corre una sola
    instancia, "en el acto" alcanza. */
-export type Unidad = { png: Buffer; ancho: number; alto: number };
-
 declare global {
   var __cuervito_marca__:
     | {
@@ -211,87 +213,7 @@ export async function armarUnidad(opts: {
   return unidad;
 }
 
-/* ── El patrón ──────────────────────────────────────────────────────────── */
-
-/**
- * La capa que se apoya sobre la foto: un SVG de su mismo tamaño.
- *
- * En mosaico y diagonal es un <pattern> con la unidad como <image>. En
- * mosaico cada unidad rota adentro de su celda, y las filas van corridas
- * media celda —como ladrillos— para que no queden pasillos vacíos. En
- * diagonal la unidad no rota: rota la trama entera con patternTransform, y
- * el resultado son hileras inclinadas.
- *
- * La opacidad va en un <g> y no en el PNG: así el mismo PNG sirve para
- * cualquier opacidad sin volver a renderizar.
- */
-export function capaMarca(opts: {
-  anchoFoto: number;
-  altoFoto: number;
-  unidad: Unidad;
-  cfg: ConfigMarca;
-}): sharp.OverlayOptions {
-  const { anchoFoto: W, altoFoto: H, unidad: u, cfg } = opts;
-  const href = `data:image/png;base64,${u.png.toString("base64")}`;
-  const n = (x: number) => Math.round(x * 100) / 100;
-  const img = (x: number, y: number, rot = 0) =>
-    `<image href="${href}" xlink:href="${href}" x="${n(x)}" y="${n(y)}" width="${u.ancho}" height="${u.alto}"` +
-    (rot ? ` transform="rotate(${rot} ${n(x + u.ancho / 2)} ${n(y + u.alto / 2)})"` : "") +
-    ` />`;
-
-  let cuerpo: string;
-  let defs = "";
-  const aire = u.ancho * cfg.separacion;
-
-  if (cfg.patron === "mosaico") {
-    // La celda envuelve a la unidad ya rotada, más el aire.
-    const rad = (cfg.rotacion * Math.PI) / 180;
-    const bw = Math.abs(u.ancho * Math.cos(rad)) + Math.abs(u.alto * Math.sin(rad));
-    const bh = Math.abs(u.ancho * Math.sin(rad)) + Math.abs(u.alto * Math.cos(rad));
-    const cw = Math.ceil(bw + aire);
-    const ch = Math.ceil(bh + aire);
-    const x = (cw - u.ancho) / 2;
-    const y = (ch - u.alto) / 2;
-    // Dos filas por celda: la segunda corrida medio paso, y su copia del
-    // otro lado para que el corte de la celda no deje media unidad afuera.
-    defs =
-      `<pattern id="p" patternUnits="userSpaceOnUse" width="${cw}" height="${ch * 2}">` +
-      img(x, y, cfg.rotacion) +
-      img(x + cw / 2, y + ch, cfg.rotacion) +
-      img(x - cw / 2, y + ch, cfg.rotacion) +
-      `</pattern>`;
-    cuerpo = `<rect width="${W}" height="${H}" fill="url(#p)" />`;
-  } else if (cfg.patron === "diagonal") {
-    const cw = Math.ceil(u.ancho + aire);
-    const ch = Math.ceil(u.alto + aire);
-    defs =
-      `<pattern id="p" patternUnits="userSpaceOnUse" width="${cw}" height="${ch * 2}" patternTransform="rotate(${cfg.rotacion})">` +
-      img((cw - u.ancho) / 2, (ch - u.alto) / 2) +
-      img((cw - u.ancho) / 2 + cw / 2, (ch - u.alto) / 2 + ch) +
-      img((cw - u.ancho) / 2 - cw / 2, (ch - u.alto) / 2 + ch) +
-      `</pattern>`;
-    // El rect se agranda para que la trama rotada cubra las esquinas.
-    const d = Math.ceil(Math.hypot(W, H));
-    cuerpo = `<rect x="${n((W - d) / 2)}" y="${n((H - d) / 2)}" width="${d}" height="${d}" fill="url(#p)" />`;
-  } else if (cfg.patron === "centro") {
-    cuerpo = img((W - u.ancho) / 2, (H - u.alto) / 2, cfg.rotacion);
-  } else {
-    const m = Math.round(W * cfg.margen);
-    cuerpo = img(W - u.ancho - m, H - u.alto - m);
-  }
-
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">` +
-    (defs ? `<defs>${defs}</defs>` : "") +
-    `<g opacity="${cfg.opacidad}">${cuerpo}</g></svg>`;
-
-  return { input: Buffer.from(svg), blend: "over" };
-}
-
 /* ── La capa, armada una sola vez ───────────────────────────────────────── */
-
-/** La capa ya rasterizada: píxeles crudos, lista para apoyar sobre la foto. */
-export type Capa = { datos: Buffer; ancho: number; alto: number };
 
 /* Dos entradas: un evento son fotos apaisadas y verticales, y nada más. Cada
    una ocupa ancho×alto×4 bytes —unos 15 MB para 2400×1600— y eso es barato
@@ -327,30 +249,39 @@ export async function capaParaFoto(opts: {
     .digest("hex");
 
   const guardada = estado.capas.get(clave);
-  if (guardada) {
-    return {
-      input: guardada.datos,
-      raw: { width: guardada.ancho, height: guardada.alto, channels: 4 },
-      blend: "over",
-    };
-  }
+  if (guardada) return superponer(guardada);
 
-  const ancho = Math.round(W * cfg.escala);
-  const unidad = await armarUnidad({
-    imagen: opts.imagen,
-    cfg,
-    ancho,
-    conTexto: opts.conTexto,
-  });
-  const svg = capaMarca({ anchoFoto: W, altoFoto: H, unidad, cfg });
-  const datos = await sharp(svg.input as Buffer).ensureAlpha().raw().toBuffer();
+  const unidad = await unidadParaFoto({ anchoFoto: W, imagen: opts.imagen, cfg, conTexto: opts.conTexto });
+  const capa = await rasterizarCapa({ anchoFoto: W, altoFoto: H, unidad, cfg });
 
   if (estado.capas.size >= CAPAS_MAX) {
     // La más vieja primero: Map conserva el orden de inserción.
     const vieja = estado.capas.keys().next().value;
     if (vieja !== undefined) estado.capas.delete(vieja);
   }
-  estado.capas.set(clave, { datos, ancho: W, alto: H });
+  estado.capas.set(clave, capa);
 
-  return { input: datos, raw: { width: W, height: H, channels: 4 }, blend: "over" };
+  return superponer(capa);
+}
+
+/**
+ * La unidad del tamaño que le toca a una foto de este ancho.
+ *
+ * Es lo único de la marca que depende del servidor —las fuentes del repo, el
+ * logo de public/— y por eso es lo que se arma acá y viaja armado a la Lambda
+ * de derivados: con la unidad, el patrón y la capa salen iguales en los dos
+ * lados.
+ */
+export async function unidadParaFoto(opts: {
+  anchoFoto: number;
+  imagen: Buffer | null;
+  cfg: ConfigMarca;
+  conTexto: boolean;
+}): Promise<Unidad> {
+  return armarUnidad({
+    imagen: opts.imagen,
+    cfg: opts.cfg,
+    ancho: Math.round(opts.anchoFoto * opts.cfg.escala),
+    conTexto: opts.conTexto,
+  });
 }

@@ -2,9 +2,16 @@ import "server-only";
 
 import sharp from "sharp";
 
+import { env } from "~/env";
+import {
+  hacerDerivados,
+  PREVIEW_MAX_WIDTH,
+  type PedidoDerivados,
+} from "~/server/derivados";
+import { contarLocal, derivadosEnLambda, lambdaConfigurada } from "~/server/derivados-lambda";
 import { cronometro } from "~/server/diagnostico";
 import { db } from "~/server/db";
-import { capaParaFoto, leerConfigMarca } from "~/server/marca-agua";
+import { capaParaFoto, leerConfigMarca, unidadParaFoto, type ConfigMarca, type Unidad } from "~/server/marca-agua";
 import {
   deleteS3Objects,
   getS3ObjectBytes,
@@ -18,28 +25,8 @@ import {
   headObject,
 } from "~/server/s3";
 
-const PREVIEW_MAX_WIDTH = 2400;
-const PREVIEW_QUALITY = 85;
-/* La miniatura de la grilla de la tienda.
-
-   560px porque el recuadro de la grilla mide entre 212 y 300 CSS, y en una
-   pantalla densa eso son hasta 600 píxeles reales. Medido sobre una foto real
-   del evento: 2400px q85 son 845 KB, 560px q72 son 56 KB. Quince veces menos
-   para algo que se ve idéntico a ese tamaño. */
-const THUMB_WIDTH = 560;
-const THUMB_QUALITY = 72;
-
-/**
- * Cómo se abre cualquier imagen que mandó un usuario.
- *
- * limitInputPixels es el que importa. QUOTA_MAX_PHOTO_BYTES son 30 MB y sharp
- * acepta hasta ~268 megapíxeles por defecto: un PNG de 20.000x20.000 entra
- * cómodo en 30 MB comprimido y al descomprimirlo son ~1,2 GB de RAM. Eso no
- * lanza una excepción que se pueda atrapar: mata el proceso. Y como el proceso
- * muere antes de anotar el intento, al reiniciar toma la misma foto y vuelve a
- * morir, para siempre. 60 MP cubre cualquier cámara con margen.
- */
-const OPC_SHARP = { limitInputPixels: 60_000_000, failOn: "error" as const };
+/* Las medidas, calidades y opciones de sharp de los derivados viven en
+   derivados.ts, que comparten este archivo y la Lambda de derivados. */
 
 /* libvips abre un hilo por núcleo POR OPERACIÓN, y acá hay varias a la vez.
 
@@ -147,17 +134,37 @@ async function buildComposite(
   imageHeight: number,
   ownerId?: string,
 ): Promise<sharp.OverlayOptions> {
+  const { imagen, cfg, conTexto } = await elegirMarca(ownerId);
+  return capaParaFoto({ anchoFoto: imageWidth, altoFoto: imageHeight, imagen, cfg, conTexto });
+}
+
+/**
+ * Qué marca lleva una foto de este fotógrafo. Una sola función para el camino
+ * del VPS y para lo que se le manda a la Lambda: si la elección estuviera
+ * escrita dos veces, el día que se corrija en una sola las fotos saldrían
+ * marcadas distinto según quién las procesó.
+ */
+async function elegirMarca(
+  ownerId?: string,
+): Promise<{ imagen: Buffer | null; cfg: ConfigMarca; conTexto: boolean }> {
   const propia = ownerId ? await loadUserWatermark(ownerId) : null;
   const cfg = await leerConfigMarca();
-  const imagen =
-    propia ?? (cfg.fuente === "subida" ? await loadPlatformWatermark() : null);
-  return capaParaFoto({
-    anchoFoto: imageWidth,
-    altoFoto: imageHeight,
-    imagen,
-    cfg,
-    conTexto: !propia,
-  });
+  const imagen = propia ?? (cfg.fuente === "subida" ? await loadPlatformWatermark() : null);
+  return { imagen, cfg, conTexto: !propia };
+}
+
+/**
+ * La unidad de la marca para una foto de este ancho, con la misma elección que
+ * buildComposite: la marca propia del fotógrafo sola, o la de la plataforma
+ * con su texto. Es lo que viaja armado a la Lambda.
+ */
+async function unidadDeLaMarca(
+  ownerId: string,
+  anchoFoto: number,
+): Promise<{ unidad: Unidad; cfg: ConfigMarca }> {
+  const { imagen, cfg, conTexto } = await elegirMarca(ownerId);
+  const unidad = await unidadParaFoto({ anchoFoto, imagen, cfg, conTexto });
+  return { unidad, cfg };
 }
 
 /**
@@ -166,10 +173,10 @@ async function buildComposite(
  * or null if the original couldn't be processed.
  */
 /** Resultado de generar las previews de una foto.
- *  `rekognitionBytes` es el mismo buffer 2400px re-encodeado a JPEG: se
- *  devuelve para que OCR y face-index lo reusen en vez de volver a bajar
- *  el original de S3. Rekognition no acepta WebP, por eso no sirve el
- *  previewClean que guardamos en el bucket. */
+ *  `rekognitionBytes` queda siempre en null: era un JPEG para que el
+ *  reconocimiento no volviera a bajar la foto, pero la cola hace el
+ *  reconocimiento en otra vuelta y baja la vista previa limpia por su cuenta,
+ *  así que nadie lo usaba y costaba un encode por foto. */
 export type PreviewResult = {
   watermarkedKey: string | null;
   rekognitionBytes: Uint8Array | null;
@@ -241,6 +248,30 @@ async function _generatePreview(
   reloj.marca("base");
   if (signal?.aborted) return ABORTADO;
 
+  const claves = {
+    marcada: previewPhotoKey(photo.ownerId, photo.eventId, photo.id),
+    limpia: previewCleanPhotoKey(photo.ownerId, photo.eventId, photo.id),
+    miniatura: thumbPhotoKey(photo.ownerId, photo.eventId, photo.id),
+  };
+  const viejas = [photo.previewKey, photo.previewCleanKey, photo.thumbKey].filter(
+    (k): k is string => Boolean(k),
+  );
+
+  // Primero la Lambda, si está: al lado de S3 esto tarda segundos y no usa el
+  // procesador del VPS. Si no está o falla, se sigue acá como siempre.
+  // Por qué no la hizo la Lambda, si se le pidió: una foto angosta le toca al
+  // VPS por diseño y no cuenta como que la Lambda falló.
+  let porQueLocal: string | null = null;
+  if (lambdaConfigurada()) {
+    const intento = await enLambda(photo, claves, viejas, reloj, signal);
+    if (typeof intento !== "string") return intento;
+    porQueLocal = intento;
+    if (signal?.aborted) {
+      reloj.cerrar(photoId, "abortada", { detalle: "lambda" });
+      return ABORTADO;
+    }
+  }
+
   let raw: Uint8Array;
   try {
     raw = await getS3ObjectBytes(photo.storageKey, { signal });
@@ -288,69 +319,12 @@ async function _generatePreview(
       reloj.cerrar(photoId, "abortada", { bytes: raw.byteLength });
       return ABORTADO;
     }
-    /* metadata() ADENTRO del try.
 
-       Estaba afuera, y es la primera línea que toca los bytes del usuario: un
-       HEIC con extensión .jpg, o un archivo truncado, la hace lanzar. La
-       excepción escapaba de _generatePreview en vez de volverse un resultado
-       con error, así que el llamador —que trata esto como "devuelve nulls"—
-       se comía un rechazo que nadie atrapa. */
-    const meta = await sharp(buf, OPC_SHARP).metadata();
-    reloj.marca("metadata");
-    const w = meta.width ?? 1200;
-    const h = meta.height ?? 800;
-
-    const resized =
-      w > PREVIEW_MAX_WIDTH
-        ? await sharp(buf, OPC_SHARP)
-            .resize({ width: PREVIEW_MAX_WIDTH, withoutEnlargement: true })
-            .toBuffer()
-        : buf;
-    const resizedMeta = w > PREVIEW_MAX_WIDTH ? await sharp(resized).metadata() : { width: w, height: h };
-    reloj.marca("achicar");
-
-    // Generate watermarked preview FIRST so the public-facing image is
-    // guaranteed correct before anything else touches state. Each pipeline
-    // takes its own copy of `resized` to prevent any chance of sharp's
-    // internal state bleeding between the two outputs.
-    const composite = await buildComposite(
-      resizedMeta.width ?? w,
-      resizedMeta.height ?? h,
-      photo.ownerId,
-    );
-    reloj.marca("capa-marca");
-    const watermarkedOut = await sharp(Buffer.from(resized), OPC_SHARP)
-      .composite([composite])
-      .webp({ quality: PREVIEW_QUALITY })
-      .toBuffer();
-    reloj.marca("estampar");
-
-    // Clean preview (same dimensions/quality, no watermark) for the
-    // photographer's own dashboard.
-    const cleanOut = await sharp(Buffer.from(resized), OPC_SHARP)
-      .webp({ quality: PREVIEW_QUALITY })
-      .toBuffer();
-    reloj.marca("limpia");
-
-    /* La miniatura sale de la imagen YA MARCADA y no del original.
-
-       Si se compusiera la marca sobre una imagen de 560px habría que escalar
-       también la marca, y dos caminos que dibujan la misma marca a tamaños
-       distintos se separan en la primera corrección que se hace en uno solo.
-       Achicando la marcada, la marca queda igual, sólo que más chica. */
-    const thumbOut = await sharp(Buffer.from(watermarkedOut), OPC_SHARP)
-      .resize({ width: THUMB_WIDTH, withoutEnlargement: true })
-      .webp({ quality: THUMB_QUALITY })
-      .toBuffer();
-    reloj.marca("miniatura");
-
-    // Derivado JPEG para Rekognition. No se sube a S3: viaja en memoria
-    // hasta runOcr/runFaceIndex y se descarta. Reusa `resized`, así que
-    // cuesta un encode y ahorra dos descargas del original + dos resizes.
-    const rekognitionBytes = await sharp(Buffer.from(resized), OPC_SHARP)
-      .jpeg({ quality: PREVIEW_QUALITY })
-      .toBuffer();
-    reloj.marca("jpeg-rek");
+    // Sin el JPEG para Rekognition: nadie lo usaba, y el reconocimiento
+    // baja la vista previa limpia por su cuenta.
+    const d = await hacerDerivados(buf, (ancho, alto) => buildComposite(ancho, alto, photo.ownerId), {
+      reloj,
+    });
     // El trabajo de imagen terminó: lo que sigue es red y base, sin turno.
     soltarTurno();
 
@@ -363,44 +337,23 @@ async function _generatePreview(
     }
 
     // Delete stale previews before writing new ones
-    const stale: string[] = [];
-    if (photo.previewKey) stale.push(photo.previewKey);
-    if (photo.previewCleanKey) stale.push(photo.previewCleanKey);
-    if (photo.thumbKey) stale.push(photo.thumbKey);
-    if (stale.length > 0) {
-      await deleteS3Objects(stale).catch(() => undefined);
+    if (viejas.length > 0) {
+      await deleteS3Objects(viejas).catch(() => undefined);
     }
     reloj.marca("borrar-viejas");
 
-    const cleanKey = previewCleanPhotoKey(photo.ownerId, photo.eventId, photo.id);
-    const watermarkedKey = previewPhotoKey(photo.ownerId, photo.eventId, photo.id);
-    const thumbKey = thumbPhotoKey(photo.ownerId, photo.eventId, photo.id);
     await Promise.all([
-      putS3Object(cleanKey, cleanOut, "image/webp", CACHE_MOSTRAR),
-      putS3Object(watermarkedKey, watermarkedOut, "image/webp", CACHE_MOSTRAR),
-      putS3Object(thumbKey, thumbOut, "image/webp", CACHE_MOSTRAR),
+      putS3Object(claves.limpia, d.limpia, "image/webp", CACHE_MOSTRAR),
+      putS3Object(claves.marcada, d.marcada, "image/webp", CACHE_MOSTRAR),
+      putS3Object(claves.miniatura, d.miniatura, "image/webp", CACHE_MOSTRAR),
     ]);
     reloj.marca("subir");
 
-    await db.photo.update({
-      where: { id: photo.id },
-      data: {
-        previewKey: watermarkedKey,
-        previewCleanKey: cleanKey,
-        // La miniatura SE SUBÍA a S3 tres líneas más arriba y no se guardaba
-        // acá, así que para la base no existía: 2.620 fotos con el archivo de
-        // 56 KB sentado en el bucket mientras la grilla les servía el preview
-        // de 845 KB. Todo el trabajo de agosto para que la galería abriera
-        // rápido se apagó solo, sin romper nada, sin un error en ningún lado.
-        thumbKey,
-        previewGeneratedAt: new Date(),
-        width: resizedMeta.width ?? w,
-        height: resizedMeta.height ?? h,
-      },
-    });
+    await registrarDerivados(photo.id, claves, d.ancho, d.alto);
+    if (porQueLocal !== "angosta") contarLocal();
 
     reloj.cerrar(photoId, "ok", { bytes: raw.byteLength });
-    return { watermarkedKey, rekognitionBytes: new Uint8Array(rekognitionBytes) };
+    return { watermarkedKey: claves.marcada, rekognitionBytes: null };
   } catch (err) {
     reloj.cerrar(photoId, signal?.aborted ? "abortada" : "error", {
       bytes: raw.byteLength,
@@ -422,4 +375,91 @@ async function _generatePreview(
   } finally {
     soltarTurno();
   }
+}
+
+type Claves = { marcada: string; limpia: string; miniatura: string };
+
+/**
+ * Los mismos derivados, hechos por la Lambda. Si hay que hacerlos acá, el
+ * porqué: no está configurada, está en pausa, falló, o la foto es de un ancho
+ * para el que la unidad que se le manda no sirve ("angosta").
+ */
+async function enLambda(
+  photo: { id: string; ownerId: string; storageKey: string },
+  claves: Claves,
+  viejas: string[],
+  reloj: ReturnType<typeof cronometro>,
+  signal?: AbortSignal,
+): Promise<PreviewResult | string> {
+  if (!env.AWS_S3_BUCKET) return "sin-bucket";
+  let pedido: PedidoDerivados;
+  try {
+    const { unidad, cfg } = await unidadDeLaMarca(photo.ownerId, PREVIEW_MAX_WIDTH);
+    pedido = {
+      bucket: env.AWS_S3_BUCKET,
+      original: photo.storageKey,
+      claves,
+      viejas,
+      anchoEsperado: PREVIEW_MAX_WIDTH,
+      unidad: { png: unidad.png.toString("base64"), ancho: unidad.ancho, alto: unidad.alto },
+      cfg,
+      cacheControl: CACHE_MOSTRAR,
+    };
+  } catch (e) {
+    console.warn("[watermark] no se pudo armar la marca para la Lambda:", e);
+    return "sin-marca";
+  }
+  reloj.marca("unidad");
+
+  const t0 = Date.now();
+  const resultado = await derivadosEnLambda(pedido, signal);
+  if (!resultado.ok) {
+    // El tiempo del intento con su nombre, para que no se sume a la descarga
+    // del VPS que viene después.
+    if (resultado.por !== "apagada" && resultado.por !== "pausa") reloj.marca(`lambda-${resultado.por}`);
+    return resultado.por;
+  }
+  const r = resultado.respuesta;
+  // Las etapas de adentro de la Lambda con su prefijo —la descarga de ahí no
+  // es la del VPS, que es la que vigila el MCP—, y lo que costó ir y volver
+  // como "lambda".
+  const adentro = Object.values(r.etapas).reduce((a, b) => a + b, 0);
+  reloj.agregar({
+    ...Object.fromEntries(Object.entries(r.etapas).map(([k, v]) => [`lambda:${k}`, v])),
+    lambda: Math.max(0, Date.now() - t0 - adentro),
+  });
+
+  try {
+    await registrarDerivados(photo.id, claves, r.ancho, r.alto);
+  } catch (e) {
+    // Los archivos ya están en S3 con las claves de siempre: la próxima pasada
+    // los vuelve a escribir igual. Se devuelve como fallo transitorio.
+    reloj.cerrar(photo.id, "error", { bytes: r.bytes, detalle: "lambda: no se pudo registrar" });
+    return {
+      watermarkedKey: null,
+      rekognitionBytes: null,
+      error: { mensaje: e instanceof Error ? e.message : String(e), permanente: false },
+    };
+  }
+  reloj.cerrar(photo.id, "ok", { bytes: r.bytes, detalle: "lambda" });
+  return { watermarkedKey: claves.marcada, rekognitionBytes: null };
+}
+
+async function registrarDerivados(id: string, claves: Claves, ancho: number, alto: number): Promise<void> {
+  await db.photo.update({
+    where: { id },
+    data: {
+      previewKey: claves.marcada,
+      previewCleanKey: claves.limpia,
+      // La miniatura SE SUBÍA a S3 y no se guardaba acá, así que para la base
+      // no existía: 2.620 fotos con el archivo de 56 KB sentado en el bucket
+      // mientras la grilla les servía el preview de 845 KB. Todo el trabajo de
+      // agosto para que la galería abriera rápido se apagó solo, sin romper
+      // nada, sin un error en ningún lado.
+      thumbKey: claves.miniatura,
+      previewGeneratedAt: new Date(),
+      width: ancho,
+      height: alto,
+    },
+  });
 }
