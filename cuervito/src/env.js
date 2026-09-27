@@ -40,15 +40,19 @@ export const env = createEnv({
       .enum(["true", "false"])
       .default(process.env.NODE_ENV === "production" ? "true" : "false")
       .transform((v) => v === "true"),
-    /* Cuántas fotos a la vez, a la par de los permisos de sharp.
+    /* Cuántas fotos a la vez: el doble de los turnos de sharp.
 
-       Estaba en 4 contra 3 permisos, y sobraba un obrero. Sobrar no es
-       gratis: el que espera un permiso lo espera CON el reloj del tope
-       corriendo, así que bajo carga gastaba sus cuatro minutos sin tocar la
-       foto, la marcaba como fallida y le sumaba un intento. A los cuatro
-       intentos la cola la aparta. Fotos que nunca se intentaron quedaban
-       apartadas por no haber conseguido turno. */
-    PROCESADOR_A_LA_VEZ: z.coerce.number().int().min(1).max(12).default(2),
+       Estuvo en 4 contra 3 turnos, y el que esperaba turno lo esperaba con el
+       reloj del tope corriendo: bajo carga se pasaba del tope sin tocar la
+       foto. Se bajó a la par de los turnos (2). Pero el turno se tomaba antes
+       de bajar el original, y bajar 15 MB tarda unos diez segundos: con dos
+       fotos a la vez el procesador estaba parado la mayor parte del tiempo y
+       la cola no llegaba a la par de las subidas de un evento grande.
+
+       Ahora el turno cubre sólo el trabajo de imagen (unos cuatro segundos
+       por foto), así que mientras dos fotos usan sharp otras dos se bajan. Lo
+       que se espera por un turno son segundos, no minutos. */
+    PROCESADOR_A_LA_VEZ: z.coerce.number().int().min(1).max(12).default(4),
     /* Si pm2 corre en fork con UNA instancia, un lease vivo al arrancar es de
        un proceso muerto y se puede liberar: eso repara al arrancar en vez de
        esperar los 25 minutos del vencimiento. En cluster hay que ponerlo en

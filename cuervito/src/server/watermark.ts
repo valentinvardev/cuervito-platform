@@ -58,8 +58,9 @@ sharp.cache({ memory: 32, files: 0, items: 50 });
 
 // ── Concurrency limiter ───────────────────────────────────────────────────────
 // Sharp is CPU + memory intensive. Without a cap, uploading 50 photos at once
-// fires 50 concurrent resize+watermark+S3-upload operations, which OOMs the
-// VPS and produces 502s. Queue extras and process at most 3 at a time.
+// fires 50 concurrent resize+watermark operations, which OOMs the VPS and
+// produces 502s. El turno cubre sólo el trabajo de imagen: la descarga y la
+// subida de cada foto corren afuera (ver generatePreview).
 export const MAX_CONCURRENT = 2;
 
 /* El contador vive en globalThis, como el bus de ventas y el cliente de Prisma.
@@ -176,16 +177,20 @@ export type PreviewResult = {
   error?: { mensaje: string; permanente: boolean };
 };
 
+/* El turno de sharp se toma adentro, y sólo para el trabajo de imagen.
+
+   Antes se tomaba acá, antes de todo, y cubría también la descarga del
+   original y la subida de los tres derivados. Con originales de 15 MB, bajar
+   uno tarda unos diez segundos y el trabajo de imagen unos cuatro: cada foto
+   tenía el turno tomado el 70 % del tiempo esperando a la red, con el
+   procesador parado, y con dos turnos pasaban dos fotos a la vez. Así, las
+   descargas corren en paralelo fuera del turno y el turno se usa para lo que
+   existe: que no haya más de dos decodes de 24 MP en memoria a la vez. */
 export async function generatePreview(
   photoId: string,
   signal?: AbortSignal,
 ): Promise<PreviewResult> {
-  await tomarSlotSharp();
-  try {
-    return await _generatePreview(photoId, signal);
-  } finally {
-    soltarSlotSharp();
-  }
+  return _generatePreview(photoId, signal);
 }
 
 /** Abandonada por quien la pidió: no tiene sentido seguir gastando en ella. */
@@ -268,7 +273,21 @@ async function _generatePreview(
     return ABORTADO;
   }
 
+  // Recién ahora el turno, con los bytes ya en memoria (ver generatePreview).
+  await tomarSlotSharp();
+  let conTurno = true;
+  const soltarTurno = () => {
+    if (!conTurno) return;
+    conTurno = false;
+    soltarSlotSharp();
+  };
+  reloj.marca("turno");
+
   try {
+    if (signal?.aborted) {
+      reloj.cerrar(photoId, "abortada", { bytes: raw.byteLength });
+      return ABORTADO;
+    }
     /* metadata() ADENTRO del try.
 
        Estaba afuera, y es la primera línea que toca los bytes del usuario: un
@@ -332,6 +351,8 @@ async function _generatePreview(
       .jpeg({ quality: PREVIEW_QUALITY })
       .toBuffer();
     reloj.marca("jpeg-rek");
+    // El trabajo de imagen terminó: lo que sigue es red y base, sin turno.
+    soltarTurno();
 
     /* El trabajo pesado terminó. Si quien la pidió ya se cansó, no se sube
        nada ni se toca la base: la foto queda como estaba y la próxima pasada
@@ -398,5 +419,7 @@ async function _generatePreview(
         permanente,
       },
     };
+  } finally {
+    soltarTurno();
   }
 }
