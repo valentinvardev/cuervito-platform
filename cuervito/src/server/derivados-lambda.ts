@@ -181,9 +181,27 @@ function contar(lado: "lambda" | "local"): void {
   anotarEstado(false);
 }
 
+let pendiente: ReturnType<typeof setTimeout> | null = null;
+
 function anotarEstado(ya: boolean): void {
-  // Una escritura cada medio minuto como mucho, salvo cambios de estado.
-  if (!ya && Date.now() - estado.anotadoEn < 30_000) return;
+  // Una escritura cada medio minuto como mucho, salvo cambios de estado. Lo
+  // que queda sin escribir se escribe al cumplirse el medio minuto: si no, al
+  // final de una tanda la fila quedaba con la cuenta de su primera foto.
+  const pasaron = Date.now() - estado.anotadoEn;
+  if (!ya && pasaron < 30_000) {
+    if (!pendiente) {
+      pendiente = setTimeout(() => {
+        pendiente = null;
+        anotarEstado(true);
+      }, 30_000 - pasaron);
+      pendiente.unref?.();
+    }
+    return;
+  }
+  if (pendiente) {
+    clearTimeout(pendiente);
+    pendiente = null;
+  }
   estado.anotadoEn = Date.now();
   const value = JSON.stringify({
     actualizado: new Date().toISOString(),

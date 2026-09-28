@@ -78,7 +78,18 @@ export function soltarSlotSharp() {
 // We keep one entry for the platform watermark and one per user who has their
 // own. TTL is 60 s so a new upload is reflected quickly without hammering S3.
 
-interface CacheEntry { bytes: Buffer; loadedAt: number }
+/* También se guarda que NO hay: sin eso, un fotógrafo sin marca propia —casi
+   todos— le preguntaba a S3 por un archivo que no existe en cada foto, y eso
+   era medio segundo de cada foto que hace la Lambda. Sólo cuando S3 contesta
+   que el archivo no existe: un error pasajero no se guarda, porque durante un
+   minuto las fotos de alguien CON marca propia saldrían con la de la
+   plataforma. */
+interface CacheEntry { bytes: Buffer | null; loadedAt: number }
+
+function noExiste(err: unknown): boolean {
+  const e = err as { name?: string; $metadata?: { httpStatusCode?: number } };
+  return e?.name === "NoSuchKey" || e?.$metadata?.httpStatusCode === 404;
+}
 let platformCache: CacheEntry | null = null;
 const userCacheMap = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 60_000;
@@ -92,7 +103,8 @@ export async function loadPlatformWatermark(): Promise<Buffer | null> {
     const buf = Buffer.from(bytes);
     platformCache = { bytes: buf, loadedAt: Date.now() };
     return buf;
-  } catch {
+  } catch (err) {
+    if (noExiste(err)) platformCache = { bytes: null, loadedAt: Date.now() };
     return null;
   }
 }
@@ -105,7 +117,8 @@ export async function loadUserWatermark(userId: string): Promise<Buffer | null> 
     const buf = Buffer.from(bytes);
     userCacheMap.set(userId, { bytes: buf, loadedAt: Date.now() });
     return buf;
-  } catch {
+  } catch (err) {
+    if (noExiste(err)) userCacheMap.set(userId, { bytes: null, loadedAt: Date.now() });
     return null;
   }
 }
