@@ -3,13 +3,15 @@
 # región del bucket: ya tiene la AWS CLI con tus permisos, Node y zip, y es
 # Linux x86_64 como la Lambda.
 #
-#   BUCKET=el-bucket CLAVE_VPS=AKIA... bash desplegar.sh
+#   BUCKET=el-bucket USUARIO_VPS=el-usuario bash desplegar.sh
 #
-# BUCKET     el bucket de las fotos (obligatorio).
-# CLAVE_VPS  el access key ID que usa la app en el VPS (AWS_ACCESS_KEY_ID del
-#            .env; el ID, no el secreto). Con él se busca el usuario de IAM y
-#            se le da permiso para invocar la función. Opcional: sin él, el
-#            script imprime la política para agregarla a mano.
+# BUCKET       el bucket de las fotos (obligatorio).
+# USUARIO_VPS  el usuario de IAM cuyas claves usa la app en el VPS: se le da
+#              permiso para invocar la función.
+# CLAVE_VPS    en vez del nombre, el access key ID de esas claves
+#              (AWS_ACCESS_KEY_ID del .env; el ID, no el secreto), y el script
+#              busca el usuario. Sin ninguno de los dos, imprime la política
+#              para agregarla a mano.
 # FUNCION    nombre de la función (por defecto cuervito-derivados).
 # PREFIJO    prefijo de las claves en el bucket (por defecto cuervito).
 # MEMORIA    MB de la Lambda (por defecto 3008: casi dos núcleos).
@@ -96,8 +98,11 @@ FUNCION_ARN="$(aws lambda get-function --function-name "$FUNCION" --region "$REG
 
 echo "== 4/4 Permiso para que el VPS la invoque"
 POLITICA="{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"lambda:InvokeFunction\",\"Resource\":\"${FUNCION_ARN}\"}]}"
-if [ -n "${CLAVE_VPS:-}" ]; then
+USUARIO="${USUARIO_VPS:-}"
+if [ -z "$USUARIO" ] && [ -n "${CLAVE_VPS:-}" ]; then
   USUARIO="$(aws iam get-access-key-last-used --access-key-id "$CLAVE_VPS" --query UserName --output text)"
+fi
+if [ -n "$USUARIO" ]; then
   aws iam put-user-policy --user-name "$USUARIO" --policy-name invocar-derivados --policy-document "$POLITICA"
   echo "   listo: el usuario ${USUARIO} puede invocarla"
 else

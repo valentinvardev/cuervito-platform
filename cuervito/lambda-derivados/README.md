@@ -44,7 +44,7 @@ En la consola de AWS, abrí **CloudShell** en la región del bucket y corré:
 ```bash
 git clone --depth 1 https://github.com/valentinvardev/cuervito-platform.git
 cd cuervito-platform/cuervito/lambda-derivados
-BUCKET=<el bucket> CLAVE_VPS=<el AWS_ACCESS_KEY_ID del .env del VPS> bash desplegar.sh
+BUCKET=<el bucket> USUARIO_VPS=<el usuario de IAM de las claves del VPS> bash desplegar.sh
 ```
 
 El script toma la región del bucket, arma el paquete (con sharp para Linux),
