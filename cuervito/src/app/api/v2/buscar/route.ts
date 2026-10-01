@@ -10,7 +10,15 @@ import { db } from "~/server/db";
  * encolan de a una, así que escribiendo rápido cada tecla espera a la anterior
  * y el buscador se siente pegajoso. Un GET se puede cancelar con AbortController
  * cuando llega la tecla siguiente, que es justo lo que hace falta acá.
+ *
+ * Sin `tipo` busca en todo a la vez, pocos de cada cosa. Con `tipo` (la pill
+ * que se elige en el panel) busca sólo eso y trae más: quien eligió "Venta"
+ * ya dijo qué busca, y cuatro renglones le cortan la lista justo donde
+ * empieza a servir.
  */
+const TIPOS = ["dorsal", "evento", "venta"] as const;
+type Tipo = (typeof TIPOS)[number];
+
 export async function GET(req: Request) {
   const session = await auth();
   /* Cualquier sesión, no sólo admin.
@@ -28,61 +36,102 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Sesión expirada." }, { status: 401 });
   }
 
-  const q = (new URL(req.url).searchParams.get("q") ?? "").trim();
-  if (q.length < 2) return NextResponse.json({ eventos: [], ventas: [], dorsal: null });
+  const params = new URL(req.url).searchParams;
+  const q = (params.get("q") ?? "").trim();
+  const crudo = params.get("tipo");
+  const tipo: Tipo | null = TIPOS.find((t) => t === crudo) ?? null;
+  const nada = { eventos: [], ventas: [], dorsal: null, dorsalEventos: [] };
+
+  // Un dorsal puede tener una sola cifra; un nombre de una letra no dice nada.
+  if (q.length < (tipo === "dorsal" ? 1 : 2)) return NextResponse.json(nada);
 
   const userId = session.user.id;
   const soloDigitos = /^\d+$/.test(q);
+  if (tipo === "dorsal" && !soloDigitos) return NextResponse.json(nada);
 
-  const [eventos, ventas, dorsal] = await Promise.all([
-    db.event.findMany({
-      where: {
-        ownerId: userId,
-        NOT: { status: "ARCHIVED" },
-        OR: [
-          { name: { contains: q, mode: "insensitive" } },
-          { location: { contains: q, mode: "insensitive" } },
-        ],
-      },
-      take: 4,
-      orderBy: { eventDate: "desc" },
-      select: { id: true, name: true, eventDate: true, _count: { select: { photos: true } } },
-    }),
+  const cuantos = tipo ? 8 : 4;
+  const busca = (t: Tipo) => tipo === null || tipo === t;
 
-    db.sale.findMany({
-      where: {
-        sellerId: userId,
-        OR: [
-          { buyerName: { contains: q, mode: "insensitive" } },
-          { buyerEmail: { contains: q, mode: "insensitive" } },
-        ],
-      },
-      take: 4,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        buyerName: true,
-        buyerEmail: true,
-        sellerNetCents: true,
-        event: { select: { name: true } },
-      },
-    }),
+  /* El dorsal se guarda como lista separada por comas ("123,456"), y se busca
+     por PREFIJO de cada número, igual que el campo de dorsal del evento: así
+     "12" encuentra 1247 y 1288, y no 312. Con un `contains` suelto, la cuenta
+     de acá y lo que mostraba el evento al llegar no coincidían. */
+  const dondeDorsal = {
+    ownerId: userId,
+    deletedAt: null,
+    OR: [{ bibNumbers: { startsWith: q } }, { bibNumbers: { contains: `,${q}` } }],
+  };
 
-    // El dorsal se guarda como lista separada por comas, así que se busca por
-    // coincidencia parcial. Sólo se cuenta: la lista de fotos vive adentro del
-    // evento, y traerla acá sería armar una segunda galería en un desplegable.
-    soloDigitos
-      ? db.photo.count({
-          where: { ownerId: userId, deletedAt: null, bibNumbers: { contains: q } },
+  const [eventos, ventas, dorsal, porEvento] = await Promise.all([
+    busca("evento")
+      ? db.event.findMany({
+          where: {
+            ownerId: userId,
+            NOT: { status: "ARCHIVED" },
+            OR: [
+              { name: { contains: q, mode: "insensitive" } },
+              { location: { contains: q, mode: "insensitive" } },
+            ],
+          },
+          take: cuantos,
+          orderBy: { eventDate: "desc" },
+          select: { id: true, name: true, eventDate: true, _count: { select: { photos: true } } },
         })
-      : Promise.resolve(null),
+      : Promise.resolve([]),
+
+    busca("venta")
+      ? db.sale.findMany({
+          where: {
+            sellerId: userId,
+            OR: [
+              { buyerName: { contains: q, mode: "insensitive" } },
+              { buyerEmail: { contains: q, mode: "insensitive" } },
+            ],
+          },
+          take: cuantos,
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            buyerName: true,
+            buyerEmail: true,
+            sellerNetCents: true,
+            event: { select: { name: true } },
+          },
+        })
+      : Promise.resolve([]),
+
+    // En la búsqueda general, sólo la cuenta: el renglón invita a elegir el
+    // tipo dorsal, que es donde se ve en qué eventos está.
+    tipo === null && soloDigitos ? db.photo.count({ where: dondeDorsal }) : Promise.resolve(null),
+
+    // Con el tipo elegido, en qué eventos aparece y cuántas fotos en cada uno:
+    // la lista de fotos vive adentro del evento, y traerla acá sería armar una
+    // segunda galería en un desplegable.
+    tipo === "dorsal"
+      ? db.photo.groupBy({
+          by: ["eventId"],
+          where: dondeDorsal,
+          _count: { _all: true },
+          orderBy: { _count: { eventId: "desc" } },
+          take: cuantos,
+        })
+      : Promise.resolve([]),
   ]);
+
+  const eventosDelDorsal = porEvento.length
+    ? await db.event.findMany({
+        where: { id: { in: porEvento.map((p) => p.eventId) }, NOT: { status: "ARCHIVED" } },
+        select: { id: true, name: true, eventDate: true },
+      })
+    : [];
+  const fecha = (d: Date | null) =>
+    d ? d.toLocaleDateString("es-AR", { day: "numeric", month: "long" }) : "Sin fecha";
 
   return NextResponse.json({
     eventos: eventos.map((e) => ({
       id: e.id,
       nombre: e.name,
-      meta: `${e.eventDate ? e.eventDate.toLocaleDateString("es-AR", { day: "numeric", month: "long" }) : "Sin fecha"} · ${e._count.photos.toLocaleString("es-AR")} fotos`,
+      meta: `${fecha(e.eventDate)} · ${e._count.photos.toLocaleString("es-AR")} fotos`,
     })),
     ventas: ventas.map((v) => ({
       id: v.id,
@@ -90,5 +139,12 @@ export async function GET(req: Request) {
       meta: `${v.event.name} · $${Math.round(v.sellerNetCents / 100).toLocaleString("es-AR")}`,
     })),
     dorsal: dorsal !== null ? { numero: q, fotos: dorsal } : null,
+    // En el orden de la cuenta, el que más fotos tiene primero.
+    dorsalEventos: porEvento.flatMap((p) => {
+      const e = eventosDelDorsal.find((x) => x.id === p.eventId);
+      if (!e) return [];
+      const n = p._count._all;
+      return [{ id: e.id, nombre: e.name, meta: `${n.toLocaleString("es-AR")} ${n === 1 ? "foto" : "fotos"} · ${fecha(e.eventDate)}` }];
+    }),
   });
 }

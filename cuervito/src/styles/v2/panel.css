@@ -224,24 +224,9 @@ body { overflow-x: hidden; }
    lugar para 26 píxeles, no para los 173 que mide el logotipo a esa altura. */
 .mark-ico { display: none; }
 
-.search { position: relative; flex: 1; max-width: 380px; }
-/* La lupa va con su clase (.search .lupa, más abajo) y no con "todo svg
-   adentro de .search": esa regla también agarraba los íconos del panel de
-   resultados, que es hijo del buscador, y los sacaba de su cuadrado para
-   apilarlos todos en el mismo punto del panel. */
-.search input {
-  width: 100%; height: 34px;
-  padding: 0 11px 0 33px;
-  background: var(--paper-3);
-  border: 1px solid transparent;
-  border-radius: var(--r-2);
-  font-family: var(--sans); font-size: 13.5px; color: var(--ink);
-  transition: background 140ms ease, border-color 140ms ease;
-}
-.search input::placeholder { color: var(--ink-3); }
-.search input:focus {
-  outline: none; background: var(--paper-2); border-color: var(--line-strong);
-}
+/* El buscador (.search) está entero en BÚSQUEDA, más abajo. Acá había una
+   primera versión con un ".search svg" que ubicaba la lupa y agarraba también
+   los íconos del panel de resultados: los sacaba de su cuadrado. */
 .top-r { margin-left: auto; display: flex; align-items: center; gap: var(--s-2); }
 
 /* Velo del riel en pantalla chica. */
@@ -1174,31 +1159,62 @@ body { overflow-x: hidden; }
 }
 .search:focus-within { max-width: 520px; }
 
-/* Centrada con translate y no con un top calculado a mano. El top fijo estaba
-   6px arriba del centro, y encima obligaba a recalcularlo en cada tamaño de
-   campo: el de teléfono mide 44px y necesitaba su propia excepción. Así se
-   centra sola en cualquier alto. */
+/* El campo es una caja flex y no un input a lo ancho con la lupa encima:
+   adentro, además de la lupa, puede ir la pill del tipo de búsqueda, que
+   mide distinto según el tipo. Con la lupa encima del input, el texto tenía
+   que arrancar en un padding calculado a mano, y con la pill habría que
+   medirla en cada cambio. Así la lupa, la pill y el texto se acomodan solos,
+   y se centran en cualquier alto: el de teléfono mide 44px. */
+.search-f {
+  display: flex; align-items: center; gap: 7px;
+  height: 34px; padding: 0 46px 0 11px;
+  background: var(--paper-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-2);
+  cursor: text;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.search-f:focus-within { background: var(--paper-2); border-color: var(--line-strong); }
+
 .search .lupa {
-  position: absolute; left: 11px; top: 50%;
-  transform: translateY(-50%);
-  width: 15px; height: 15px; color: var(--ink-3); pointer-events: none;
+  width: 15px; height: 15px; flex-shrink: 0;
+  color: var(--ink-3); pointer-events: none;
   transition: color 160ms ease;
 }
 .search:focus-within .lupa { color: var(--ink); }
 
 .search input {
-  width: 100%; height: 34px;
-  padding: 0 46px 0 33px;
-  background: var(--paper-3);
-  border: 1px solid transparent;
-  border-radius: var(--r-2);
+  flex: 1; min-width: 0; height: 100%;
+  padding: 0; background: none; border: 0;
   font-family: var(--sans); font-size: 13.5px; color: var(--ink);
-  transition: background 140ms ease, border-color 140ms ease;
 }
 .search input::placeholder { color: var(--ink-3); }
 .search input::-webkit-search-cancel-button { display: none; }
-.search input:focus {
-  outline: none; background: var(--paper-2); border-color: var(--line-strong);
+.search input:focus { outline: none; }
+
+/* La pill del tipo elegido. Del mismo color que su cuadrado en el panel: se
+   lee como "esa fila que tocaste ahora es el filtro". */
+.sr-pill {
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+  height: 24px; padding: 0 3px 0 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c) 14%, transparent); color: var(--c);
+  font-size: 12.5px; font-weight: 500; white-space: nowrap;
+  animation: pill-entra 200ms cubic-bezier(.2, .8, .3, 1);
+}
+.sr-pill svg { width: 13px; height: 13px; }
+.sr-pill button {
+  display: grid; place-items: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 0; background: none; color: inherit;
+  cursor: pointer; opacity: .7;
+  transition: opacity 120ms ease, background 120ms ease;
+}
+.sr-pill button:hover { opacity: 1; background: color-mix(in srgb, var(--c) 18%, transparent); }
+.sr-pill button svg { width: 11px; height: 11px; }
+@keyframes pill-entra {
+  from { opacity: 0; transform: scale(.85); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* El atajo se muestra en reposo y se va al escribir: sirve para descubrirlo,
@@ -1267,10 +1283,10 @@ body { overflow-x: hidden; }
    mezclando dorsales, eventos y ventas, el color dice qué es cada renglón
    antes de leerlo. Fondo teñido y no lleno, para que el renglón marcado se
    siga distinguiendo por el fondo de la fila. */
-.sr-i[data-tipo="dorsal"] { --c: var(--acento-txt); }
-.sr-i[data-tipo="evento"] { --c: #1F5FBF; }
-.sr-i[data-tipo="venta"]  { --c: var(--ok-txt); }
-:root[data-theme="dark"] .sr-i[data-tipo="evento"] { --c: #7EA8F0; }
+.search [data-tipo="dorsal"] { --c: var(--acento-txt); }
+.search [data-tipo="evento"] { --c: #1F5FBF; }
+.search [data-tipo="venta"]  { --c: var(--ok-txt); }
+:root[data-theme="dark"] .search [data-tipo="evento"] { --c: #7EA8F0; }
 .sr-i[data-tipo] { background: color-mix(in srgb, var(--c) 13%, transparent); color: var(--c); }
 .sr-item.marcado .sr-i[data-tipo] { background: color-mix(in srgb, var(--c) 24%, transparent); color: var(--c); }
 .sr-cv {
@@ -1332,8 +1348,8 @@ body { overflow-x: hidden; }
     background: var(--paper);
     animation: subir 220ms cubic-bezier(.2, .8, .3, 1);
   }
-  :root[data-buscar="open"] .search input { height: 44px; font-size: 16px; }
-  :root[data-buscar="open"] .search .lupa { left: 26px; }
+  :root[data-buscar="open"] .search-f { height: 44px; }
+  :root[data-buscar="open"] .search input { font-size: 16px; }
   :root[data-buscar="open"] .search kbd { display: none; }
   :root[data-buscar="open"] .sr {
     position: absolute; top: 64px; left: var(--s-4); right: var(--s-4);

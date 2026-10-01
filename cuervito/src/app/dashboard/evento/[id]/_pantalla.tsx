@@ -85,6 +85,7 @@ export function Pantalla({
   fotosDelDueno,
   simulado = false,
   historias = false,
+  dorsalInicial = "",
 }: {
   evento: {
     id: string;
@@ -128,6 +129,8 @@ export function Pantalla({
   simulado?: boolean;
   /** Tiene el estudio de historias: al terminar de subir se le ofrece armar una. */
   historias?: boolean;
+  /** El dorsal con el que se llega desde el buscador de la barra (?dorsal=). */
+  dorsalInicial?: string;
 }) {
   const sinCobrar = colaboradores.filter((c) => c.estado !== "PENDING" && !c.cobra);
   const [publicando, empezarPub] = useTransition();
@@ -189,8 +192,15 @@ export function Pantalla({
 
   const [solapa, setSolapa] = useState<"fotos" | "precio" | "equipo" | "info">("fotos");
   const [filtro, setFiltro] = useState<string>("todas");
-  const [buscado, setBuscado] = useState("");
+  const [buscado, setBuscado] = useState(dorsalInicial);
   const [pagina, setPagina] = useState(1);
+  // Buscar otro dorsal desde la barra estando ya en este evento es la misma
+  // ruta con otro ?dorsal=: el componente no se vuelve a montar, así que el
+  // estado se pone al día acá.
+  useEffect(() => {
+    setBuscado(dorsalInicial);
+    setPagina(1);
+  }, [dorsalInicial]);
   const [abierto, setAbierto] = useState(false);
   const [copiado, setCopiado] = useState(false);
 

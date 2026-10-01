@@ -1,38 +1,115 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { CalendarDays, Hash, ReceiptText, Search } from "lucide-react";
+import { CalendarDays, Hash, ReceiptText, Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 type Fila = { id: string; nombre: string; meta: string };
-type Resultado = { eventos: Fila[]; ventas: Fila[]; dorsal: { numero: string; fotos: number } | null };
+type Resultado = {
+  eventos: Fila[];
+  ventas: Fila[];
+  dorsal: { numero: string; fotos: number } | null;
+  /** Con la pill de dorsal: en qué eventos aparece, el que más fotos tiene primero. */
+  dorsalEventos: Fila[];
+};
 
-const VACIO: Resultado = { eventos: [], ventas: [], dorsal: null };
+const VACIO: Resultado = { eventos: [], ventas: [], dorsal: null, dorsalEventos: [] };
 
 /** Qué es cada renglón; panel.css le da un color a cada uno. */
 type Tipo = "dorsal" | "evento" | "venta";
 
+/**
+ * Los tipos de búsqueda, en el orden de la ayuda. Elegir uno pone su pill en
+ * el campo y la búsqueda se limita a eso.
+ */
+const TIPOS: Record<
+  Tipo,
+  {
+    Icono: typeof Hash;
+    /** El renglón de la ayuda. */
+    titulo: string;
+    ayuda: string;
+    /** Lo que dice la pill. */
+    pill: string;
+    placeholder: string;
+    /** Cuántos caracteres hacen falta para buscar. */
+    minimo: number;
+    /** El panel con la pill puesta y el campo todavía vacío. */
+    falta: [string, string];
+    /** Sin resultados. */
+    nada: string;
+  }
+> = {
+  dorsal: {
+    Icono: Hash,
+    titulo: "Un dorsal",
+    ayuda: "Escribí el número y listo",
+    pill: "Dorsal",
+    placeholder: "Número de dorsal",
+    // Hay dorsales de una cifra.
+    minimo: 1,
+    falta: ["Escribí el número", "Te decimos en qué eventos aparece y cuántas fotos tiene."],
+    nada: "Puede que el dorsal no se haya leído bien, o que esas fotos todavía estén procesando.",
+  },
+  evento: {
+    Icono: CalendarDays,
+    titulo: "Un evento",
+    ayuda: "Por nombre o por lugar",
+    pill: "Evento",
+    placeholder: "Nombre o lugar del evento",
+    minimo: 2,
+    falta: ["Escribí el nombre o el lugar", "Buscamos entre todos tus eventos."],
+    nada: "Probá con otra parte del nombre, o con el lugar.",
+  },
+  venta: {
+    Icono: ReceiptText,
+    titulo: "Una venta",
+    ayuda: "Por comprador o por mail",
+    pill: "Venta",
+    placeholder: "Comprador o mail",
+    minimo: 2,
+    falta: ["Escribí el nombre o el mail", "Del comprador, para encontrar su venta."],
+    nada: "Probá con el mail, o con otra parte del nombre.",
+  },
+};
+const ORDEN: Tipo[] = ["dorsal", "evento", "venta"];
+
+type Item = {
+  tipo: Tipo;
+  icono: React.ReactNode;
+  nombre: React.ReactNode;
+  meta: string;
+  /** A dónde lleva, o qué hace: los renglones de la ayuda eligen un tipo. */
+  ir: { href: string } | { tipo: Tipo };
+};
+
 export function Buscador({ placeholder }: { placeholder: string }) {
   const router = useRouter();
   const [q, setQ] = useState("");
+  const [tipo, setTipo] = useState<Tipo | null>(null);
   const [res, setRes] = useState<Resultado>(VACIO);
   const [abierto, setAbierto] = useState(false);
   const [marcado, setMarcado] = useState(0);
   const caja = useRef<HTMLDivElement>(null);
   const campo = useRef<HTMLInputElement>(null);
 
+  const minimo = tipo ? TIPOS[tipo].minimo : 2;
+  const corto = q.trim().length < minimo;
+
   // Cada tecla cancela el pedido anterior. Sin esto, escribiendo rápido llegan
   // respuestas fuera de orden y la lista termina mostrando los resultados de
   // una consulta vieja: el clásico bug de que borrás una letra y aparecen más
-  // resultados que antes.
+  // resultados que antes. Cambiar la pill cuenta como una tecla más.
   useEffect(() => {
-    if (q.trim().length < 2) {
+    if (q.trim().length < minimo) {
       setRes(VACIO);
       return;
     }
     const corte = new AbortController();
     const id = setTimeout(() => {
-      fetch(`/api/v2/buscar?q=${encodeURIComponent(q)}`, { signal: corte.signal })
+      const params = new URLSearchParams({ q });
+      if (tipo) params.set("tipo", tipo);
+      fetch(`/api/v2/buscar?${params.toString()}`, { signal: corte.signal })
         .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
         .then((d: Partial<Resultado>) => {
           /* Sólo se guarda lo que tiene la forma que se espera.
@@ -49,7 +126,12 @@ export function Buscador({ placeholder }: { placeholder: string }) {
             setRes(VACIO);
             return;
           }
-          setRes({ eventos: d.eventos, ventas: d.ventas, dorsal: d.dorsal ?? null });
+          setRes({
+            eventos: d.eventos,
+            ventas: d.ventas,
+            dorsal: d.dorsal ?? null,
+            dorsalEventos: Array.isArray(d.dorsalEventos) ? d.dorsalEventos : [],
+          });
           setMarcado(0);
         })
         .catch((e: unknown) => {
@@ -62,7 +144,7 @@ export function Buscador({ placeholder }: { placeholder: string }) {
       clearTimeout(id);
       corte.abort();
     };
-  }, [q]);
+  }, [q, tipo, minimo]);
 
   useEffect(() => {
     function fuera(e: MouseEvent) {
@@ -89,100 +171,167 @@ export function Buscador({ placeholder }: { placeholder: string }) {
     return () => document.removeEventListener("keydown", tecla);
   }, []);
 
-  const items: { href: string; tipo: Tipo; icono: React.ReactNode; nombre: React.ReactNode; meta: string }[] = [];
-  if (res.dorsal) {
-    items.push({
-      href: `/dashboard/eventos`,
-      tipo: "dorsal",
-      icono: <Hash />,
-      nombre: `Dorsal ${res.dorsal.numero}`,
-      meta:
-        res.dorsal.fotos > 0
-          ? `${res.dorsal.fotos.toLocaleString("es-AR")} fotos con ese número`
-          : "Ninguna foto con ese número",
-    });
+  /** Pone la pill. Lo escrito se conserva: "123" y después "Dorsal" sigue buscando el 123. */
+  function elegirTipo(t: Tipo) {
+    setTipo(t);
+    if (t === "dorsal") setQ((v) => v.replace(/[^0-9]/g, ""));
+    setRes(VACIO);
+    setMarcado(0);
+    setAbierto(true);
+    campo.current?.focus();
   }
-  res.eventos.forEach((e) => items.push({ href: `/dashboard/evento/${e.id}`, tipo: "evento", icono: <CalendarDays />, nombre: e.nombre, meta: e.meta }));
-  // A ESA venta, abierta. Antes llevaba a la lista general, que muestra las
-  // últimas cincuenta: buscar una venta de hace dos meses te dejaba en una
-  // lista donde no estaba.
-  res.ventas.forEach((v) => items.push({ href: `/dashboard/ventas?venta=${v.id}`, tipo: "venta", icono: <ReceiptText />, nombre: v.nombre, meta: v.meta }));
+
+  function quitarTipo() {
+    setTipo(null);
+    setRes(VACIO);
+    setMarcado(0);
+    campo.current?.focus();
+  }
+
+  // Sin pill y sin nada escrito, el panel es la ayuda, y sus renglones se
+  // eligen con el mouse o con las flechas igual que un resultado.
+  const guia = !tipo && corto;
+  const items: Item[] = [];
+  if (guia) {
+    for (const t of ORDEN) {
+      const { Icono, titulo, ayuda } = TIPOS[t];
+      items.push({ tipo: t, icono: <Icono />, nombre: titulo, meta: ayuda, ir: { tipo: t } });
+    }
+  } else if (tipo === "dorsal") {
+    // El evento llega con las fotos de ese dorsal ya filtradas.
+    res.dorsalEventos.forEach((e) =>
+      items.push({
+        tipo: "dorsal",
+        icono: <Hash />,
+        nombre: e.nombre,
+        meta: e.meta,
+        ir: { href: `/dashboard/evento/${e.id}?dorsal=${encodeURIComponent(q.trim())}` },
+      }),
+    );
+  } else {
+    if (res.dorsal) {
+      // La cuenta sola no lleva a ningún lado útil: elegirlo pone la pill de
+      // dorsal, que muestra en qué eventos está.
+      items.push({
+        tipo: "dorsal",
+        icono: <Hash />,
+        nombre: `Dorsal ${res.dorsal.numero}`,
+        meta:
+          res.dorsal.fotos > 0
+            ? `${res.dorsal.fotos.toLocaleString("es-AR")} fotos con ese número · ver en qué eventos`
+            : "Ninguna foto con ese número",
+        ir: { tipo: "dorsal" },
+      });
+    }
+    res.eventos.forEach((e) =>
+      items.push({ tipo: "evento", icono: <CalendarDays />, nombre: e.nombre, meta: e.meta, ir: { href: `/dashboard/evento/${e.id}` } }),
+    );
+    // A ESA venta, abierta. Antes llevaba a la lista general, que muestra las
+    // últimas cincuenta: buscar una venta de hace dos meses te dejaba en una
+    // lista donde no estaba.
+    res.ventas.forEach((v) =>
+      items.push({ tipo: "venta", icono: <ReceiptText />, nombre: v.nombre, meta: v.meta, ir: { href: `/dashboard/ventas?venta=${v.id}` } }),
+    );
+  }
+  // El marcado puede venir de una lista más larga que la de ahora.
+  const elegido = Math.min(marcado, Math.max(items.length - 1, 0));
 
   function ir(i: number) {
     const it = items[i];
     if (!it) return;
+    if ("tipo" in it.ir) {
+      elegirTipo(it.ir.tipo);
+      return;
+    }
     setAbierto(false);
-    router.push(it.href);
+    router.push(it.ir.href);
   }
+
+  const Pill = tipo ? TIPOS[tipo].Icono : null;
 
   return (
     <div className="search" ref={caja} data-abierto={abierto ? "1" : ""}>
-      <Search className="lupa" />
-      <input
-        ref={campo}
-        type="search"
-        value={q}
-        placeholder={placeholder}
-        autoComplete="off"
-        onChange={(e) => setQ(e.target.value)}
-        onFocus={() => setAbierto(true)}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      {/* Un clic en cualquier parte de la caja va al campo, también al lado de
+          la pill. Con un <label> no: el botón de quitar la pill es lo primero
+          que se puede activar adentro, y el label se lo daría a él. */}
+      <div
+        className="search-f"
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget) {
             e.preventDefault();
-            if (!items.length) return;
-            setMarcado((m) => (e.key === "ArrowDown" ? (m + 1) % items.length : (m - 1 + items.length) % items.length));
-          } else if (e.key === "Enter") {
-            e.preventDefault();
-            ir(marcado);
-          } else if (e.key === "Escape") {
-            if (q) setQ("");
-            else {
-              setAbierto(false);
-              campo.current?.blur();
-            }
+            campo.current?.focus();
           }
         }}
-      />
+      >
+        <Search className="lupa" />
+        {tipo && Pill && (
+          <span className="sr-pill" data-tipo={tipo}>
+            <Pill />
+            {TIPOS[tipo].pill}
+            <button
+              type="button"
+              aria-label={`Dejar de buscar sólo por ${TIPOS[tipo].pill.toLowerCase()}`}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={quitarTipo}
+            >
+              <X />
+            </button>
+          </span>
+        )}
+        <input
+          ref={campo}
+          type="search"
+          value={q}
+          placeholder={tipo ? TIPOS[tipo].placeholder : placeholder}
+          inputMode={tipo === "dorsal" ? "numeric" : undefined}
+          autoComplete="off"
+          onChange={(e) => setQ(tipo === "dorsal" ? e.target.value.replace(/[^0-9]/g, "") : e.target.value)}
+          onFocus={() => setAbierto(true)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+              e.preventDefault();
+              if (!items.length) return;
+              setMarcado(
+                e.key === "ArrowDown" ? (elegido + 1) % items.length : (elegido - 1 + items.length) % items.length,
+              );
+            } else if (e.key === "Enter") {
+              e.preventDefault();
+              ir(elegido);
+            } else if (e.key === "Backspace" && q === "" && tipo) {
+              // Como en cualquier campo con etiquetas: borrar con el campo
+              // vacío se lleva la pill.
+              e.preventDefault();
+              quitarTipo();
+            } else if (e.key === "Escape") {
+              if (q) setQ("");
+              else if (tipo) quitarTipo();
+              else {
+                setAbierto(false);
+                campo.current?.blur();
+              }
+            }
+          }}
+        />
+      </div>
       <kbd>Ctrl K</kbd>
 
       <div className="sr" role="listbox">
-        {q.trim().length < 2 ? (
-          <>
-            <div className="sr-tit">Buscá por</div>
-            <div className="sr-item">
-              <span className="sr-i" data-tipo="dorsal">
-                <Hash />
-              </span>
-              <span className="sr-t">
-                <b>Un dorsal</b>
-                <span>Escribí el número y listo</span>
-              </span>
-            </div>
-            <div className="sr-item">
-              <span className="sr-i" data-tipo="evento">
-                <CalendarDays />
-              </span>
-              <span className="sr-t">
-                <b>Un evento</b>
-                <span>Por nombre o por lugar</span>
-              </span>
-            </div>
-            <div className="sr-item">
-              <span className="sr-i" data-tipo="venta">
-                <ReceiptText />
-              </span>
-              <span className="sr-t">
-                <b>Una venta</b>
-                <span>Por comprador o por mail</span>
-              </span>
-            </div>
-          </>
+        {guia && <div className="sr-tit">Buscá por</div>}
+        {tipo && corto ? (
+          <div className="sr-nada">
+            <b>{TIPOS[tipo].falta[0]}</b>
+            <span>{TIPOS[tipo].falta[1]}</span>
+          </div>
         ) : items.length > 0 ? (
           items.map((it, i) => (
             <div
-              key={`${it.href}-${i}`}
-              className={`sr-item${i === marcado ? " marcado" : ""}`}
+              key={`${"href" in it.ir ? it.ir.href : it.ir.tipo}-${i}`}
+              role="option"
+              aria-selected={i === elegido}
+              className={`sr-item${i === elegido ? " marcado" : ""}`}
               onMouseEnter={() => setMarcado(i)}
+              // Sin esto, el clic le saca el foco al campo antes de llegar.
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => ir(i)}
             >
               <span className="sr-i" data-tipo={it.tipo}>
@@ -198,7 +347,7 @@ export function Buscador({ placeholder }: { placeholder: string }) {
         ) : (
           <div className="sr-nada">
             <b>Nada con “{q}”</b>
-            <span>Probá con el nombre del evento, un dorsal o el comprador.</span>
+            <span>{tipo ? TIPOS[tipo].nada : "Probá con el nombre del evento, un dorsal o el comprador."}</span>
           </div>
         )}
       </div>

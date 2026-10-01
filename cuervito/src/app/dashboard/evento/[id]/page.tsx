@@ -17,8 +17,18 @@ export const dynamic = "force-dynamic";
 // en memoria. Con más que esto conviene mover el filtrado al servidor.
 const TOPE = 600;
 
-export default async function V2Evento({ params }: { params: Promise<{ id: string }> }) {
+export default async function V2Evento({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ dorsal?: string | string[] }>;
+}) {
   const { id } = await params;
+  // ?dorsal= viene del buscador de la barra: llega con las fotos de ese
+  // dorsal ya filtradas. Con el mismo saneo que el campo de dorsal.
+  const pedido = (await searchParams).dorsal;
+  const dorsal = (Array.isArray(pedido) ? pedido[0] : pedido)?.replace(/[^0-9]/g, "").slice(0, 5) ?? "";
   const { userId, slug, nombre, rol, historiasEnabled } = await sesionPanel();
   // Para el modal de "subí una a tu historia" al terminar de subir. Con la
   // llave que sesionPanel ya trajo: cero consultas de más.
@@ -209,6 +219,7 @@ export default async function V2Evento({ params }: { params: Promise<{ id: strin
       publico={e.isPublished && e.slug ? `/${slug}/${e.slug}` : null}
       yo={nombre}
       fotosDelDueno={fotosDelDueno}
+      dorsalInicial={dorsal}
     />
   );
 }
