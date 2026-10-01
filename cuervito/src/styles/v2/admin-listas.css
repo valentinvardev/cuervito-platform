@@ -11,8 +11,13 @@
 /* Usuarios: avatar · quién · eventos · ventas · fotos · MP · rol · alta · ir */
 .ut { grid-template-columns: 30px minmax(0, 1.6fr) 62px 62px 62px 84px 90px 86px 16px; }
 
-/* Ventas (admin): estado · cuándo · fotógrafo · evento · comprador · total · comisión · neto */
-.at { grid-template-columns: 92px 82px minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1.25fr) 92px 84px 92px; }
+/* Ventas (admin): estado · cuándo · fotógrafo · evento · comprador · total · comisión · neto
+
+   .avt y no .at: .at es la fila de "Necesita tu atención" del inicio del
+   panel. Como el admin y el panel comparten armazón, al pasar de uno al otro
+   sin recargar esta hoja queda cargada, y con el mismo nombre pisaba a la del
+   panel: la tarjeta se dibujaba con las ocho columnas de esta tabla. */
+.avt { grid-template-columns: 92px 82px minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1.25fr) 92px 84px 92px; }
 
 /* Métricas: fotógrafo · eventos · fotos · ventas · vendidas · conv · recaudado */
 .mt { grid-template-columns: minmax(0, 1.5fr) 68px 96px 68px 96px 88px 104px; }
@@ -22,7 +27,7 @@
 
 /* Las cifras y las fechas no quiebran: "hace 12 d" en dos líneas desalinea la
    fila entera para ahorrar diez píxeles. */
-.ut .num, .at .num, .mt .num, .ct .num { white-space: nowrap; }
+.ut .num, .avt .num, .mt .num, .ct .num { white-space: nowrap; }
 
 /* Los links dentro de una fila no se pintan de acento: la fila entera es el
    destino y el acento es para lo que hay que ver primero. */
@@ -68,7 +73,7 @@
    número que importa y la píldora. Las columnas .oc desaparecen. */
 @media (max-width: 900px) {
   .ut { grid-template-columns: 30px minmax(0, 1fr) 84px; }
-  .at { grid-template-columns: 92px minmax(0, 1fr) 92px; }
+  .avt { grid-template-columns: 92px minmax(0, 1fr) 92px; }
   .mt { grid-template-columns: minmax(0, 1fr) 88px 104px; }
   .ct { grid-template-columns: minmax(0, 1fr) 104px; }
   .oc { display: none; }

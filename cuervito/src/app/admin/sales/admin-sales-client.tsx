@@ -267,7 +267,7 @@ export function AdminSalesClient({
             </div>
           ) : (
             <>
-              <div className="row row-h at">
+              <div className="row row-h avt">
                 <span />
                 <span className="oc">Cuándo</span>
                 <span className="oc">Fotógrafo</span>
@@ -281,7 +281,7 @@ export function AdminSalesClient({
               {rows.map((s) => {
                 const e = ESTADO[s.status] ?? { txt: s.status, cls: "" };
                 return (
-                  <div key={s.id} className="row at">
+                  <div key={s.id} className="row avt">
                     <span>
                       <span className={`pill ${e.cls}`}>
                         <i /> {e.txt}
