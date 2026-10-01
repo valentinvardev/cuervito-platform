@@ -66,12 +66,9 @@ export async function signupAction(
       slug,
       role: "PHOTOGRAPHER",
       status: "ACTIVE",
-      // La plantilla nueva se asigna ACÁ, explícitamente, y no cambiando el
-      // respaldo del catálogo. getTemplate() devuelve la primera de la lista
-      // cuando la columna está en null, y todas las cuentas viejas la tienen
-      // así: mover ese respaldo les cambiaría la página a todas de un día para
-      // el otro, sin que nadie lo haya pedido. De este modo la traen las
-      // cuentas nuevas y sólo ellas.
+      // La misma que el respaldo del catálogo (PLANTILLA_POR_DEFECTO), pero
+      // anotada: si el respaldo cambia algún día, las cuentas que ya existen
+      // conservan la página con la que empezaron.
       storefrontTemplate: "encontrate",
     },
   });

@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
 
+import { PLANTILLA_POR_DEFECTO } from "~/lib/storefront-templates";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 
@@ -51,7 +52,7 @@ export default async function V2Pagina() {
             websiteUrl: u?.websiteUrl ?? "",
           }}
           colorInicial={u?.storefrontBrandColor ?? "#F0410F"}
-          plantillaInicial={u?.storefrontTemplate ?? "light"}
+          plantillaInicial={u?.storefrontTemplate ?? PLANTILLA_POR_DEFECTO}
           logoInicial={u?.logoKey ? await resolveMediaUrl(u.logoKey) : null}
         />
       </div>

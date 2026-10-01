@@ -16,12 +16,13 @@ export interface StorefrontTemplate {
 }
 
 /**
- * OJO con el orden: getTemplate() devuelve TEMPLATES[0] cuando no encuentra el
- * id, y esa es la plantilla que ven las cuentas sin elegir. NO se puede poner
- * la nueva primera sin cambiarle la página a todos los que nunca eligieron.
- * La oscura sigue siendo el respaldo; la nueva se asigna explícitamente al
- * crear la cuenta, así que la traen las nuevas y sólo las nuevas.
+ * La plantilla de las cuentas que nunca eligieron una (la columna en null) y
+ * de cualquier id que ya no exista. Antes era la oscura, la primera de la
+ * lista, y la nueva sólo la traían las cuentas creadas después; ahora es la de
+ * todos los que no eligieron otra.
  */
+export const PLANTILLA_POR_DEFECTO: TemplateId = "encontrate";
+
 export const TEMPLATES: readonly StorefrontTemplate[] = [
   {
     id: "dark",
@@ -107,7 +108,7 @@ export const TEMPLATES: readonly StorefrontTemplate[] = [
 ] as const;
 
 export function getTemplate(id: string | null | undefined): StorefrontTemplate {
-  return (TEMPLATES.find((t) => t.id === id) as StorefrontTemplate | undefined) ?? TEMPLATES[0]!;
+  return TEMPLATES.find((t) => t.id === id) ?? TEMPLATES.find((t) => t.id === PLANTILLA_POR_DEFECTO)!;
 }
 
 export function buildTemplateStyle(
