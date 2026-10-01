@@ -7,6 +7,8 @@ import { useActionState, useEffect, useRef, useState, useTransition } from "reac
 import { savePerfilAction } from "~/app/dashboard/perfil/actions";
 import { saveBrandColorAction, saveTemplateAction } from "~/app/dashboard/pagina/actions";
 
+import { Dominio } from "./_dominio";
+
 /**
  * Editor de la página pública, con la página REAL al lado.
  *
@@ -213,6 +215,8 @@ export function Editor({
                   {guardandoDir ? "Guardando" : "Cambiar dirección"}
                 </button>
               </div>
+
+              <Dominio slug={slugVivo} />
             </div>
           </section>
         </form>

@@ -26,7 +26,7 @@ const PREGUNTAS = [
   },
   {
     q: "¿Puedo usar mi propio dominio?",
-    a: "Sí, sin costo extra. En Mi página, abajo de la dirección, tenés la opción de conectar un dominio propio. Nosotros te damos los datos y vos los cargás donde compraste el dominio.",
+    a: "Sí, sin costo extra. En Mi página, abajo de la dirección, tocá «Conectar tu dominio» y escribinos por WhatsApp: te decimos qué cargar donde compraste el dominio y te acompañamos hasta que tu página se vea ahí.",
   },
 ];
 

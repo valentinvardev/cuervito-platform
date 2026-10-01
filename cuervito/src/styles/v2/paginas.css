@@ -1343,6 +1343,30 @@
 }
 .propio .btn { margin-left: auto; }
 
+/* El diálogo de dominio propio: tres pasos y el botón a WhatsApp. */
+.dmn-txt { font-size: 13.5px; line-height: 1.55; color: var(--ink-2); }
+.dmn-pasos { display: grid; gap: 10px; margin: 0; padding: 0; counter-reset: paso; }
+.dmn-pasos li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13.5px; line-height: 1.5; color: var(--ink-2);
+  list-style: none; counter-increment: paso;
+}
+.dmn-pasos li::before {
+  content: counter(paso);
+  width: 22px; height: 22px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--paper-3); color: var(--ink);
+  font-size: 12px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Relleno con el mismo verde del riel (no el #25D366 de la marca: con blanco
+   encima no se lee). Es la única salida del diálogo, así que va lleno. */
+.btn-wa-sol { background: #0A7C42; color: #FFFFFF; }
+.btn-wa-sol:hover { filter: brightness(1.12); }
+.btn-wa-sol .wa { width: 16px; height: 16px; fill: currentColor; }
+
 /* ── Plantillas ──────────────────────────────────────────────────────────────
    Miniaturas reales y no nombres en una lista: "Editorial" no le dice nada a
    nadie hasta que lo ve. */
