@@ -38,6 +38,9 @@ const TIPOS: Record<
     falta: [string, string];
     /** Sin resultados. */
     nada: string;
+    /** Qué se está buscando, mientras llega y arriba de lo que llegó. */
+    buscando: (q: string) => string;
+    resultados: (q: string) => string;
   }
 > = {
   dorsal: {
@@ -50,6 +53,8 @@ const TIPOS: Record<
     minimo: 1,
     falta: ["Escribí el número", "Te decimos en qué eventos aparece y cuántas fotos tiene."],
     nada: "Puede que el dorsal no se haya leído bien, o que esas fotos todavía estén procesando.",
+    buscando: (q) => `Buscando el dorsal ${q}`,
+    resultados: (q) => `Eventos con el dorsal ${q}`,
   },
   evento: {
     Icono: CalendarDays,
@@ -60,6 +65,8 @@ const TIPOS: Record<
     minimo: 2,
     falta: ["Escribí el nombre o el lugar", "Buscamos entre todos tus eventos."],
     nada: "Probá con otra parte del nombre, o con el lugar.",
+    buscando: (q) => `Buscando eventos con “${q}”`,
+    resultados: (q) => `Eventos con “${q}”`,
   },
   venta: {
     Icono: ReceiptText,
@@ -70,6 +77,8 @@ const TIPOS: Record<
     minimo: 2,
     falta: ["Escribí el nombre o el mail", "Del comprador, para encontrar su venta."],
     nada: "Probá con el mail, o con otra parte del nombre.",
+    buscando: (q) => `Buscando ventas de “${q}”`,
+    resultados: (q) => `Ventas de “${q}”`,
   },
 };
 const ORDEN: Tipo[] = ["dorsal", "evento", "venta"];
@@ -88,6 +97,10 @@ export function Buscador({ placeholder }: { placeholder: string }) {
   const [q, setQ] = useState("");
   const [tipo, setTipo] = useState<Tipo | null>(null);
   const [res, setRes] = useState<Resultado>(VACIO);
+  // Desde la tecla hasta que llega la respuesta de ESA consulta. Sin esto el
+  // panel no decía nada en ese rato: mostraba lo de la consulta anterior, o
+  // "Nada con…" antes de haber buscado.
+  const [cargando, setCargando] = useState(false);
   const [abierto, setAbierto] = useState(false);
   const [marcado, setMarcado] = useState(0);
   const caja = useRef<HTMLDivElement>(null);
@@ -103,8 +116,10 @@ export function Buscador({ placeholder }: { placeholder: string }) {
   useEffect(() => {
     if (q.trim().length < minimo) {
       setRes(VACIO);
+      setCargando(false);
       return;
     }
+    setCargando(true);
     const corte = new AbortController();
     const id = setTimeout(() => {
       const params = new URLSearchParams({ q });
@@ -122,6 +137,7 @@ export function Buscador({ placeholder }: { placeholder: string }) {
              barra y se quedaba mirando un fondo vacío.
 
              Una respuesta rara es "sin resultados". Nunca es "sin panel". */
+          setCargando(false);
           if (!Array.isArray(d.eventos) || !Array.isArray(d.ventas)) {
             setRes(VACIO);
             return;
@@ -135,9 +151,12 @@ export function Buscador({ placeholder }: { placeholder: string }) {
           setMarcado(0);
         })
         .catch((e: unknown) => {
-          // Cancelado por la tecla siguiente: no hay nada que mostrar todavía.
-          // Cualquier otra falla se muestra como lista vacía, por lo de arriba.
-          if ((e as Error).name !== "AbortError") setRes(VACIO);
+          // Cancelado por la tecla siguiente: no hay nada que mostrar todavía,
+          // y la consulta nueva sigue cargando. Cualquier otra falla se
+          // muestra como lista vacía, por lo de arriba.
+          if ((e as Error).name === "AbortError") return;
+          setCargando(false);
+          setRes(VACIO);
         });
     }, 180);
     return () => {
@@ -148,7 +167,13 @@ export function Buscador({ placeholder }: { placeholder: string }) {
 
   useEffect(() => {
     function fuera(e: MouseEvent) {
-      if (!caja.current?.contains(e.target as Node)) setAbierto(false);
+      /* Por el recorrido del evento y no por contains(e.target). Elegir un
+         renglón de la ayuda o sacar la pill re-dibuja el panel ANTES de que
+         este listener corra, y el renglón tocado ya no está en el documento:
+         contains decía "afuera" y el panel se cerraba justo al elegir. El
+         recorrido se arma al hacer el clic, así que todavía lo incluye. */
+      const c = caja.current;
+      if (c && !e.composedPath().includes(c)) setAbierto(false);
     }
     document.addEventListener("click", fuera);
     return () => document.removeEventListener("click", fuera);
@@ -263,7 +288,8 @@ export function Buscador({ placeholder }: { placeholder: string }) {
           }
         }}
       >
-        <Search className="lupa" />
+        {/* Mientras busca, la lupa gira: es lo primero que se mira al tipear. */}
+        {cargando ? <span className="spin lupa-gira" aria-hidden="true" /> : <Search className="lupa" />}
         {tipo && Pill && (
           <span className="sr-pill" data-tipo={tipo}>
             <Pill />
@@ -315,8 +341,23 @@ export function Buscador({ placeholder }: { placeholder: string }) {
       </div>
       <kbd>Ctrl K</kbd>
 
-      <div className="sr" role="listbox">
+      <div className="sr" role="listbox" aria-busy={cargando} data-cargando={cargando ? "1" : undefined}>
         {guia && <div className="sr-tit">Buscá por</div>}
+        {/* Qué se está buscando, con las mismas palabras mientras carga y
+            cuando llega. Lo de la consulta anterior se queda abajo, apagado:
+            vaciar la lista en cada tecla la haría parpadear. */}
+        {!guia && !corto && (cargando || items.length > 0) && (
+          <div className="sr-tit sr-estado" aria-live="polite">
+            {cargando && <span className="spin" aria-hidden="true" />}
+            <span>
+              {cargando
+                ? `${tipo ? TIPOS[tipo].buscando(q.trim()) : `Buscando “${q.trim()}”`}…`
+                : tipo
+                  ? TIPOS[tipo].resultados(q.trim())
+                  : `Resultados para “${q.trim()}”`}
+            </span>
+          </div>
+        )}
         {tipo && corto ? (
           <div className="sr-nada">
             <b>{TIPOS[tipo].falta[0]}</b>
@@ -344,7 +385,7 @@ export function Buscador({ placeholder }: { placeholder: string }) {
               <span className="sr-tec">Enter</span>
             </div>
           ))
-        ) : (
+        ) : cargando ? null : (
           <div className="sr-nada">
             <b>Nada con “{q}”</b>
             <span>{tipo ? TIPOS[tipo].nada : "Probá con el nombre del evento, un dorsal o el comprador."}</span>
