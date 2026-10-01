@@ -9,6 +9,9 @@ type Resultado = { eventos: Fila[]; ventas: Fila[]; dorsal: { numero: string; fo
 
 const VACIO: Resultado = { eventos: [], ventas: [], dorsal: null };
 
+/** Qué es cada renglón; panel.css le da un color a cada uno. */
+type Tipo = "dorsal" | "evento" | "venta";
+
 export function Buscador({ placeholder }: { placeholder: string }) {
   const router = useRouter();
   const [q, setQ] = useState("");
@@ -86,10 +89,11 @@ export function Buscador({ placeholder }: { placeholder: string }) {
     return () => document.removeEventListener("keydown", tecla);
   }, []);
 
-  const items: { href: string; icono: React.ReactNode; nombre: React.ReactNode; meta: string }[] = [];
+  const items: { href: string; tipo: Tipo; icono: React.ReactNode; nombre: React.ReactNode; meta: string }[] = [];
   if (res.dorsal) {
     items.push({
       href: `/dashboard/eventos`,
+      tipo: "dorsal",
       icono: <Hash />,
       nombre: `Dorsal ${res.dorsal.numero}`,
       meta:
@@ -98,11 +102,11 @@ export function Buscador({ placeholder }: { placeholder: string }) {
           : "Ninguna foto con ese número",
     });
   }
-  res.eventos.forEach((e) => items.push({ href: `/dashboard/evento/${e.id}`, icono: <CalendarDays />, nombre: e.nombre, meta: e.meta }));
+  res.eventos.forEach((e) => items.push({ href: `/dashboard/evento/${e.id}`, tipo: "evento", icono: <CalendarDays />, nombre: e.nombre, meta: e.meta }));
   // A ESA venta, abierta. Antes llevaba a la lista general, que muestra las
   // últimas cincuenta: buscar una venta de hace dos meses te dejaba en una
   // lista donde no estaba.
-  res.ventas.forEach((v) => items.push({ href: `/dashboard/ventas?venta=${v.id}`, icono: <ReceiptText />, nombre: v.nombre, meta: v.meta }));
+  res.ventas.forEach((v) => items.push({ href: `/dashboard/ventas?venta=${v.id}`, tipo: "venta", icono: <ReceiptText />, nombre: v.nombre, meta: v.meta }));
 
   function ir(i: number) {
     const it = items[i];
@@ -146,7 +150,7 @@ export function Buscador({ placeholder }: { placeholder: string }) {
           <>
             <div className="sr-tit">Buscá por</div>
             <div className="sr-item">
-              <span className="sr-i">
+              <span className="sr-i" data-tipo="dorsal">
                 <Hash />
               </span>
               <span className="sr-t">
@@ -155,7 +159,7 @@ export function Buscador({ placeholder }: { placeholder: string }) {
               </span>
             </div>
             <div className="sr-item">
-              <span className="sr-i">
+              <span className="sr-i" data-tipo="evento">
                 <CalendarDays />
               </span>
               <span className="sr-t">
@@ -164,7 +168,7 @@ export function Buscador({ placeholder }: { placeholder: string }) {
               </span>
             </div>
             <div className="sr-item">
-              <span className="sr-i">
+              <span className="sr-i" data-tipo="venta">
                 <ReceiptText />
               </span>
               <span className="sr-t">
@@ -181,7 +185,9 @@ export function Buscador({ placeholder }: { placeholder: string }) {
               onMouseEnter={() => setMarcado(i)}
               onClick={() => ir(i)}
             >
-              <span className="sr-i">{it.icono}</span>
+              <span className="sr-i" data-tipo={it.tipo}>
+                {it.icono}
+              </span>
               <span className="sr-t">
                 <b>{it.nombre}</b>
                 <span>{it.meta}</span>
