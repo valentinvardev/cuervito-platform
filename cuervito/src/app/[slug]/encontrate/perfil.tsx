@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { AtSign, CalendarDays, Globe, ImageOff, MapPin } from "lucide-react";
+import { CalendarDays, Globe, ImageOff, MapPin } from "lucide-react";
 
 import { NOMBRE, SITIO } from "~/lib/marca";
+
+import { PillInstagram } from "./pill-instagram";
 
 /**
  * El perfil público del fotógrafo, en la plantilla de encontrate.
@@ -102,18 +104,9 @@ export function PerfilEncontrate({
 
           {(fotografo.instagram ?? fotografo.web) && (
             <div className="et-perfil-links">
-              {fotografo.instagram && (
-                <a
-                  className="et-btn et-btn-sm"
-                  href={`https://instagram.com/${fotografo.instagram}`}
-                  target="_blank"
-                  rel="noopener"
-                >
-                  <AtSign /> {fotografo.instagram}
-                </a>
-              )}
+              {fotografo.instagram && <PillInstagram usuario={fotografo.instagram} />}
               {fotografo.web && (
-                <a className="et-btn et-btn-sm" href={fotografo.web} target="_blank" rel="noopener">
+                <a className="et-red" href={fotografo.web} target="_blank" rel="noopener">
                   <Globe /> Sitio web
                 </a>
               )}

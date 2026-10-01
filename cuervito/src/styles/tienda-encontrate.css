@@ -722,9 +722,31 @@
 .et-perfil-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
   margin-top: 18px;
 }
+
+/* Las redes del fotógrafo, como pills: el ícono de la red y el usuario. Más
+   chicas que un botón y redondas, para que no compitan con las acciones de la
+   página —buscar, comprar—, que son las que tienen que ganar. */
+.et-red {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 34px; padding: 0 14px 0 11px;
+  border: 1px solid var(--et-linea-fuerte);
+  border-radius: 999px;
+  color: var(--text-primary, #12110F);
+  font-size: 13px; font-weight: 500; letter-spacing: -0.005em;
+  text-decoration: none;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+.et-red:hover { border-color: var(--text-primary, #12110F); background: color-mix(in srgb, var(--text-primary, #12110F) 4%, transparent); }
+.et-red svg {
+  width: 16px; height: 16px; flex-shrink: 0;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.et-red .et-red-punto { fill: currentColor; stroke: none; }
 
 /* ── La lista de eventos ──────────────────────────────────────────────────── */
 .et-eventos {

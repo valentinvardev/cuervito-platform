@@ -15,7 +15,10 @@ import { useEffect, useMemo, useState } from "react";
 
 import { CartProvider, useCart } from "../cart-context";
 import type { PublicDiscount } from "../event-coverage-shell";
+import { usuarioInstagram } from "~/lib/instagram";
 import { NOMBRE, SITIO } from "~/lib/marca";
+
+import { PillInstagram } from "../../encontrate/pill-instagram";
 
 import { useBusquedaSelfie } from "../selfie-search";
 import { useFotos, type Modo } from "../usar-fotos";
@@ -185,6 +188,7 @@ function Adentro({
 
   const precioCent = Math.round(event.pricePerPhoto * 100);
   const fecha = fechaLarga(event.eventDate);
+  const instagram = usuarioInstagram(photographer.instagramUrl);
   const promo = useMemo(
     () => elegirPromo(discounts, event.pricePerPhoto),
     [discounts, event.pricePerPhoto],
@@ -304,6 +308,11 @@ function Adentro({
               </>
             )}
           </div>
+          {instagram && (
+            <div className="et-perfil-links">
+              <PillInstagram usuario={instagram} />
+            </div>
+          )}
         </section>
 
         <section className="et-buscar">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { usuarioInstagram } from "~/lib/instagram";
 import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
@@ -93,7 +94,7 @@ export default async function PhotographerPage(props: {
             nombre: user.name ?? "Fotógrafo",
             bio: user.bio,
             lugar: user.location,
-            instagram: user.instagramUrl ? user.instagramUrl.replace(/^@/, "") : null,
+            instagram: usuarioInstagram(user.instagramUrl),
             web: user.websiteUrl,
             iniciales: initials,
             avatarUrl,
