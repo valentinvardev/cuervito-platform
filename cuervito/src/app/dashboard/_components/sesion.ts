@@ -4,6 +4,7 @@ import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 
 import { iniciales, slugDeNombre } from "./formato";
+import type { DatosPerfil } from "./perfil-modal";
 
 /**
  * Control de acceso y datos del encabezado, para todas las pantallas del panel.
@@ -33,6 +34,9 @@ export async function sesionPanel() {
       slug: true,
       image: true,
       bio: true,
+      // Para el diálogo de perfil del riel, que se abre sin ir a buscar nada.
+      instagramUrl: true,
+      websiteUrl: true,
       mpConnectedAt: true,
       // Para puedeUsarHistorias, sin una consulta más en el layout.
       historiasEnabled: true,
@@ -72,6 +76,24 @@ export { hace, iniciales, pesos, slugDeNombre } from "./formato";
  * viejas que puedan haber quedado sin uno, que si no se caerían al guardar el
  * perfil con un error de un campo que ni siquiera se muestra.
  */
+/**
+ * Lo que muestra y edita el diálogo de perfil del riel, con la misma consulta
+ * de sesionPanel: abrirlo no espera a nadie.
+ */
+export async function perfilDelRiel(s: Awaited<ReturnType<typeof sesionPanel>>): Promise<DatosPerfil> {
+  const { userId, yo, nombre } = s;
+  return {
+    name: yo?.name ?? "",
+    // Con la red de asegurarSlug: el diálogo no muestra la dirección, y sin
+    // una guardar fallaría por un campo que no hay forma de arreglar ahí.
+    slug: await asegurarSlug(userId, yo?.name ?? nombre, yo?.slug ?? null),
+    bio: yo?.bio ?? "",
+    instagramUrl: yo?.instagramUrl ?? "",
+    websiteUrl: yo?.websiteUrl ?? "",
+    foto: yo?.image ?? null,
+  };
+}
+
 export async function asegurarSlug(userId: string, nombre: string, actual: string | null) {
   const base = slugDeNombre(nombre);
   if (actual) return actual;

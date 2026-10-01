@@ -193,7 +193,7 @@ export default async function V2Page() {
       icono: <UserRound />,
       titulo: "Te falta la foto de perfil",
       detalle: "Tu página se ve vacía arriba de todo",
-      href: "/dashboard/perfil",
+      href: "/dashboard?perfil=1",
     });
   }
   const visibles = avisos.slice(0, 4);

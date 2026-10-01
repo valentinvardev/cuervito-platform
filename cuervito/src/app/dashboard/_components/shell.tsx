@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   BarChart3,
@@ -10,6 +10,7 @@ import {
   Images,
   LayoutGrid,
   LifeBuoy,
+  LogOut,
   Mail,
   Menu,
   Moon,
@@ -21,17 +22,18 @@ import {
   Sparkles,
   Store,
   Sun,
-  UserRound,
   Users,
   Wallet,
   X,
 } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import { Suspense, useCallback, useEffect, useState, useTransition } from "react";
 
 import { whatsappUrl } from "~/lib/support";
 
 import { Buscador } from "./buscador";
+import { cerrarSesionAction } from "./cuenta";
 import { GlifoWhatsapp } from "./glifo-whatsapp";
+import { type DatosPerfil, PerfilModal } from "./perfil-modal";
 import { VentasEnVivo } from "./ventas-en-vivo";
 
 /**
@@ -50,9 +52,10 @@ const NAV = [
   { id: "pagina", href: "/dashboard/pagina", icono: Store, texto: "Mi página" },
 ];
 
+// El perfil no está acá: se abre como diálogo desde la tarjeta de abajo del
+// riel, la que tiene tu nombre, que es donde se lo va a buscar.
 const CUENTA = [
   { id: "pagos", href: "/dashboard/pagos", icono: Wallet, texto: "Métodos de pago" },
-  { id: "perfil", href: "/dashboard/perfil", icono: UserRound, texto: "Perfil" },
   { id: "ayuda", href: "/dashboard/ayuda", icono: LifeBuoy, texto: "Ayuda" },
 ];
 
@@ -104,6 +107,25 @@ const BUSCAR: Record<string, string> = {
   ventas: "Buscar por comprador, mail o dorsal",
 };
 
+/**
+ * Abre el perfil cuando la URL trae ?perfil=1: así lo abren los avisos de
+ * Inicio, y lo que quede apuntando a la vieja página /dashboard/perfil. Va
+ * aparte y dentro de un Suspense porque leer la URL en el armazón no puede
+ * frenar el resto del riel. El parámetro se saca enseguida: si no, recargar la
+ * página lo volvería a abrir.
+ */
+function PerfilDesdeUrl({ abrir }: { abrir: () => void }) {
+  const pedido = useSearchParams().get("perfil") === "1";
+  useEffect(() => {
+    if (!pedido) return;
+    abrir();
+    const url = new URL(window.location.href);
+    url.searchParams.delete("perfil");
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+  }, [pedido, abrir]);
+  return null;
+}
+
 function idDeRuta(p: string) {
   if (p === "/dashboard") return "inicio";
   if (p.startsWith("/admin/")) return p.replace("/admin/", "").split("/")[0] ?? "users";
@@ -117,6 +139,7 @@ export function Shell({
   nombre,
   slug,
   iniciales,
+  perfil,
   children,
 }: {
   /** Si el usuario tiene la beta del estudio de historias. */
@@ -128,11 +151,21 @@ export function Shell({
   nombre: string;
   slug: string;
   iniciales: string;
+  /** Lo que muestra y edita el diálogo de perfil. */
+  perfil: DatosPerfil;
   children: React.ReactNode;
 }) {
   const ruta = usePathname();
   const [cajon, setCajon] = useState(false);
   const [, empezar] = useTransition();
+  const [verPerfil, setVerPerfil] = useState(false);
+  // Estables: el diálogo los usa en sus efectos, y uno nuevo en cada render lo
+  // haría volver a enfocar el primer campo con cada tecla.
+  const abrirPerfil = useCallback(() => {
+    setVerPerfil(true);
+    setCajon(false);
+  }, []);
+  const cerrarPerfil = useCallback(() => setVerPerfil(false), []);
 
   // Destino optimista: el riel se marca al soltar el click, sin esperar a que
   // el servidor conteste. usePathname sólo cambia cuando la navegación ya
@@ -272,13 +305,32 @@ export function Shell({
             Escribinos
           </a>
 
-          <Link href="/dashboard/perfil" className="me">
-            <span className="me-av">{iniciales}</span>
-            <span className="me-txt">
-              <b>{nombre}</b>
-              <span>encontrate.app/{slug}</span>
-            </span>
-          </Link>
+          <div className="me-fila">
+            <button type="button" className="me" onClick={abrirPerfil} aria-label="Abrir tu perfil">
+              <span className="me-av">
+                {perfil.foto ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={perfil.foto} alt="" />
+                ) : (
+                  iniciales
+                )}
+              </span>
+              <span className="me-txt">
+                <b>{nombre}</b>
+                <span>encontrate.app/{slug}</span>
+              </span>
+            </button>
+            <form action={cerrarSesionAction}>
+              <button
+                type="submit"
+                className="btn btn-ghost btn-icon me-salir"
+                aria-label="Cerrar sesión"
+                data-tip="Cerrar sesión"
+              >
+                <LogOut />
+              </button>
+            </form>
+          </div>
         </div>
       </aside>
 
@@ -341,6 +393,11 @@ export function Shell({
       <VentasEnVivo />
 
       <div className="rail-scrim" onClick={() => setCajon(false)} />
+
+      {verPerfil && <PerfilModal perfil={perfil} onCerrar={cerrarPerfil} />}
+      <Suspense fallback={null}>
+        <PerfilDesdeUrl abrir={abrirPerfil} />
+      </Suspense>
     </div>
   );
 }

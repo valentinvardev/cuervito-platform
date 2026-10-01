@@ -78,7 +78,8 @@ export async function savePerfilAction(
     },
   });
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/perfil");
+  // El layout entero: el nombre y la foto salen en el riel de todas las
+  // pantallas, no sólo en la que se guardó.
+  revalidatePath("/dashboard", "layout");
   return { error: null, saved: true };
 }

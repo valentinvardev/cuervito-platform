@@ -22,7 +22,7 @@ import { redirect } from "next/navigation";
 import { TooltipProvider } from "~/app/_components/tooltip-provider";
 
 import { Shell } from "~/app/dashboard/_components/shell";
-import { sesionPanel } from "~/app/dashboard/_components/sesion";
+import { perfilDelRiel, sesionPanel } from "~/app/dashboard/_components/sesion";
 
 /**
  * El panel de administración, con el mismo armazón que el del fotógrafo.
@@ -38,8 +38,10 @@ import { sesionPanel } from "~/app/dashboard/_components/sesion";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // sesionPanel ya hace el auth() y la consulta del usuario; repetir auth()
   // acá sería un viaje más a la base en cada pantalla, y en serie.
-  const { rol, nombre, slug, iniciales } = await sesionPanel();
+  const sesion = await sesionPanel();
+  const { rol, nombre, slug, iniciales } = sesion;
   if (rol !== "ADMIN") redirect("/dashboard");
+  const perfil = await perfilDelRiel(sesion);
 
   return (
     <div style={{ "--meta": "var(--sans)" } as React.CSSProperties}>
@@ -49,7 +51,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css"
       />
 
-      <Shell modo="admin" esAdmin nombre={nombre} slug={slug} iniciales={iniciales}>
+      <Shell modo="admin" esAdmin nombre={nombre} slug={slug} iniciales={iniciales} perfil={perfil}>
         {children}
       </Shell>
       <TooltipProvider />
