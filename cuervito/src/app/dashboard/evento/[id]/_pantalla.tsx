@@ -16,6 +16,7 @@ import {
   ListFilter,
   ScanFace,
   ScanSearch,
+  ShieldCheck,
   ShoppingBag,
   Tag,
   Trash2,
@@ -86,6 +87,7 @@ export function Pantalla({
   simulado = false,
   historias = false,
   dorsalInicial = "",
+  comoAdmin = null,
 }: {
   evento: {
     id: string;
@@ -131,6 +133,12 @@ export function Pantalla({
   historias?: boolean;
   /** El dorsal con el que se llega desde el buscador de la barra (?dorsal=). */
   dorsalInicial?: string;
+  /**
+   * El nombre del dueño, cuando el que mira es un admin y el evento es de otro.
+   * Se esconde lo que es sólo del dueño (ver src/server/acceso-evento.ts):
+   * subir fotos, descuentos, invitar y borrar el evento.
+   */
+  comoAdmin?: string | null;
 }) {
   const sinCobrar = colaboradores.filter((c) => c.estado !== "PENDING" && !c.cobra);
   const [publicando, empezarPub] = useTransition();
@@ -317,9 +325,26 @@ export function Pantalla({
   return (
     <main className="canvas">
       <div className="canvas-in">
-        <Link href="/dashboard/eventos" className="btn btn-ghost btn-sm" style={{ justifySelf: "start" }}>
-          <ArrowLeft /> Eventos
+        <Link
+          href={comoAdmin ? "/admin/eventos" : "/dashboard/eventos"}
+          className="btn btn-ghost btn-sm"
+          style={{ justifySelf: "start" }}
+        >
+          <ArrowLeft /> {comoAdmin ? "Eventos de todos" : "Eventos"}
         </Link>
+
+        {/* Que no quede duda de que es el evento de otro: lo que se toque acá
+            lo ve su dueño en su panel y los atletas en la tienda. */}
+        {comoAdmin && (
+          <div className="porque">
+            <ShieldCheck />
+            <span>
+              Estás en el evento de <b>{comoAdmin}</b> como admin. Podés cambiar la portada, los
+              datos y el precio, publicarlo y sacar fotos. Subir fotos, invitar, los descuentos y
+              borrar el evento son sólo de su dueño.
+            </span>
+          </div>
+        )}
 
         <section
           className="banda"
@@ -549,13 +574,16 @@ export function Pantalla({
 
         {solapa === "fotos" && (
           <section className="panel-s" data-activo="1">
-            <Soltador
-              eventId={evento.id}
-              eventoNombre={evento.nombre}
-              maxBytes={evento.maxFoto}
-              simulado={simulado}
-              historias={historias}
-            />
+            {/* Subidas por un admin, las fotos quedarían a su nombre y con sus ventas. */}
+            {!comoAdmin && (
+              <Soltador
+                eventId={evento.id}
+                eventoNombre={evento.nombre}
+                maxBytes={evento.maxFoto}
+                simulado={simulado}
+                historias={historias}
+              />
+            )}
 
             <div className="barra">
               <div style={{ display: "flex", gap: "var(--s-2)", alignItems: "center", flexWrap: "wrap" }}>
@@ -804,6 +832,7 @@ export function Pantalla({
                 alCerrar={() => setViendo(null)}
                 alIr={setViendo}
                 alBorrar={(id) => void borrarFotos([id])}
+                conDescarga={!comoAdmin}
               />
             )}
 
@@ -849,7 +878,7 @@ export function Pantalla({
               puedeRegalar={evento.puedeRegalar}
             />
 
-            <Descuentos eventId={evento.id} precio={evento.precio} />
+            {!comoAdmin && <Descuentos eventId={evento.id} precio={evento.precio} />}
 
             {/* En el laboratorio esto eran tres interruptores: por cara, por
                 dorsal y marca de agua. No los porté porque no hay ninguna
@@ -968,7 +997,7 @@ export function Pantalla({
                   <h2>Quiénes cubren este evento</h2>
                   <div className="sub">{colaboradores.length + 1} fotógrafos</div>
                 </div>
-                <Invitar eventId={evento.id} precio={evento.precio} />
+                {!comoAdmin && <Invitar eventId={evento.id} precio={evento.precio} />}
               </div>
 
               {/* El dueño va en la tabla y no sólo en la cuenta del encabezado.
@@ -1054,7 +1083,7 @@ export function Pantalla({
         {solapa === "info" && (
           <section className="panel-s" data-activo="1">
             <Datos evento={evento} />
-            <Borrar eventoId={evento.id} nombre={evento.nombre} fotos={evento.total} />
+            {!comoAdmin && <Borrar eventoId={evento.id} nombre={evento.nombre} fotos={evento.total} />}
           </section>
         )}
       </div>

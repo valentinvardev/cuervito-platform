@@ -5,6 +5,7 @@ import { dondeApartadaPreview } from "~/server/cola-fotos";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 
+import { puedeEditarEvento } from "~/server/acceso-evento";
 import { puedeUsarHistorias } from "~/server/historias/acceso";
 
 import { pesos, sesionPanel } from "../../_components/sesion";
@@ -29,7 +30,7 @@ export default async function V2Evento({
   // dorsal ya filtradas. Con el mismo saneo que el campo de dorsal.
   const pedido = (await searchParams).dorsal;
   const dorsal = (Array.isArray(pedido) ? pedido[0] : pedido)?.replace(/[^0-9]/g, "").slice(0, 5) ?? "";
-  const { userId, slug, nombre, rol, historiasEnabled } = await sesionPanel();
+  const { userId, nombre, rol, historiasEnabled } = await sesionPanel();
   // Para el modal de "subí una a tu historia" al terminar de subir. Con la
   // llave que sesionPanel ya trajo: cero consultas de más.
   const historias = await puedeUsarHistorias({ id: userId, role: rol, historiasEnabled });
@@ -53,7 +54,8 @@ export default async function V2Evento({
       ownerId: true,
       // Si esta cuenta puede regalar. Es lo que decide qué significa poner el
       // precio en cero: entregar gratis, o dejar el evento sin poder cobrarse.
-      owner: { select: { giftEnabled: true } },
+      // El nombre y la dirección, para cuando lo abre un admin y no el dueño.
+      owner: { select: { giftEnabled: true, name: true, slug: true } },
       sales: { where: { status: "PAID" }, select: { sellerNetCents: true } },
       collaborators: {
         select: {
@@ -64,7 +66,10 @@ export default async function V2Evento({
       },
     },
   });
-  if (e?.ownerId !== userId) notFound();
+  // El dueño, o un admin (ver acceso-evento.ts). Para el admin, todo lo que
+  // depende de "quién mira" se arma desde el lado del dueño.
+  if (!e || !puedeEditarEvento(e.ownerId, { id: userId, role: rol })) notFound();
+  const comoAdmin = e.ownerId !== userId ? (e.owner.name ?? "otro fotógrafo") : null;
   const puedeRegalar = e.owner.giftEnabled;
 
   // Los tres conteos van al servidor y no se sacan del arreglo de fotos: ese
@@ -170,7 +175,7 @@ export default async function V2Evento({
   // El dueño también sube fotos, y hasta ahora la tabla del equipo decía
   // "4 fotógrafos" pero listaba tres: el que faltaba era el que estaba mirando.
   const fotosDelDueno = await db.photo.count({
-    where: { eventId: id, ownerId: userId, deletedAt: null },
+    where: { eventId: id, ownerId: e.ownerId, deletedAt: null },
   });
 
   const cover = e.coverUrl
@@ -214,12 +219,13 @@ export default async function V2Evento({
         recaudado: pesos(e.sales.reduce((a, s) => a + s.sellerNetCents, 0)),
       }}
       fotos={conUrl}
-      historias={historias}
+      historias={historias && !comoAdmin}
       colaboradores={colaboradores}
-      publico={e.isPublished && e.slug ? `/${slug}/${e.slug}` : null}
-      yo={nombre}
+      publico={e.isPublished && e.slug && e.owner.slug ? `/${e.owner.slug}/${e.slug}` : null}
+      yo={comoAdmin ?? nombre}
       fotosDelDueno={fotosDelDueno}
       dorsalInicial={dorsal}
+      comoAdmin={comoAdmin}
     />
   );
 }

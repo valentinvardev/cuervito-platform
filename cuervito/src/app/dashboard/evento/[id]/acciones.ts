@@ -10,6 +10,7 @@ import {
   slugify,
   uniqueSlug,
 } from "~/app/dashboard/_nucleo";
+import { puedeEditarEvento } from "~/server/acceso-evento";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 
@@ -36,7 +37,7 @@ export async function guardarPrecioAction(
     where: { id: eventId },
     select: { ownerId: true },
   });
-  if (ev?.ownerId !== session.user.id) return { error: "Evento no encontrado." };
+  if (!ev || !puedeEditarEvento(ev.ownerId, session.user)) return { error: "Evento no encontrado." };
 
   // Mismo rango que el esquema del formulario de evento. El 0 se permite a
   // propósito: es como se regala una galería entera.
@@ -52,7 +53,7 @@ export async function guardarPrecioAction(
     data: { pricePerPhoto: Math.round(precio * 100) / 100 },
   });
 
-  busUserDashboardCache(session.user.id);
+  busUserDashboardCache(ev.ownerId);
   revalidatePath(`/dashboard/evento/${eventId}`);
   revalidatePath(`/dashboard/events/${eventId}`);
 
@@ -90,7 +91,7 @@ export async function guardarDatosAction(
     where: { id: eventId },
     select: { ownerId: true, slug: true, name: true },
   });
-  if (ev?.ownerId !== session.user.id) return { error: "Evento no encontrado." };
+  if (!ev || !puedeEditarEvento(ev.ownerId, session.user)) return { error: "Evento no encontrado." };
 
   const parsed = datos.safeParse(entrada);
   if (!parsed.success) {
@@ -105,7 +106,8 @@ export async function guardarDatosAction(
   // dónde lo edites. La pantalla lo avisa antes de guardar.
   let slug = ev.slug;
   if (d.name !== ev.name) {
-    slug = await uniqueSlug(slugify(d.name), session.user.id, eventId);
+    // Única entre los eventos del DUEÑO, aunque edite un admin.
+    slug = await uniqueSlug(slugify(d.name), ev.ownerId, eventId);
   }
 
   await db.event.update({
@@ -120,7 +122,7 @@ export async function guardarDatosAction(
     },
   });
 
-  busUserDashboardCache(session.user.id);
+  busUserDashboardCache(ev.ownerId);
   revalidatePath(`/dashboard/evento/${eventId}`);
   revalidatePath(`/dashboard/events/${eventId}`);
   revalidatePath("/dashboard/eventos");
@@ -147,7 +149,7 @@ export async function publicarAction(
     where: { id: eventId },
     select: { ownerId: true, isPublished: true, status: true, _count: { select: { photos: true } } },
   });
-  if (ev?.ownerId !== session.user.id) return { error: "Evento no encontrado." };
+  if (!ev || !puedeEditarEvento(ev.ownerId, session.user)) return { error: "Evento no encontrado." };
 
   const proximo = !ev.isPublished;
   if (proximo && ev._count.photos === 0) {
@@ -162,7 +164,7 @@ export async function publicarAction(
     },
   });
 
-  busUserDashboardCache(session.user.id);
+  busUserDashboardCache(ev.ownerId);
   revalidatePath(`/dashboard/evento/${eventId}`);
   revalidatePath("/dashboard/eventos");
   revalidatePath(`/dashboard/events/${eventId}`);

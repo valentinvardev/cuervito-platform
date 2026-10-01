@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { puedeEditarEvento } from "~/server/acceso-evento";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { createCFInvalidation, deleteS3Objects, eventCoverKey, putS3Object } from "~/server/s3";
@@ -25,7 +26,8 @@ export async function POST(
     where: { id: eventId },
     select: { ownerId: true, coverUrl: true },
   });
-  if (!event || event.ownerId !== session.user.id) {
+  // El dueño, o un admin moderando (ver acceso-evento.ts).
+  if (!event || !puedeEditarEvento(event.ownerId, session.user)) {
     return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
   }
 
@@ -48,7 +50,8 @@ export async function POST(
   }
 
   const ext = EXT_BY_MIME[file.type]!;
-  const key = eventCoverKey(session.user.id, eventId, ext);
+  // En la carpeta del DUEÑO, aunque la suba un admin.
+  const key = eventCoverKey(event.ownerId, eventId, ext);
   const buf = Buffer.from(await file.arrayBuffer());
   await putS3Object(key, buf, file.type);
 
@@ -79,12 +82,16 @@ export async function DELETE(
     where: { id: eventId },
     select: { ownerId: true, coverUrl: true },
   });
-  if (!event || event.ownerId !== session.user.id) {
+  // El dueño, o un admin moderando (ver acceso-evento.ts).
+  if (!event || !puedeEditarEvento(event.ownerId, session.user)) {
     return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
   }
   if (event.coverUrl) {
     await deleteS3Objects([event.coverUrl]).catch(() => undefined);
   }
   await db.event.update({ where: { id: eventId }, data: { coverUrl: null } });
+  // Borrada de S3 la sigue sirviendo la CDN hasta que vence. Cuando se saca
+  // una portada que no debería estar, no alcanza con que nadie la enlace.
+  if (event.coverUrl) void createCFInvalidation([`/${event.coverUrl}`]);
   return NextResponse.json({ ok: true });
 }

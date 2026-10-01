@@ -33,6 +33,7 @@ export function Visor({
   alCerrar,
   alIr,
   alBorrar,
+  conDescarga = true,
 }: {
   fotos: FotoVisor[];
   indice: number;
@@ -40,6 +41,8 @@ export function Visor({
   alCerrar: () => void;
   alIr: (i: number) => void;
   alBorrar: (id: string) => void;
+  /** El original sin marca es lo que se vende: lo baja su dueño, no un admin. */
+  conDescarga?: boolean;
 }) {
   const [cerrando, setCerrando] = useState(false);
   const [bajando, setBajando] = useState(false);
@@ -153,14 +156,16 @@ export function Visor({
             </span>
           </div>
 
-          <button
-            className="btn btn-sm"
-            onClick={bajar}
-            disabled={bajando}
-            data-tip="Baja el original, sin marca de agua"
-          >
-            <Download /> {bajando ? "Preparando" : "Descargar"}
-          </button>
+          {conDescarga && (
+            <button
+              className="btn btn-sm"
+              onClick={bajar}
+              disabled={bajando}
+              data-tip="Baja el original, sin marca de agua"
+            >
+              <Download /> {bajando ? "Preparando" : "Descargar"}
+            </button>
+          )}
           <button
             className="btn btn-sm peligro"
             onClick={() => {

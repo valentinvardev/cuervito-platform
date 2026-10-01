@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
+import { puedeEditarEvento } from "~/server/acceso-evento";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 
@@ -39,11 +40,20 @@ export async function POST(
     );
   }
 
+  /* Cada uno borra las suyas: un colaborador no le borra fotos al dueño ni
+     el dueño a un colaborador. La excepción es un admin moderando, que puede
+     sacar cualquier foto del evento (ver acceso-evento.ts). */
+  let deCualquiera = false;
+  if (session.user.role === "ADMIN") {
+    const ev = await db.event.findUnique({ where: { id: eventId }, select: { ownerId: true } });
+    deCualquiera = puedeEditarEvento(ev?.ownerId, session.user);
+  }
+
   const result = await db.photo.updateMany({
     where: {
       id: { in: parsed.data.photoIds },
       eventId,
-      ownerId: session.user.id,
+      ...(deCualquiera ? {} : { ownerId: session.user.id }),
       deletedAt: null,
     },
     data: { deletedAt: new Date() },
