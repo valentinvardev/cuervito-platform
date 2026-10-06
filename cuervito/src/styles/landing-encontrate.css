@@ -321,6 +321,7 @@ section { position: relative; }
 .strip { border-block: 1px solid var(--line-soft); padding: var(--s-5) 0; overflow: hidden; }
 .strip-track { display: flex; gap: var(--s-3); width: max-content; animation: slide 52s linear infinite; }
 .strip-tile {
+  position: relative; overflow: hidden;
   width: 200px; aspect-ratio: 3/2; border-radius: var(--r-2);
   background: var(--paper-3); border: 1px solid var(--line-soft);
   flex-shrink: 0; display: grid; place-items: center;
@@ -576,7 +577,7 @@ section { position: relative; }
   background: var(--paper-2); transition: box-shadow 220ms ease;
 }
 .ev:hover { box-shadow: var(--shadow-card); }
-.ev-cover { aspect-ratio: 16/9; background: var(--paper-3); display: grid; place-items: center; }
+.ev-cover { position: relative; overflow: hidden; aspect-ratio: 16/9; background: var(--paper-3); display: grid; place-items: center; }
 .ev-cover span { font-family: var(--meta); font-weight: 500; font-size: 9px; letter-spacing: 0.14em; color: var(--ink-3); }
 .ev-body { padding: var(--s-4); }
 .ev-body .t { font-family: var(--sans); font-size: 18px; font-weight: 500; letter-spacing: -0.03em; }
@@ -609,32 +610,39 @@ section { position: relative; }
 /* ── Preguntas ───────────────────────────────────────────────────────────── */
 .faq { max-width: 800px; margin: var(--s-7) auto 0; }
 .qa { border-bottom: 1px solid var(--line-soft); }
-.qa summary {
+/* La fila entera es el botón: la pregunta, el aire de los costados y el "+".
+   Antes sólo respondía el <summary>, y con el script de altura trabado ni
+   eso. */
+.qa-q {
   display: flex; justify-content: space-between; align-items: center; gap: var(--s-4);
-  padding: var(--s-4) 0; cursor: pointer; list-style: none;
+  width: 100%; padding: var(--s-4) 0;
+  border: 0; background: none; color: inherit; text-align: left;
+  cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
   font-family: var(--sans); font-size: 19px; font-weight: 500; letter-spacing: -0.03em;
 }
-.qa summary::-webkit-details-marker { display: none; }
-.qa summary { user-select: none; }
-.qa summary::after {
-  content: "+"; font-family: var(--meta); font-weight: 300; font-size: 22px;
+.qa-q:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+.qa-q::after {
+  content: "+"; flex-shrink: 0; font-family: var(--meta); font-weight: 300; font-size: 22px;
   color: var(--ink-3); line-height: 1;
   transition: transform 360ms cubic-bezier(.2, .8, .2, 1), color 240ms ease;
 }
-.qa.is-open summary::after { transform: rotate(135deg); color: var(--accent); }
-/* La altura la maneja el script; acá va sólo la curva. overflow hidden es lo
-   que recorta el contenido mientras el alto crece. */
+.qa.is-open .qa-q::after { transform: rotate(135deg); color: var(--accent); }
+/* La altura la anima la grilla: una sola fila que va de 0fr a 1fr. Es la
+   forma de animar hasta "lo que mida el contenido" sin medirlo, y no depende
+   de ningún evento que tenga que llegar. */
 .qa-body {
-  height: 0;
-  overflow: hidden;
-  transition: height 360ms cubic-bezier(.2, .8, .2, 1);
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 360ms cubic-bezier(.2, .8, .2, 1);
 }
-.qa.is-open .qa-body { height: auto; }
+.qa.is-open .qa-body { grid-template-rows: 1fr; }
 /* El texto entra un pelo después y desde abajo: sin esto la apertura se ve
    como una persiana y no como algo que se despliega. */
 /* Salida rápida y sin demora; entrada más lenta y con 80ms de retraso, para
    que el texto no aparezca antes de que haya lugar donde ponerlo. */
 .qa-body > div {
+  min-height: 0;
+  overflow: hidden;
   opacity: 0;
   transform: translateY(-6px);
   transition: opacity 170ms ease, transform 190ms ease;
@@ -661,9 +669,14 @@ section { position: relative; }
    En el laboratorio son degradados, que alcanzan para decidir composición y
    ritmo. En producción entran portadas y previews de la base, y la foto tapa
    al degradado sin que haya que apagarlo. */
-.tile img,
+/* En posición absoluta y no como hijo de la grilla: con una foto vertical,
+   Safari no resuelve el height:100% contra una caja que mide por
+   aspect-ratio, la foto toma su alto natural y estira la baldosa. Quedaba un
+   hueco arriba y la foto tapando el renglón de abajo ("36 eventos · …").
+   Fuera del flujo, la foto no puede cambiar el tamaño de la caja. */
 .strip-tile img,
 .ev-cover img {
+  position: absolute; inset: 0;
   display: block;
   width: 100%;
   height: 100%;

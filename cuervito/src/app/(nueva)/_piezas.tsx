@@ -170,91 +170,48 @@ type Pregunta = { p: string; r: string };
 /**
  * Las preguntas, con el acordeón animado.
  *
- * <details> no anima solo: al cerrar, el navegador saca el contenido del flujo
- * antes de que corra la transición, así que el cierre era instantáneo por más
- * transición que tuviera. Se intercepta el click, se anima la altura a mano en
- * píxeles —`auto` no se puede interpolar— y recién ahí se toca el atributo.
+ * Antes era un <details> con la altura animada a mano: se medía en píxeles, se
+ * animaba, y recién al terminar la transición se tocaba el atributo. Dependía
+ * de que llegara el evento de fin de transición, y no siempre llegaba —con la
+ * altura ya en cero, por ejemplo, no hay transición que termine—: la pregunta
+ * quedaba trabada a mitad de camino y ningún toque la volvía a mover. Y la
+ * primera, que arranca abierta, arrancaba sin la clase que le da altura, así
+ * que se veía cerrada y el primer toque la "cerraba" sin que pasara nada.
+ *
+ * Ahora el estado es de React y la animación es sólo CSS: el cuerpo es una
+ * grilla de una fila que va de 0fr a 1fr. No hay que medir ni esperar a
+ * nadie, y la fila entera de la pregunta es el botón: la pregunta, el aire y
+ * el "+".
  */
 export function Preguntas({ items }: { items: Pregunta[] }) {
   return (
     <div className="faq">
       {items.map((q, i) => (
-        <Qa key={q.p} pregunta={q} abierta={i === 0} />
+        <Qa key={q.p} pregunta={q} inicial={i === 0} id={`qa-${i}`} />
       ))}
     </div>
   );
 }
 
-function Qa({ pregunta, abierta }: { pregunta: Pregunta; abierta: boolean }) {
-  const det = useRef<HTMLDetailsElement>(null);
-  const cuerpo = useRef<HTMLDivElement>(null);
-  const ocupado = useRef(false);
-
-  function alFinal(hacer: () => void) {
-    const c = cuerpo.current;
-    if (!c) return hacer();
-    const fin = (e: TransitionEvent) => {
-      if (e.propertyName !== "height") return;
-      c.removeEventListener("transitionend", fin);
-      hacer();
-    };
-    c.addEventListener("transitionend", fin);
-  }
-
+function Qa({ pregunta, inicial, id }: { pregunta: Pregunta; inicial: boolean; id: string }) {
+  const [abierta, setAbierta] = useState(inicial);
   return (
-    <details
-      className="qa"
-      ref={det}
-      open={abierta}
-      onClick={(e) => {
-        // Sólo el resumen abre y cierra; un click en el texto de la respuesta
-        // no tiene por qué cerrarla.
-        if (!(e.target as HTMLElement).closest("summary")) return;
-        e.preventDefault();
-        const d = det.current;
-        const c = cuerpo.current;
-        if (!d || !c || ocupado.current) return;
-        ocupado.current = true;
-        const listo = () => {
-          c.style.height = "";
-          ocupado.current = false;
-        };
-
-        if (d.open) {
-          d.classList.remove("is-open");
-          c.style.height = c.scrollHeight + "px";
-          // Reflow forzado. Sin esto el navegador nunca llega a computar la
-          // altura en píxeles y pasa de `auto` a 0 de un salto.
-          void c.offsetHeight;
-          requestAnimationFrame(() => {
-            c.style.height = "0px";
-          });
-          alFinal(() => {
-            d.open = false;
-            listo();
-          });
-        } else {
-          d.open = true;
-          d.classList.add("is-open");
-          const h = c.scrollHeight;
-          c.style.height = "0px";
-          void c.offsetHeight;
-          requestAnimationFrame(() => {
-            c.style.height = h + "px";
-          });
-          alFinal(listo);
-        }
-      }}
-    >
-      <summary>
+    <div className={`qa${abierta ? " is-open" : ""}`}>
+      <button
+        type="button"
+        className="qa-q"
+        aria-expanded={abierta}
+        aria-controls={id}
+        onClick={() => setAbierta((a) => !a)}
+      >
         <span>{pregunta.p}</span>
-      </summary>
-      <div className="qa-body" ref={cuerpo}>
+      </button>
+      <div className="qa-body" id={id} role="region" aria-hidden={!abierta}>
         <div>
           <p>{pregunta.r}</p>
         </div>
       </div>
-    </details>
+    </div>
   );
 }
 
