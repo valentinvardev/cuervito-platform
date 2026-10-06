@@ -217,3 +217,47 @@ export function dorsal({
   ${filaAgujeros(false)}
 </table>`;
 }
+
+/**
+ * Una historia (9:16) al lado de lo que se hace con ella, con su botón.
+ *
+ * Lado a lado en escritorio y una abajo de la otra en el teléfono: es la
+ * técnica "híbrida", dos bloques inline-block que se apilan solos cuando no
+ * entran, y una tabla sólo para Outlook, que no entiende inline-block. La
+ * usan "¿ya lo compartiste?" —con la historia real del evento— y la campaña
+ * de historias, con una de ejemplo.
+ */
+export function historiaConBoton({
+  img,
+  alt,
+  href,
+  rotulo,
+  titulo,
+  bajada,
+  accion,
+}: {
+  img: string;
+  alt: string;
+  href: string;
+  rotulo: string;
+  titulo: string;
+  bajada: string;
+  accion: string;
+}): string {
+  return `
+<!--[if mso]><table role="presentation" width="488" cellpadding="0" cellspacing="0" border="0"><tr><td width="200" valign="top"><![endif]-->
+<div style="display:inline-block;width:100%;max-width:200px;vertical-align:top;"><a href="${href}" style="text-decoration:none;"><img src="${img}" width="200" height="356" alt="${esc(alt)}" style="display:block;width:200px;max-width:100%;height:auto;border:1px solid ${D.linea};border-radius:14px;font-family:${SANS};font-size:13px;color:${D.tenue};" /></a></div><!--[if mso]></td><td width="288" valign="top"><![endif]--><div style="display:inline-block;width:100%;max-width:280px;vertical-align:top;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:18px 0 0 24px;" class="en-hist">
+    <div style="font-family:${SANS};font-weight:500;font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:${D.tenue};padding-bottom:10px;">${esc(rotulo)}</div>
+    <div style="font-family:${SANS};font-weight:600;font-size:18px;line-height:24px;color:${D.tinta};padding-bottom:8px;">${esc(titulo)}</div>
+    <div style="font-family:${SANS};font-size:14px;line-height:21px;color:${D.cordon};padding-bottom:20px;">${esc(bajada)}</div>
+    ${boton(accion, href)}
+  </td></tr></table>
+</div>
+<!--[if mso]></td></tr></table><![endif]-->`;
+}
+
+/** Una pieza dibujada en Paper y exportada como imagen, a lo ancho del cuerpo. */
+export function pieza(src: string, alt: string, ancho: number, alto: number): string {
+  return `<img src="${src}" width="${ancho}" height="${alto}" alt="${esc(alt)}" style="display:block;width:100%;max-width:${ancho}px;height:auto;border:0;border-radius:16px;font-family:${SANS};font-size:13px;color:${D.tenue};" />`;
+}

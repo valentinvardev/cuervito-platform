@@ -5,18 +5,18 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { env } from "~/env";
 import { db } from "~/server/db";
 import { sendEmail } from "~/server/email";
-import { BASE } from "~/server/email-encontrate";
 import { puedeUsarHistorias } from "~/server/historias/acceso";
 
 import {
+  BASE,
   D,
   SANS,
   antetitulo,
   boton,
   cuerpo,
-  esc,
   franjaGris,
   fuerte,
+  historiaConBoton,
   marco,
   pill,
   texto,
@@ -235,21 +235,15 @@ export function mailCompartir(d: DatosCompartir): { asunto: string; html: string
   const wa = `https://wa.me/?text=${encodeURIComponent(mensajeWhatsapp(d))}`;
   const fotos = `${d.fotos.toLocaleString("es-AR")} ${d.fotos === 1 ? "foto" : "fotos"}`;
 
-  /* La historia y su botón, lado a lado en escritorio y una abajo de la otra
-     en el teléfono. Es la técnica "híbrida": dos bloques inline-block que se
-     apilan solos cuando no entran, y una tabla sólo para Outlook, que no
-     entiende inline-block. */
-  const historia = `
-<!--[if mso]><table role="presentation" width="488" cellpadding="0" cellspacing="0" border="0"><tr><td width="200" valign="top"><![endif]-->
-<div style="display:inline-block;width:100%;max-width:200px;vertical-align:top;"><a href="${estudio}" style="text-decoration:none;"><img src="${historiaImgUrl(d.eventId)}" width="200" height="356" alt="La historia de ${esc(d.evento)}, lista para publicar" style="display:block;width:200px;max-width:100%;height:auto;border:1px solid ${D.linea};border-radius:14px;font-family:${SANS};font-size:13px;color:${D.tenue};" /></a></div><!--[if mso]></td><td width="288" valign="top"><![endif]--><div style="display:inline-block;width:100%;max-width:280px;vertical-align:top;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:18px 0 0 24px;" class="en-hist">
-    <div style="font-family:${SANS};font-weight:500;font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:${D.tenue};padding-bottom:10px;">Te la armamos</div>
-    <div style="font-family:${SANS};font-weight:600;font-size:18px;line-height:24px;color:${D.tinta};padding-bottom:8px;">Una foto del evento, tu marca y el link a la tienda.</div>
-    <div style="font-family:${SANS};font-size:14px;line-height:21px;color:${D.cordon};padding-bottom:20px;">Elegís otra foto si querés, la bajás y la subís a tus historias de Instagram y a tu estado de WhatsApp.</div>
-    ${boton("Crear mi historia", estudio)}
-  </td></tr></table>
-</div>
-<!--[if mso]></td></tr></table><![endif]-->`;
+  const historia = historiaConBoton({
+    img: historiaImgUrl(d.eventId),
+    alt: `La historia de ${d.evento}, lista para publicar`,
+    href: estudio,
+    rotulo: "Te la armamos",
+    titulo: "Una foto del evento, tu marca y el link a la tienda.",
+    bajada: "Elegís otra foto si querés, la bajás y la subís a tus historias de Instagram y a tu estado de WhatsApp.",
+    accion: "Crear mi historia",
+  });
 
   const grupo = `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
