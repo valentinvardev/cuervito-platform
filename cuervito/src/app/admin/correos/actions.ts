@@ -3,8 +3,8 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 
 import { auth } from "~/server/auth";
-import { CAMPANAS_IDS, type CampanaId } from "~/server/correos/campanas";
-import { claveActiva, correrCorreos, enviarPrueba } from "~/server/correos/enviar";
+import { enviarPruebaCompartir, ID_COMPARTIR } from "~/server/correos/compartir";
+import { CORREOS_IDS, claveActiva, correrCorreos, enviarPrueba, type CorreoId } from "~/server/correos/enviar";
 import { db } from "~/server/db";
 import { escribirBandera } from "~/server/settings";
 
@@ -14,8 +14,8 @@ async function admin() {
   return session.user;
 }
 
-function esCampana(id: string): id is CampanaId {
-  return (CAMPANAS_IDS as readonly string[]).includes(id);
+function esCampana(id: string): id is CorreoId {
+  return (CORREOS_IDS as readonly string[]).includes(id);
 }
 
 /**
@@ -47,10 +47,19 @@ export async function enviarPruebaAction(id: string): Promise<{ ok: boolean; det
   const yo = await admin();
   if (!esCampana(id)) return { ok: false, detalle: "Campaña desconocida" };
   if (!yo.email) return { ok: false, detalle: "Tu cuenta no tiene mail" };
-  const r = await enviarPrueba(id, yo.email, yo.name ?? null);
+  const r =
+    id === ID_COMPARTIR
+      ? await enviarPruebaCompartir(yo.email, yo.id, yo.name ?? null)
+      : await enviarPrueba(id, yo.email, yo.name ?? null);
   return r
     ? { ok: true, detalle: `Enviado a ${yo.email}` }
-    : { ok: false, detalle: "No hay proveedor de mail configurado (RESEND_API_KEY)" };
+    : {
+        ok: false,
+        detalle:
+          id === ID_COMPARTIR
+            ? "No se mandó: hace falta un evento publicado con fotos procesadas, y RESEND_API_KEY"
+            : "No hay proveedor de mail configurado (RESEND_API_KEY)",
+      };
 }
 
 /** Una pasada ahora, sin esperar el tick. Dispara y vuelve. */

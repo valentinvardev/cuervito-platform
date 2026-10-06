@@ -16,7 +16,11 @@ export const dynamic = "force-dynamic";
  * ruta directamente no existe, y eso es más honesto que mandarlo al inicio
  * sin decirle por qué.
  */
-export default async function HistoriasPage() {
+export default async function HistoriasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ evento?: string | string[] }>;
+}) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/dashboard/historias");
   if (!(await puedeUsarHistorias(session.user))) notFound();
@@ -50,6 +54,9 @@ export default async function HistoriasPage() {
         </div>
 
         <Estudio
+          // ?evento= viene del mail de "¿ya lo compartiste?": abre con ese
+          // evento elegido, que es el de la historia que el mail mostró.
+          eventoInicial={[(await searchParams).evento].flat()[0]}
           eventos={eventos.map((e) => ({
             id: e.id,
             nombre: e.name,

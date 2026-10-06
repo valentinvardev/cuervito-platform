@@ -5,6 +5,7 @@ import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { puedeUsarHistorias } from "~/server/historias/acceso";
 import { FORMATOS } from "~/server/historias/formatos";
+import { datosDePieza } from "~/server/historias/pieza";
 import { renderHistoria } from "~/server/historias/render";
 import { getS3ObjectBytes } from "~/server/s3";
 
@@ -92,38 +93,13 @@ export async function POST(req: Request) {
     getS3ObjectBytes(clave),
   ]);
 
-  // El logo va como data URI porque satori no sale a la red: le damos los
-  // bytes o no hay logo. Que falte no puede romper la historia entera, así que
-  // si S3 falla se sigue sin él.
-  let logo: string | null = null;
-  if (usuario?.logoKey) {
-    try {
-      const b = Buffer.from(await getS3ObjectBytes(usuario.logoKey));
-      logo = `data:image/png;base64,${b.toString("base64")}`;
-    } catch {
-      logo = null;
-    }
-  }
-
   const ev = foto.event;
   const { jpeg: imagen, foco: usado } = await renderHistoria({
     foto: Buffer.from(bytes),
     plantilla,
     formato,
     foco: foco ?? null,
-    datos: {
-      evento: ev.name,
-      fecha: ev.eventDate
-        ? ev.eventDate.toLocaleDateString("es-AR", { day: "numeric", month: "long" })
-        : null,
-      lugar: ev.location,
-      disciplina: ev.discipline,
-      fotos: ev._count.photos,
-      precio: `$${Number(ev.pricePerPhoto).toLocaleString("es-AR")}`,
-      direccion: `encontrate.app/${usuario?.slug ?? ""}`,
-      logo,
-      color: usuario?.storefrontBrandColor ?? "#F0410F",
-    },
+    datos: await datosDePieza({ ...ev, fotos: ev._count.photos }, usuario),
   });
 
   return new NextResponse(new Uint8Array(imagen), {

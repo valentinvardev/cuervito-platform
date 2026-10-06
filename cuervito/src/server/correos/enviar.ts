@@ -9,6 +9,7 @@ import { BASE } from "~/server/email-encontrate";
 import { leerBandera } from "~/server/settings";
 
 import { CAMPANAS, CAMPANAS_IDS, contarElegibles, elegibles, type CampanaId } from "./campanas";
+import { contarCompartir, enviarCompartir, ID_COMPARTIR } from "./compartir";
 
 /**
  * El remitente de campañas.
@@ -38,7 +39,11 @@ const PRIMER_TICK_MS = 90_000;
 /** Entre mail y mail. Resend admite diez por segundo; no hace falta rozarlo. */
 const ENTRE_ENVIOS_MS = 400;
 
-export const claveActiva = (id: CampanaId) => `correos:${id}:activa`;
+/** Las campañas y los automáticos por evento ("compartir") se prenden igual. */
+export type CorreoId = CampanaId | typeof ID_COMPARTIR;
+export const CORREOS_IDS: readonly CorreoId[] = [...CAMPANAS_IDS, ID_COMPARTIR];
+
+export const claveActiva = (id: CorreoId) => `correos:${id}:activa`;
 
 type Resumen = {
   corridaAt: string;
@@ -162,6 +167,17 @@ export async function correrCorreos(): Promise<Resumen> {
       }
       resumen.porCampana[id] = await enviarCampana(id, Math.min(POR_TANDA, cupo));
     }
+
+    // "¿Ya lo compartiste?", uno por evento: mismo interruptor y mismo tope.
+    if (!(await leerBandera(claveActiva(ID_COMPARTIR)))) {
+      resumen.porCampana[ID_COMPARTIR] = { enviados: 0, fallidos: 0, saltada: "apagada" };
+    } else {
+      const cupo = TOPE_DIARIO - (await enviadosHoy());
+      resumen.porCampana[ID_COMPARTIR] =
+        cupo <= 0
+          ? { enviados: 0, fallidos: 0, saltada: "tope diario" }
+          : await enviarCompartir(Math.min(POR_TANDA, cupo), bajaUrl);
+    }
   } finally {
     estado.corriendo = false;
     estado.ultimoResumen = resumen;
@@ -206,7 +222,15 @@ export async function enviarPrueba(
 
 export async function estadoCorreos() {
   const ahora = new Date();
-  const campanas = await Promise.all(
+  const campanas: {
+    id: CorreoId;
+    nombre: string;
+    descripcion: string;
+    activa: boolean;
+    elegibles: number;
+    enviados: number;
+    ultimo: string | null;
+  }[] = await Promise.all(
     CAMPANAS_IDS.map(async (id) => {
       const [activa, elegiblesAhora, enviados, ultimo] = await Promise.all([
         leerBandera(claveActiva(id)),
@@ -229,6 +253,29 @@ export async function estadoCorreos() {
       };
     }),
   );
+
+  /* El automático por evento, con la misma forma que una campaña para que el
+     panel lo muestre igual. Sus envíos se anotan "compartir:<evento>". */
+  const [activaCompartir, elegiblesCompartir, enviadosCompartir, ultimoCompartir] = await Promise.all([
+    leerBandera(claveActiva(ID_COMPARTIR)),
+    contarCompartir(ahora),
+    db.emailEnvio.count({ where: { campana: { startsWith: `${ID_COMPARTIR}:` }, resendId: { not: null } } }),
+    db.emailEnvio.findFirst({
+      where: { campana: { startsWith: `${ID_COMPARTIR}:` }, resendId: { not: null } },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    }),
+  ]);
+  campanas.push({
+    id: ID_COMPARTIR,
+    nombre: "¿Ya lo compartiste?",
+    descripcion:
+      "Una hora después de que un evento publicado terminó de recibir fotos: la historia ya armada, el mensaje para WhatsApp y la pregunta de dónde lo compartió. Uno por evento, y no más de uno por persona cada veinte horas.",
+    activa: activaCompartir,
+    elegibles: elegiblesCompartir,
+    enviados: enviadosCompartir,
+    ultimo: ultimoCompartir?.createdAt.toISOString() ?? null,
+  });
 
   const [hoy, ultimos] = await Promise.all([
     enviadosHoy(),

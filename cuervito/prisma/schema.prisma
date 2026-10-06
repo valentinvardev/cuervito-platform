@@ -192,7 +192,8 @@ model EmailEnvio {
     id        String   @id @default(cuid())
     userId    String
     user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    /// "sin-mp", "historias", "promo-1", "promo-2", "promo-3".
+    /// "sin-mp", "historias", "promo-1", "promo-2", "promo-3", o
+    /// "compartir:<id del evento>" para el "¿ya lo compartiste?", que es uno por evento.
     campana   String
     /// El id que devuelve Resend. Null mientras se está mandando; si el envío
     /// falla, la fila se borra y la próxima pasada lo vuelve a intentar.

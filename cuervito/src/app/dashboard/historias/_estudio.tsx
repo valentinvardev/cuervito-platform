@@ -34,8 +34,17 @@ type Foto = { id: string; url: string };
  * con ese punto. No es un segundo maquetador: es la misma foto con la misma
  * regla, y el texto vuelve un segundo después, donde siempre estuvo.
  */
-export function Estudio({ eventos }: { eventos: EventoOp[] }) {
-  const [eventoId, setEventoId] = useState(eventos[0]?.id ?? "");
+export function Estudio({
+  eventos,
+  eventoInicial,
+}: {
+  eventos: EventoOp[];
+  /** El evento con el que abre, si es uno de la lista. */
+  eventoInicial?: string;
+}) {
+  const [eventoId, setEventoId] = useState(
+    (eventos.some((e) => e.id === eventoInicial) ? eventoInicial : undefined) ?? eventos[0]?.id ?? "",
+  );
   const [fotos, setFotos] = useState<Foto[]>([]);
   const [fotoId, setFotoId] = useState<string | null>(null);
   const [plantilla, setPlantilla] = useState<PlantillaId>("cubierta");
