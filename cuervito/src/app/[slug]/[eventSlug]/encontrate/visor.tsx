@@ -1,7 +1,9 @@
 "use client";
 
-import { Check, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useEffect, useState } from "react";
+
+import { CarritoMas } from "./icono-carrito";
 
 // fullUrl y no previewUrl: en la grilla previewUrl es la miniatura de 560px,
 // que estirada a pantalla completa se ve borrosa. El visor es donde el atleta
@@ -125,7 +127,7 @@ export function Visor({
               </>
             ) : (
               <>
-                <Plus /> Agregar
+                <CarritoMas /> Agregar
               </>
             )}
           </button>

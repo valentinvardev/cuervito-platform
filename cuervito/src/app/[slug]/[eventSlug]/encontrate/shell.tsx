@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   Check,
   ImageOff,
-  Plus,
   ScanFace,
   ScanSearch,
   ShoppingBag,
@@ -23,6 +22,7 @@ import { PillInstagram } from "../../encontrate/pill-instagram";
 import { useBusquedaSelfie } from "../selfie-search";
 import { useFotos, type Modo } from "../usar-fotos";
 import { Carrito } from "./carrito";
+import { CarritoMas } from "./icono-carrito";
 import { elegirPromo } from "./promo";
 import { Visor } from "./visor";
 
@@ -465,7 +465,7 @@ function Adentro({
                   }}
                   aria-label={puesta ? "Quitar del carrito" : "Agregar al carrito"}
                 >
-                  {puesta ? <Check /> : <Plus />}
+                  {puesta ? <Check /> : <CarritoMas />}
                   <span>{puesta ? "Agregada" : "Agregar"}</span>
                 </button>
               </div>
