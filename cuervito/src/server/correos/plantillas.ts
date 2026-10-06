@@ -11,6 +11,7 @@ import {
   historiaConBoton,
   marco,
   pieza,
+  sinLink,
   texto,
   titular,
 } from "./diseno";
@@ -55,7 +56,7 @@ function conNombre(d: Destinatario, resto: string): string {
 }
 
 function pie(bajaUrl: string): string {
-  return `Te llegó porque tenés cuenta en encontrate.app. Si no querés recibir más mails como éste, <a href="${bajaUrl}" style="color:${D.tenue};text-decoration:underline;">date de baja acá</a>.`;
+  return `Te llegó porque tenés cuenta en ${sinLink("encontrate.app")}. Si no querés recibir más mails como éste, <a href="${bajaUrl}" style="color:${D.tenue};text-decoration:underline;">date de baja acá</a>.`;
 }
 
 function pieTexto(bajaUrl: string): string {

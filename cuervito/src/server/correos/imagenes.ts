@@ -4,7 +4,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { env } from "~/env";
 
-import { BASE } from "./diseno";
+import { BASE } from "./base";
 
 /**
  * Las imágenes que llevan los mails: las fotos de una compra, las miniaturas
