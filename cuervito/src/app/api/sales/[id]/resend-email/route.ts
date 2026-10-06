@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { env } from "~/env";
 import { auth } from "~/server/auth";
 import { esEntregable } from "~/lib/venta";
 import { db } from "~/server/db";
+import { mailDeEntrega } from "~/server/correos/entrega";
 import { sendEmail } from "~/server/email";
-import { mailsDe } from "~/server/email-marca";
 
 export async function POST(
   _req: Request,
@@ -22,13 +21,8 @@ export async function POST(
     select: {
       sellerId: true,
       status: true,
-      buyerEmail: true,
-      buyerName: true,
       downloadToken: true,
       downloadTokenExpires: true,
-      event: { select: { name: true } },
-      seller: { select: { storefrontTemplate: true } },
-      _count: { select: { items: true } },
     },
   });
   if (!sale) return NextResponse.json({ error: "Venta no encontrada" }, { status: 404 });
@@ -42,19 +36,12 @@ export async function POST(
     return NextResponse.json({ error: "El link de descarga venció" }, { status: 410 });
   }
 
-  const downloadUrl = `${env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "")}/descarga/${sale.downloadToken}`;
+  // El mismo mail que la entrega original, armado en un solo lugar.
+  const mail = await mailDeEntrega(id);
+  if (!mail) return NextResponse.json({ error: "La venta todavía no se entregó" }, { status: 409 });
 
   try {
-    await sendEmail({
-      to: sale.buyerEmail,
-      subject: `Tus fotos · ${sale.event.name}`,
-      html: mailsDe(sale.seller.storefrontTemplate).deliveryEmailHtml({
-        buyerName: sale.buyerName ?? "Hola",
-        eventName: sale.event.name,
-        photoCount: sale._count.items,
-        downloadUrl,
-      }),
-    });
+    await sendEmail(mail);
   } catch (err) {
     console.error("[resend-email] failed:", err);
     return NextResponse.json(

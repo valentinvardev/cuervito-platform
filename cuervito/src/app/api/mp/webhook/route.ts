@@ -5,39 +5,16 @@ import { randomBytes } from "node:crypto";
 import { env } from "~/env";
 import { db } from "~/server/db";
 import { accrueCommissionsForSale } from "~/server/commissions";
+import { mailDeEntrega } from "~/server/correos/entrega";
 import { sendEmail } from "~/server/email";
-import { mailsDe } from "~/server/email-marca";
 import { fetchPayment } from "~/server/mp";
 import { recordPendingAndMaybeNotify } from "~/server/sale-notifier";
 import { publishSale } from "~/server/sales-bus";
 
 async function sendDeliveryEmailForSale(saleId: string): Promise<void> {
-  const sale = await db.sale.findUnique({
-    where: { id: saleId },
-    select: {
-      buyerEmail: true,
-      buyerName: true,
-      downloadToken: true,
-      event: { select: { name: true } },
-      _count: { select: { items: true } },
-      // Para elegir el juego de plantillas: el mail se tiene que parecer a la
-      // página donde compró.
-      seller: { select: { storefrontTemplate: true } },
-    },
-  });
-  if (!sale?.downloadToken) return;
-
-  const baseUrl = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
-  await sendEmail({
-    to: sale.buyerEmail,
-    subject: `Tus fotos · ${sale.event.name}`,
-    html: mailsDe(sale.seller.storefrontTemplate).deliveryEmailHtml({
-      buyerName: sale.buyerName ?? "Hola",
-      eventName: sale.event.name,
-      photoCount: sale._count.items,
-      downloadUrl: `${baseUrl}/descarga/${sale.downloadToken}`,
-    }),
-  });
+  // El mail lo arma mailDeEntrega, el mismo para los tres lugares que entregan.
+  const mail = await mailDeEntrega(saleId);
+  if (mail) await sendEmail(mail);
 }
 
 /**

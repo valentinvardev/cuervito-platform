@@ -13,7 +13,8 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import { PLANTILLAS_ENCONTRATE } from "../src/server/email-encontrate";
+import { mailCompartir } from "../src/server/correos/compartir";
+import { MUESTRAS } from "../src/server/correos/transaccionales";
 import { historias, promo1, promo2, promo3, sinMp } from "../src/server/correos/plantillas";
 
 const out = process.argv[2];
@@ -23,13 +24,19 @@ if (!out) {
 }
 mkdirSync(out, { recursive: true });
 
-const d = { nombre: "Germán Sosa", bajaUrl: "https://encontrate.app/correos/baja?prueba=1" };
+// Nombres inventados: el repo es público.
+const d = { nombre: "Martina Gómez", bajaUrl: "https://encontrate.app/correos/baja?prueba=1" };
 const mails: Record<string, string> = {
-  bienvenida: PLANTILLAS_ENCONTRATE.bienvenida(),
-  entrega: PLANTILLAS_ENCONTRATE.entrega(),
-  venta: PLANTILLAS_ENCONTRATE.venta(),
-  contrasena: PLANTILLAS_ENCONTRATE.contrasena(),
-  invitacion: PLANTILLAS_ENCONTRATE.invitacion(),
+  ...Object.fromEntries(Object.entries(MUESTRAS).map(([k, armar]) => [k, armar()])),
+  compartir: mailCompartir({
+    nombre: "Sofía Ríos",
+    evento: "Medio Maratón de las Sierras",
+    eventId: "evento-ejemplo",
+    fotos: 846,
+    tienda: "https://encontrate.app/sofiarios/medio-maraton",
+    bajaUrl: d.bajaUrl,
+    prueba: true,
+  }).html,
   "campana-sin-mp": sinMp(d).html,
   "campana-historias": historias(d).html,
   "campana-promo-1": promo1(d).html,

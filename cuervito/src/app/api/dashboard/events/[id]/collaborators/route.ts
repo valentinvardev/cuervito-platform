@@ -77,7 +77,8 @@ export async function POST(
 
   const event = await db.event.findUnique({
     where: { id: eventId },
-    select: { ownerId: true, name: true },
+    // La portada y la fecha van en el mail de invitación.
+    select: { ownerId: true, name: true, coverUrl: true, eventDate: true },
   });
   if (!event || event.ownerId !== session.user.id) {
     return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
@@ -142,6 +143,13 @@ export async function POST(
         eventName: event.name,
         acceptUrl,
         commissionLine,
+        pct: parsed.data.commissionPct,
+        alcance: parsed.data.commissionScope,
+        eventId,
+        // Las portadas viejas eran URLs externas: ésas no pasan por la ruta
+        // de imágenes de los mails.
+        conPortada: !!event.coverUrl && !event.coverUrl.startsWith("http"),
+        fechaEvento: event.eventDate,
       }),
     }).catch((err: unknown) =>
       console.error("[collaborators] invite email failed:", err),

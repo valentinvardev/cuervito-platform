@@ -1,10 +1,6 @@
 import "server-only";
 
-import { env } from "~/env";
-
-// El resumen de venta se comparte con email.ts en vez de redefinirlo: es el
-// mismo dato, y dos formas del mismo resumen divergen sin que nadie se entere.
-import type { SaleItemSummary } from "./email";
+import { BASE } from "./correos/diseno";
 
 /* ============================================================================
  * Los mails de encontrate.app
@@ -69,11 +65,7 @@ function esc(s: string): string {
   );
 }
 
-function pesos(centavos: number): string {
-  return `$${(centavos / 100).toLocaleString("es-AR")}`;
-}
-
-export const BASE = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
+export { BASE };
 
 /**
  * La marca: el logo entero —pájaro y nombre— como una sola imagen.
@@ -184,242 +176,22 @@ export function cifra(rotulo: string, valor: string, nota?: string): string {
   </td></tr></table>`;
 }
 
-/** Una lista de datos, clave a la izquierda y valor a la derecha. */
-function datos(filas: [string, string][]): string {
-  const tr = filas
-    .map(
-      ([k, v]) =>
-        `<tr><td class="en-txt3" style="font-family:${FUENTE};font-size:13px;color:${C.texto3};padding:5px 0;">${esc(k)}</td><td align="right" class="en-txt" style="font-family:${FUENTE};font-size:13px;color:${C.texto};padding:5px 0;font-weight:500;">${esc(v)}</td></tr>`,
-    )
-    .join("");
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;">${tr}</table>`;
-}
-
-/* ── 1) Bienvenida ───────────────────────────────────────────────────────── */
-
-export type WelcomeEmailInput = {
-  name: string;
-  hasMpConnected: boolean;
-  hasFirstEvent: boolean;
-};
-
-export function welcomeEmailHtml(i: WelcomeEmailInput): string {
-  // Se muestra UN solo paso, el que falta primero. Una lista de tres pendientes
-  // en el primer mail se lee como trabajo, no como bienvenida.
-  const paso = !i.hasMpConnected
-    ? {
-        t: "Conectá Mercado Pago",
-        d: "Es lo único que hace falta para poder cobrar. Toma dos minutos.",
-        url: `${BASE}/onboarding/mp`,
-        b: "Conectar Mercado Pago",
-      }
-    : !i.hasFirstEvent
-      ? {
-          t: "Creá tu primer evento",
-          d: "Subís las fotos y te queda un link para repartir.",
-          url: `${BASE}/dashboard/nuevo`,
-          b: "Crear un evento",
-        }
-      : {
-          t: "Ya está todo listo",
-          d: "Tenés tu cuenta lista para vender.",
-          url: `${BASE}/dashboard`,
-          b: "Ir a mi panel",
-        };
-
-  return armar({
-    preheader: `${paso.t} — ${paso.d}`,
-    cuerpo: `
-      ${titulo(`Bienvenido, ${i.name.split(" ")[0] ?? i.name}`)}
-      ${parrafo("Tu cuenta está creada. Desde acá vas a subir tus fotos, y el atleta las encuentra con una selfie o con su número de dorsal.")}
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;"><tr><td bgcolor="${C.suave}" class="en-suave" style="background:${C.suave};border-radius:10px;padding:18px 20px;">
-        <div class="en-txt" style="font-family:${FUENTE};font-size:15px;font-weight:600;color:${C.texto};">${esc(paso.t)}</div>
-        <div class="en-txt2" style="font-family:${FUENTE};font-size:13.5px;line-height:1.5;color:${C.texto2};margin-top:4px;">${esc(paso.d)}</div>
-      </td></tr></table>
-      ${boton(paso.b, paso.url)}
-    `,
-  });
-}
-
-/* ── 2) Entrega al comprador ─────────────────────────────────────────────── */
-
-export type DeliveryEmailInput = {
-  buyerName?: string;
-  eventName: string;
-  photoCount: number;
-  downloadUrl: string;
-  expiresAt?: Date;
-};
-
-export function deliveryEmailHtml(i: DeliveryEmailInput): string {
-  const nombre = i.buyerName?.split(" ")[0];
-  const vence = i.expiresAt
-    ? i.expiresAt.toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })
-    : null;
-
-  // "De a una o todas juntas": la página de descarga tiene las dos. Decía sólo
-  // "en un .zip", y en el teléfono lo cómodo es de a una: en iPhone el .zip va
-  // a la app Archivos, no al carrete.
-  return armar({
-    preheader: `${i.photoCount} ${i.photoCount === 1 ? "foto lista" : "fotos listas"} de ${i.eventName}`,
-    cuerpo: `
-      ${titulo(nombre ? `Listo, ${nombre}. Son tuyas.` : "Listo. Son tuyas.")}
-      ${parrafo(`Tus fotos de <strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(i.eventName)}</strong>, sin marca de agua y en calidad original.`)}
-      ${cifra(i.photoCount === 1 ? "Tu foto" : "Tus fotos", String(i.photoCount), i.photoCount === 1 ? "La bajás en calidad original" : "Las bajás de a una o todas juntas")}
-      ${boton("Bajar mis fotos", i.downloadUrl)}
-      ${
-        vence
-          ? parrafo(
-              `<span style="color:${C.texto3};font-size:13px;">El link funciona hasta el <strong style="color:${C.texto2};">${esc(vence)}</strong>. Guardalo: podés volver a bajarlas todas las veces que quieras hasta esa fecha.</span>`,
-            )
-          : ""
-      }
-    `,
-  });
-}
-
-/* ── 3) Aviso de venta al fotógrafo ──────────────────────────────────────────
-   SaleItemSummary vive en email.ts, al lado de sendEmail, porque lo arma el
-   notificador y lo consume esto: es el contrato entre los dos. */
-
-export function saleEmailSingleHtml(i: {
-  photographerName: string;
-  sale: SaleItemSummary;
-}): string {
-  const nombre = i.photographerName.split(" ")[0] ?? "Hola";
-  const comprador = i.sale.buyerName ?? "Alguien";
-  return armar({
-    preheader: `Vendiste ${i.sale.itemCount} ${i.sale.itemCount === 1 ? "foto" : "fotos"} — te quedan ${pesos(i.sale.sellerNetCents)}`,
-    cuerpo: `
-      ${titulo(`${nombre}, vendiste`)}
-      ${parrafo(`<strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(comprador)}</strong> compró ${i.sale.itemCount === 1 ? "una foto" : `${i.sale.itemCount} fotos`} de <strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(i.sale.eventName)}</strong>.`)}
-      ${cifra("Te quedan", pesos(i.sale.sellerNetCents), "Ya está en tu Mercado Pago, con la comisión descontada")}
-      ${botonSuave("Ver la venta", `${BASE}/dashboard/ventas`)}
-    `,
-  });
-}
-
-export function saleEmailSmallBatchHtml(i: {
-  photographerName: string;
-  sales: SaleItemSummary[];
-}): string {
-  const nombre = i.photographerName.split(" ")[0] ?? "Hola";
-  const neto = i.sales.reduce((a, s) => a + s.sellerNetCents, 0);
-  const fotos = i.sales.reduce((a, s) => a + s.itemCount, 0);
-  return armar({
-    preheader: `${i.sales.length} ventas — te quedan ${pesos(neto)}`,
-    cuerpo: `
-      ${titulo(`${nombre}, ${i.sales.length} ventas nuevas`)}
-      ${cifra("Te quedan", pesos(neto), `${fotos} ${fotos === 1 ? "foto" : "fotos"} en total`)}
-      ${datos(
-        i.sales.map((s) => [
-          s.buyerName ?? "Alguien",
-          `${s.itemCount} · ${pesos(s.sellerNetCents)}`,
-        ]),
-      )}
-      ${botonSuave("Ver mis ventas", `${BASE}/dashboard/ventas`)}
-    `,
-  });
-}
-
-export function saleEmailBigBatchHtml(i: {
-  photographerName: string;
-  sales: SaleItemSummary[];
-}): string {
-  const nombre = i.photographerName.split(" ")[0] ?? "Hola";
-  const neto = i.sales.reduce((a, s) => a + s.sellerNetCents, 0);
-  const fotos = i.sales.reduce((a, s) => a + s.itemCount, 0);
-  const evento = i.sales[0]?.eventName ?? "tus eventos";
-  return armar({
-    preheader: `${i.sales.length} ventas — te quedan ${pesos(neto)}`,
-    cuerpo: `
-      ${titulo(`${nombre}, se está vendiendo`)}
-      ${parrafo(`<strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(evento)}</strong> tuvo ${i.sales.length} ventas.`)}
-      ${cifra("Te quedan", pesos(neto), `${fotos} fotos en ${i.sales.length} ventas`)}
-      ${botonSuave("Ver el detalle", `${BASE}/dashboard/ventas`)}
-    `,
-  });
-}
-
-/* ── 4) Recuperar la contraseña ──────────────────────────────────────────── */
-
-export type PasswordResetEmailInput = { name: string; resetUrl: string };
-
-export function passwordResetEmailHtml(i: PasswordResetEmailInput): string {
-  return armar({
-    preheader: "Cambiá tu contraseña — el link vence en una hora",
-    cuerpo: `
-      ${titulo("Cambiá tu contraseña")}
-      ${parrafo("Pediste recuperar el acceso a tu cuenta. El link de abajo vence en una hora.")}
-      ${boton("Elegir una contraseña nueva", i.resetUrl)}
-      ${parrafo(`<span style="color:${C.texto3};font-size:13px;">Si no pediste esto, ignorá el mail: tu contraseña sigue siendo la misma y nadie entró a tu cuenta.</span>`)}
-    `,
-  });
-}
-
-/* ── 5) Invitación a cubrir un evento ────────────────────────────────────── */
-
-export type CollaboratorInviteInput = {
-  inviterName: string;
-  eventName: string;
-  acceptUrl: string;
-  /** "Te queda el 20 % de lo que vendas", ya redactado por quien invita. */
-  commissionLine?: string;
-};
-
-export function collaboratorInviteHtml(i: CollaboratorInviteInput): string {
-  return armar({
-    preheader: `${i.inviterName} te invita a cubrir ${i.eventName}`,
-    cuerpo: `
-      ${titulo("Te invitaron a cubrir un evento")}
-      ${parrafo(`<strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(i.inviterName)}</strong> te invita a subir tus fotos a <strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(i.eventName)}</strong>.`)}
-      ${datos([
-        ["Podés", "Subir tus fotos y ver cuánto vendieron"],
-        ["No podés", "Ver las ventas de los demás ni cambiar el precio"],
-        ...(i.commissionLine
-          ? ([["Te queda", i.commissionLine]] as [string, string][])
-          : []),
-      ])}
-      ${parrafo(`<span style="color:${C.texto3};font-size:13px;">Las ventas entran en la cuenta de Mercado Pago de quien organiza el evento. Lo que te corresponde queda registrado y te lo pasa esa persona.</span>`)}
-      ${boton("Aceptar la invitación", i.acceptUrl)}
-    `,
-  });
-}
-
-/**
- * Todas las plantillas juntas, para poder verlas en una pantalla sin mandar
- * mails de verdad.
- */
-export const PLANTILLAS_ENCONTRATE = {
-  bienvenida: () =>
-    welcomeEmailHtml({ name: "Germán Sosa", hasMpConnected: false, hasFirstEvent: false }),
-  entrega: () =>
-    deliveryEmailHtml({
-      buyerName: "Lucía Fernández",
-      eventName: "Duatlón Club Ciclista Chivilcoy",
-      photoCount: 7,
-      downloadUrl: `${BASE}/descarga/demo`,
-      expiresAt: new Date(Date.now() + 72 * 3600 * 1000),
-    }),
-  venta: () =>
-    saleEmailSingleHtml({
-      photographerName: "Germán Sosa",
-      sale: {
-        eventName: "Duatlón Club Ciclista Chivilcoy",
-        itemCount: 3,
-        totalCents: 540000,
-        sellerNetCents: 486000,
-        buyerName: "Lucía Fernández",
-        paidAt: new Date().toISOString(),
-      },
-    }),
-  contrasena: () =>
-    passwordResetEmailHtml({ name: "Germán", resetUrl: `${BASE}/reset/demo` }),
-  invitacion: () =>
-    collaboratorInviteHtml({
-      inviterName: "Germán Sosa",
-      eventName: "Duatlón Club Ciclista Chivilcoy",
-      acceptUrl: `${BASE}/invitacion/demo`,
-      commissionLine: "70% de las ventas de tus fotos",
-    }),
-} as const;
+/* ── Los mails de la cuenta ───────────────────────────────────────────────
+   Bienvenida, entrega, avisos de venta, contraseña e invitación tienen el
+   diseño nuevo y viven en correos/transaccionales.ts. Se reexportan acá con
+   el mismo nombre para que mailsDe() y los que importan de este archivo no
+   cambien. Las piezas de arriba (armar, boton, titulo…) las siguen usando
+   las campañas de correos/plantillas.ts. */
+export {
+  collaboratorInviteHtml,
+  deliveryEmailHtml,
+  passwordResetEmailHtml,
+  saleEmailBigBatchHtml,
+  saleEmailSingleHtml,
+  saleEmailSmallBatchHtml,
+  welcomeEmailHtml,
+  type CollaboratorInviteInput,
+  type DeliveryEmailInput,
+  type PasswordResetEmailInput,
+  type WelcomeEmailInput,
+} from "./correos/transaccionales";

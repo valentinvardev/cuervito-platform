@@ -1,6 +1,11 @@
 import "server-only";
 
-import { BASE } from "~/server/email-encontrate";
+import { env } from "~/env";
+
+/** La dirección de la app, sin la barra final. Vive acá y no en
+    email-encontrate.ts para que las plantillas puedan usar estas piezas sin
+    importarse en círculo; allá se reexporta para lo que ya la pedía. */
+export const BASE = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
 
 /* ============================================================================
  * El diseño nuevo de los mails, en HTML de mail.
@@ -44,6 +49,8 @@ export const D = {
   /* El verde de WhatsApp del panel, no el de la marca: con blanco encima el
      de la marca no se lee. */
   whatsapp: "#0A7C42",
+  /* El verde de "ok" del panel: lo que sí se puede, lo que salió bien. */
+  ok: "#1E7A4D",
 } as const;
 
 export const SANS =
@@ -200,7 +207,7 @@ export function dorsal({
   <tr><td bgcolor="${D.cono}" style="background:${D.cono};border-radius:10px 10px 0 0;padding:12px 20px;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
       <td style="font-family:${SANS};font-weight:600;font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:${D.tinta};">${esc(izq)}</td>
-      <td align="right" style="font-family:${SANS};font-weight:600;font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:${D.tinta};">${esc(der)}</td>
+      <td align="right" valign="top" style="padding-left:12px;white-space:nowrap;font-family:${SANS};font-weight:600;font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:${D.tinta};">${esc(der)}</td>
     </tr></table>
   </td></tr>
   ${filaAgujeros(true)}

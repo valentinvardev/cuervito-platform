@@ -45,6 +45,12 @@ export async function sendEmail(input: SendEmailInput): Promise<{ id: string } |
  * del envío, porque es el contrato entre quien arma el aviso y quien lo dibuja.
  */
 export type SaleItemSummary = {
+  /** Para llevar a ESA venta desde el aviso. */
+  saleId?: string;
+  /** Para llevar al evento (los packs se arman ahí). */
+  eventId?: string;
+  /** Hasta tres fotos de la venta, para las miniaturas del aviso. */
+  photoIds?: string[];
   eventName: string;
   itemCount: number;
   totalCents: number;

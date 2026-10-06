@@ -114,8 +114,12 @@ export async function flushPending(
         sellerNetCents: true,
         buyerName: true,
         paidAt: true,
+        eventId: true,
         event: { select: { name: true } },
         _count: { select: { items: true } },
+        // Para las miniaturas del aviso de una venta. Las borradas no: su
+        // imagen ya no se sirve.
+        items: { where: { photo: { deletedAt: null } }, select: { photoId: true }, take: 3 },
       },
     }),
   ]);
@@ -123,6 +127,9 @@ export async function flushPending(
   if (!seller?.email || sales.length === 0) return;
 
   const summaries: SaleItemSummary[] = sales.map((s) => ({
+    saleId: s.id,
+    eventId: s.eventId,
+    photoIds: s.items.flatMap((i) => (i.photoId ? [i.photoId] : [])),
     eventName: s.event.name,
     itemCount: s._count.items,
     totalCents: s.totalCents,
@@ -144,10 +151,10 @@ export async function flushPending(
     subject = `Venta nueva · $${(only.sellerNetCents / 100).toLocaleString("es-AR")}`;
   } else if (summaries.length <= 4) {
     html = mails.saleEmailSmallBatchHtml({ photographerName, sales: summaries });
-    subject = `${summaries.length} ventas nuevas en cuervito`;
+    subject = `${summaries.length} ventas nuevas`;
   } else {
     html = mails.saleEmailBigBatchHtml({ photographerName, sales: summaries });
-    subject = `${summaries.length} ventas seguidas — estás en racha`;
+    subject = `Se está vendiendo · ${summaries.length} ventas seguidas`;
   }
 
   try {

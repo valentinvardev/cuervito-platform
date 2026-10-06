@@ -7,8 +7,8 @@ import { env } from "~/env";
 import { calcular } from "~/lib/descuentos";
 import { db } from "~/server/db";
 import { accrueCommissionsForSale } from "~/server/commissions";
+import { mailDeEntrega } from "~/server/correos/entrega";
 import { sendEmail } from "~/server/email";
-import { mailsDe } from "~/server/email-marca";
 import { createPreference, isMpConfigured } from "~/server/mp";
 import { recordPendingAndMaybeNotify } from "~/server/sale-notifier";
 import { publishSale } from "~/server/sales-bus";
@@ -62,7 +62,6 @@ export async function POST(req: NextRequest) {
           id: true,
           mpAccessToken: true,
           mpConnectedAt: true,
-          storefrontTemplate: true,
           status: true,
           role: true,
           testModeEnabled: true,
@@ -269,19 +268,10 @@ export async function POST(req: NextRequest) {
 
     // El mail al comprador SÍ va siempre: es la entrega. Que no se haya
     // cobrado no cambia que del otro lado hay alguien esperando sus fotos.
-    const baseUrl = env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
-    void sendEmail({
-      to: datos.buyerEmail,
-      subject: `Tus fotos · ${evento.name}`,
-      html: mailsDe(evento.owner.storefrontTemplate).deliveryEmailHtml({
-        buyerName: datos.buyerName ?? "Hola",
-        eventName: evento.name,
-        photoCount: items.length,
-        downloadUrl: `${baseUrl}/descarga/${downloadToken}`,
-      }),
-    }).catch((err: unknown) =>
-      console.error(`[checkout ${etiqueta}] delivery email failed:`, err),
-    );
+    // El mismo mail que manda el webhook, armado en un solo lugar.
+    void mailDeEntrega(sale.id)
+      .then((mail) => (mail ? sendEmail(mail) : null))
+      .catch((err: unknown) => console.error(`[checkout ${etiqueta}] delivery email failed:`, err));
 
     return { saleId: sale.id, token: downloadToken };
   }
