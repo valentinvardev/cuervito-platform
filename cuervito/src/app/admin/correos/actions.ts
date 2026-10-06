@@ -47,10 +47,21 @@ export async function enviarPruebaAction(id: string): Promise<{ ok: boolean; det
   const yo = await admin();
   if (!esCampana(id)) return { ok: false, detalle: "Campaña desconocida" };
   if (!yo.email) return { ok: false, detalle: "Tu cuenta no tiene mail" };
-  const r =
-    id === ID_COMPARTIR
-      ? await enviarPruebaCompartir(yo.email, yo.id, yo.name ?? null)
-      : await enviarPrueba(id, yo.email, yo.name ?? null);
+  /* El error se devuelve como texto y no se tira. Una acción que tira llega
+     al navegador como una excepción sin mensaje —en producción Next lo borra
+     a propósito— y, sin quien la ataje, tira abajo la pantalla entera con
+     "Application error". El motivo de verdad (Resend que rechaza el remitente,
+     el tope del día, lo que sea) es justo lo que hay que ver acá. */
+  let r: string | null;
+  try {
+    r =
+      id === ID_COMPARTIR
+        ? await enviarPruebaCompartir(yo.email, yo.id, yo.name ?? null)
+        : await enviarPrueba(id, yo.email, yo.name ?? null);
+  } catch (e) {
+    console.error(`[admin correos] la prueba de ${id} falló:`, e);
+    return { ok: false, detalle: `No se mandó: ${e instanceof Error ? e.message : String(e)}` };
+  }
   return r
     ? { ok: true, detalle: `Enviado a ${yo.email}` }
     : {

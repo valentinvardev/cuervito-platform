@@ -41,8 +41,15 @@ export function Correos({ estado }: { estado: Estado }) {
   function prueba(id: string) {
     setAviso((v) => ({ ...v, [id]: "Enviando…" }));
     empezar(async () => {
-      const r = await enviarPruebaAction(id);
-      setAviso((v) => ({ ...v, [id]: r.detalle }));
+      // Atajado acá también, como en alternar: si la acción no llega —un
+      // corte de red, un deploy en el medio—, el aviso lo dice en vez de que
+      // la pantalla entera se caiga.
+      try {
+        const r = await enviarPruebaAction(id);
+        setAviso((v) => ({ ...v, [id]: r.detalle }));
+      } catch (e) {
+        setAviso((v) => ({ ...v, [id]: e instanceof Error ? e.message : "No se pudo mandar la prueba" }));
+      }
     });
   }
 
