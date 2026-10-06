@@ -257,12 +257,15 @@ export function deliveryEmailHtml(i: DeliveryEmailInput): string {
     ? i.expiresAt.toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })
     : null;
 
+  // "De a una o todas juntas": la página de descarga tiene las dos. Decía sólo
+  // "en un .zip", y en el teléfono lo cómodo es de a una: en iPhone el .zip va
+  // a la app Archivos, no al carrete.
   return armar({
     preheader: `${i.photoCount} ${i.photoCount === 1 ? "foto lista" : "fotos listas"} de ${i.eventName}`,
     cuerpo: `
       ${titulo(nombre ? `Listo, ${nombre}. Son tuyas.` : "Listo. Son tuyas.")}
       ${parrafo(`Tus fotos de <strong class="en-txt" style="color:${C.texto};font-weight:600;">${esc(i.eventName)}</strong>, sin marca de agua y en calidad original.`)}
-      ${cifra(i.photoCount === 1 ? "Tu foto" : "Tus fotos", String(i.photoCount), "Las bajás todas juntas en un .zip")}
+      ${cifra(i.photoCount === 1 ? "Tu foto" : "Tus fotos", String(i.photoCount), i.photoCount === 1 ? "La bajás en calidad original" : "Las bajás de a una o todas juntas")}
       ${boton("Bajar mis fotos", i.downloadUrl)}
       ${
         vence
