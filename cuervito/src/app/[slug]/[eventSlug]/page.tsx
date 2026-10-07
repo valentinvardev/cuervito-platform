@@ -1,6 +1,11 @@
+import { type Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
+import { JsonLd } from "~/app/_components/json-ld";
 import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
+import { slugReservado } from "~/lib/slugs-reservados";
+import { urlPublica } from "~/lib/url-publica";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
@@ -14,18 +19,10 @@ import { EncontrateShell } from "./encontrate/shell";
 /** Fotos en la primera tanda. Tiene que coincidir con el endpoint. */
 const TANDA = 60;
 
-const RESERVED = new Set([
-  "dashboard", "admin", "login", "signup", "onboarding", "suspended",
-  "api", "descarga", "_components", "_next", "favicon.ico", "robots.txt",
-]);
-
-export default async function PublicEventPage(props: {
-  params: Promise<{ slug: string; eventSlug: string }>;
-}) {
-  const { slug, eventSlug } = await props.params;
-  if (RESERVED.has(slug)) notFound();
-
-  const photographer = await db.user.findUnique({
+/* El fotógrafo y el evento se piden una vez por request: los usa la página y
+   los usa su <head>, y cache() hace que el segundo pedido no viaje a la base. */
+const traerFotografo = cache((slug: string) =>
+  db.user.findUnique({
     where: { slug },
     select: {
       id: true,
@@ -40,16 +37,21 @@ export default async function PublicEventPage(props: {
       status: true,
       onboardingCompletedAt: true,
       giftEnabled: true,
+      customDomains: {
+        where: { status: "ACTIVE" },
+        orderBy: { verifiedAt: "asc" },
+        take: 1,
+        select: { hostname: true },
+      },
     },
-  });
-  if (!photographer || photographer.status !== "ACTIVE" || !photographer.onboardingCompletedAt) {
-    notFound();
-  }
+  }),
+);
 
-  const event = await db.event.findFirst({
+const traerEvento = cache((ownerId: string, eventSlug: string) =>
+  db.event.findFirst({
     where: {
       slug: eventSlug,
-      ownerId: photographer.id,
+      ownerId,
       isPublished: true,
       NOT: { status: "ARCHIVED" },
     },
@@ -64,19 +66,90 @@ export default async function PublicEventPage(props: {
       coverUrl: true,
       pricePerPhoto: true,
       currency: true,
+      recognition: true,
       // Si el evento no lee dorsales, la tienda no ofrece buscar por dorsal:
       // mandar a escribir un número que no va a encontrar nada es peor que no
       // ofrecerlo.
       bibDetection: true,
     },
-  });
+  }),
+);
+
+/** La portada en una URL que se pueda compartir. Con CloudFront es estable. */
+const urlPortada = cache(async (coverUrl: string | null) =>
+  coverUrl ? (coverUrl.startsWith("http") ? coverUrl : await resolveMediaUrl(coverUrl)) : null,
+);
+
+/* El título es lo que se busca: «fotos maratón de rosario». Hasta acá todas
+   las páginas de evento heredaban el título de la landing, así que para Google
+   eran cientos de páginas que decían lo mismo. */
+export async function generateMetadata(props: {
+  params: Promise<{ slug: string; eventSlug: string }>;
+}): Promise<Metadata> {
+  const { slug, eventSlug } = await props.params;
+  if (slugReservado(slug)) return {};
+  const photographer = await traerFotografo(slug);
+  if (!photographer || photographer.status !== "ACTIVE" || !photographer.onboardingCompletedAt) {
+    return {};
+  }
+  const event = await traerEvento(photographer.id, eventSlug);
+  if (!event) return {};
+
+  const fecha = event.eventDate
+    ? event.eventDate.toLocaleDateString("es-AR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "America/Argentina/Buenos_Aires",
+      })
+    : null;
+  const fotografo = photographer.name ?? "el fotógrafo";
+  const como = !event.recognition
+    ? "en la galería"
+    : event.bibDetection
+      ? "por número de dorsal o con una selfie"
+      : "con una selfie";
+
+  const titulo = `Fotos de ${event.name}${fecha ? ` · ${fecha}` : ""}`;
+  const descripcion = `Buscá tus fotos de ${event.name}${event.location ? ` en ${event.location}` : ""} ${como}. Fotos de ${fotografo}: comprás y descargás al instante, sin crear cuenta.`;
+  const url = urlPublica(slug, photographer.customDomains[0]?.hostname, event.slug);
+  const portada = await urlPortada(event.coverUrl);
+
+  return {
+    title: titulo,
+    description: descripcion,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      title: titulo,
+      description: descripcion,
+      url,
+      ...(portada ? { images: [{ url: portada, alt: event.name }] } : {}),
+    },
+    twitter: {
+      card: portada ? "summary_large_image" : "summary",
+      title: titulo,
+      description: descripcion,
+      ...(portada ? { images: [portada] } : {}),
+    },
+  };
+}
+
+export default async function PublicEventPage(props: {
+  params: Promise<{ slug: string; eventSlug: string }>;
+}) {
+  const { slug, eventSlug } = await props.params;
+  if (slugReservado(slug)) notFound();
+
+  const photographer = await traerFotografo(slug);
+  if (!photographer || photographer.status !== "ACTIVE" || !photographer.onboardingCompletedAt) {
+    notFound();
+  }
+
+  const event = await traerEvento(photographer.id, eventSlug);
   if (!event) notFound();
 
-  const coverSignedUrl = event.coverUrl
-    ? event.coverUrl.startsWith("http")
-      ? event.coverUrl
-      : await resolveMediaUrl(event.coverUrl)
-    : null;
+  const coverSignedUrl = await urlPortada(event.coverUrl);
 
   // Load all committed photos. We require `previewKey` to exist —
   // without it the falling back to `storageKey` would leak the original
@@ -246,8 +319,40 @@ export default async function PublicEventPage(props: {
     regalo,
   };
 
+  /* Lo mismo que dice la página, en la forma en que lo lee un agente: qué
+     evento, cuándo, dónde, de quién son las fotos y cuánto cuestan. La
+     galería es la página; el evento es de lo que trata. */
+  const datosEstructurados = {
+    "@context": "https://schema.org",
+    "@type": "ImageGallery",
+    name: `Fotos de ${event.name}`,
+    url: urlPublica(slug, photographer.customDomains[0]?.hostname, event.slug),
+    ...(event.description ? { description: event.description } : {}),
+    ...(coverSignedUrl ? { image: coverSignedUrl } : {}),
+    inLanguage: "es-AR",
+    author: { "@type": "Person", name: photographer.name ?? "Fotógrafo" },
+    about: {
+      "@type": "SportsEvent",
+      name: event.name,
+      ...(event.eventDate ? { startDate: event.eventDate.toISOString().slice(0, 10) } : {}),
+      ...(event.location ? { location: { "@type": "Place", name: event.location } } : {}),
+      ...(event.discipline ? { sport: event.discipline } : {}),
+    },
+    ...(regalo
+      ? { isAccessibleForFree: true }
+      : {
+          offers: {
+            "@type": "Offer",
+            price: Number(event.pricePerPhoto),
+            priceCurrency: event.currency,
+            description: "Precio por foto",
+          },
+        }),
+  };
+
   return (
     <div style={pageStyle}>
+      <JsonLd datos={datosEstructurados} />
       {layout === "encontrate" ? (
         <EncontrateShell {...shellProps} buscaPorDorsal={event.bibDetection} />
       ) : (

@@ -5,6 +5,11 @@ import "~/styles/prototype/lightbox.css";
 import "~/styles/tienda-encontrate.css";
 import "~/styles/entrega-encontrate.css";
 
+import { type Metadata } from "next";
+
+// La compra de alguien. Nunca en un buscador, aunque el link ande suelto.
+export const metadata: Metadata = { robots: { index: false, follow: false } };
+
 export default function DescargaLayout({ children }: { children: React.ReactNode }) {
   return (
     <>

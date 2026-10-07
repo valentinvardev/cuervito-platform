@@ -4,6 +4,7 @@ import { AuthError } from "next-auth";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
+import { slugReservado } from "~/lib/slugs-reservados";
 import { db } from "~/server/db";
 import { signIn } from "~/server/auth";
 import { sendEmail } from "~/server/email";
@@ -52,7 +53,9 @@ export async function signupAction(
   const base = slugify(name) || "fotografo";
   let slug = base;
   for (let i = 2; i < 50; i++) {
-    const taken = await db.user.findUnique({ where: { slug }, select: { id: true } });
+    const taken =
+      slugReservado(slug) ||
+      (await db.user.findUnique({ where: { slug }, select: { id: true } }));
     if (!taken) break;
     slug = `${base}-${i}`;
   }

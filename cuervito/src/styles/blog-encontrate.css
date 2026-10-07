@@ -1,0 +1,168 @@
+/* =============================================================================
+   encontrate · blog
+   Se carga después de tokens.css → base.css → landing-encontrate.css (las tres
+   vienen del layout de (nueva)). Todo lo de acá usa los tokens; no hay un solo
+   color propio, así que el tema oscuro sale solo.
+
+   La landing grita en caja alta porque son cuatro palabras. Un artículo son
+   dos mil: los títulos de adentro van en la sans, en caja baja, y el ancho de
+   línea se corta en 68 caracteres, que es lo que se lee sin perder el renglón.
+   ========================================================================== */
+
+/* ── Cabecera del blog y de cada sección ─────────────────────────────────── */
+.blog-hero { padding-bottom: var(--s-6); }
+.blog-hero .lede { max-width: 58ch; }
+.blog-hero .eyebrow a:hover,
+.blog-post-cab .eyebrow a:hover { color: var(--ink); }
+
+.blog-cuerpo { padding: 0 0 var(--s-9); }
+
+/* ── Secciones como pestañas ─────────────────────────────────────────────── */
+.blog-secciones {
+  display: flex; gap: var(--s-2); flex-wrap: wrap;
+  margin-bottom: var(--s-6);
+}
+.blog-secciones a,
+.blog-secciones span {
+  height: 34px; padding: 0 14px;
+  display: inline-flex; align-items: center;
+  border: 1px solid var(--line); border-radius: 999px;
+  font-size: var(--t-small); color: var(--ink-2);
+}
+.blog-secciones a:hover { border-color: var(--line-strong); color: var(--ink); }
+.blog-secciones span[aria-current] { background: var(--cta-bg); border-color: var(--cta-bg); color: var(--cta-fg); }
+
+/* ── Lista de posts ──────────────────────────────────────────────────────── */
+.blog-lista {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--s-4);
+}
+@media (max-width: 400px) { .blog-lista { grid-template-columns: 1fr; } }
+
+.blog-tarjeta {
+  height: 100%;
+  display: flex; flex-direction: column; gap: var(--s-3);
+  padding: var(--s-5);
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft); border-radius: var(--r-3);
+  transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+.blog-tarjeta:hover { box-shadow: var(--shadow-card); border-color: var(--line); }
+.blog-tarjeta h2 {
+  font-family: var(--sans); text-transform: none;
+  font-size: 22px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.22;
+}
+.blog-tarjeta p { color: var(--ink-2); font-size: var(--t-small); line-height: 1.6; }
+.blog-tarjeta .blog-meta { margin-top: auto; }
+
+.blog-meta {
+  font-family: var(--meta); font-size: 12.5px; font-weight: 500;
+  letter-spacing: 0.02em; color: var(--ink-3);
+}
+.blog-meta em { font-style: normal; color: var(--acento-txt); }
+
+.blog-vacio {
+  padding: var(--s-7) var(--s-5); text-align: center;
+  border: 1px dashed var(--line); border-radius: var(--r-3);
+}
+.blog-vacio b { display: block; font-size: 18px; font-weight: 500; letter-spacing: -0.02em; }
+.blog-vacio span { display: block; margin-top: 6px; font-size: var(--t-small); color: var(--ink-3); }
+
+/* ── El artículo ─────────────────────────────────────────────────────────── */
+.blog-post { padding: var(--s-7) 0 var(--s-8); }
+@media (max-width: 760px) { .blog-post { padding-top: var(--s-6); } }
+
+/* Cabecera, texto y llamado en UNA columna centrada. Con el ancho en «ch»
+   cada pieza medía distinto —el ch depende del cuerpo de letra de cada una—
+   y la cabecera quedaba corrida respecto del texto. */
+.blog-post .wrap { max-width: calc(720px + 2 * var(--s-5)); }
+.blog-post-cab h1 {
+  font-size: calc(var(--t-h2) * var(--display-scale) * 1.15);
+  font-weight: var(--display-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--display-track);
+  line-height: 1.1;
+  margin-bottom: var(--s-4);
+}
+.blog-post-cab .lede { margin-bottom: var(--s-4); }
+.blog-post-cab .blog-meta { padding-bottom: var(--s-6); border-bottom: 1px solid var(--line-soft); }
+
+.prosa { padding-top: var(--s-6); font-size: 17.5px; line-height: 1.72; color: var(--ink); }
+.prosa > * + * { margin-top: 1.1em; }
+
+.prosa h2,
+.prosa h3 { font-family: var(--sans); text-transform: none; scroll-margin-top: 96px; }
+.prosa h2 {
+  margin-top: 2.2em;
+  font-size: clamp(23px, 2.4vw, 28px); font-weight: 600;
+  letter-spacing: -0.03em; line-height: 1.22;
+}
+.prosa h3 { margin-top: 1.8em; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+.prosa h2 + *,
+.prosa h3 + * { margin-top: 0.6em; }
+
+.prosa a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.prosa a:hover { color: var(--acento-txt); }
+
+.prosa strong { font-weight: 600; }
+/* El reset del sistema les saca la viñeta a todas las listas; en un texto
+   largo la viñeta es lo que dice que esto es una lista. */
+.prosa ul { list-style: disc; padding-left: 1.3em; }
+.prosa ol { list-style: decimal; padding-left: 1.3em; }
+.prosa li + li { margin-top: 0.45em; }
+.prosa li::marker { color: var(--ink-3); }
+
+.prosa blockquote {
+  margin-left: 0; padding-left: var(--s-4);
+  border-left: 3px solid var(--accent);
+  color: var(--ink-2);
+}
+.prosa hr { border: 0; border-top: 1px solid var(--line-soft); margin: 2.4em 0; }
+.prosa img { border-radius: var(--r-3); }
+.prosa code {
+  font-size: 0.9em; padding: 0.1em 0.35em;
+  background: var(--paper-3); border-radius: var(--r-1);
+}
+
+/* Las tablas: comparan precios, y en un teléfono no entran. Scrollean ellas,
+   no la página. */
+.prosa-tabla { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.prosa table { width: 100%; border-collapse: collapse; font-size: 15.5px; }
+.prosa th,
+.prosa td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+.prosa th { font-weight: 600; color: var(--ink-2); border-bottom-color: var(--line); }
+
+.prosa-nota {
+  display: flex; gap: var(--s-3);
+  padding: var(--s-4);
+  background: var(--accent-wash);
+  border-radius: var(--r-3);
+  font-size: 16px; line-height: 1.6;
+}
+.prosa-nota svg { width: 20px; height: 20px; flex-shrink: 0; margin-top: 3px; color: var(--acento-txt); }
+.prosa-nota b { display: block; font-weight: 600; margin-bottom: 2px; }
+.prosa-nota div > * + * { margin-top: 0.5em; }
+
+/* ── El llamado del final ────────────────────────────────────────────────── */
+.prosa-ancho { margin-top: var(--s-7); }
+.blog-llamado {
+  display: flex; flex-direction: column; gap: var(--s-4);
+  padding: var(--s-5);
+  border: 1px solid var(--line); border-radius: var(--r-4);
+  background: var(--paper-2);
+}
+.blog-llamado b { display: block; font-size: 21px; font-weight: 600; letter-spacing: -0.03em; }
+.blog-llamado p { margin-top: 6px; color: var(--ink-2); font-size: var(--t-small); line-height: 1.6; }
+.blog-llamado-cta { display: flex; gap: var(--s-3); flex-wrap: wrap; }
+
+/* Adentro del texto el llamado no lleva el aire de arriba: ya lo da la prosa. */
+.prosa .blog-llamado { margin-top: 1.6em; }
+
+.blog-relacionados { padding-top: var(--s-7); border-top: 1px solid var(--line-soft); }

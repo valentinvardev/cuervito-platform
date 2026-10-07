@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { slugReservado } from "~/lib/slugs-reservados";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 
@@ -19,7 +20,8 @@ const perfilSchema = z.object({
     .trim()
     .min(3, "El usuario tiene que tener al menos 3 caracteres.")
     .max(40)
-    .regex(/^[a-z0-9-]+$/, "Solo minúsculas, números y guiones."),
+    .regex(/^[a-z0-9-]+$/, "Solo minúsculas, números y guiones.")
+    .refine((s) => !slugReservado(s), "Ese usuario está reservado. Probá otro."),
   // Opcional: pedir 20 caracteres mínimos frenaba el onboarding sin
   // aportar nada. El storefront ya maneja el caso vacío.
   bio: z.string().trim().max(280).optional(),

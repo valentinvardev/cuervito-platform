@@ -74,6 +74,12 @@ de S3 recién pasado `PHOTO_RETENTION_DAYS`.
 - `/descarga/[token]` — descarga post-compra
 - `/pago/{exito,error,pendiente,procesando}` — retorno de Mercado Pago
 - `/invitacion/[token]` — aceptar invitación de colaborador
+- `/eventos` — buscador de eventos para el atleta
+- `/blog`, `/blog/[slug]` — posts en MDX desde `content/blog/` (ver su README),
+  estáticos; `[slug]` es una sección (`fotografos`, `atletas`, `ayuda`) o un post
+- `/sitemap.xml`, `/robots.txt`, `/llms.txt`, `/llms-full.txt` — para buscadores
+  y agentes; los slugs que no puede tener un fotógrafo están en
+  `src/lib/slugs-reservados.ts`
 
 **Fotógrafo** (`/dashboard/*`)
 `events`, `events/new`, `events/[id]`, `ventas`, `tienda`, `cobros`, `perfil`,

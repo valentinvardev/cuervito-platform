@@ -17,12 +17,16 @@ import {
   Zap,
 } from "lucide-react";
 
+import { JsonLd } from "~/app/_components/json-ld";
+import { NOMBRE, SITIO } from "~/lib/marca";
+import { COMISION, INCLUIDO, PREGUNTAS } from "~/lib/producto";
 import { whatsappUrl } from "~/lib/support";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { ahora, lento } from "~/server/medir";
 import { resolveMediaUrl } from "~/server/media";
 
+import { Pie } from "./_pie";
 import { Encabezado, PanelVentas, Preguntas, Telefono, VerEvento } from "./_piezas";
 
 /**
@@ -68,42 +72,6 @@ const MIN_FOTOS = 500;
 
 /** El evento que se ofrece para probar. Decisión editorial, no técnica. */
 const EVENTO_DEMO = "duatlon-club-ciclista-chivilcoy";
-
-const PREGUNTAS = [
-  {
-    p: "¿Cuándo cobro?",
-    r: "En el momento de la venta. El pago del atleta entra directo a tu cuenta de Mercado Pago y nosotros retenemos el 10% en la misma operación. No hay retiros ni plazos: nunca tenemos tu plata.",
-  },
-  {
-    p: "¿El atleta tiene que crearse una cuenta?",
-    r: "No. Compra con su email y descarga con un link, sin registrarse. Cada paso que le sacás al comprador es plata que no perdés.",
-  },
-  {
-    p: "¿Sirve si en mi deporte no hay dorsal?",
-    r: "Sí. El reconocimiento facial funciona igual, y el atleta también puede recorrer la galería completa y filtrar a mano.",
-  },
-  {
-    p: "¿Qué pasa con la selfie que sube el atleta?",
-    r: "Se usa para buscar y se descarta. No la guardamos: no va a nuestro storage ni a la base de datos.",
-  },
-  {
-    p: "¿A quién le escribo si algo falla?",
-    r: "A nosotros, por WhatsApp, a la hora que sea. Las carreras arrancan a las 7 de la mañana y terminan de noche, así que el soporte atiende las 24 horas.",
-  },
-];
-
-const INCLUIDO = [
-  "100 GB de almacenamiento",
-  "Eventos y fotos ilimitados",
-  "Reconocimiento de cara y número",
-  "Marca de agua automática",
-  "Tu página con dominio propio",
-  "Códigos de descuento",
-  "Descuentos por cantidad",
-  "Colaboradores con comisión propia",
-  "Entrega y descarga automáticas",
-  "Soporte por WhatsApp las 24 horas",
-];
 
 /** La tira de eventos publicados, con su portada. */
 async function tiraDeEventos() {
@@ -305,7 +273,7 @@ export default async function LandingNueva() {
             </h1>
             <p className="lede">
               Subís las fotos y listo: reconocemos cara y número, armamos tu página de venta con tu
-              marca, y cada compra entra directo a tu cuenta, menos el 10%. Nosotros nunca tocamos
+              marca, y cada compra entra directo a tu cuenta, menos el {COMISION.conReconocimiento}%. Nosotros nunca tocamos
               tu plata.
             </p>
             <div className="hero-cta">
@@ -316,7 +284,7 @@ export default async function LandingNueva() {
             </div>
             <div className="trust">
               <span>
-                <b>10%</b> sólo si vendés
+                <b>{COMISION.conReconocimiento}%</b> sólo si vendés
               </span>
               <span>
                 Soporte <b>24 hs</b>
@@ -450,7 +418,7 @@ export default async function LandingNueva() {
               <h3>El atleta compra</h3>
               <p>
                 Se encuentra en segundos y paga sin crear cuenta. La plata entra a tu Mercado Pago
-                en el momento, con el 10% ya descontado.
+                en el momento, con el {COMISION.conReconocimiento}% ya descontado.
               </p>
               <ShoppingBag className="step-i" />
             </article>
@@ -476,7 +444,7 @@ export default async function LandingNueva() {
                 <div>
                   <strong>Cobrás vos, no nosotros.</strong>
                   <p>
-                    La compra entra a tu cuenta de Mercado Pago en el momento, con el 10% ya
+                    La compra entra a tu cuenta de Mercado Pago en el momento, con el {COMISION.conReconocimiento}% ya
                     descontado. Sin retiros, sin mínimos y sin esperar treinta días.
                   </p>
                 </div>
@@ -616,14 +584,14 @@ export default async function LandingNueva() {
 
           <div className="price-card">
             <div className="price-left">
-              <div className="price-big">10%</div>
+              <div className="price-big">{COMISION.conReconocimiento}%</div>
               <div className="price-sub">por venta, con reconocimiento</div>
               <p className="price-note">
                 Sin cuota mensual, sin alta y sin permanencia. Si un mes no vendés, pagás cero.
               </p>
               <div className="founder">
                 <span className="label" style={{ color: "var(--accent)" }}>
-                  Sin reconocimiento, 5%
+                  Sin reconocimiento, {COMISION.sinReconocimiento}%
                 </span>
                 <p style={{ fontSize: "14.5px", color: "var(--ink-2)", marginTop: 10 }}>
                   Si sólo querés la galería y no la búsqueda por cara y número, la comisión baja a
@@ -684,12 +652,38 @@ export default async function LandingNueva() {
         </div>
       </section>
 
-      <footer>
-        <div className="wrap foot">
-          <span>© {new Date().getFullYear()} encontrate.app · Hecho en Argentina</span>
-          <Link href="/terminos">Términos y privacidad</Link>
-        </div>
-      </footer>
+      <Pie />
+
+      {/* Lo que un agente necesita para contestar «qué es encontrate» sin
+          tener que adivinarlo del diseño de la página. */}
+      <JsonLd
+        datos={[
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: NOMBRE,
+            url: SITIO,
+            logo: `${SITIO}/android-chrome-512x512.png`,
+            areaServed: "AR",
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: NOMBRE,
+            url: SITIO,
+            inLanguage: "es-AR",
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: PREGUNTAS.map((q) => ({
+              "@type": "Question",
+              name: q.p,
+              acceptedAnswer: { "@type": "Answer", text: q.r },
+            })),
+          },
+        ]}
+      />
     </>
   );
 }

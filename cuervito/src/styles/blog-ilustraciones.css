@@ -1,0 +1,352 @@
+/* =============================================================================
+   encontrate · blog · ilustraciones
+   -----------------------------------------------------------------------------
+   Cada pieza tiene tres estados, que pone <AlVerse> en [data-ilus]:
+
+     final   lo que llega del servidor. Es el resultado: así se ve sin
+             JavaScript, con «reducir movimiento», y así lo lee un buscador.
+     espera  el punto de partida, mientras la pieza no se vio.
+     juega   las animaciones, que terminan exactamente en «final».
+
+   Por eso los estilos de abajo son siempre el estado final, y espera/juega
+   sólo agregan. Una animación que termina en otro lado que el estado final
+   salta al terminar.
+
+   Colores: sólo tokens, así el tema oscuro sale solo. El naranja va una vez
+   por pieza, como en el resto de la marca.
+   ========================================================================== */
+
+.ilus {
+  position: relative;
+  margin-inline: 0;
+  padding: var(--s-5);
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-4);
+}
+.prosa .ilus { margin-top: 1.8em; margin-bottom: 1.8em; }
+/* Las listas de adentro son dibujo, no texto: sin la viñeta ni el aire que
+   la prosa les pone a las suyas (y que gana por especificidad). */
+.prosa .ilus ol,
+.prosa .ilus ul { list-style: none; padding: 0; }
+.prosa .ilus li + li { margin-top: 0; }
+@media (max-width: 520px) { .ilus { padding: var(--s-4); } }
+
+.ilus-sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.ilus-repetir {
+  position: absolute; top: 10px; right: 10px;
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 10px;
+  font-size: 12.5px; color: var(--ink-3);
+  background: transparent; border: 0; border-radius: var(--r-2);
+  cursor: pointer;
+  animation: ilus-aparecer 300ms ease 3s both;
+}
+.ilus-repetir:hover { color: var(--ink); background: var(--ghost-hov); }
+.ilus-repetir svg { width: 13px; height: 13px; }
+
+@keyframes ilus-aparecer { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ilus-subir { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BUSCARSE · de 2.162 fotos a las 4 tuyas
+   ═══════════════════════════════════════════════════════════════════════════ */
+.bus-barra {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-3); flex-wrap: wrap;
+  margin-bottom: var(--s-4);
+  padding-right: 96px; /* el «Ver de nuevo» */
+}
+@media (max-width: 520px) { .bus-barra { padding-right: 0; padding-top: 22px; } }
+
+.bus-cuenta { display: inline-grid; font-weight: 600; font-size: 17px; letter-spacing: -0.02em; }
+.bus-cuenta > span { grid-area: 1 / 1; }
+.bus-cuenta-a { opacity: 0; }
+
+.bus-campo {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 38px; min-width: 150px; padding: 0 14px 0 12px;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  background: var(--paper);
+  font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums;
+}
+.bus-campo > svg { width: 15px; height: 15px; color: var(--ink-3); }
+.bus-tipeo { display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: bottom; }
+.bus-cursor { display: none; width: 1.5px; height: 1.1em; margin-left: -6px; background: var(--ink); opacity: 0; }
+
+.bus-selfie {
+  position: relative; display: grid; place-items: center;
+  width: 26px; height: 26px; border-radius: 50%; overflow: hidden;
+  background: var(--paper-3);
+}
+.bus-selfie svg { width: 15px; height: 15px; }
+.bus-escaneo {
+  position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: var(--ink); opacity: 0;
+}
+
+.bus-grilla { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (max-width: 520px) { .bus-grilla { grid-template-columns: repeat(3, 1fr); } }
+
+.bus-foto {
+  position: relative; overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r-2);
+  background: linear-gradient(160deg, var(--paper-3), color-mix(in srgb, var(--ink) 7%, var(--paper-3)));
+  outline: 2px solid transparent; outline-offset: 2px;
+}
+.bus-foto:not(.es) { opacity: 0.16; transform: scale(0.96); }
+.bus-foto.es { outline-color: var(--accent); }
+
+.bus-cabeza,
+.bus-torso { position: absolute; left: 50%; transform: translateX(-50%); background: color-mix(in srgb, var(--ink) 15%, transparent); }
+.bus-cabeza { top: 14%; width: 17%; aspect-ratio: 1; border-radius: 50%; }
+.bus-torso { top: 40%; width: 46%; height: 64%; border-radius: 40% 40% 6px 6px; }
+.bus-torso b {
+  position: absolute; top: 18%; left: 50%; transform: translateX(-50%);
+  padding: 1px 5px; border-radius: 2px;
+  background: var(--paper-2); color: var(--ink);
+  font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.4;
+}
+
+/* espera */
+[data-ilus="espera"] .bus-cuenta-a { opacity: 1; }
+[data-ilus="espera"] .bus-cuenta-b { opacity: 0; }
+[data-ilus="espera"] .bus-tipeo { max-width: 0; }
+[data-ilus="espera"] .bus-foto { opacity: 1; transform: none; outline-color: transparent; }
+
+/* juega: tipea (o escanea), y a los 1,5 s se apaga lo que no es tuyo */
+[data-ilus="juega"] .bus-tipeo { animation: bus-tipear 900ms steps(4, end) 300ms both; }
+[data-ilus="juega"] .bus-cursor {
+  display: inline-block;
+  animation: bus-parpadeo 500ms steps(2, jump-none) 300ms 3, bus-ocultar 1ms 1800ms forwards;
+}
+[data-ilus="juega"] .bus-escaneo { animation: bus-escanear 700ms ease-in-out 200ms 2; }
+[data-ilus="juega"] .bus-cuenta-a { animation: bus-salir 260ms ease 1500ms both; }
+[data-ilus="juega"] .bus-cuenta-b { animation: bus-entrar 300ms ease 1700ms both; }
+[data-ilus="juega"] .bus-foto:not(.es) {
+  animation: bus-apagar 450ms ease calc(1500ms + var(--i) * 35ms) both;
+}
+[data-ilus="juega"] .bus-foto.es {
+  animation: bus-marcar 420ms cubic-bezier(.2,.8,.2,1) calc(1650ms + var(--i) * 35ms) both;
+}
+
+@keyframes bus-tipear { from { max-width: 0; } to { max-width: 4ch; } }
+@keyframes bus-parpadeo { from { opacity: 1; } to { opacity: 0; } }
+@keyframes bus-ocultar { to { opacity: 0; visibility: hidden; } }
+@keyframes bus-escanear { 0% { top: 0; opacity: 1; } 100% { top: 100%; opacity: 1; } }
+@keyframes bus-salir { from { opacity: 1; } to { opacity: 0; } }
+@keyframes bus-entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes bus-apagar { from { opacity: 1; transform: none; } to { opacity: 0.16; transform: scale(0.96); } }
+@keyframes bus-marcar { from { outline-color: transparent; transform: scale(0.97); } to { outline-color: var(--accent); transform: none; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COBERTURA · el recorrido y dónde pararse
+   ═══════════════════════════════════════════════════════════════════════════ */
+.cob-mapa { display: block; width: 100%; height: auto; overflow: visible; }
+.cob-fondo { fill: none; stroke: var(--line-strong); stroke-width: 2; stroke-dasharray: 2 8; stroke-linecap: round; }
+.cob-ruta { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.cob-punto circle {
+  fill: var(--paper-2); stroke: var(--ink); stroke-width: 3;
+  transform-box: fill-box; transform-origin: center;
+}
+.cob-p3 circle { fill: var(--accent); stroke: var(--accent); }
+
+.cob-corredor {
+  fill: var(--ink); stroke: var(--paper-2); stroke-width: 2;
+  offset-distance: 100%; offset-rotate: 0deg;
+}
+/* Sin offset-path, el corredor se quedaría en la esquina del dibujo. */
+@supports not (offset-path: path("M 0 0")) { .cob-corredor { display: none; } }
+
+.cob-leyenda {
+  list-style: none; margin: var(--s-4) 0 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-4);
+}
+.cob-leyenda li { display: flex; flex-direction: column; gap: 4px; }
+.cob-leyenda svg { width: 18px; height: 18px; color: var(--ink-2); margin-bottom: 2px; }
+.cob-leyenda b { font-size: 15.5px; font-weight: 600; letter-spacing: -0.015em; }
+.cob-leyenda span { font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+@media (max-width: 600px) { .cob-leyenda { grid-template-columns: 1fr; gap: var(--s-3); } }
+
+[data-ilus="espera"] .cob-ruta { stroke-dashoffset: 1; }
+[data-ilus="espera"] .cob-punto circle { transform: scale(0); }
+[data-ilus="espera"] .cob-corredor { offset-distance: 0%; }
+[data-ilus="espera"] .cob-leyenda li { opacity: 0; }
+
+/* El corredor y el trazo van juntos (mismos 2,4 s); cada punto aparece
+   cuando él pasa, y su texto un poco después. */
+[data-ilus="juega"] .cob-ruta { animation: cob-trazar 2400ms ease-in-out 200ms both; }
+[data-ilus="juega"] .cob-corredor { animation: cob-correr 2400ms ease-in-out 200ms both; }
+[data-ilus="juega"] .cob-p1 circle { animation: cob-pop 350ms cubic-bezier(.3,1.6,.5,1) 200ms both; }
+[data-ilus="juega"] .cob-p2 circle { animation: cob-pop 350ms cubic-bezier(.3,1.6,.5,1) 1350ms both; }
+[data-ilus="juega"] .cob-p3 circle { animation: cob-pop 420ms cubic-bezier(.3,1.6,.5,1) 2550ms both; }
+[data-ilus="juega"] .cob-l1 { animation: ilus-subir 400ms ease 450ms both; }
+[data-ilus="juega"] .cob-l2 { animation: ilus-subir 400ms ease 1600ms both; }
+[data-ilus="juega"] .cob-l3 { animation: ilus-subir 400ms ease 2800ms both; }
+
+@keyframes cob-trazar { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes cob-correr { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+@keyframes cob-pop { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGO · una barra que entra entera y se parte
+   ═══════════════════════════════════════════════════════════════════════════ */
+.pago-cab { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-3); }
+.pago-cab b { font-size: 26px; font-weight: 600; letter-spacing: -0.03em; }
+
+.pago-barra {
+  display: flex; gap: 6px;
+  height: 56px; margin: var(--s-4) 0 var(--s-3);
+  clip-path: inset(0 0 0 0);
+}
+.pago-barra > span {
+  display: flex; align-items: center;
+  border-radius: var(--r-2);
+  font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden;
+}
+.pago-tuyo { flex: 0 0 calc(var(--tuyo) - 3px); padding: 0 14px; background: var(--ink); color: var(--paper); }
+.pago-comision {
+  flex: 1; justify-content: center; color: var(--ink-2); font-size: 13px;
+  background:
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 12%, transparent) 0 2px, transparent 2px 7px),
+    var(--paper-3);
+}
+
+.pago-pie { display: flex; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; font-size: 13.5px; color: var(--ink-2); }
+.pago-pie-tuyo i {
+  display: inline-block; width: 8px; height: 8px; margin-right: 4px;
+  border-radius: 50%; background: var(--accent); vertical-align: 1px;
+}
+.pago-pie-tuyo b { color: var(--ink); font-weight: 600; }
+
+[data-ilus="espera"] .pago-barra { clip-path: inset(0 100% 0 0); gap: 0; }
+[data-ilus="espera"] .pago-barra > span > span,
+[data-ilus="espera"] .pago-pie { opacity: 0; }
+
+[data-ilus="juega"] .pago-barra {
+  animation:
+    pago-entrar 700ms cubic-bezier(.4,0,.2,1) 100ms both,
+    pago-partir 420ms cubic-bezier(.2,.8,.2,1) 1000ms both;
+}
+[data-ilus="juega"] .pago-barra > span > span { animation: ilus-aparecer 300ms ease 1250ms both; }
+[data-ilus="juega"] .pago-pie { animation: ilus-subir 400ms ease 1400ms both; }
+
+@keyframes pago-entrar { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes pago-partir { from { gap: 0; } to { gap: 6px; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PASOS · cuatro nodos y la línea que los une
+   ═══════════════════════════════════════════════════════════════════════════ */
+.pas-lista {
+  position: relative;
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-4);
+}
+.pas-lista::before {
+  content: ""; position: absolute;
+  top: 21px; left: 12.5%; right: 12.5%; height: 2px;
+  background: var(--line-strong);
+  transform-origin: left center;
+}
+.pas-lista li { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; margin: 0; }
+.pas-nodo {
+  display: grid; place-items: center;
+  width: 44px; height: 44px; margin-bottom: 6px;
+  border-radius: 50%; border: 2px solid var(--ink);
+  background: var(--paper-2); color: var(--ink);
+}
+.pas-nodo svg { width: 19px; height: 19px; }
+.pas-lista li:last-child .pas-nodo { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pas-lista b { font-size: 15.5px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.3; }
+.pas-lista span:not(.pas-nodo) { font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+
+@media (max-width: 600px) {
+  .pas-lista { grid-template-columns: 1fr; gap: var(--s-4); }
+  .pas-lista::before { top: 22px; bottom: 22px; left: 21px; right: auto; width: 2px; height: auto; transform-origin: center top; }
+  .pas-lista li {
+    display: grid; grid-template-columns: 44px 1fr; column-gap: var(--s-3);
+    align-items: start; text-align: left;
+  }
+  .pas-nodo { grid-row: span 2; margin-bottom: 0; }
+  .pas-lista b { padding-top: 2px; }
+}
+
+[data-ilus="espera"] .pas-lista::before { transform: scaleX(0); }
+[data-ilus="espera"] .pas-lista li { opacity: 0; }
+[data-ilus="juega"] .pas-lista::before { animation: pas-linea-x 1500ms ease-in-out 200ms both; }
+[data-ilus="juega"] .pas-lista li { animation: ilus-subir 420ms ease calc(150ms + var(--i) * 420ms) both; }
+@media (max-width: 600px) {
+  [data-ilus="espera"] .pas-lista::before { transform: scaleY(0); }
+  [data-ilus="juega"] .pas-lista::before { animation-name: pas-linea-y; }
+}
+
+@keyframes pas-linea-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes pas-linea-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CALCULADORA
+   ═══════════════════════════════════════════════════════════════════════════ */
+.calc {
+  display: grid; grid-template-columns: 1fr 1.1fr; gap: var(--s-5);
+  margin: 1.8em 0;
+  padding: var(--s-5);
+  background: var(--paper-2);
+  border: 1px solid var(--line-soft); border-radius: var(--r-4);
+  font-size: 15px; line-height: 1.5;
+}
+@media (max-width: 680px) { .calc { grid-template-columns: 1fr; padding: var(--s-4); } }
+
+.calc-entradas { display: grid; gap: var(--s-4); align-content: start; }
+.calc-campo { display: flex; flex-direction: column; gap: 6px; }
+.calc-campo label,
+.calc-rotulo { font-size: 13.5px; font-weight: 500; color: var(--ink-2); }
+.calc-campo small { font-size: 12px; color: var(--ink-3); }
+.calc-campo input[type="number"] {
+  height: 40px; padding: 0 12px;
+  font: inherit; font-size: 16px; font-variant-numeric: tabular-nums;
+  color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line); border-radius: var(--r-2);
+}
+.calc-campo input[type="number"]:focus { outline: none; border-color: var(--ink); }
+.calc-campo input[type="range"] { width: 100%; accent-color: var(--ink); }
+
+.calc-opciones { display: flex; gap: 6px; flex-wrap: wrap; }
+.calc-opciones button {
+  height: 34px; padding: 0 12px;
+  font: inherit; font-size: 13.5px; color: var(--ink-2);
+  background: transparent; border: 1px solid var(--line); border-radius: 999px;
+  cursor: pointer;
+}
+.calc-opciones button:hover { border-color: var(--line-strong); color: var(--ink); }
+.calc-opciones button[aria-checked="true"] { background: var(--cta-bg); border-color: var(--cta-bg); color: var(--cta-fg); }
+
+.calc-salida { display: flex; flex-direction: column; gap: var(--s-4); padding-left: var(--s-5); border-left: 1px solid var(--line-soft); }
+@media (max-width: 680px) { .calc-salida { padding: var(--s-4) 0 0; border-left: 0; border-top: 1px solid var(--line-soft); } }
+
+.calc-cifras { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4) var(--s-3); }
+.calc-cifras dt { font-size: 12.5px; color: var(--ink-3); }
+.calc-cifras dd { margin: 2px 0 0; font-size: 22px; font-weight: 600; letter-spacing: -0.025em; }
+.calc-queda dd { color: var(--acento-txt); }
+.calc-queda[data-negativo] dd { color: var(--bad-txt); }
+
+.calc-barra { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--paper-3); }
+.calc-barra span { height: 100%; transition: width 350ms cubic-bezier(.2,.8,.2,1); }
+.calc-b-costos {
+  background:
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 30%, transparent) 0 2px, transparent 2px 6px),
+    var(--paper-3);
+}
+.calc-b-comision { background: var(--ink-3); }
+.calc-b-queda { background: var(--ink); }
+
+.calc-ref { display: flex; gap: var(--s-4); flex-wrap: wrap; font-size: 12px; color: var(--ink-3); margin-top: calc(-1 * var(--s-2)); }
+.calc-ref i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+
+.calc-equilibrio { font-size: 15px; color: var(--ink-2); }
+.calc-equilibrio b { color: var(--ink); font-weight: 600; }
+.calc-aviso { font-size: 12px; color: var(--ink-3); }

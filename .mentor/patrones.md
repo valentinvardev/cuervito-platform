@@ -5,7 +5,7 @@ existir: una vez es un descuido, dos es una tendencia.
 
 ## La misma regla escrita en N lugares
 - Primera vez: 2026-09-06 (registrado; las apariciones son anteriores)
-- Ocurrencias: 4 (fórmula de descuentos, tipografía por layout, `status !== "PAID"`, candado ADMIN de la vista previa /v2 — 2026-09-08)
+- Ocurrencias: 5 (fórmula de descuentos, tipografía por layout, `status !== "PAID"`, candado ADMIN de la vista previa /v2 — 2026-09-08; slugs reservados — 2026-10-07)
 - Qué pasa: una decisión —cómo se calcula un descuento, qué fuente usa el
   panel, quién puede bajar las fotos— queda expresada como una línea repetida
   en cada lugar que la necesita, en vez de como un módulo con nombre.
@@ -30,6 +30,18 @@ existir: una vez es un descuido, dos es una tendencia.
   repetir los márgenes en el cliente, `cajaFoto()` en `formatos.ts` los dice una
   vez y los usan los dos lados. Misma jugada con `marca-agua-config.ts`: la
   forma de la config, sin server-only, importada por el editor y el servidor.
+- 2026-10-07, la quinta: `RESERVED` estaba copiado en `[slug]/page.tsx` y en
+  `[slug]/[eventSlug]/page.tsx` (ya distintas: a una le faltaba sitemap.xml), y
+  los tres lugares que ASIGNAN slugs —registro, onboarding, perfil— no lo
+  conocían. Resultado: un fotógrafo podía quedar con "demo" o "eventos" y una
+  tienda inalcanzable. Se creó `lib/slugs-reservados.ts` para la asignación;
+  las dos copias de las páginas quedaron a propósito hasta revisar la base.
+  Mismo día, después de revisarla: las páginas pasaron a la lista compartida.
+- 2026-10-07, evitado dos veces más: la comisión, lo incluido y las preguntas
+  vivían como constantes de la landing, y el blog y /llms.txt los iban a
+  repetir. Se movieron a `lib/producto.ts` ANTES de la segunda copia, y el
+  MDX usa `<Comision />` en vez de «10%». El pie, que ya estaba dos veces
+  (landing, /eventos), pasó a `_pie.tsx` antes de la tercera (blog).
 - Estado: activo
 
 ## Trabajo en vuelo que nadie gobierna

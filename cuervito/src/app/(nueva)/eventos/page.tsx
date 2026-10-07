@@ -1,8 +1,8 @@
 import { type Metadata } from "next";
-import Link from "next/link";
 
 import { auth } from "~/server/auth";
 
+import { Pie } from "../_pie";
 import { Encabezado } from "../_piezas";
 import { BuscadorEventos } from "./_buscador";
 
@@ -53,12 +53,7 @@ export default async function EventosPage() {
         </div>
       </section>
 
-      <footer>
-        <div className="wrap foot">
-          <span>© {new Date().getFullYear()} encontrate.app · Hecho en Argentina</span>
-          <Link href="/terminos">Términos y privacidad</Link>
-        </div>
-      </footer>
+      <Pie />
     </>
   );
 }

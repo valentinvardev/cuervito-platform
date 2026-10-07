@@ -23,10 +23,13 @@ import { BotonTema } from "~/app/_components/boton-tema";
  * que el resto llegue como HTML y se vea antes de que cargue nada.
  */
 
+/* Con la barra de la landing en /eventos y en el blog, «#precio» a secas
+   buscaba la sección en la página equivocada y no pasaba nada. Con la barra
+   adelante funciona en las tres; en la landing el navegador sólo scrollea. */
 const ENLACES = [
-  { href: "#como", txt: "Cómo funciona" },
-  { href: "#precio", txt: "Precio" },
-  { href: "#preguntas", txt: "Preguntas" },
+  { href: "/#como", txt: "Cómo funciona" },
+  { href: "/#precio", txt: "Precio" },
+  { href: "/#preguntas", txt: "Preguntas" },
 ] as const;
 
 /**
@@ -53,8 +56,21 @@ const BUSCAR = { href: "/eventos", txt: "Buscar mis fotos" } as const;
  * el CSS todo lo que se mueve: el cajón entrando, el velo apareciendo y el
  * ícono de la hamburguesa girando hasta ser una cruz.
  */
-export function Encabezado({ logueado }: { logueado: boolean }) {
+export function Encabezado({ logueado: deServidor }: { logueado?: boolean }) {
   const [abierto, setAbierto] = useState(false);
+
+  /* Sin el dato del servidor, se pregunta desde acá. Es lo que deja al blog
+     ser HTML estático: leer la sesión en el servidor lee la cookie, y eso
+     vuelve dinámica la página entera para mostrar un solo botón. */
+  const [deCliente, setDeCliente] = useState(false);
+  useEffect(() => {
+    if (deServidor !== undefined) return;
+    fetch("/api/auth/session")
+      .then((r) => (r.ok ? (r.json() as Promise<{ user?: unknown } | null>) : null))
+      .then((s) => setDeCliente(!!s?.user))
+      .catch(() => undefined);
+  }, [deServidor]);
+  const logueado = deServidor ?? deCliente;
 
   useEffect(() => {
     document.documentElement.dataset.menu = abierto ? "open" : "";
@@ -133,7 +149,12 @@ export function Encabezado({ logueado }: { logueado: boolean }) {
 
       <aside className="drawer" id="menu" aria-label="Menú">
         <nav className="drawer-links">
-          {[...ENLACES, { href: "#demo", txt: "Ver un evento real" }, BUSCAR].map((e) => (
+          {[
+            ...ENLACES,
+            { href: "/#demo", txt: "Ver un evento real" },
+            BUSCAR,
+            { href: "/blog", txt: "Blog" },
+          ].map((e) => (
             <a key={e.href} href={e.href} onClick={() => setAbierto(false)}>
               {e.txt} <ArrowRight />
             </a>

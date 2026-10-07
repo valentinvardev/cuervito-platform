@@ -1,27 +1,22 @@
+import { type Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import { usuarioInstagram } from "~/lib/instagram";
 import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
+import { slugReservado } from "~/lib/slugs-reservados";
+import { urlPublica } from "~/lib/url-publica";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 
 import { PerfilEncontrate } from "./encontrate/perfil";
 
-const RESERVED = new Set([
-  "dashboard", "admin", "login", "signup", "onboarding", "suspended",
-  "api", "descarga", "_components", "_next", "favicon.ico", "robots.txt",
-  "sitemap.xml",
-]);
-
-export default async function PhotographerPage(props: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await props.params;
-  if (RESERVED.has(slug)) notFound();
-
-  const user = await db.user.findUnique({
+/* Una sola consulta para la página y para su <head>: cache() la comparte
+   dentro del mismo request, y la base está lejos del VPS. */
+const traerFotografo = cache((slug: string) =>
+  db.user.findUnique({
     where: { slug },
     select: {
       id: true,
@@ -36,8 +31,47 @@ export default async function PhotographerPage(props: {
       logoKey: true,
       status: true,
       onboardingCompletedAt: true,
+      customDomains: {
+        where: { status: "ACTIVE" },
+        orderBy: { verifiedAt: "asc" },
+        take: 1,
+        select: { hostname: true },
+      },
     },
-  });
+  }),
+);
+
+export async function generateMetadata(props: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await props.params;
+  if (slugReservado(slug)) return {};
+  const user = await traerFotografo(slug);
+  if (!user || user.status !== "ACTIVE" || !user.onboardingCompletedAt) return {};
+
+  const nombre = user.name ?? "Fotógrafo";
+  const titulo = `${nombre} · Fotos de eventos deportivos`;
+  const descripcion =
+    user.bio?.trim() ||
+    `Las fotos de ${nombre}${user.location ? ` en ${user.location}` : ""}. Buscá las tuyas por número de dorsal o con una selfie y descargalas al instante, sin crear cuenta.`;
+  const url = urlPublica(slug, user.customDomains[0]?.hostname);
+
+  return {
+    title: titulo,
+    description: descripcion,
+    alternates: { canonical: url },
+    openGraph: { type: "profile", title: titulo, description: descripcion, url },
+    twitter: { title: titulo, description: descripcion },
+  };
+}
+
+export default async function PhotographerPage(props: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await props.params;
+  if (slugReservado(slug)) notFound();
+
+  const user = await traerFotografo(slug);
   if (!user || user.status !== "ACTIVE" || !user.onboardingCompletedAt) notFound();
 
   const eventsRaw = await db.event.findMany({
