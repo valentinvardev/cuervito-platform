@@ -18,7 +18,7 @@ export const SLUGS_RESERVADOS: ReadonlySet<string> = new Set([
   "admin", "api", "comparativa", "correos", "dashboard", "demo", "descarga",
   "eventos", "invitacion", "onboarding", "pago", "suspended",
   "login", "signup", "forgot-password", "reset-password",
-  "privacidad", "terminos",
+  "privacidad", "terminos", "vista-portfolio",
   // Carpetas de public/
   "assets", "hero", "marca",
   // Archivos y rutas de Next

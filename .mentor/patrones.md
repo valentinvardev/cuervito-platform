@@ -42,6 +42,11 @@ existir: una vez es un descuido, dos es una tendencia.
   repetir. Se movieron a `lib/producto.ts` ANTES de la segunda copia, y el
   MDX usa `<Comision />` en vez de «10%». El pie, que ya estaba dos veces
   (landing, /eventos), pasó a `_pie.tsx` antes de la tercera (blog).
+- 2026-10-08, heredado y cortado al portar: en photo-saas Halcyon tenía su
+  propia copia de `fillWa` (las otras plantillas usaban `lib/editor/wa.ts`) y
+  las tres leían el formulario con `String(fd.get(x) ?? "")`, que convierte un
+  File en "[object File]". Al traerlas quedó una sola función de cada cosa
+  (`whatsapp.ts`: `fillWaTemplate`, `campo`).
 - Estado: activo
 
 ## Trabajo en vuelo que nadie gobierna
