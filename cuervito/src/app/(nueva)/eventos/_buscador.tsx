@@ -15,26 +15,43 @@ import { searchLiveEvents, type LiveEvent } from "~/app/_components/live-events-
  * que hace. La portada también lleva al evento, porque en el teléfono lo
  * primero que se toca es la foto.
  */
-export function BuscadorEventos() {
+export function BuscadorEventos({ iniciales }: { iniciales: LiveEvent[] | null }) {
   const [q, setQ] = useState("");
-  const [eventos, setEventos] = useState<LiveEvent[]>([]);
-  const [cargado, setCargado] = useState(false);
+  const [eventos, setEventos] = useState<LiveEvent[]>(iniciales ?? []);
+  const [cargado, setCargado] = useState(iniciales !== null);
+  const [fallo, setFallo] = useState(false);
   const [, empezar] = useTransition();
   const espera = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ultima = useRef(0);
   const campo = useRef<HTMLInputElement>(null);
 
-  function buscar(texto: string) {
+  /* Una búsqueda que falla no puede llegar a React sin atrapar: adentro de
+     una transición, un error tira la página entera a "Application error".
+     Y gana sólo la última: con 200 ms entre teclas, una respuesta lenta de
+     "ma" puede llegar después de la de "maratón" y pisarla. */
+  function buscar(texto: string, demora = 200) {
     if (espera.current) clearTimeout(espera.current);
     espera.current = setTimeout(() => {
+      const esta = ++ultima.current;
       empezar(async () => {
-        setEventos(await searchLiveEvents(texto));
+        try {
+          const r = await searchLiveEvents(texto);
+          if (esta !== ultima.current) return;
+          setEventos(r);
+          setFallo(false);
+        } catch {
+          if (esta !== ultima.current) return;
+          setFallo(true);
+        }
         setCargado(true);
       });
-    }, 200);
+    }, demora);
   }
 
   useEffect(() => {
-    buscar("");
+    if (iniciales === null) buscar("", 0);
+    // Sólo al montar: si la lista no vino con la página, se pide una vez.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -80,6 +97,14 @@ export function BuscadorEventos() {
               </div>
             </div>
           ))
+        ) : fallo ? (
+          <div className="evs-vacio">
+            <b>No pudimos traer los eventos</b>
+            <span>Puede ser la conexión. Probá de nuevo en un momento.</span>
+            <button type="button" className="btn btn-ghost" onClick={() => buscar(q, 0)}>
+              Reintentar
+            </button>
+          </div>
         ) : eventos.length === 0 ? (
           <div className="evs-vacio">
             {q ? (

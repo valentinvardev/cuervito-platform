@@ -1,5 +1,6 @@
 import { type Metadata } from "next";
 
+import { searchLiveEvents } from "~/app/_components/live-events-actions";
 import { auth } from "~/server/auth";
 
 import { Pie } from "../_pie";
@@ -25,7 +26,14 @@ export const metadata: Metadata = {
  * indexe por su cuenta.
  */
 export default async function EventosPage() {
-  const sesion = await auth().catch(() => null);
+  // La primera lista viene con la página y no la pide el navegador al
+  // cargar: si esa llamada fallaba —un reinicio en pleno deploy, una pestaña
+  // vieja—, la página entera caía en "Application error". Si falla acá, el
+  // buscador la vuelve a pedir y muestra el error en su lugar.
+  const [sesion, iniciales] = await Promise.all([
+    auth().catch(() => null),
+    searchLiveEvents("").catch(() => null),
+  ]);
 
   return (
     <>
@@ -49,7 +57,7 @@ export default async function EventosPage() {
 
       <section className="evs-lista">
         <div className="wrap">
-          <BuscadorEventos />
+          <BuscadorEventos iniciales={iniciales} />
         </div>
       </section>
 

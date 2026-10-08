@@ -23,6 +23,10 @@ export async function searchLiveEvents(query: string): Promise<LiveEvent[]> {
     where: {
       isPublished: true,
       NOT: { status: "ARCHIVED" },
+      // Sólo eventos que se pueden abrir: la página del evento da 404 si el
+      // fotógrafo no está activo o no tiene la tienda habilitada, y mostrar
+      // la tarjeta igual es mandar al atleta a una página rota.
+      owner: { status: "ACTIVE", onboardingCompletedAt: { not: null }, slug: { not: null } },
       ...(q
         ? {
             OR: [
@@ -42,7 +46,7 @@ export async function searchLiveEvents(query: string): Promise<LiveEvent[]> {
       location: true,
       coverUrl: true,
       owner: { select: { slug: true } },
-      _count: { select: { photos: { where: { fileSize: { not: null } } } } },
+      _count: { select: { photos: { where: { fileSize: { not: null }, deletedAt: null } } } },
       photos: {
         where: { previewKey: { not: null }, deletedAt: null },
         orderBy: { createdAt: "desc" },
