@@ -71,6 +71,10 @@ de S3 recién pasado `PHOTO_RETENTION_DAYS`.
 - `/` — landing
 - `/[slug]` — storefront del fotógrafo
 - `/[slug]/[eventSlug]` — galería del evento, búsqueda por dorsal y por selfie
+- `/[slug]/p/[portfolio]` — portfolio del fotógrafo (plantillas en `src/app/_portfolio`);
+  el borrador lo ve sólo el dueño. Por eso un evento no puede llamarse `p`
+- `/vista-portfolio/[plantilla]` — una plantilla armada con fotos propias, para
+  el asistente (iframe)
 - `/descarga/[token]` — descarga post-compra
 - `/pago/{exito,error,pendiente,procesando}` — retorno de Mercado Pago
 - `/invitacion/[token]` — aceptar invitación de colaborador
@@ -83,7 +87,9 @@ de S3 recién pasado `PHOTO_RETENTION_DAYS`.
 
 **Fotógrafo** (`/dashboard/*`)
 `events`, `events/new`, `events/[id]`, `ventas`, `tienda`, `cobros`, `perfil`,
-`ayuda`
+`ayuda`, `portfolio` (lista, `nuevo`, `[id]`, `[id]/editor`). Portfolio lo
+usan sólo quienes habilita `src/lib/portfolio-acceso.ts` (hoy, admins): es el
+único interruptor, lo leen el riel, las pantallas y las acciones.
 
 **Admin** (`/admin/*`)
 `users`, `sales`, `metricas`, `watermark`, `editor`, `settings`
@@ -213,6 +219,7 @@ cuervito/
       original/{photoId}.jpg        ← lo que compra el comprador
       preview/{photoId}.webp        ← con marca de agua, público
       preview-clean/{photoId}.webp  ← sin marca, dashboard del dueño
+    portfolio/{photoId}-{token}.webp ← sin marca, 1600px, sólo fotos en un portfolio
     editor/{projectId}/...
 ```
 

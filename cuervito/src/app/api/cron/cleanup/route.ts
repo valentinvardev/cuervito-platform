@@ -68,13 +68,15 @@ export async function POST(req: NextRequest) {
       previewCleanKey: true,
       // La miniatura también: sin esto queda en el bucket sin dueño.
       thumbKey: true,
+      // Y la de portfolio, si estuvo en alguno.
+      portfolioKey: true,
     },
   });
 
   let photosDeleted = 0;
   if (stalePhotos.length > 0) {
     const s3Keys = stalePhotos
-      .flatMap((p) => [p.storageKey, p.previewKey, p.previewCleanKey, p.thumbKey])
+      .flatMap((p) => [p.storageKey, p.previewKey, p.previewCleanKey, p.thumbKey, p.portfolioKey])
       .filter((k): k is string => Boolean(k));
 
     // Best-effort S3 cleanup. If S3 fails, leave the DB rows so we retry

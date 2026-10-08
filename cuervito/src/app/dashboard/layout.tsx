@@ -6,6 +6,7 @@ import "~/styles/v2/paginas.css";
 
 import { TooltipProvider } from "~/app/_components/tooltip-provider";
 
+import { puedeUsarPortfolio } from "~/lib/portfolio-acceso";
 import { puedeUsarHistorias } from "~/server/historias/acceso";
 
 import { Shell } from "./_components/shell";
@@ -53,6 +54,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
     >
       <Shell
         historias={historias}
+        portfolio={puedeUsarPortfolio(rol)}
         esAdmin={rol === "ADMIN"}
         nombre={nombre}
         slug={slug}

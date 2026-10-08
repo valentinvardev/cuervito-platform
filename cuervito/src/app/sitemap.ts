@@ -77,6 +77,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // Los portfolios publicados, con las mismas reglas que las tiendas: dueño
+  // activo, con slug propio y sin dominio propio.
+  const portfolios = await db.portfolio.findMany({
+    where: {
+      publicadoAt: { not: null },
+      fotos: { some: { photo: { deletedAt: null, portfolioKey: { not: null } } } },
+      owner: {
+        status: "ACTIVE",
+        onboardingCompletedAt: { not: null },
+        slug: { not: null },
+        customDomains: { none: { status: "ACTIVE" } },
+      },
+    },
+    select: { slug: true, updatedAt: true, owner: { select: { slug: true } } },
+  });
+  const dePortfolios: MetadataRoute.Sitemap = portfolios
+    .filter((p) => p.owner.slug && !slugReservado(p.owner.slug))
+    .map((p) => ({
+      url: `${SITIO}/${p.owner.slug}/p/${p.slug}`,
+      lastModified: p.updatedAt,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    }));
+
   const [posts, secciones] = await Promise.all([listarPosts(), categoriasConPosts()]);
   const delBlog: MetadataRoute.Sitemap = [
     {
@@ -98,5 +122,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   ];
 
-  return [...fijas, ...delBlog, ...deTiendas, ...deEventos];
+  return [...fijas, ...delBlog, ...deTiendas, ...dePortfolios, ...deEventos];
 }

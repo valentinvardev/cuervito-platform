@@ -13,7 +13,7 @@ function FooterIcon() { return <svg width="12" height="12" viewBox="0 0 24 24" f
 export const HALCYON_NODES: Record<string, EditorNode> = {
   /* Nav wordmark */
   "hl-mark-name":      { id: "hl-mark-name",      type: "logo",      content: "{nombre}" },
-  "hl-mark-sub":       { id: "hl-mark-sub",       type: "paragraph", content: "Fotografía deportiva · Córdoba" },
+  "hl-mark-sub":       { id: "hl-mark-sub",       type: "paragraph", content: "Fotografía deportiva" },
 
   /* Cover */
   "hl-cover-image":    { id: "hl-cover-image",    type: "image",     src: "", alt: "" },

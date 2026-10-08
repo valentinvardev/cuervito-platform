@@ -38,6 +38,9 @@ export function slugify(s: string): string {
 
 export async function uniqueSlug(base: string, userId: string, ignoreId?: string): Promise<string> {
   let slug = base || "evento";
+  // /{fotógrafo}/p/{portfolio} es la dirección de los portfolios: un evento
+  // que se llamara "p" quedaría tapado por ellos.
+  if (slug === "p") slug = "p-2";
   for (let i = 1; i < 100; i++) {
     const taken = await db.event.findFirst({
       where: { slug, ownerId: userId, ...(ignoreId ? { NOT: { id: ignoreId } } : {}) },
@@ -67,13 +70,15 @@ export async function purgarEvento(
   // 1) Collect every S3 key tied to this event: originals + both previews + cover.
   const photos = await db.photo.findMany({
     where: { eventId: id },
-    select: { storageKey: true, previewKey: true, previewCleanKey: true },
+    // Todas las versiones: la miniatura y la de portfolio también, que si no
+    // quedaban en el bucket sin nadie que las nombre.
+    select: { storageKey: true, previewKey: true, previewCleanKey: true, thumbKey: true, portfolioKey: true },
   });
   const s3Keys: string[] = [];
   for (const p of photos) {
-    if (p.storageKey) s3Keys.push(p.storageKey);
-    if (p.previewKey) s3Keys.push(p.previewKey);
-    if (p.previewCleanKey) s3Keys.push(p.previewCleanKey);
+    for (const k of [p.storageKey, p.previewKey, p.previewCleanKey, p.thumbKey, p.portfolioKey]) {
+      if (k) s3Keys.push(k);
+    }
   }
   if (ev.coverUrl) s3Keys.push(ev.coverUrl);
 

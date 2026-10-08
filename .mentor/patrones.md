@@ -47,6 +47,10 @@ existir: una vez es un descuido, dos es una tendencia.
   las tres leían el formulario con `String(fd.get(x) ?? "")`, que convierte un
   File en "[object File]". Al traerlas quedó una sola función de cada cosa
   (`whatsapp.ts`: `fillWaTemplate`, `campo`).
+- 2026-10-08, evitado desde el diseño: el candado "sólo admins" de Portfolio
+  es una función (`lib/portfolio-acceso.ts`) que leen el riel, las pantallas
+  y las acciones. Es exactamente la cuarta ocurrencia (el candado de /v2),
+  resuelta antes de copiarla.
 - Estado: activo
 
 ## Trabajo en vuelo que nadie gobierna
@@ -83,4 +87,9 @@ existir: una vez es un descuido, dos es una tendencia.
   encuentra. Se descubre por casualidad o por queja, meses después.
 - Señal temprana: si un campo se llena "después" de crear la fila, tiene que
   existir la consulta que lista las filas donde sigue vacío, y algo que la corra.
-- Estado: activo
+- 2026-10-08, evitado desde el diseño: `Photo.portfolioKey` (la versión de
+  1600px) nació con su consulta de pendientes y una pasada periódica
+  (`server/portfolio-fotos.ts`), además del empujón al agregar fotos. La
+  clave es determinística (HMAC del id), así que dos pasadas a la vez escriben
+  el mismo archivo y no dejan huérfanos.
+- Estado: mejorando

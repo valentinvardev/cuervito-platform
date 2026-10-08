@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Suspense, useCallback, useEffect, useState, useTransition } from "react";
 
+import { PORTFOLIO_ROTULO } from "~/lib/portfolio-acceso";
 import { whatsappUrl } from "~/lib/support";
 
 import { Buscador } from "./buscador";
@@ -45,7 +46,16 @@ import { VentasEnVivo } from "./ventas-en-vivo";
  * sensación de lentitud. Desde el layout, React lo mantiene montado y sólo
  * cambia el contenido.
  */
-const NAV = [
+type ItemRiel = {
+  id: string;
+  href: string;
+  icono: typeof LayoutGrid;
+  texto: string;
+  /** Una etiqueta al final del ítem, para lo que todavía no ve todo el mundo. */
+  rotulo?: string | null;
+};
+
+const NAV: ItemRiel[] = [
   { id: "inicio", href: "/dashboard", icono: LayoutGrid, texto: "Inicio" },
   { id: "eventos", href: "/dashboard/eventos", icono: CalendarDays, texto: "Eventos" },
   { id: "ventas", href: "/dashboard/ventas", icono: ReceiptText, texto: "Ventas" },
@@ -89,6 +99,16 @@ const NAV_ADMIN_HERRAMIENTAS = [
 // ningún lado a propósito: un ítem que se ve igual que los demás y no hace nada
 // se prueba una vez, no pasa nada, y se prueba de nuevo.
 const PRONTO = [{ id: "portfolio", icono: Images, texto: "Portfolio" }];
+
+// Portfolio para quien puede usarlo (hoy, admins: ver lib/portfolio-acceso).
+// Para el resto sigue siendo el anuncio de PRONTO.
+const PORTFOLIO: ItemRiel = {
+  id: "portfolio",
+  href: "/dashboard/portfolio",
+  icono: Images,
+  texto: "Portfolio",
+  rotulo: PORTFOLIO_ROTULO,
+};
 
 // Historias está abierta para todos desde septiembre de 2026. Si la llave de
 // emergencia la cierra, para quien no la tiene vuelve a ser un anuncio; para
@@ -134,6 +154,7 @@ function idDeRuta(p: string) {
 
 export function Shell({
   historias = false,
+  portfolio = false,
   esAdmin = false,
   modo = "panel",
   nombre,
@@ -144,6 +165,8 @@ export function Shell({
 }: {
   /** Si el usuario tiene la beta del estudio de historias. */
   historias?: boolean;
+  /** Si puede usar Portfolio (lib/portfolio-acceso). */
+  portfolio?: boolean;
   /** Tiene el rol: aparece la entrada al panel de administración. */
   esAdmin?: boolean;
   /** "admin" dibuja el riel de administración en vez del del fotógrafo. */
@@ -216,7 +239,7 @@ export function Shell({
 
   const admin = modo === "admin";
 
-  const item = (i: (typeof NAV)[number]) => (
+  const item = (i: ItemRiel) => (
     <Link
       key={i.id}
       href={i.href}
@@ -232,8 +255,12 @@ export function Shell({
       }}
     >
       <i.icono /> {i.texto}
+      {i.rotulo && <span className="rl-rotulo">{i.rotulo}</span>}
     </Link>
   );
+
+  const principal = [...NAV, ...(historias ? [HISTORIAS] : []), ...(portfolio ? [PORTFOLIO] : [])];
+  const pronto = [...(portfolio ? [] : PRONTO), ...(historias ? [] : [HISTORIAS_PRONTO])];
 
   return (
     <div className="app">
@@ -265,7 +292,7 @@ export function Shell({
           </>
         ) : (
           <>
-            <nav className="rail-nav">{(historias ? [...NAV, HISTORIAS] : NAV).map(item)}</nav>
+            <nav className="rail-nav">{principal.map(item)}</nav>
 
             <div>
               <div className="rail-sep" />
@@ -275,18 +302,20 @@ export function Shell({
               </nav>
             </div>
 
-            <div>
-              <div className="rail-sep" />
-              <div className="rail-cap">Próximamente</div>
-              <div className="rail-nav">
-                {(historias ? PRONTO : [...PRONTO, HISTORIAS_PRONTO]).map((i) => (
-                  <span className="rl pronto" key={i.id} aria-disabled="true">
-                    <i.icono /> {i.texto}
-                    <span className="rl-pronto">Pronto</span>
-                  </span>
-                ))}
+            {pronto.length > 0 && (
+              <div>
+                <div className="rail-sep" />
+                <div className="rail-cap">Próximamente</div>
+                <div className="rail-nav">
+                  {pronto.map((i) => (
+                    <span className="rl pronto" key={i.id} aria-disabled="true">
+                      <i.icono /> {i.texto}
+                      <span className="rl-pronto">Pronto</span>
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </>
         )}
 

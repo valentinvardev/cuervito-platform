@@ -142,6 +142,17 @@ export function previewCleanPhotoKey(userId: string, eventId: string, photoId: s
   return `${prefix}/users/${userId}/events/${eventId}/preview-clean/${photoId}.webp`;
 }
 
+/**
+ * La versión de portfolio de una foto: sin marca de agua, 1600px.
+ *
+ * Lleva un token en el nombre que no sale de los ids (ver portfolio-fotos):
+ * conocer el id de una foto no alcanza para armar la dirección de su versión
+ * sin marca.
+ */
+export function portfolioPhotoKey(userId: string, photoId: string, token: string) {
+  return `${prefix}/users/${userId}/portfolio/${photoId}-${token}.webp`;
+}
+
 /** Per-user watermark (unused — superseded by the global platform watermark). */
 export function userWatermarkKey(userId: string) {
   return `${prefix}/users/${userId}/watermark.png`;

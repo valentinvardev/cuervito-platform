@@ -178,6 +178,7 @@ model User {
     collaboratorsInvited EventCollaborator[] @relation("CollaboratorInviter")
     commissionsEarned SaleCommission[]    @relation("CommissionEarner")
     correos           EmailEnvio[]
+    portfolios        Portfolio[]
 }
 
 // =============================================================================
@@ -208,6 +209,63 @@ model EsperaEvento {
 
     @@unique([eventId, email])
     @@index([avisadoAt, eventId])
+}
+
+/// Un portfolio: una página para mostrar trabajo, sin precio ni carrito.
+/// Vive en /{slug del fotógrafo}/p/{slug}. Ver src/app/_portfolio.
+model Portfolio {
+    id             String    @id @default(cuid())
+    ownerId        String
+    owner          User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    /// El nombre para el panel ("Running 2026"). No se muestra en la página.
+    nombre         String
+    /// Único por fotógrafo, no global: la dirección ya lleva el slug del dueño.
+    slug           String
+    /// El diseño (plantilla, textos, colores…). Misma forma que PortfolioDesign.
+    diseno         Json      @default("{}")
+    /// Null = borrador: sólo lo ve el dueño, y con noindex.
+    publicadoAt    DateTime?
+    seoTitulo      String?
+    seoDescripcion String?
+    vistas         Int       @default(0)
+    createdAt      DateTime  @default(now())
+    updatedAt      DateTime  @updatedAt
+
+    fotos          PortfolioFoto[]
+    consultas      ConsultaPortfolio[]
+
+    @@unique([ownerId, slug])
+}
+
+/// Una foto en un portfolio. Referencia a Photo, no una URL copiada: si la
+/// foto se borra, sale del portfolio con ella.
+model PortfolioFoto {
+    id          String    @id @default(cuid())
+    portfolioId String
+    portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+    photoId     String
+    photo       Photo     @relation(fields: [photoId], references: [id], onDelete: Cascade)
+    /// La serie en la que se muestra. Nace del nombre del evento; se puede renombrar.
+    grupo       String
+    orden       Int
+
+    @@unique([portfolioId, photoId])
+    @@index([portfolioId, orden])
+    @@index([photoId])
+}
+
+/// Lo que un visitante escribe en el formulario de contacto de un portfolio.
+model ConsultaPortfolio {
+    id          String    @id @default(cuid())
+    portfolioId String
+    portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+    nombre      String
+    email       String
+    mensaje     String    @db.Text
+    createdAt   DateTime  @default(now())
+    leidaAt     DateTime?
+
+    @@index([portfolioId, createdAt])
 }
 
 model EmailEnvio {
@@ -392,6 +450,12 @@ model Photo {
      *  una primera pantalla de 24 fotos son 20 MB. Esta versión pesa 56 KB.
      *  Nulo en las fotos anteriores al cambio: la grilla cae al preview. */
     thumbKey        String?
+    /** La versión del portfolio: 1600px, SIN marca de agua, con un token en la
+     *  clave que no se deduce de las otras (ver server/portfolio-fotos.ts). Sólo
+     *  existe para fotos que están en algún portfolio; la genera la pasada de
+     *  portfolio-fotos, que busca justamente las que la tienen en null. */
+    portfolioKey    String?
+    enPortfolios    PortfolioFoto[]
     filename     String
     mimeType     String?
     fileSize     Int?    // bytes

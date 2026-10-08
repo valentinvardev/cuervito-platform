@@ -53,7 +53,25 @@ export interface PortfolioDesign {
   hiddenSections?: string[];
 }
 
-export type FotoSitio = { src: string; title?: string; group?: string; date?: string };
+/** Una foto del sitio. `id` es el de Photo: lo usan las imágenes del diseño
+ *  (portada, retrato), que guardan "foto:<id>" y no una URL. */
+export type FotoSitio = { id?: string; src: string; title?: string; group?: string; date?: string };
+
+/**
+ * La URL de una imagen del diseño.
+ *
+ * Las imágenes guardan una referencia a la foto ("foto:<id>"), no su URL: la
+ * URL depende de quién mira (el dueño ve la miniatura mientras se genera la
+ * versión de portfolio) y de dónde se sirve. Guardar la URL era la manera de
+ * que la miniatura con marca de la vista previa terminara como portada
+ * pública. Si la foto ya no está en el portfolio, cae a la primera.
+ */
+export function srcDeImagen(src: string | undefined, fotos: FotoSitio[]): string {
+  if (!src) return "";
+  if (!src.startsWith("foto:")) return src;
+  const id = src.slice(5);
+  return fotos.find((f) => f.id === id)?.src ?? fotos[0]?.src ?? "";
+}
 
 /** Lo del fotógrafo que las plantillas muestran fuera de los textos editables. */
 export type PerfilSitio = {
@@ -61,7 +79,29 @@ export type PerfilSitio = {
   ubicacion: string | null;
   instagram: string | null;
   web: string | null;
+  /** Números reales de encontrate, ya formateados ("12 mil"). */
+  cifras?: { eventos: string; fotos: string; temporadas: string };
 };
+
+/**
+ * Los comodines que una plantilla puede usar en sus textos por defecto. Las
+ * plantillas de photo-saas traían datos inventados ("Desde 2018", "140
+ * eventos", un mail de ejemplo) que un fotógrafo podía publicar sin darse
+ * cuenta. Acá salen de su perfil y de encontrate, o no salen.
+ */
+function comodines(p: PerfilSitio): Record<string, string> {
+  const ig = p.instagram?.replace(/^https?:\/\/(www\.)?instagram\.com\//, "@").replace(/\/$/, "") ?? "";
+  const web = p.web?.replace(/^https?:\/\//, "").replace(/\/$/, "") ?? "";
+  return {
+    nombre: p.nombre,
+    ubicacion: p.ubicacion ?? "",
+    instagram: ig,
+    web,
+    eventos: p.cifras?.eventos ?? "",
+    fotos: p.cifras?.fotos ?? "",
+    temporadas: p.cifras?.temporadas ?? "",
+  };
+}
 
 export type Consulta = { name: string; email: string; message: string };
 
@@ -75,6 +115,9 @@ export interface EstadoSitio extends EditorState {
   perfil: PerfilSitio;
   siteSlug: string | null;
   enviarConsulta: EnviarConsulta | null;
+  /** Los nodos que el fotógrafo cambió: son los únicos que se guardan. El
+   *  resto sigue a la plantilla (y a {nombre}, que se resuelve al dibujar). */
+  tocados: string[];
   selectNode: (id: string | null) => void;
   setEditing: (id: string | null) => void;
   updateNode: (id: string, patch: Partial<EditorNode>) => void;
@@ -113,29 +156,43 @@ function resolverDiseno(d: PortfolioDesign) {
 
 /**
  * Lo que la plantilla trae como comodín, resuelto con los datos del
- * fotógrafo: `{nombre}` en los textos y en el logo, y las imágenes vacías
- * (portada, retrato) con sus propias fotos, en orden. Así una plantilla recién
- * elegida ya se ve con su nombre y su trabajo, no con un estudio de Lisboa.
+ * fotógrafo: `{nombre}`, `{ubicacion}`, sus cifras, en los textos y en el
+ * logo; y las imágenes vacías (portada, retrato) con sus propias fotos, en
+ * orden. Así una plantilla recién elegida ya se ve con su nombre y su
+ * trabajo, no con un estudio de Lisboa.
+ *
+ * Un texto que queda vacío (no cargó Instagram, no tiene ubicación) se
+ * oculta, y en las filas de contacto se oculta también su rótulo.
  */
 function completar(
   d: ReturnType<typeof resolverDiseno>,
-  nombre: string,
+  perfil: PerfilSitio,
   fotos: FotoSitio[],
 ): ReturnType<typeof resolverDiseno> {
+  const valores = comodines(perfil);
   let siguiente = 0;
   const nodes: Record<string, EditorNode> = {};
+  const vacios: string[] = [];
   for (const [id, n] of Object.entries(d.nodes)) {
     let nodo = n;
-    if (nodo.content?.includes("{nombre}")) {
-      nodo = { ...nodo, content: nodo.content.replaceAll("{nombre}", nombre) };
+    if (nodo.content && /\{\w+\}/.test(nodo.content)) {
+      const texto = nodo.content.replace(/\{(\w+)\}/g, (m, k: string) => valores[k] ?? m);
+      nodo = { ...nodo, content: texto };
+      if (!texto.trim()) vacios.push(id);
     }
     if (nodo.type === "image" && !nodo.src && fotos.length > 0) {
-      nodo = { ...nodo, src: fotos[siguiente % fotos.length]!.src };
+      const f = fotos[siguiente % fotos.length]!;
+      nodo = { ...nodo, src: f.id ? `foto:${f.id}` : f.src };
       siguiente++;
     }
     nodes[id] = nodo;
   }
-  return { ...d, nodes, logo: { ...d.logo, text: d.logo.text.replaceAll("{nombre}", nombre) } };
+  for (const id of vacios) {
+    nodes[id] = { ...nodes[id]!, hidden: true };
+    const rotulo = id.replace(/-value$/, "-label");
+    if (rotulo !== id && nodes[rotulo]) nodes[rotulo] = { ...nodes[rotulo], hidden: true };
+  }
+  return { ...d, nodes, logo: { ...d.logo, text: d.logo.text.replaceAll("{nombre}", perfil.nombre) } };
 }
 
 export function crearStoreSitio(inicial: {
@@ -148,12 +205,13 @@ export function crearStoreSitio(inicial: {
   enviarConsulta?: EnviarConsulta;
 }): StoreSitio {
   return createStore<EstadoSitio>()((set) => ({
-    ...completar(resolverDiseno(inicial.diseno), inicial.perfil.nombre, inicial.fotos),
+    ...completar(resolverDiseno(inicial.diseno), inicial.perfil, inicial.fotos),
     readOnly: inicial.soloLectura,
     galleryPhotos: inicial.fotos,
     perfil: inicial.perfil,
     siteSlug: inicial.slug,
     enviarConsulta: inicial.enviarConsulta ?? null,
+    tocados: Object.keys(inicial.diseno.nodes ?? {}),
     selectedId: null,
     editingId: null,
     viewport: inicial.viewport,
@@ -166,7 +224,15 @@ export function crearStoreSitio(inicial: {
       set((s) => {
         const actual = s.nodes[id];
         if (!actual) return s;
-        return { nodes: { ...s.nodes, [id]: { ...actual, ...patch } } };
+        const nodes = { ...s.nodes, [id]: { ...actual, ...patch } };
+        // Un dato que estaba oculto por vacío vuelve a verse al escribirle
+        // algo, con su rótulo.
+        if (patch.content?.trim() && actual.hidden) {
+          nodes[id] = { ...nodes[id]!, hidden: false };
+          const rotulo = id.replace(/-value$/, "-label");
+          if (rotulo !== id && nodes[rotulo]) nodes[rotulo] = { ...nodes[rotulo], hidden: false };
+        }
+        return { nodes, tocados: s.tocados.includes(id) ? s.tocados : [...s.tocados, id] };
       }),
     setPalette: (patch) => set((s) => ({ palette: { ...s.palette, ...patch } })),
     setTypography: (patch) => set((s) => ({ typography: { ...s.typography, ...patch } })),

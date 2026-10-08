@@ -9,7 +9,7 @@
  * cambia es de dónde leen: el store por sitio de ./store, no uno global.
  */
 
-import { useEditorStore } from "./store";
+import { srcDeImagen, useEditorStore } from "./store";
 import type { ImageCrop } from "./tipos";
 
 /**
@@ -143,12 +143,13 @@ export function EditableText({
 
 export function EditableImage({ id, imgStyle }: { id: string; imgStyle?: React.CSSProperties }) {
   const node = useEditorStore((s) => s.nodes[id]);
+  const src = useEditorStore((s) => srcDeImagen(s.nodes[id]?.src, s.galleryPhotos));
   // Sin foto (un portfolio todavía vacío), nada: un <img src=""> hace que el
   // navegador vuelva a pedir la página entera.
-  if (!node?.src) return null;
+  if (!src) return null;
   const style: React.CSSProperties = { ...imgStyle };
   if (node?.objectFit) style.objectFit = node.objectFit;
   if (node?.objectPosition) style.objectPosition = node.objectPosition;
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={node?.src ?? ""} alt={node?.alt ?? ""} style={style} />;
+  return <img src={src} alt={node?.alt ?? ""} style={style} />;
 }

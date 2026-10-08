@@ -67,7 +67,7 @@ export function SitioPortfolio({
 }
 
 /** La plantilla con las variables de diseño (--ed-*, --tpl-*) que lee. */
-function Lienzo({ store }: { store: StoreSitio }) {
+export function Lienzo({ store }: { store: StoreSitio }) {
   const templateId = useStore(store, (s) => s.templateId);
   const viewport = useStore(store, (s) => s.viewport);
   const palette = useStore(store, (s) => s.palette);

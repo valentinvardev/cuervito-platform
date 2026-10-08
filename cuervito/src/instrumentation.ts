@@ -20,5 +20,7 @@ export async function register() {
     arrancarCola();
     const { arrancarCorreos } = await import("~/server/correos/enviar");
     arrancarCorreos();
+    const { arrancarPortfolioFotos } = await import("~/server/portfolio-fotos");
+    arrancarPortfolioFotos();
   }
 }
