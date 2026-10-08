@@ -73,13 +73,18 @@ export async function signupAction(
       // anotada: si el respaldo cambia algún día, las cuentas que ya existen
       // conservan la página con la que empezaron.
       storefrontTemplate: "encontrate",
+      // El registro con email ya tiene lo que pide /onboarding —nombre y
+      // usuario— y manda directo al tablero, así que nadie pasa por ese paso.
+      // Sin esta fecha la tienda y cada evento dan 404 para siempre: el
+      // fotógrafo sube y publica, y nadie puede ver nada.
+      onboardingCompletedAt: new Date(),
     },
   });
 
   // Welcome email — best-effort, never block signup
   void sendEmail({
     to: email,
-    subject: "Bienvenido a cuervito",
+    subject: "Bienvenido a encontrate",
     html: welcomeEmailHtml({
       name,
       hasMpConnected: false,
