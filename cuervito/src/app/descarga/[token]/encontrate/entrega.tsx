@@ -12,6 +12,7 @@ import {
 import { useEffect, useState } from "react";
 
 import { NOMBRE, SITIO } from "~/lib/marca";
+import type { TonoLogo } from "~/lib/tema-tienda";
 
 import { compartirLink, esIos, guardarConHojaDeCompartir } from "../guardar-ios";
 import { Velo } from "./velo";
@@ -24,6 +25,8 @@ type Fotografo = {
   avatar: string | null;
   /** Su logo, si lo subió. Cuando está, reemplaza al avatar y al nombre. */
   logo: string | null;
+  /** Si el logo es blanco o negro sobre transparente (server/logo-tono). */
+  logoTono: TonoLogo | null;
   iniciales: string;
 };
 
@@ -195,7 +198,12 @@ export function Entrega({
               el suyo. */}
           {fotografo.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="et-logo" src={fotografo.logo} alt={fotografo.nombre} />
+            <img
+              className="et-logo"
+              src={fotografo.logo}
+              alt={fotografo.nombre}
+              data-tono={fotografo.logoTono ?? undefined}
+            />
           ) : (
             <>
               <span className="et-av">

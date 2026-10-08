@@ -7,6 +7,7 @@ import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
 import { urlPublica } from "~/lib/url-publica";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
+import { tonoDeLogo } from "~/server/logo-tono";
 import { getPresignedDownloadUrl } from "~/server/s3";
 import { ahora, lento } from "~/server/medir";
 import { resolveMediaUrl } from "~/server/media";
@@ -207,11 +208,13 @@ export default async function PublicEventPage(props: {
       .slice(0, 2)
       .join("") || "?";
 
-  const [avatarUrl, logoUrl, testMode] = await Promise.all([
+  const [avatarUrl, logoUrl, logoTono, testMode] = await Promise.all([
     resolveAvatarUrl(photographer.image),
     photographer.logoKey
       ? resolveMediaUrl(photographer.logoKey)
       : null,
+    // Sólo la plantilla clara lo usa; las otras no pagan la medición.
+    layout === "encontrate" ? tonoDeLogo(photographer.id, photographer.logoKey) : null,
     getMpTestMode(),
   ]);
 
@@ -249,6 +252,7 @@ export default async function PublicEventPage(props: {
       initials,
       avatarUrl,
       logoUrl,
+      logoTono,
     },
     event: {
       id: event.id,

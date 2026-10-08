@@ -100,6 +100,26 @@
   .et-logo { max-height: 30px; max-width: 40vw; }
 }
 
+/* El logo blanco sobre transparente —hecho para las plantillas oscuras— en
+   esta clara desaparece. Se invierte, y el giro de tono le devuelve el color
+   a lo que no era blanco: una hoja verde queda verde (más oscura), no rosa.
+   En el modo oscuro es al revés: el que se pierde es el negro. El tono lo
+   mide el servidor (server/logo-tono); sin tono no se toca nada. */
+.et-logo[data-tono="claro"],
+:root[data-tienda="oscura"] .et-logo[data-tono="oscuro"] {
+  filter: invert(1) hue-rotate(180deg);
+}
+:root[data-tienda="oscura"] .et-logo[data-tono="claro"] { filter: none; }
+
+/* Claro u oscuro: el botón de la barra. Va pegado a la derecha, o justo antes
+   del carrito cuando lo hay. Los dos íconos están siempre y se ve el del modo
+   al que se pasa, como en el panel. */
+.et-tema { margin-left: auto; flex-shrink: 0; }
+.et-tema + .et-carrito { margin-left: 0; }
+.et-tema .et-tema-sol,
+:root[data-tienda="oscura"] .et-tema .et-tema-luna { display: none; }
+:root[data-tienda="oscura"] .et-tema .et-tema-sol { display: block; }
+
 /* ── Botones ─────────────────────────────────────────────────────────────────
    Rectangulares con las esquinas redondeadas, no cápsulas. La cápsula funciona
    para una etiqueta de estado, que es un dato; para una acción, el rectángulo
@@ -857,4 +877,33 @@
   .et-ev, .et-ev-portada img { transition: none; }
   .et-ev:hover { transform: none; }
   .et-ev:hover .et-ev-portada img { transform: none; }
+}
+
+/* ── Modo oscuro ─────────────────────────────────────────────────────────────
+   Lo elige el visitante con el botón de la barra (lib/tema-tienda). Son los
+   mismos tokens del panel en oscuro, así que la tienda oscura y el panel
+   oscuro son la misma marca.
+
+   Se declaran dos veces a propósito. En :root, para el fondo del <body> y lo
+   que se monta fuera de la página. Y en .et, porque la página va envuelta en
+   un <div> con los tokens de la plantilla como estilo en línea
+   (buildTemplateStyle): heredados de ese <div> le ganan a :root, pero no a
+   una declaración sobre el propio .et. El acento queda el del fotógrafo. */
+:root[data-tienda="oscura"],
+:root[data-tienda="oscura"] .et {
+  color-scheme: dark;
+  --bg-base: #0D0D0C;
+  --bg-surface: #151513;
+  --bg-elevated: #1D1D1A;
+  --bg-subtle: #262622;
+  --text-primary: #F4F3EF;
+  --text-secondary: #A5A199;
+  --text-tertiary: #6E6A62;
+  --border-subtle: rgba(244, 243, 239, 0.06);
+  --border-default: rgba(244, 243, 239, 0.11);
+  --border-strong: rgba(244, 243, 239, 0.22);
+  --nav-bg: rgba(13, 13, 12, 0.88);
+  --et-linea: rgba(244, 243, 239, .11);
+  --et-linea-fuerte: rgba(244, 243, 239, .2);
+  --et-tenue: rgba(244, 243, 239, .55);
 }

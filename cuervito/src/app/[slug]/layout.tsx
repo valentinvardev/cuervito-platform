@@ -13,7 +13,8 @@ import { Suspense } from "react";
 import { ExternalStylesheets } from "~/app/_components/external-stylesheets";
 import { StorefrontTheme } from "~/app/_components/storefront-theme";
 import { VisitorTracker } from "~/app/_components/visitor-tracker";
-import { buildTemplateCSSOverride } from "~/lib/storefront-templates";
+import { buildTemplateCSSOverride, getTemplate } from "~/lib/storefront-templates";
+import { SCRIPT_TEMA_TIENDA } from "~/lib/tema-tienda";
 
 import { traerFotografo } from "./_datos";
 
@@ -37,6 +38,7 @@ export default async function PublicLayout({
   if (!user) notFound();
 
   const cssOverride = buildTemplateCSSOverride(user.storefrontTemplate, user.storefrontBrandColor);
+  const encontrate = getTemplate(user.storefrontTemplate).layout === "encontrate";
 
   return (
     <>
@@ -46,10 +48,10 @@ export default async function PublicLayout({
          navegaciones SPA, restaurando la preferencia real al salir. */}
       <script
         dangerouslySetInnerHTML={{
-          __html: `document.documentElement.dataset.theme='dark'`,
+          __html: `document.documentElement.dataset.theme='dark'${encontrate ? ";" + SCRIPT_TEMA_TIENDA : ""}`,
         }}
       />
-      <StorefrontTheme />
+      <StorefrontTheme encontrate={encontrate} />
       <Suspense fallback={null}>
         <VisitorTracker />
       </Suspense>

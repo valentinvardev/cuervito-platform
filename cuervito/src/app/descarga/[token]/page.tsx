@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { db } from "~/server/db";
+import { tonoDeLogo } from "~/server/logo-tono";
 import { getPresignedDownloadUrl } from "~/server/s3";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { resolveMediaUrl } from "~/server/media";
@@ -35,6 +36,7 @@ export default async function DescargaPage(props: {
       // reconocer el mismo lugar diez segundos después.
       seller: {
         select: {
+          id: true,
           storefrontTemplate: true,
           storefrontBrandColor: true,
           name: true,
@@ -121,6 +123,7 @@ export default async function DescargaPage(props: {
             slug: sale.seller.slug ?? "",
             avatar: await resolveAvatarUrl(sale.seller.image),
             logo: sale.seller.logoKey ? await resolveMediaUrl(sale.seller.logoKey) : null,
+            logoTono: await tonoDeLogo(sale.seller.id, sale.seller.logoKey),
             iniciales:
               (sale.seller.name ?? "?")
                 .split(" ")

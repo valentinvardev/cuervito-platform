@@ -2,7 +2,9 @@ import Link from "next/link";
 import { CalendarDays, Globe, ImageOff, MapPin } from "lucide-react";
 
 import { NOMBRE, SITIO } from "~/lib/marca";
+import type { TonoLogo } from "~/lib/tema-tienda";
 
+import { BotonTemaTienda } from "./boton-tema";
 import { PillInstagram } from "./pill-instagram";
 
 /**
@@ -44,6 +46,8 @@ export function PerfilEncontrate({
     iniciales: string;
     avatarUrl: string | null;
     logoUrl: string | null;
+    /** Si el logo es blanco o negro sobre transparente (server/logo-tono). */
+    logoTono: TonoLogo | null;
   };
   eventos: Evento[];
 }) {
@@ -59,7 +63,12 @@ export function PerfilEncontrate({
         <Link href={`/${fotografo.slug}`} className="et-marca">
           {fotografo.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="et-logo" src={fotografo.logoUrl} alt={fotografo.nombre} />
+            <img
+              className="et-logo"
+              src={fotografo.logoUrl}
+              alt={fotografo.nombre}
+              data-tono={fotografo.logoTono ?? undefined}
+            />
           ) : (
             <>
               <span className="et-av">
@@ -77,6 +86,8 @@ export function PerfilEncontrate({
             </>
           )}
         </Link>
+
+        <BotonTemaTienda />
       </header>
 
       <div className="et-in">

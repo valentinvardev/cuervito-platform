@@ -8,6 +8,7 @@ import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
 import { urlPublica } from "~/lib/url-publica";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
+import { tonoDeLogo } from "~/server/logo-tono";
 import { resolveMediaUrl } from "~/server/media";
 
 import { type Fotografo, traerFotografo } from "./_datos";
@@ -138,6 +139,7 @@ async function Tienda({
             iniciales: initials,
             avatarUrl,
             logoUrl,
+            logoTono: await tonoDeLogo(user.id, user.logoKey),
           }}
           eventos={events.map((e) => ({
             id: e.id,

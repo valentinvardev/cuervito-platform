@@ -16,7 +16,9 @@ import { CartProvider, useCart } from "../cart-context";
 import type { PublicDiscount } from "../event-coverage-shell";
 import { usuarioInstagram } from "~/lib/instagram";
 import { NOMBRE, SITIO } from "~/lib/marca";
+import type { TonoLogo } from "~/lib/tema-tienda";
 
+import { BotonTemaTienda } from "../../encontrate/boton-tema";
 import { PillInstagram } from "../../encontrate/pill-instagram";
 
 import { useBusquedaSelfie } from "../selfie-search";
@@ -38,6 +40,8 @@ type Photographer = {
   initials: string;
   avatarUrl: string | null;
   logoUrl: string | null;
+  /** Sólo lo usa esta plantilla, que es clara: las otras van en oscuro. */
+  logoTono?: TonoLogo | null;
 };
 type EventInfo = {
   id: string;
@@ -241,7 +245,12 @@ function Adentro({
         <Link href={`/${photographer.slug}`} className="et-marca">
           {photographer.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="et-logo" src={photographer.logoUrl} alt={photographer.name} />
+            <img
+              className="et-logo"
+              src={photographer.logoUrl}
+              alt={photographer.name}
+              data-tono={photographer.logoTono ?? undefined}
+            />
           ) : (
             <>
               <span className="et-av">
@@ -259,6 +268,8 @@ function Adentro({
             </>
           )}
         </Link>
+
+        <BotonTemaTienda />
 
         <div className="et-carrito">
           <button

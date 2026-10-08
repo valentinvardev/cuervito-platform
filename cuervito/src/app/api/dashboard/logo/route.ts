@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
+import { olvidarTonoLogo } from "~/server/logo-tono";
 import { createCFInvalidation, deleteS3Objects, putS3Object, storefrontLogoKey } from "~/server/s3";
 
 const MAX_BYTES = 3 * 1024 * 1024; // 3 MB
@@ -27,6 +28,8 @@ export async function POST(req: NextRequest) {
     data: { logoKey: key },
   });
 
+  // Misma clave, otro archivo: el tono medido es del logo anterior.
+  olvidarTonoLogo(session.user.id);
   void createCFInvalidation([`/${key}`]);
   return NextResponse.json({ ok: true, key });
 }

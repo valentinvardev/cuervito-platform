@@ -5,6 +5,7 @@ import { buildTemplateStyle } from "~/lib/storefront-templates";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
+import { tonoDeLogo } from "~/server/logo-tono";
 
 import { Demo } from "./_demo";
 
@@ -144,9 +145,10 @@ export default async function DemoCompra() {
     })),
   );
 
-  const [avatarUrl, logoUrl] = await Promise.all([
+  const [avatarUrl, logoUrl, logoTono] = await Promise.all([
     resolveAvatarUrl(fotografo.image),
     fotografo.logoKey ? resolveMediaUrl(fotografo.logoKey) : null,
+    tonoDeLogo(fotografo.id, fotografo.logoKey),
   ]);
 
   const iniciales =
@@ -172,6 +174,7 @@ export default async function DemoCompra() {
           slug,
           avatar: avatarUrl,
           logo: logoUrl,
+          logoTono,
           iniciales,
         }}
         tienda={{
@@ -184,6 +187,7 @@ export default async function DemoCompra() {
             initials: iniciales,
             avatarUrl,
             logoUrl,
+            logoTono,
           },
           event: {
             id: evento.id,

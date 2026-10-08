@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+import { CLAVE_TEMA_TIENDA } from "~/lib/tema-tienda";
+
 /**
  * Fija el tema oscuro mientras se está en el storefront y lo restaura al
  * salir.
@@ -17,12 +19,24 @@ import { useEffect } from "react";
  * /descarga) la hoja sigue cargada y seguía pisando los tokens claros
  * fuera del storefront. Cambiando el atributo, el CSS normal hace lo
  * correcto en cada página sin reglas especiales.
+ *
+ * En la plantilla de encontrate además aplica el claro/oscuro que eligió el
+ * visitante (ver lib/tema-tienda), y lo saca al salir: el atributo pinta la
+ * página que sigue si nadie lo apaga.
  */
-export function StorefrontTheme() {
+export function StorefrontTheme({ encontrate = false }: { encontrate?: boolean }) {
   useEffect(() => {
     const el = document.documentElement;
     el.dataset.theme = "dark";
+    if (encontrate) {
+      try {
+        if (localStorage.getItem(CLAVE_TEMA_TIENDA) === "oscura") el.dataset.tienda = "oscura";
+      } catch {
+        // sin almacenamiento, clara
+      }
+    }
     return () => {
+      delete el.dataset.tienda;
       // Al salir volvemos a la preferencia real del visitante, con la
       // misma lógica que el script de arranque en el layout raíz.
       let next: string;
@@ -39,7 +53,7 @@ export function StorefrontTheme() {
       }
       el.dataset.theme = next;
     };
-  }, []);
+  }, [encontrate]);
 
   return null;
 }
