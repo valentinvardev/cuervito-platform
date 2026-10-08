@@ -188,6 +188,28 @@ model User {
 /// campaña): la restricción única ES la garantía de que nadie recibe dos veces
 /// el mismo, y se escribe ANTES de mandar —es el reclamo—, así dos pasadas que
 /// se crucen no pueden mandarlo las dos.
+/// Alguien entró a un evento que todavía no está publicado y dejó su mail para
+/// enterarse cuando salga. Es gente que no tiene cuenta —como todo comprador—,
+/// así que no puede ir en EmailEnvio, que es por usuario.
+///
+/// Un aviso por persona y por evento: la restricción única hace que pedirlo
+/// dos veces no anote dos, y `avisadoAt` que la próxima pasada del remitente
+/// no le escriba de nuevo.
+model EsperaEvento {
+    id        String    @id @default(cuid())
+    eventId   String
+    event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    email     String
+    createdAt DateTime  @default(now())
+    /// Cuándo se le escribió que el evento salió. Null = todavía no. Se marca
+    /// ANTES de mandar (es el reclamo); si el envío falla, vuelve a null.
+    avisadoAt DateTime?
+    resendId  String?
+
+    @@unique([eventId, email])
+    @@index([avisadoAt, eventId])
+}
+
 model EmailEnvio {
     id        String   @id @default(cuid())
     userId    String
@@ -270,6 +292,7 @@ model Event {
     editorFolders EditorFolder[] @relation("EditorFolderEvent")
     collaborators EventCollaborator[]
     faceSearches  FaceSearchLog[]
+    esperas       EsperaEvento[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

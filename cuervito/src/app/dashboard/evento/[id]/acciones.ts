@@ -12,6 +12,7 @@ import {
 } from "~/app/dashboard/_nucleo";
 import { puedeEditarEvento } from "~/server/acceso-evento";
 import { auth } from "~/server/auth";
+import { empujarAvisosPublicados } from "~/server/correos/enviar";
 import { db } from "~/server/db";
 
 /**
@@ -168,6 +169,10 @@ export async function publicarAction(
   revalidatePath(`/dashboard/evento/${eventId}`);
   revalidatePath("/dashboard/eventos");
   revalidatePath(`/dashboard/events/${eventId}`);
+
+  // A quien dejó su mail en la página de evento privado le escribimos ya, no
+  // en la próxima pasada del remitente.
+  if (proximo) empujarAvisosPublicados();
 
   return { publicado: proximo };
 }

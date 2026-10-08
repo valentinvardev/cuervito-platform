@@ -10,6 +10,7 @@ import { leerBandera } from "~/server/settings";
 
 import { CAMPANAS, CAMPANAS_IDS, contarElegibles, elegibles, type CampanaId } from "./campanas";
 import { contarCompartir, enviarCompartir, ID_COMPARTIR } from "./compartir";
+import { avisarPublicados } from "./espera";
 
 /**
  * El remitente de campañas.
@@ -96,7 +97,36 @@ const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function enviadosHoy(): Promise<number> {
   const hoy = new Date();
   hoy.setUTCHours(0, 0, 0, 0);
-  return db.emailEnvio.count({ where: { createdAt: { gte: hoy }, resendId: { not: null } } });
+  const [deCuentas, aEsperas] = await Promise.all([
+    db.emailEnvio.count({ where: { createdAt: { gte: hoy }, resendId: { not: null } } }),
+    // Los «ya se publicó» van a gente sin cuenta, en otra tabla, pero salen
+    // por el mismo proveedor y cuentan para el mismo tope.
+    db.esperaEvento.count({ where: { avisadoAt: { gte: hoy }, resendId: { not: null } } }),
+  ]);
+  return deCuentas + aEsperas;
+}
+
+/** Clave del resumen para los avisos de evento publicado. */
+const ID_PUBLICADO = "publicado";
+
+/**
+ * Los avisos de «ya están las fotos», con el tope del día. No dependen del
+ * interruptor de campañas: los pidió cada persona, uno por uno.
+ */
+async function pasadaPublicados(): Promise<{ enviados: number; fallidos: number; saltada?: string }> {
+  const cupo = TOPE_DIARIO - (await enviadosHoy());
+  if (cupo <= 0) return { enviados: 0, fallidos: 0, saltada: "tope diario" };
+  return avisarPublicados(Math.min(POR_TANDA, cupo), ENTRE_ENVIOS_MS);
+}
+
+/**
+ * Publicar un evento empuja una pasada en el momento, para que a quien
+ * esperaba le llegue enseguida y no a los quince minutos. Se suelta sin
+ * esperar a propósito: si el proceso muere a mitad, la pasada siguiente del
+ * remitente retoma lo que quedó (ver avisarPublicados).
+ */
+export function empujarAvisosPublicados(): void {
+  pasadaPublicados().catch((e: unknown) => console.error("[correos] publicado:", e));
 }
 
 async function enviarCampana(
@@ -155,6 +185,9 @@ export async function correrCorreos(): Promise<Resumen> {
 
   const resumen: Resumen = { corridaAt: new Date().toISOString(), porCampana: {} };
   try {
+    // Primero lo que alguien pidió: que las campañas no le coman el cupo.
+    resumen.porCampana[ID_PUBLICADO] = await pasadaPublicados();
+
     for (const id of CAMPANAS_IDS) {
       if (!(await leerBandera(claveActiva(id)))) {
         resumen.porCampana[id] = { enviados: 0, fallidos: 0, saltada: "apagada" };

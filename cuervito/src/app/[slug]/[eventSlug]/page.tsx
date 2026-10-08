@@ -4,7 +4,6 @@ import { cache } from "react";
 
 import { JsonLd } from "~/app/_components/json-ld";
 import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
-import { slugReservado } from "~/lib/slugs-reservados";
 import { urlPublica } from "~/lib/url-publica";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
@@ -13,67 +12,13 @@ import { ahora, lento } from "~/server/medir";
 import { resolveMediaUrl } from "~/server/media";
 import { getMpTestMode } from "~/server/settings";
 
-import { GaleriaProgresiva } from "./galeria-progresiva";
+import { estaALaVenta, traerEvento, traerFotografo } from "../_datos";
 import { EncontrateShell } from "./encontrate/shell";
+import { GaleriaProgresiva } from "./galeria-progresiva";
+import { EventoPrivado } from "./privado/evento-privado";
 
 /** Fotos en la primera tanda. Tiene que coincidir con el endpoint. */
 const TANDA = 60;
-
-/* El fotógrafo y el evento se piden una vez por request: los usa la página y
-   los usa su <head>, y cache() hace que el segundo pedido no viaje a la base. */
-const traerFotografo = cache((slug: string) =>
-  db.user.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      name: true,
-      bio: true,
-      location: true,
-      instagramUrl: true,
-      image: true,
-      storefrontBrandColor: true,
-      storefrontTemplate: true,
-      logoKey: true,
-      status: true,
-      onboardingCompletedAt: true,
-      giftEnabled: true,
-      customDomains: {
-        where: { status: "ACTIVE" },
-        orderBy: { verifiedAt: "asc" },
-        take: 1,
-        select: { hostname: true },
-      },
-    },
-  }),
-);
-
-const traerEvento = cache((ownerId: string, eventSlug: string) =>
-  db.event.findFirst({
-    where: {
-      slug: eventSlug,
-      ownerId,
-      isPublished: true,
-      NOT: { status: "ARCHIVED" },
-    },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      description: true,
-      discipline: true,
-      location: true,
-      eventDate: true,
-      coverUrl: true,
-      pricePerPhoto: true,
-      currency: true,
-      recognition: true,
-      // Si el evento no lee dorsales, la tienda no ofrece buscar por dorsal:
-      // mandar a escribir un número que no va a encontrar nada es peor que no
-      // ofrecerlo.
-      bibDetection: true,
-    },
-  }),
-);
 
 /** La portada en una URL que se pueda compartir. Con CloudFront es estable. */
 const urlPortada = cache(async (coverUrl: string | null) =>
@@ -87,13 +32,17 @@ export async function generateMetadata(props: {
   params: Promise<{ slug: string; eventSlug: string }>;
 }): Promise<Metadata> {
   const { slug, eventSlug } = await props.params;
-  if (slugReservado(slug)) return {};
   const photographer = await traerFotografo(slug);
-  if (!photographer || photographer.status !== "ACTIVE" || !photographer.onboardingCompletedAt) {
-    return {};
-  }
+  if (!photographer) return {};
   const event = await traerEvento(photographer.id, eventSlug);
   if (!event) return {};
+  // Sin publicar: se ve el aviso, pero no es una página para los buscadores.
+  if (!estaALaVenta(event)) {
+    return {
+      title: `${event.name} · ${photographer.name ?? "Fotógrafo"}`,
+      robots: { index: false, follow: false },
+    };
+  }
 
   const fecha = event.eventDate
     ? event.eventDate.toLocaleDateString("es-AR", {
@@ -139,15 +88,17 @@ export default async function PublicEventPage(props: {
   params: Promise<{ slug: string; eventSlug: string }>;
 }) {
   const { slug, eventSlug } = await props.params;
-  if (slugReservado(slug)) notFound();
 
+  // El layout ya respondió 404 si alguno de los dos no existe; esto es para
+  // el tipo.
   const photographer = await traerFotografo(slug);
-  if (!photographer || photographer.status !== "ACTIVE" || !photographer.onboardingCompletedAt) {
-    notFound();
-  }
-
+  if (!photographer) notFound();
   const event = await traerEvento(photographer.id, eventSlug);
   if (!event) notFound();
+
+  if (!estaALaVenta(event)) {
+    return <EventoPrivado fotografo={photographer} slug={slug} evento={event} />;
+  }
 
   const coverSignedUrl = await urlPortada(event.coverUrl);
 

@@ -7,31 +7,15 @@ import "~/styles/prototype/lightbox.css";
 // por fuera del árbol de la grilla.
 import "~/styles/tienda-encontrate.css";
 
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { ExternalStylesheets } from "~/app/_components/external-stylesheets";
 import { StorefrontTheme } from "~/app/_components/storefront-theme";
 import { VisitorTracker } from "~/app/_components/visitor-tracker";
 import { buildTemplateCSSOverride } from "~/lib/storefront-templates";
-import { db } from "~/server/db";
-import { resolveMediaUrl } from "~/server/media";
 
-function NavSkeleton({ logoUrl }: { logoUrl: string | null }) {
-  return (
-    <nav className="nav">
-      <div className="nav-left">
-        {logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={logoUrl} alt="" className="storefront-logo" />
-        ) : (
-          <span className="logo" aria-hidden="true">
-            cuerv<span className="logo-dot" />to
-          </span>
-        )}
-      </div>
-    </nav>
-  );
-}
+import { traerFotografo } from "./_datos";
 
 export default async function PublicLayout({
   children,
@@ -42,18 +26,17 @@ export default async function PublicLayout({
 }) {
   const { slug } = await params;
 
-  const user = await db.user.findUnique({
-    where: { slug },
-    select: { storefrontTemplate: true, storefrontBrandColor: true, logoKey: true },
-  });
+  /* El 404 se decide acá, y por eso este layout ya no envuelve a sus hijos en
+     un <Suspense>. Con el límite acá arriba, todo lo de abajo —la página de
+     la tienda, el layout del evento— corría adentro, y para cuando cualquiera
+     llamaba a notFound() el 200 ya había salido: una tienda o un evento que
+     no existen respondían 200 con el cartel de «no encontrado», que para
+     Google es un soft 404. El esqueleto de carga lo pone ahora cada página
+     (la tienda adentro suyo, el evento en su loading.tsx). */
+  const user = await traerFotografo(slug);
+  if (!user) notFound();
 
-  const cssOverride = user
-    ? buildTemplateCSSOverride(user.storefrontTemplate, user.storefrontBrandColor)
-    : "";
-
-  const logoUrl = user?.logoKey
-    ? await resolveMediaUrl(user.logoKey)
-    : null;
+  const cssOverride = buildTemplateCSSOverride(user.storefrontTemplate, user.storefrontBrandColor);
 
   return (
     <>
@@ -74,9 +57,7 @@ export default async function PublicLayout({
       {cssOverride && (
         <style dangerouslySetInnerHTML={{ __html: cssOverride }} />
       )}
-      <Suspense fallback={<NavSkeleton logoUrl={logoUrl} />}>
-        {children}
-      </Suspense>
+      {children}
     </>
   );
 }

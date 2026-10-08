@@ -1,0 +1,125 @@
+/* =============================================================================
+   Evento privado: la página de un evento que existe pero no está a la venta.
+
+   Va en todas las plantillas de la tienda, y por eso no tiene un solo color
+   propio: todo sale de las variables que pone cada tema (--bg-surface,
+   --text-primary, --accent… en las clásicas; las mismas más las --et- en la
+   de encontrate). Cada var trae su respaldo para el caso en que una plantilla
+   no la defina.
+   ========================================================================== */
+
+.ep-pagina {
+  min-height: 100dvh;
+  background: var(--bg-base, #FBFAF8);
+  color: var(--text-primary, #12110F);
+}
+.ep-clasica { font-family: var(--font-ui, system-ui, sans-serif); }
+.ep-nombre-nav { font-family: var(--font-display, inherit); font-weight: 700; font-size: 16px; letter-spacing: -0.02em; }
+
+.ep {
+  display: grid; place-items: center;
+  min-height: calc(100dvh - 72px);
+  padding: clamp(28px, 6vw, 72px) clamp(16px, 4vw, 40px);
+}
+
+.ep-caja {
+  width: 100%; max-width: 520px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 14px;
+  padding: clamp(24px, 4vw, 40px);
+  background: var(--bg-surface, color-mix(in srgb, var(--text-primary, #12110F) 3%, transparent));
+  border: 1px solid var(--border-subtle, var(--et-linea, rgba(18, 17, 15, .1)));
+  border-radius: var(--et-radio, 16px);
+}
+
+.ep-icono {
+  display: grid; place-items: center;
+  width: 46px; height: 46px; border-radius: 12px;
+  background: color-mix(in srgb, var(--accent, #F0410F) 12%, transparent);
+  color: var(--accent, #F0410F);
+}
+.ep-icono svg { width: 21px; height: 21px; }
+
+.ep-evento {
+  font-size: 12px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-tertiary, var(--et-tenue, rgba(18, 17, 15, .55)));
+}
+
+.ep-caja h1 {
+  margin: 0;
+  font-family: var(--et-display, var(--font-display, inherit));
+  font-size: clamp(26px, 4.4vw, 36px); font-weight: 800;
+  letter-spacing: -0.035em; line-height: 1.08;
+  text-wrap: balance;
+}
+.ep-caja > p {
+  margin: 0;
+  font-size: 15.5px; line-height: 1.6;
+  color: var(--text-secondary, var(--et-tenue, rgba(18, 17, 15, .7)));
+}
+
+/* ── El formulario ───────────────────────────────────────────────────────── */
+.ep-form { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.ep-form label { font-size: 13.5px; font-weight: 600; }
+.ep-form label span { font-weight: 400; color: var(--text-tertiary, var(--et-tenue, rgba(18, 17, 15, .55))); }
+
+.ep-fila { display: flex; gap: 8px; flex-wrap: wrap; }
+.ep-fila input {
+  flex: 1 1 200px; min-width: 0;
+  height: 46px; padding: 0 15px;
+  font: inherit; font-size: 15.5px; color: inherit;
+  background: var(--bg-base, #FBFAF8);
+  border: 1px solid var(--border-default, var(--et-linea-fuerte, rgba(18, 17, 15, .18)));
+  border-radius: 11px;
+  outline: none;
+}
+.ep-fila input:focus { border-color: var(--text-primary, #12110F); }
+.ep-fila input[aria-invalid] { border-color: var(--error, #C4342F); }
+
+.ep-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 46px; padding: 0 18px;
+  font: inherit; font-size: 15px; font-weight: 600; white-space: nowrap;
+  border-radius: 11px; border: 1px solid transparent;
+  cursor: pointer;
+  transition: opacity 150ms ease, transform 120ms ease;
+}
+.ep-btn:active { transform: scale(.98); }
+.ep-btn:disabled { opacity: .6; cursor: default; }
+.ep-btn svg { width: 16px; height: 16px; }
+/* El botón va en el color de cada tema: el acento del fotógrafo. */
+.ep-btn-lleno {
+  background: var(--accent, #F0410F);
+  color: var(--text-on-accent, #FFFFFF);
+}
+.ep-btn-lleno:hover:not(:disabled) { opacity: .9; }
+@media (max-width: 460px) { .ep-fila .ep-btn { flex: 1 1 100%; } }
+
+.ep-error { margin: 0; font-size: 13.5px; color: var(--error, #C4342F); }
+
+.ep-trampa { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+
+.ep-listo {
+  width: 100%; display: flex; gap: 12px; align-items: flex-start;
+  margin-top: 6px; padding: 14px 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--success, #1E7A4D) 10%, transparent);
+}
+.ep-listo-i {
+  flex-shrink: 0; display: grid; place-items: center;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--success, #1E7A4D); color: #FFFFFF;
+}
+.ep-listo-i svg { width: 15px; height: 15px; }
+.ep-listo b { display: block; font-size: 15px; font-weight: 600; }
+.ep-listo div > span { display: block; margin-top: 2px; font-size: 14px; line-height: 1.5; color: var(--text-secondary, var(--et-tenue, rgba(18, 17, 15, .7))); }
+.ep-listo .ep-btn { margin-top: 10px; height: 40px; }
+
+.ep-otros {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 8px;
+  font-size: 14px; font-weight: 500;
+  color: var(--text-secondary, var(--et-tenue, rgba(18, 17, 15, .7)));
+  text-decoration: none;
+}
+.ep-otros:hover { color: var(--text-primary, #12110F); }
+.ep-otros svg { width: 15px; height: 15px; }

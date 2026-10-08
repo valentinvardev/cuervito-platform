@@ -14,6 +14,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 
 import { mailCompartir } from "../src/server/correos/compartir";
+import { eventoPublicadoHtml, pedidoPublicacionHtml } from "../src/server/correos/espera";
 import { MUESTRAS } from "../src/server/correos/transaccionales";
 import { historias, promo1, promo2, promo3, sinMp } from "../src/server/correos/plantillas";
 
@@ -36,6 +37,17 @@ const mails: Record<string, string> = {
     tienda: "https://encontrate.app/sofiarios/medio-maraton",
     bajaUrl: d.bajaUrl,
     prueba: true,
+  }).html,
+  "pedido-publicacion": pedidoPublicacionHtml({
+    evento: "Medio Maratón de las Sierras",
+    eventId: "evento-ejemplo",
+    esperando: 7,
+  }).html,
+  "evento-publicado": eventoPublicadoHtml({
+    evento: "Medio Maratón de las Sierras",
+    fotografo: "Sofía Ríos",
+    url: "https://encontrate.app/sofiarios/medio-maraton",
+    conBusqueda: true,
   }).html,
   "campana-sin-mp": sinMp(d).html,
   "campana-historias": historias(d).html,

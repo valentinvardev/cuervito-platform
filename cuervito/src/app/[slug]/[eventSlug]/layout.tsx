@@ -1,7 +1,9 @@
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
+
+import { traerEvento, traerFotografo } from "../_datos";
 
 function EventSkeleton({ logoUrl }: { logoUrl: string | null }) {
   return (
@@ -83,14 +85,18 @@ export default async function EventLayout({
   children: React.ReactNode;
   params: Promise<{ slug: string; eventSlug: string }>;
 }) {
-  const { slug } = await params;
+  const { slug, eventSlug } = await params;
 
-  const user = await db.user.findUnique({
-    where: { slug },
-    select: { logoKey: true },
-  });
+  /* El 404 se decide acá, antes del loading.tsx: la página corre adentro de
+     ese límite y para cuando llama a notFound() el 200 ya salió. Un evento
+     SIN PUBLICAR no es un 404 —existe, y la página muestra el aviso de
+     privado—; sólo lo es el que no existe. */
+  const user = await traerFotografo(slug);
+  if (!user) notFound();
+  const evento = await traerEvento(user.id, eventSlug);
+  if (!evento) notFound();
 
-  const logoUrl = user?.logoKey
+  const logoUrl = user.logoKey
     ? await resolveMediaUrl(user.logoKey)
     : null;
 

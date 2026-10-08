@@ -1,53 +1,24 @@
 import { type Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { cache } from "react";
+import { Suspense } from "react";
 
 import { usuarioInstagram } from "~/lib/instagram";
 import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
-import { slugReservado } from "~/lib/slugs-reservados";
 import { urlPublica } from "~/lib/url-publica";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 
+import { type Fotografo, traerFotografo } from "./_datos";
 import { PerfilEncontrate } from "./encontrate/perfil";
-
-/* Una sola consulta para la página y para su <head>: cache() la comparte
-   dentro del mismo request, y la base está lejos del VPS. */
-const traerFotografo = cache((slug: string) =>
-  db.user.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      name: true,
-      bio: true,
-      location: true,
-      instagramUrl: true,
-      websiteUrl: true,
-      image: true,
-      storefrontBrandColor: true,
-      storefrontTemplate: true,
-      logoKey: true,
-      status: true,
-      onboardingCompletedAt: true,
-      customDomains: {
-        where: { status: "ACTIVE" },
-        orderBy: { verifiedAt: "asc" },
-        take: 1,
-        select: { hostname: true },
-      },
-    },
-  }),
-);
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await props.params;
-  if (slugReservado(slug)) return {};
   const user = await traerFotografo(slug);
-  if (!user || user.status !== "ACTIVE" || !user.onboardingCompletedAt) return {};
+  if (!user) return {};
 
   const nombre = user.name ?? "Fotógrafo";
   const titulo = `${nombre} · Fotos de eventos deportivos`;
@@ -65,15 +36,52 @@ export async function generateMetadata(props: {
   };
 }
 
+function NavSkeleton({ logoUrl }: { logoUrl: string | null }) {
+  return (
+    <nav className="nav">
+      <div className="nav-left">
+        {logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logoUrl} alt="" className="storefront-logo" />
+        ) : (
+          <span className="logo" aria-hidden="true">
+            cuerv<span className="logo-dot" />to
+          </span>
+        )}
+      </div>
+    </nav>
+  );
+}
+
+/* El esqueleto vivía en el layout, alrededor de todo lo de abajo. Bajó acá
+   para que el layout pueda responder 404 (ver layout.tsx); la tienda lo sigue
+   teniendo igual, con el logo del fotógrafo mientras cargan los eventos. */
 export default async function PhotographerPage(props: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await props.params;
-  if (slugReservado(slug)) notFound();
-
+  // El layout ya respondió 404 si no existe; esto es para el tipo.
   const user = await traerFotografo(slug);
-  if (!user || user.status !== "ACTIVE" || !user.onboardingCompletedAt) notFound();
+  if (!user) notFound();
 
+  const logoUrl = user.logoKey ? await resolveMediaUrl(user.logoKey) : null;
+
+  return (
+    <Suspense fallback={<NavSkeleton logoUrl={logoUrl} />}>
+      <Tienda slug={slug} user={user} logoUrl={logoUrl} />
+    </Suspense>
+  );
+}
+
+async function Tienda({
+  slug,
+  user,
+  logoUrl,
+}: {
+  slug: string;
+  user: Fotografo;
+  logoUrl: string | null;
+}) {
   const eventsRaw = await db.event.findMany({
     where: { ownerId: user.id, isPublished: true, NOT: { status: "ARCHIVED" } },
     orderBy: [{ eventDate: "desc" }, { createdAt: "desc" }],
@@ -90,7 +98,7 @@ export default async function PhotographerPage(props: {
     },
   });
 
-  const [events, avatarUrl, logoUrl] = await Promise.all([
+  const [events, avatarUrl] = await Promise.all([
     Promise.all(
       eventsRaw.map(async (e) => ({
         ...e,
@@ -102,9 +110,6 @@ export default async function PhotographerPage(props: {
       })),
     ),
     resolveAvatarUrl(user.image),
-    user.logoKey
-      ? resolveMediaUrl(user.logoKey)
-      : null,
   ]);
 
   const initials =
