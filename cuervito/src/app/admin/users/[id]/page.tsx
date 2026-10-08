@@ -45,7 +45,7 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
   const session = await auth();
   const soyYo = session?.user?.id === id;
 
-  const [user, quota, acciones, reconocimiento, descargas, eventos, eventosGratis, regalados] =
+  const [user, quota, acciones, reconocimiento, descargas, eventos, eventosGratis, regalados, fueraDeLaCuenta] =
     await Promise.all([
       db.user.findUnique({
         where: { id },
@@ -66,7 +66,7 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
           giftEnabled: true,
           historiasEnabled: true,
           emailsPromocionales: true,
-          _count: { select: { eventsOwned: true, sales: true, photosOwned: true } },
+          _count: { select: { eventsOwned: true, sales: true, photosOwned: { where: { deletedAt: null, fileSize: { not: null } } } } },
         },
       }),
       getQuotaUsage(id).catch(() => null),
@@ -96,6 +96,17 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
       // a ciegas.
       db.event.count({ where: { ownerId: id, pricePerPhoto: 0 } }),
       db.sale.count({ where: { sellerId: id, status: "GIFT" } }),
+      // Lo que no entra en "Fotos" y explica la diferencia con lo que el
+      // fotógrafo cree que subió: las que llegaron pero todavía no se ven en
+      // la tienda (sin procesar o dadas por perdidas), las subidas que se
+      // firmaron y nunca llegaron, y las que borró.
+      Promise.all([
+        db.photo.count({
+          where: { ownerId: id, deletedAt: null, fileSize: { not: null }, previewKey: null },
+        }),
+        db.photo.count({ where: { ownerId: id, deletedAt: null, fileSize: null } }),
+        db.photo.count({ where: { ownerId: id, deletedAt: { not: null } } }),
+      ]).then(([sinVer, noLlegaron, borradas]) => ({ sinVer, noLlegaron, borradas })),
     ]);
 
   if (!user) notFound();
@@ -167,6 +178,19 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
           <div className="card">
             <div className="k-lab">Fotos</div>
             <div className="k-n tnum">{n(user._count.photosOwned)}</div>
+            {(fueraDeLaCuenta.sinVer > 0 ||
+              fueraDeLaCuenta.noLlegaron > 0 ||
+              fueraDeLaCuenta.borradas > 0) && (
+              <div className="k-sub">
+                {[
+                  fueraDeLaCuenta.sinVer > 0 && `${n(fueraDeLaCuenta.sinVer)} sin verse en la tienda`,
+                  fueraDeLaCuenta.noLlegaron > 0 && `${n(fueraDeLaCuenta.noLlegaron)} no llegaron`,
+                  fueraDeLaCuenta.borradas > 0 && `${n(fueraDeLaCuenta.borradas)} borradas`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </div>
+            )}
           </div>
           <div className="card">
             <div className="k-lab">Ventas</div>

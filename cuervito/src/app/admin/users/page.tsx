@@ -57,7 +57,9 @@ export default async function AdminUsersPage(props: {
         status: true,
         createdAt: true,
         mpConnectedAt: true,
-        _count: { select: { eventsOwned: true, sales: true, photosOwned: true } },
+        // Las mismas fotos que cuenta la lista de eventos: las que llegaron y no
+        // se borraron. Una fila sin tamaño es una subida firmada que nunca llegó.
+        _count: { select: { eventsOwned: true, sales: true, photosOwned: { where: { deletedAt: null, fileSize: { not: null } } } } },
       },
     }),
     db.user.count({ where }),
