@@ -59,7 +59,12 @@ existir: una vez es un descuido, dos es una tendencia.
 - Señal temprana: si lanzás algo que tarda y no guardás la forma de
   cancelarlo, no lo lanzaste, lo soltaste. Un `Promise.race` con un timeout es
   la versión que más se disfraza de correcta.
-- Estado: activo
+- 2026-10-07, evitado desde el diseño: los mails de «ya se publicó» no los
+  manda el botón de publicar sino el remitente en cada pasada, con reclamo
+  en la base y liberación de reclamos colgados. Publicar sólo EMPUJA una
+  pasada (`void`), y si el proceso muere, la siguiente retoma. Es la primera
+  vez que el trabajo suelto tiene un reconciliador desde el día uno.
+- Estado: mejorando
 
 ## Estado derivado que se calcula una vez y nunca se reconcilia
 - Primera vez: 2026-09-08 (registrado; la primera aparición fue el relleno de miniaturas)
