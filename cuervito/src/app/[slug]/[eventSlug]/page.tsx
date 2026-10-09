@@ -9,7 +9,7 @@ import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { getPresignedDownloadUrl } from "~/server/s3";
 import { ahora, lento } from "~/server/medir";
-import { resolveMediaUrl } from "~/server/media";
+import { resolveMediaUrl, urlDerivado } from "~/server/media";
 import { getMpTestMode } from "~/server/settings";
 
 import { estaALaVenta, traerEvento, traerFotografo } from "../_datos";
@@ -146,6 +146,8 @@ export default async function PublicEventPage(props: {
         // La miniatura de 560px. Nula en las fotos anteriores al cambio: ahí
         // se cae al preview de 2400px, que es lento pero se ve.
         thumbKey: true,
+        // La versión de las dos URLs: cambia al regenerar la marca (urlDerivado).
+        previewGeneratedAt: true,
         bibNumbers: true,
         width: true,
         height: true,
@@ -165,8 +167,8 @@ export default async function PublicEventPage(props: {
   const photos = await Promise.all(
     rawPhotos.map(async (p) => ({
       id: p.id,
-      previewUrl: await resolveMediaUrl(p.thumbKey ?? p.previewKey!),
-      fullUrl: await resolveMediaUrl(p.previewKey!),
+      previewUrl: await urlDerivado(p.thumbKey ?? p.previewKey!, p.previewGeneratedAt),
+      fullUrl: await urlDerivado(p.previewKey!, p.previewGeneratedAt),
       bibNumbers: p.bibNumbers,
       width: p.width,
       height: p.height,

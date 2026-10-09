@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "~/server/db";
-import { resolveMediaUrl } from "~/server/media";
+import { resolveMediaUrl, urlDerivado } from "~/server/media";
 
 export type LiveEvent = {
   href: string;
@@ -51,23 +51,24 @@ export async function searchLiveEvents(query: string): Promise<LiveEvent[]> {
         where: { previewKey: { not: null }, deletedAt: null },
         orderBy: { createdAt: "desc" },
         take: 1,
-        select: { previewKey: true },
+        select: { previewKey: true, previewGeneratedAt: true },
       },
     },
   });
 
   const results = await Promise.all(
     events.map(async (e) => {
-      const rawKey = e.coverUrl ?? e.photos[0]?.previewKey ?? null;
+      // Sin portada subida, la primera foto: ésa lleva marca y va con su versión.
+      const foto = e.photos[0];
       let coverUrl: string | null = null;
-      if (rawKey) {
-        try {
-          coverUrl = rawKey.startsWith("http")
-            ? rawKey
-            : await resolveMediaUrl(rawKey);
-        } catch {
-          coverUrl = null;
+      try {
+        if (e.coverUrl) {
+          coverUrl = e.coverUrl.startsWith("http") ? e.coverUrl : await resolveMediaUrl(e.coverUrl);
+        } else if (foto?.previewKey) {
+          coverUrl = await urlDerivado(foto.previewKey, foto.previewGeneratedAt);
         }
+      } catch {
+        coverUrl = null;
       }
       return {
         // ?src=search marca que el descubrimiento lo aportó el buscador

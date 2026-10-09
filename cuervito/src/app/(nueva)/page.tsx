@@ -24,7 +24,7 @@ import { whatsappUrl } from "~/lib/support";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { ahora, lento } from "~/server/medir";
-import { resolveMediaUrl } from "~/server/media";
+import { resolveMediaUrl, urlDerivado } from "~/server/media";
 
 import { Pie } from "./_pie";
 import { Encabezado, PanelVentas, Preguntas, Telefono, VerEvento } from "./_piezas";
@@ -139,7 +139,7 @@ async function miniaturasDeVentas() {
             previewKey: { not: null },
           },
           orderBy: { createdAt: "desc" },
-          select: { previewKey: true },
+          select: { previewKey: true, previewGeneratedAt: true },
         })
         .catch(() => null),
     ),
@@ -147,9 +147,9 @@ async function miniaturasDeVentas() {
 
   const urls = await Promise.all(
     claves
-      .filter((f): f is { previewKey: string } => !!f?.previewKey)
+      .filter((f): f is { previewKey: string; previewGeneratedAt: Date | null } => !!f?.previewKey)
       .slice(0, 3)
-      .map((f) => resolveMediaUrl(f.previewKey).catch(() => null)),
+      .map((f) => urlDerivado(f.previewKey, f.previewGeneratedAt).catch(() => null)),
   );
   return urls.filter((u): u is string => !!u);
 }
@@ -177,7 +177,7 @@ async function eventoDemo() {
           where: { previewKey: { not: null }, deletedAt: null },
           orderBy: { createdAt: "desc" },
           take: 1,
-          select: { previewKey: true },
+          select: { previewKey: true, previewGeneratedAt: true },
         },
       },
     });
@@ -185,17 +185,21 @@ async function eventoDemo() {
   const e = (await buscar(EVENTO_DEMO)) ?? (await buscar());
   if (!e?.owner.slug) return null;
 
-  const clave = e.coverUrl ?? e.photos[0]?.previewKey ?? null;
+  // Sin portada subida, la primera foto: ésa lleva marca y va con su versión.
+  const foto = e.photos[0];
+  const portada = e.coverUrl
+    ? e.coverUrl.startsWith("http")
+      ? e.coverUrl
+      : await resolveMediaUrl(e.coverUrl).catch(() => null)
+    : foto?.previewKey
+      ? await urlDerivado(foto.previewKey, foto.previewGeneratedAt).catch(() => null)
+      : null;
   return {
     nombre: e.name,
     lugar: e.location,
     fotos: e._count.photos,
     href: `/${e.owner.slug}/${e.slug}?src=demo`,
-    portada: clave
-      ? clave.startsWith("http")
-        ? clave
-        : await resolveMediaUrl(clave).catch(() => null)
-      : null,
+    portada,
   };
 }
 
