@@ -58,6 +58,9 @@ export function VistaEscalada({
           loading="lazy"
           tabIndex={-1}
           aria-hidden
+          // La página es más alta que la caja; achicada, su barra de scroll
+          // queda como una franja blanca en el borde.
+          scrolling="no"
           style={{
             position: "absolute",
             top: 0,

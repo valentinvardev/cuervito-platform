@@ -342,7 +342,7 @@ export function Asistente({ eventos, slugFotografo }: { eventos: EventoParaElegi
       )}
 
       {paso === 2 && (
-        <div className="pfa-cuerpo" style={{ flexDirection: "column" }}>
+        <div className="pfa-cuerpo pfa-paso-plantilla" style={{ flexDirection: "column" }}>
           <div className="pfa-fotos-h" style={{ padding: "var(--s-6) var(--s-6) var(--s-4)" }}>
             <div>
               <h1>Elegí cómo se ve</h1>

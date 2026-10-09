@@ -218,7 +218,17 @@
 }
 
 /* Paso 3: plantillas */
-.pfa-plantillas { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-4); padding: 0 var(--s-6) var(--s-5); }
+/* Cada vista se acota por el ALTO de la pantalla, no por el ancho: con un
+   tercio del ancho y proporción 3:4, en una pantalla de 1440 la tarjeta medía
+   585px de alto y no entraba con la barra, el título y el pie. Las 360px de
+   la cuenta son esas tres cosas más el nombre debajo de cada vista. */
+.pfa-paso-plantilla .pfa-fotos-h { justify-content: center; text-align: center; }
+.pfa-plantillas {
+  --ancho-vista: min(380px, calc((100dvh - 360px) * .75));
+  display: grid; grid-template-columns: repeat(3, minmax(0, max(240px, var(--ancho-vista))));
+  justify-content: center; align-content: start;
+  gap: var(--s-6); padding: 0 var(--s-6) var(--s-5);
+}
 .pfa-plantilla { display: flex; flex-direction: column; gap: 12px; background: none; border: 0; padding: 0; text-align: left; color: inherit; font: inherit; cursor: pointer; }
 .pfa-plantilla .vista {
   position: relative; aspect-ratio: 3 / 4; border-radius: var(--r-3); overflow: hidden;
@@ -238,7 +248,7 @@
 }
 .pfa-plantilla[aria-pressed="true"] .tilde { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .pfa-plantilla .tilde svg { width: 12px; height: 12px; stroke-width: 3; }
-@media (max-width: 900px) { .pfa-plantillas { grid-template-columns: 1fr; padding: 0 var(--s-4) var(--s-4); } }
+@media (max-width: 900px) { .pfa-plantillas { grid-template-columns: minmax(0, 360px); padding: 0 var(--s-4) var(--s-4); } }
 
 /* ── Detalle ────────────────────────────────────────────────────────────── */
 .pf-miga { display: flex; gap: 6px; font-size: 13px; color: var(--ink-3); }
