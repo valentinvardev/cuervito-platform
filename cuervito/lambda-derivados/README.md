@@ -28,9 +28,12 @@ hace en el VPS y viaja armado. Las dos usan sharp 0.34.5; si se actualiza en la
 app, hay que actualizarlo acá y volver a desplegar.
 
 **Nunca es obligatoria.** Sin `PROCESADOR_LAMBDA`, o si la función falla, la
-foto se procesa en el VPS como siempre. También vuelven al VPS las fotos más
-angostas que la vista previa (la unidad viaja armada para 2400 px) y las que no
-se pueden abrir, para que sea el VPS el que decida si el error es permanente.
+foto se procesa en el VPS como siempre. La unidad viaja armada para un ancho:
+2400 px, o el de la vista previa anterior si la foto ya se procesó y es más
+angosta (así se regenera la marca de un recorte sin pasar por el VPS). Si la
+foto sale de otro ancho —una angosta en su primera pasada— vuelve al VPS, igual
+que las que no se pueden abrir, para que sea el VPS el que decida si el error
+es permanente.
 Si la función falla cinco veces seguidas, el VPS deja de pedírsela cinco minutos
 y después prueba con una sola foto. Si AWS contesta que la cuenta tiene demasiadas
 Lambdas en curso, esa foto se hace en el VPS sin contarlo como falla. El estado
