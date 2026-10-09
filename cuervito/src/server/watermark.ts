@@ -90,47 +90,59 @@ function noExiste(err: unknown): boolean {
   const e = err as { name?: string; $metadata?: { httpStatusCode?: number } };
   return e?.name === "NoSuchKey" || e?.$metadata?.httpStatusCode === 404;
 }
-let platformCache: CacheEntry | null = null;
-const userCacheMap = new Map<string, CacheEntry>();
+/* En globalThis, como el semáforo de arriba y la configuración de la marca.
+
+   Con un `let` de módulo, la ruta que sube la marca vaciaba SU copia y el
+   procesador —la otra capa de webpack— seguía un minuto con la de antes: las
+   fotos subidas justo después de cambiar la marca propia de un fotógrafo, y
+   todo lo que la cola tomara en ese minuto, salían con la marca vieja. */
+declare global {
+  var __cuervito_marcas__:
+    | { plataforma: CacheEntry | null; fotografos: Map<string, CacheEntry> }
+    | undefined;
+}
+const marcas = (globalThis.__cuervito_marcas__ ??= {
+  plataforma: null,
+  fotografos: new Map<string, CacheEntry>(),
+});
 const CACHE_TTL_MS = 60_000;
 
 export async function loadPlatformWatermark(): Promise<Buffer | null> {
-  if (platformCache && Date.now() - platformCache.loadedAt < CACHE_TTL_MS) {
-    return platformCache.bytes;
-  }
+  const cached = marcas.plataforma;
+  if (cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) return cached.bytes;
   try {
     const bytes = await getS3ObjectBytes(platformWatermarkKey());
     const buf = Buffer.from(bytes);
-    platformCache = { bytes: buf, loadedAt: Date.now() };
+    marcas.plataforma = { bytes: buf, loadedAt: Date.now() };
     return buf;
   } catch (err) {
-    if (noExiste(err)) platformCache = { bytes: null, loadedAt: Date.now() };
+    if (noExiste(err)) marcas.plataforma = { bytes: null, loadedAt: Date.now() };
     return null;
   }
 }
 
 export async function loadUserWatermark(userId: string): Promise<Buffer | null> {
-  const cached = userCacheMap.get(userId);
+  const cached = marcas.fotografos.get(userId);
   if (cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) return cached.bytes;
   try {
     const bytes = await getS3ObjectBytes(userWatermarkKey(userId));
     const buf = Buffer.from(bytes);
-    userCacheMap.set(userId, { bytes: buf, loadedAt: Date.now() });
+    marcas.fotografos.set(userId, { bytes: buf, loadedAt: Date.now() });
     return buf;
   } catch (err) {
-    if (noExiste(err)) userCacheMap.set(userId, { bytes: null, loadedAt: Date.now() });
+    if (noExiste(err)) marcas.fotografos.set(userId, { bytes: null, loadedAt: Date.now() });
     return null;
   }
 }
 
 /** Invalidate the in-process cache for the platform watermark. */
 export function invalidateWatermarkCache() {
-  platformCache = null;
+  marcas.plataforma = null;
 }
 
 /** Invalidate the per-user cache entry (call after the user uploads/deletes). */
 export function invalidateUserWatermarkCache(userId: string) {
-  userCacheMap.delete(userId);
+  marcas.fotografos.delete(userId);
 }
 
 /**
@@ -266,8 +278,13 @@ async function _generatePreview(
     limpia: previewCleanPhotoKey(photo.ownerId, photo.eventId, photo.id),
     miniatura: thumbPhotoKey(photo.ownerId, photo.eventId, photo.id),
   };
+  /* Sólo las que no se van a pisar. Al regenerar, las claves viejas son las
+     mismas que las nuevas: borrarlas antes de escribir dejaba la foto sin
+     vista previa en la tienda mientras se procesaba, y para siempre si la
+     subida fallaba, con la base apuntando a un archivo que ya no estaba. */
+  const nuevas = new Set(Object.values(claves));
   const viejas = [photo.previewKey, photo.previewCleanKey, photo.thumbKey].filter(
-    (k): k is string => Boolean(k),
+    (k): k is string => !!k && !nuevas.has(k),
   );
 
   // Primero la Lambda, si está: al lado de S3 esto tarda segundos y no usa el
