@@ -26,6 +26,12 @@ const urlPortada = cache(async (coverUrl: string | null) =>
   coverUrl ? (coverUrl.startsWith("http") ? coverUrl : await resolveMediaUrl(coverUrl)) : null,
 );
 
+/** Cómo encuentra el atleta sus fotos en este evento, para los textos de búsqueda. */
+function comoSeBusca(e: { recognition: boolean; bibDetection: boolean }): string {
+  if (!e.recognition) return "en la galería";
+  return e.bibDetection ? "por número de dorsal o con una selfie" : "con una selfie";
+}
+
 /* El título es lo que se busca: «fotos maratón de rosario». Hasta acá todas
    las páginas de evento heredaban el título de la landing, así que para Google
    eran cientos de páginas que decían lo mismo. */
@@ -54,11 +60,7 @@ export async function generateMetadata(props: {
       })
     : null;
   const fotografo = photographer.name ?? "el fotógrafo";
-  const como = !event.recognition
-    ? "en la galería"
-    : event.bibDetection
-      ? "por número de dorsal o con una selfie"
-      : "con una selfie";
+  const como = comoSeBusca(event);
 
   const titulo = `Fotos de ${event.name}${fecha ? ` · ${fecha}` : ""}`;
   const descripcion = `Buscá tus fotos de ${event.name}${event.location ? ` en ${event.location}` : ""} ${como}. Fotos de ${fotografo}: comprás y descargás al instante, sin crear cuenta.`;
@@ -276,23 +278,47 @@ export default async function PublicEventPage(props: {
 
   /* Lo mismo que dice la página, en la forma en que lo lee un agente: qué
      evento, cuándo, dónde, de quién son las fotos y cuánto cuestan. La
-     galería es la página; el evento es de lo que trata. */
+     galería es la página; el evento es de lo que trata.
+
+     Google lee el evento de `about` como un Event aparte y le pide sus
+     campos. Van los que son ciertos: imagen (la portada o, sin portada, la
+     primera foto), descripción (la del fotógrafo o una armada con los datos
+     del evento) y estado: no hay forma de marcar un evento cancelado, así que
+     es «programado». Quedan afuera dos a propósito: `organizer`, porque no
+     sabemos quién organiza la carrera y el fotógrafo no lo es; y `offers`,
+     porque en un Event son entradas, y acá no se venden entradas sino fotos
+     (ese precio va en el Offer de la galería, más abajo).
+
+     Sin fecha o sin lugar no es un Event válido para Google (son los dos
+     campos obligatorios): ahí se dice sólo de qué trata, sin tipo de evento. */
+  const imagen = coverSignedUrl ?? photos[0]?.previewUrl ?? null;
+  const propia = event.description?.trim();
+  const descripcion = propia?.length
+    ? propia
+    : `${event.name}${event.location ? `, ${event.location}` : ""}. Fotos de ${photographer.name ?? "el fotógrafo"}: buscá las tuyas ${comoSeBusca(event)}.`;
   const datosEstructurados = {
     "@context": "https://schema.org",
     "@type": "ImageGallery",
     name: `Fotos de ${event.name}`,
     url: urlPublica(slug, photographer.customDomains[0]?.hostname, event.slug),
-    ...(event.description ? { description: event.description } : {}),
-    ...(coverSignedUrl ? { image: coverSignedUrl } : {}),
+    description: descripcion,
+    ...(imagen ? { image: imagen } : {}),
     inLanguage: "es-AR",
     author: { "@type": "Person", name: photographer.name ?? "Fotógrafo" },
-    about: {
-      "@type": "SportsEvent",
-      name: event.name,
-      ...(event.eventDate ? { startDate: event.eventDate.toISOString().slice(0, 10) } : {}),
-      ...(event.location ? { location: { "@type": "Place", name: event.location } } : {}),
-      ...(event.discipline ? { sport: event.discipline } : {}),
-    },
+    about:
+      event.eventDate && event.location
+        ? {
+            "@type": "SportsEvent",
+            name: event.name,
+            description: descripcion,
+            ...(imagen ? { image: imagen } : {}),
+            startDate: event.eventDate.toISOString().slice(0, 10),
+            eventStatus: "https://schema.org/EventScheduled",
+            eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+            location: { "@type": "Place", name: event.location, address: event.location },
+            ...(event.discipline ? { sport: event.discipline } : {}),
+          }
+        : { "@type": "Thing", name: event.name },
     ...(regalo
       ? { isAccessibleForFree: true }
       : {
