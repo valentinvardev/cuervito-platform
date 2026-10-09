@@ -259,6 +259,8 @@ async function _generatePreview(
       previewKey: true,
       previewCleanKey: true,
       thumbKey: true,
+      // El de la vista previa anterior: con qué ancho armar la marca para la Lambda.
+      width: true,
     },
   });
   if (!photo) {
@@ -289,13 +291,9 @@ async function _generatePreview(
 
   // Primero la Lambda, si está: al lado de S3 esto tarda segundos y no usa el
   // procesador del VPS. Si no está o falla, se sigue acá como siempre.
-  // Por qué no la hizo la Lambda, si se le pidió: una foto angosta le toca al
-  // VPS por diseño y no cuenta como que la Lambda falló.
-  let porQueLocal: string | null = null;
   if (lambdaConfigurada()) {
     const intento = await enLambda(photo, claves, viejas, reloj, signal);
     if (typeof intento !== "string") return intento;
-    porQueLocal = intento;
     if (signal?.aborted) {
       reloj.cerrar(photoId, "abortada", { detalle: "lambda" });
       return ABORTADO;
@@ -380,7 +378,11 @@ async function _generatePreview(
     reloj.marca("subir");
 
     await registrarDerivados(photo.id, claves, d.ancho, d.alto);
-    if (porQueLocal !== "angosta") contarLocal();
+    /* También las angostas. No contarlas no las hacía de la Lambda: las
+       procesaba el VPS igual, y el estado decía "0 en el VPS" mientras un
+       tercio de un evento se bajaba y se procesaba acá. Que no sean una falla
+       de la Lambda lo decide derivados-lambda.ts, que no las anota como tal. */
+    contarLocal();
 
     reloj.cerrar(photoId, "ok", { bytes: raw.byteLength });
     return { watermarkedKey: claves.marcada, rekognitionBytes: null };
@@ -415,22 +417,33 @@ type Claves = { marcada: string; limpia: string; miniatura: string };
  * para el que la unidad que se le manda no sirve ("angosta").
  */
 async function enLambda(
-  photo: { id: string; ownerId: string; storageKey: string },
+  photo: { id: string; ownerId: string; storageKey: string; width: number | null },
   claves: Claves,
   viejas: string[],
   reloj: ReturnType<typeof cronometro>,
   signal?: AbortSignal,
 ): Promise<PreviewResult | string> {
   if (!env.AWS_S3_BUCKET) return "sin-bucket";
+  /* El ancho que va a tener la vista previa, si ya se sabe.
+
+     La unidad de la marca se arma para un ancho, y la Lambda rechaza
+     ("angosta") la foto que sale de otro. Antes se armaba siempre para 2400,
+     y toda foto más angosta —un recorte, una exportación a 2048— la bajaba y
+     la procesaba el VPS: en un evento de 350, 124 fotos. Al regenerar, el
+     ancho ya quedó guardado de la pasada anterior (es el de la vista previa,
+     no el del original), así que la unidad se arma para ése. En la primera
+     pasada no se sabe y se supone 2400, que es lo que mide casi todo; si no,
+     la foto vuelve al VPS como siempre. */
+  const ancho = photo.width && photo.width < PREVIEW_MAX_WIDTH ? photo.width : PREVIEW_MAX_WIDTH;
   let pedido: PedidoDerivados;
   try {
-    const { unidad, cfg } = await unidadDeLaMarca(photo.ownerId, PREVIEW_MAX_WIDTH);
+    const { unidad, cfg } = await unidadDeLaMarca(photo.ownerId, ancho);
     pedido = {
       bucket: env.AWS_S3_BUCKET,
       original: photo.storageKey,
       claves,
       viejas,
-      anchoEsperado: PREVIEW_MAX_WIDTH,
+      anchoEsperado: ancho,
       unidad: { png: unidad.png.toString("base64"), ancho: unidad.ancho, alto: unidad.alto },
       cfg,
       cacheControl: CACHE_MOSTRAR,
