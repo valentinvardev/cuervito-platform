@@ -93,3 +93,20 @@ existir: una vez es un descuido, dos es una tendencia.
   clave es determinística (HMAC del id), así que dos pasadas a la vez escriben
   el mismo archivo y no dejan huérfanos.
 - Estado: mejorando
+
+## Estado de proceso en una variable de módulo
+- Primera vez: 2026-10-08 (registrado; la primera aparición fue el semáforo de sharp)
+- Ocurrencias: 2 (el `let active` del semáforo de sharp, que eran dos
+  contadores; la caché de las marcas PNG en `watermark.ts`, 2026-10-08)
+- Qué pasa: algo que tiene que ser uno solo por proceso —un contador, una
+  caché con invalidación— se declara como `let` o `const new Map()` de módulo.
+  En Next, instrumentation.ts (donde corre la cola) y las rutas son dos capas
+  de webpack: el módulo se evalúa dos veces y hay dos copias.
+- Por qué importa: no rompe nada visible. El semáforo dejaba pasar el doble de
+  decodes; la caché hacía que la ruta que sube la marca invalidara SU copia y
+  la cola siguiera un minuto con la vieja. Las fallas son de a ratos y no se
+  reproducen en una prueba con una sola ruta.
+- Señal temprana: si una variable de módulo se escribe desde una ruta y se lee
+  desde la cola (o al revés), va en `globalThis.__cuervito_x__ ??=`. El repo ya
+  tiene la convención; `marca-agua.ts` la usó desde el principio.
+- Estado: activo
