@@ -1,6 +1,6 @@
 import { clasesFuentes } from "~/app/_portfolio/fuentes";
 import { db } from "~/server/db";
-import { cifrasDe, disenoDe, fotosDePortfolio } from "~/server/portfolio";
+import { cifrasDe, disenoDe, eventosDe, fotosDePortfolio } from "~/server/portfolio";
 
 import { portfolioPropio, sesionPortfolio } from "../../_acceso";
 import { Editor } from "./_editor";
@@ -18,10 +18,11 @@ export default async function EditorPortfolio({ params }: { params: Promise<{ id
   const { id } = await params;
   const p = await portfolioPropio(userId, id);
   // La vista del dueño: también las fotos cuya versión todavía se prepara.
-  const [fotos, perfil, cifras] = await Promise.all([
+  const [fotos, perfil, cifras, eventos] = await Promise.all([
     fotosDePortfolio(id, true),
     db.user.findUnique({ where: { id: userId }, select: { location: true } }),
     cifrasDe(userId),
+    eventosDe(userId, slug, null),
   ]);
 
   return (
@@ -39,6 +40,7 @@ export default async function EditorPortfolio({ params }: { params: Promise<{ id
           instagram: yo?.instagramUrl ?? null,
           web: yo?.websiteUrl ?? null,
           cifras,
+          eventos,
         }}
       />
     </div>

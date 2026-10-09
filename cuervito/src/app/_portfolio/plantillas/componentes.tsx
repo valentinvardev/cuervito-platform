@@ -1,7 +1,10 @@
 import type { Viewport } from "../tipos";
+import { FotofinishPlantilla } from "./FotofinishPlantilla";
 import { HalcyonPlantilla } from "./HalcyonPlantilla";
 import { MeridianPlantilla } from "./MeridianPlantilla";
+import { PodioPlantilla } from "./PodioPlantilla";
 import type { IdPlantilla } from "./registro";
+import { SenderoPlantilla } from "./SenderoPlantilla";
 import { VernissagePlantilla } from "./VernissagePlantilla";
 
 /**
@@ -14,4 +17,7 @@ export const COMPONENTES: Record<IdPlantilla, React.ComponentType<{ viewport: Vi
   halcyon: HalcyonPlantilla,
   meridian: MeridianPlantilla,
   vernissage: VernissagePlantilla,
+  podio: PodioPlantilla,
+  fotofinish: FotofinishPlantilla,
+  sendero: SenderoPlantilla,
 };

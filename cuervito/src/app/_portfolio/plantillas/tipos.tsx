@@ -32,6 +32,7 @@ export interface TemplateDef {
   defaultButtons?: ButtonStyle;
   defaultLogo?: LogoSettings;
   defaultGrid?: GridSettings;
-  /** Las grillas que ofrece la sección de trabajo, en el orden del panel. */
+  /** Las grillas que ofrece la sección de trabajo, en el orden del panel.
+   *  Vacío: la plantilla muestra las fotos a su manera y no hay qué elegir. */
   layouts?: GridSettings["layout"][];
 }

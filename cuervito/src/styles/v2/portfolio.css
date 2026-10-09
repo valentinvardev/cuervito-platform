@@ -222,6 +222,9 @@
    tercio del ancho y proporción 3:4, en una pantalla de 1440 la tarjeta medía
    585px de alto y no entraba con la barra, el título y el pie. Las 360px de
    la cuenta son esas tres cosas más el nombre debajo de cada vista. */
+/* Con dos filas de plantillas el paso es más alto que la pantalla: crece con
+   su contenido en vez de achicarse, así la barra de abajo queda después. */
+.pfa-cuerpo.pfa-paso-plantilla { flex: 1 0 auto; }
 .pfa-paso-plantilla .pfa-fotos-h { justify-content: center; text-align: center; }
 .pfa-plantillas {
   --ancho-vista: min(380px, calc((100dvh - 360px) * .75));

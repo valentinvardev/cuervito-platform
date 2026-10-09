@@ -65,6 +65,9 @@ const PARES = [
   { nombre: "Instrument · Geist", serif: FAMILIAS.instrumentSerif, sans: FAMILIAS.geist, mono: FAMILIAS.geistMono },
   { nombre: "Playfair · Manrope", serif: FAMILIAS.playfair, sans: FAMILIAS.manrope, mono: FAMILIAS.plexMono },
   { nombre: "Fraunces · Space Grotesk", serif: FAMILIAS.fraunces, sans: FAMILIAS.spaceGrotesk, mono: FAMILIAS.spaceMono },
+  { nombre: "Anton · JetBrains Mono", serif: FAMILIAS.anton, sans: FAMILIAS.jetbrainsMono, mono: FAMILIAS.jetbrainsMono },
+  { nombre: "Instrument Sans", serif: FAMILIAS.instrumentSans, sans: FAMILIAS.instrumentSans, mono: FAMILIAS.instrumentSans },
+  { nombre: "Fraunces · Inter Tight", serif: FAMILIAS.fraunces, sans: FAMILIAS.interTight, mono: FAMILIAS.interTight },
 ];
 
 const GRILLAS: Record<GridSettings["layout"], string> = {
@@ -435,7 +438,7 @@ function Diseno({ store }: { store: StoreSitio }) {
             key={p.nombre}
             type="button"
             className="pfe-letra"
-            aria-pressed={typography.serif === p.serif}
+            aria-pressed={typography.serif === p.serif && typography.sans === p.sans}
             onClick={() => s.setTypography({ serif: p.serif, sans: p.sans, mono: p.mono })}
           >
             <span style={{ fontFamily: p.serif }}>Aa</span>
@@ -444,6 +447,7 @@ function Diseno({ store }: { store: StoreSitio }) {
         ))}
       </section>
 
+      {layouts.length > 0 && (
       <section>
         <h3>Cómo se muestran las fotos</h3>
         <div className="chips">
@@ -468,6 +472,7 @@ function Diseno({ store }: { store: StoreSitio }) {
           </label>
         )}
       </section>
+      )}
 
       <section>
         <h3>Botones</h3>

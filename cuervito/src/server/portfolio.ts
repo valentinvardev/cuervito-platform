@@ -2,7 +2,8 @@ import "server-only";
 
 import { cache } from "react";
 
-import type { FotoSitio, PortfolioDesign } from "~/app/_portfolio/store";
+import type { EventoSitio, FotoSitio, PortfolioDesign } from "~/app/_portfolio/store";
+import { urlPublica } from "~/lib/url-publica";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 
@@ -117,3 +118,48 @@ export const cifrasDe = cache(async (ownerId: string) => {
     temporadas: temporadas ? String(temporadas) : "",
   };
 });
+
+/**
+ * Los últimos eventos publicados del fotógrafo, con el link a su galería. Son
+ * los mismos que lista su tienda (publicados y no archivados), en el mismo
+ * orden. La portada es la del evento o, si no tiene, la miniatura de su
+ * primera foto, que es la que la tienda ya muestra.
+ */
+export const eventosDe = cache(
+  async (ownerId: string, slug: string, dominio: string | null | undefined): Promise<EventoSitio[]> => {
+    const filas = await db.event.findMany({
+      where: { ownerId, isPublished: true, NOT: { status: "ARCHIVED" } },
+      orderBy: [{ eventDate: "desc" }, { createdAt: "desc" }],
+      take: 12,
+      select: {
+        slug: true,
+        name: true,
+        eventDate: true,
+        discipline: true,
+        location: true,
+        coverUrl: true,
+        photos: {
+          where: { deletedAt: null, thumbKey: { not: null } },
+          orderBy: { createdAt: "asc" },
+          take: 1,
+          select: { thumbKey: true },
+        },
+        _count: { select: { photos: { where: { fileSize: { not: null }, deletedAt: null } } } },
+      },
+    });
+    return Promise.all(
+      filas.map(async (e) => {
+        const clave = e.coverUrl ?? e.photos[0]?.thumbKey ?? null;
+        return {
+          nombre: e.name,
+          href: urlPublica(slug, dominio, e.slug),
+          fecha: e.eventDate?.toISOString().slice(0, 10) ?? null,
+          disciplina: e.discipline?.trim() ?? null,
+          lugar: e.location?.trim() ?? null,
+          fotos: e._count.photos,
+          portada: clave ? (clave.startsWith("http") ? clave : await resolveMediaUrl(clave)) : null,
+        };
+      }),
+    );
+  },
+);

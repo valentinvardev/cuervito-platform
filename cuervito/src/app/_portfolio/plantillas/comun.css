@@ -1,0 +1,55 @@
+/* El visor de fotos de Podio, Fotofinish y Sendero (ver comun.tsx). Cada
+   plantilla le pasa su acento por --visor-acento y su letra por --visor-letra. */
+
+.pf-visor {
+  position: fixed; inset: 0; z-index: 3000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 64px 72px;
+  background: rgba(8, 8, 9, .96);
+  color: #f2f2f2;
+  font-family: var(--visor-letra, var(--tpl-sans, system-ui, sans-serif));
+  animation: pf-visor-entra .3s ease both;
+}
+.pf-visor-foto {
+  max-width: 100%; max-height: 100%; object-fit: contain; display: block;
+  animation: pf-visor-foto .45s cubic-bezier(.22, 1, .36, 1) both;
+}
+.pf-visor button {
+  font: inherit; color: inherit; background: none; border: 0; cursor: pointer;
+}
+.pf-visor-cerrar {
+  position: absolute; top: 18px; right: 22px;
+  display: inline-flex; gap: 10px; align-items: center;
+  padding: 10px 14px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase;
+  border: 1px solid rgba(242, 242, 242, .2) !important; border-radius: 999px;
+}
+.pf-visor-cerrar:hover, .pf-visor-cerrar:focus-visible { border-color: var(--visor-acento, #fff) !important; }
+.pf-visor-flecha {
+  position: absolute; top: 50%; translate: 0 -50%;
+  width: 48px; height: 48px; border-radius: 50%;
+  font-size: 18px;
+  background: rgba(242, 242, 242, .08) !important;
+  transition: background .2s ease, color .2s ease;
+}
+.pf-visor-flecha[data-lado="izq"] { left: 16px; }
+.pf-visor-flecha[data-lado="der"] { right: 16px; }
+.pf-visor-flecha:hover, .pf-visor-flecha:focus-visible { background: var(--visor-acento, #fff) !important; color: #0a0a0a; }
+.pf-visor-pie {
+  position: absolute; left: 24px; right: 24px; bottom: 20px;
+  display: flex; gap: 24px; justify-content: space-between;
+  font-size: 12px; letter-spacing: .08em; color: rgba(242, 242, 242, .7);
+}
+.pf-visor-titulo { text-align: right; color: rgba(242, 242, 242, .9); }
+.pf-visor :focus-visible { outline: 2px solid var(--visor-acento, #fff); outline-offset: 3px; }
+
+@media (max-width: 640px) {
+  .pf-visor { padding: 56px 0 64px; }
+  .pf-visor-flecha { display: none; }
+}
+
+@keyframes pf-visor-entra { from { opacity: 0; } }
+@keyframes pf-visor-foto { from { opacity: 0; scale: .97; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-visor, .pf-visor-foto { animation-duration: .01ms; }
+}

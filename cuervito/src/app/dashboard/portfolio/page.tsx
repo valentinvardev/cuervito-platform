@@ -154,7 +154,7 @@ export default async function PortfolioPagina() {
               </div>
               <div>
                 <b>Otro portfolio</b>
-                <p>Uno por disciplina, por cliente o por temporada. Elegís las fotos de tus eventos y una de tres plantillas.</p>
+                <p>Uno por disciplina, por cliente o por temporada. Elegís las fotos de tus eventos y una de las {Object.keys(PLANTILLAS).length} plantillas.</p>
               </div>
               <span>
                 Empezar <ArrowRight />

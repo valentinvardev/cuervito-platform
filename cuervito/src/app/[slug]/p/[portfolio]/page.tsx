@@ -9,7 +9,7 @@ import { SitioPortfolio } from "~/app/_portfolio/sitio";
 import { urlPublica } from "~/lib/url-publica";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
-import { cifrasDe, disenoDe, fotosDePortfolio, traerPortfolio } from "~/server/portfolio";
+import { cifrasDe, disenoDe, eventosDe, fotosDePortfolio, traerPortfolio } from "~/server/portfolio";
 
 import { traerFotografo } from "../../_datos";
 import { consultarPortfolio } from "./acciones";
@@ -66,7 +66,12 @@ export default async function PaginaPortfolio({ params }: Props) {
   if (!d) notFound();
   const { fotografo, p, esDueno } = d;
 
-  const [fotos, cifras] = await Promise.all([fotosDePortfolio(p.id, esDueno), cifrasDe(fotografo.id)]);
+  const dominio = fotografo.customDomains[0]?.hostname;
+  const [fotos, cifras, eventos] = await Promise.all([
+    fotosDePortfolio(p.id, esDueno),
+    cifrasDe(fotografo.id),
+    eventosDe(fotografo.id, slug, dominio),
+  ]);
   const ua = (await headers()).get("user-agent") ?? "";
 
   // La visita se cuenta después de responder, y no las del dueño ni las de
@@ -80,7 +85,7 @@ export default async function PaginaPortfolio({ params }: Props) {
   }
 
   const nombre = fotografo.name ?? slug;
-  const url = urlPublica(slug, fotografo.customDomains[0]?.hostname, `p/${p.slug}`);
+  const url = urlPublica(slug, dominio, `p/${p.slug}`);
   const redes = [fotografo.instagramUrl, fotografo.websiteUrl].filter((x): x is string => Boolean(x));
 
   return (
@@ -98,7 +103,7 @@ export default async function PaginaPortfolio({ params }: Props) {
             jobTitle: "Fotógrafo deportivo",
             ...(fotografo.location ? { homeLocation: fotografo.location } : {}),
             ...(redes.length ? { sameAs: redes } : {}),
-            url: urlPublica(slug, fotografo.customDomains[0]?.hostname),
+            url: urlPublica(slug, dominio),
           },
           hasPart: {
             "@type": "ImageGallery",
@@ -121,6 +126,7 @@ export default async function PaginaPortfolio({ params }: Props) {
           instagram: fotografo.instagramUrl,
           web: fotografo.websiteUrl,
           cifras,
+          eventos,
         }}
         fotos={fotos}
         slug={slug}

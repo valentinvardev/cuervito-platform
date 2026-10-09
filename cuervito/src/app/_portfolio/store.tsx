@@ -73,6 +73,18 @@ export function srcDeImagen(src: string | undefined, fotos: FotoSitio[]): string
   return fotos.find((f) => f.id === id)?.src ?? fotos[0]?.src ?? "";
 }
 
+/** Un evento publicado del fotógrafo, con el link a su galería en encontrate. */
+export type EventoSitio = {
+  nombre: string;
+  href: string;
+  /** AAAA-MM-DD, o null si el evento no tiene fecha. */
+  fecha: string | null;
+  disciplina: string | null;
+  lugar: string | null;
+  fotos: number;
+  portada: string | null;
+};
+
 /** Lo del fotógrafo que las plantillas muestran fuera de los textos editables. */
 export type PerfilSitio = {
   nombre: string;
@@ -81,6 +93,9 @@ export type PerfilSitio = {
   web: string | null;
   /** Números reales de encontrate, ya formateados ("12 mil"). */
   cifras?: { eventos: string; fotos: string; temporadas: string };
+  /** Sus últimos eventos publicados: las plantillas que listan eventos
+   *  llevan a la galería de cada uno, donde el atleta busca sus fotos. */
+  eventos?: EventoSitio[];
 };
 
 /**

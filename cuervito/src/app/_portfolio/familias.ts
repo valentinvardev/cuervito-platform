@@ -15,4 +15,8 @@ export const FAMILIAS = {
   fraunces: "var(--pf-fraunces), Georgia, serif",
   spaceGrotesk: "var(--pf-space-grotesk), system-ui, sans-serif",
   spaceMono: "var(--pf-space-mono), ui-monospace, monospace",
+  anton: "var(--pf-anton), Impact, sans-serif",
+  jetbrainsMono: "var(--pf-jetbrains-mono), ui-monospace, monospace",
+  instrumentSans: "var(--pf-instrument-sans), system-ui, sans-serif",
+  interTight: "var(--pf-inter-tight), system-ui, sans-serif",
 } as const;

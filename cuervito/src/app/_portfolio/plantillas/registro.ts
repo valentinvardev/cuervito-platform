@@ -1,7 +1,10 @@
 import { FAMILIAS } from "../familias";
 import { DEFAULT_GRID, DEFAULT_LOGO } from "../tipos";
+import { FOTOFINISH_NODES, FOTOFINISH_SECTIONS } from "./fotofinish";
 import { HALCYON_NODES, HALCYON_SECTIONS } from "./halcyon";
 import { MERIDIAN_NODES, MERIDIAN_SECTIONS } from "./meridian";
+import { PODIO_NODES, PODIO_SECTIONS } from "./podio";
+import { SENDERO_NODES, SENDERO_SECTIONS } from "./sendero";
 import type { TemplateDef } from "./tipos";
 import { VERNISSAGE_NODES, VERNISSAGE_SECTIONS } from "./vernissage";
 
@@ -14,8 +17,11 @@ import { VERNISSAGE_NODES, VERNISSAGE_SECTIONS } from "./vernissage";
  *
  * Paletas y letras son las de cada plantilla en photo-saas; las fuentes van
  * por variable (ver ../fuentes.ts).
+ *
+ * Podio, Fotofinish y Sendero son propias, hechas para fotografía deportiva
+ * (diseño en Paper, archivo «encontrate — Portfolio», páginas 4 a 6).
  */
-export type IdPlantilla = "halcyon" | "meridian" | "vernissage";
+export type IdPlantilla = "halcyon" | "meridian" | "vernissage" | "podio" | "fotofinish" | "sendero";
 
 export const PLANTILLAS: Record<IdPlantilla, TemplateDef> = {
   halcyon: {
@@ -53,6 +59,43 @@ export const PLANTILLAS: Record<IdPlantilla, TemplateDef> = {
     defaultLogo: { ...DEFAULT_LOGO, text: "{nombre}" },
     defaultGrid: { ...DEFAULT_GRID, layout: "corridor", columns: 3, gap: 12 },
     layouts: ["corridor", "uniform", "masonry"],
+  },
+  podio: {
+    id: "podio",
+    name: "Podio",
+    descripcion: "Cartelería de estadio: negro, amarillo y cifras de tablero.",
+    initialNodes: PODIO_NODES,
+    sections: PODIO_SECTIONS,
+    defaultPalette: { bg: "#0A0A0A", fg: "#F2F2F2", accent: "#FFD400", muted: "#8A8A8A" },
+    defaultTypography: { serif: FAMILIAS.anton, sans: FAMILIAS.jetbrainsMono, mono: FAMILIAS.jetbrainsMono },
+    defaultLogo: { ...DEFAULT_LOGO, text: "{nombre}" },
+    defaultGrid: { ...DEFAULT_GRID, layout: "mosaic", columns: 3, gap: 16 },
+    layouts: ["mosaic", "uniform", "masonry"],
+  },
+  fotofinish: {
+    id: "fotofinish",
+    name: "Fotofinish",
+    descripcion: "Revista suiza: blanco, cobalto y una tira que se recorre.",
+    initialNodes: FOTOFINISH_NODES,
+    sections: FOTOFINISH_SECTIONS,
+    defaultPalette: { bg: "#FFFFFF", fg: "#0B0B0C", accent: "#1F3BFF", muted: "#6B6B70" },
+    defaultTypography: { serif: FAMILIAS.instrumentSans, sans: FAMILIAS.instrumentSans, mono: FAMILIAS.instrumentSans },
+    defaultLogo: { ...DEFAULT_LOGO, text: "{nombre}" },
+    // La tira y la serie destacada son el diseño: no hay grilla que elegir.
+    layouts: [],
+  },
+  sendero: {
+    id: "sendero",
+    name: "Sendero",
+    descripcion: "Crónica de montaña: arcos, hueso y verde verdín.",
+    initialNodes: SENDERO_NODES,
+    sections: SENDERO_SECTIONS,
+    defaultPalette: { bg: "#EEEBE3", fg: "#1E1F1C", accent: "#3F7F6E", muted: "#77786F" },
+    defaultTypography: { serif: FAMILIAS.fraunces, sans: FAMILIAS.interTight, mono: FAMILIAS.interTight },
+    defaultButtons: { radius: 100, bg: "", fg: "" },
+    defaultLogo: { ...DEFAULT_LOGO, text: "{nombre}" },
+    // Las crónicas en abanico son el diseño: no hay grilla que elegir.
+    layouts: [],
   },
 };
 

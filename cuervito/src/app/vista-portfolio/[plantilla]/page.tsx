@@ -10,7 +10,7 @@ import { puedeUsarPortfolio } from "~/lib/portfolio-acceso";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
-import { cifrasDe } from "~/server/portfolio";
+import { cifrasDe, eventosDe } from "~/server/portfolio";
 
 /**
  * Una plantilla de portfolio armada con fotos reales, antes de que exista el
@@ -56,7 +56,7 @@ export default async function VistaPortfolio({
   // De quién son las fotos: el que mira, salvo un admin pidiendo otro.
   const fotografo = await db.user.findFirst({
     where: q.fotografo && yo.role === "ADMIN" ? { slug: q.fotografo } : { id: yo.id },
-    select: { id: true, name: true, location: true, instagramUrl: true, websiteUrl: true },
+    select: { id: true, slug: true, name: true, location: true, instagramUrl: true, websiteUrl: true },
   });
   if (!fotografo) notFound();
 
@@ -102,7 +102,10 @@ export default async function VistaPortfolio({
   }
 
   const ua = (await headers()).get("user-agent") ?? "";
-  const cifras = await cifrasDe(fotografo.id);
+  const [cifras, publicados] = await Promise.all([
+    cifrasDe(fotografo.id),
+    fotografo.slug ? eventosDe(fotografo.id, fotografo.slug, null) : [],
+  ]);
 
   return (
     <div className={clasesFuentes}>
@@ -114,6 +117,7 @@ export default async function VistaPortfolio({
           instagram: fotografo.instagramUrl,
           web: fotografo.websiteUrl,
           cifras,
+          eventos: publicados,
         }}
         fotos={fotos}
         slug={null}
