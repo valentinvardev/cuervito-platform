@@ -12,14 +12,19 @@ export type GrupoPanel = { nombre: string; fotos: FotoPanel[] };
  * Las fotos del portfolio por grupo (serie). Cada cambio se guarda al toque,
  * con la lista entera: el orden de las fotos es el orden en la página.
  *
- * Ordenar es con flechas y no arrastrando: arrastrar en un teléfono pelea con
- * el scroll, y las flechas hacen lo mismo con un toque.
+ * Se ordena arrastrando (con mouse) o con las flechas: arrastrar en un
+ * teléfono pelea con el scroll, y ahí las flechas hacen lo mismo con un
+ * toque. Las dos cosas terminan en `guardar` con la lista entera.
  */
 export function Fotos({ portfolioId, grupos: iniciales }: { portfolioId: string; grupos: GrupoPanel[] }) {
   const [grupos, setGrupos] = useState(iniciales);
   const [error, setError] = useState<string | null>(null);
   const [, empezar] = useTransition();
   const [agregando, setAgregando] = useState(false);
+  /* El arrastre: qué foto se lleva, y dónde caería (la foto bajo el puntero y
+     de qué lado, o el final de un grupo cuando fi es su largo). */
+  const [arrastre, setArrastre] = useState<{ gi: number; fi: number } | null>(null);
+  const [sobre, setSobre] = useState<{ gi: number; fi: number; lado: "antes" | "despues" } | null>(null);
 
   // Lo que manda el servidor después de guardar (versiones nuevas listas).
   useEffect(() => setGrupos(iniciales), [iniciales]);
@@ -89,6 +94,24 @@ export function Fotos({ portfolioId, grupos: iniciales }: { portfolioId: string;
     setAgregando(false);
   }
 
+  /** Suelta la foto arrastrada donde está el puntero, también en otro grupo. */
+  function soltar() {
+    const de = arrastre;
+    const a = sobre;
+    setArrastre(null);
+    setSobre(null);
+    if (!de || !a) return;
+    const copia = grupos.map((g) => ({ ...g, fotos: [...g.fotos] }));
+    const [foto] = copia[de.gi]!.fotos.splice(de.fi, 1);
+    if (!foto) return;
+    let destino = a.lado === "antes" ? a.fi : a.fi + 1;
+    // Sacarla de antes corre un lugar a las que venían después.
+    if (a.gi === de.gi && de.fi < destino) destino--;
+    if (a.gi === de.gi && destino === de.fi) return;
+    copia[a.gi]!.fotos.splice(destino, 0, foto);
+    guardar(copia);
+  }
+
   return (
     <section className="card">
       <div className="card-h">
@@ -133,9 +156,50 @@ export function Fotos({ portfolioId, grupos: iniciales }: { portfolioId: string;
               </button>
             </span>
           </div>
-          <div className="pf-tira">
+          <div
+            className="pf-tira"
+            onDragOver={(e) => {
+              // Sobre el espacio del grupo, y no sobre una foto: va al final.
+              if (!arrastre) return;
+              e.preventDefault();
+              setSobre((s) => (s?.gi === gi && s.fi === g.fotos.length ? s : { gi, fi: g.fotos.length, lado: "antes" }));
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              soltar();
+            }}
+          >
             {g.fotos.map((f, fi) => (
-              <div key={f.photoId} className="pf-mini">
+              <div
+                key={f.photoId}
+                className="pf-mini"
+                draggable
+                data-arrastrando={arrastre?.gi === gi && arrastre.fi === fi ? "" : undefined}
+                data-sobre={sobre?.gi === gi && sobre.fi === fi ? sobre.lado : undefined}
+                onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = "move";
+                  e.dataTransfer.setData("text/plain", f.photoId);
+                  setArrastre({ gi, fi });
+                }}
+                onDragEnd={() => {
+                  setArrastre(null);
+                  setSobre(null);
+                }}
+                onDragOver={(e) => {
+                  if (!arrastre) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.dataTransfer.dropEffect = "move";
+                  const r = e.currentTarget.getBoundingClientRect();
+                  const lado = e.clientX < r.left + r.width / 2 ? "antes" : "despues";
+                  setSobre((s) => (s?.gi === gi && s.fi === fi && s.lado === lado ? s : { gi, fi, lado }));
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  soltar();
+                }}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={f.src} alt="" loading="lazy" />
                 {gi === 0 && fi === 0 && <span className="tag">Portada</span>}
@@ -156,6 +220,9 @@ export function Fotos({ portfolioId, grupos: iniciales }: { portfolioId: string;
                 </div>
               </div>
             ))}
+            {arrastre && (
+              <div className="pf-tira-fin" aria-hidden="true" data-sobre={sobre?.gi === gi && sobre.fi === g.fotos.length ? "" : undefined} />
+            )}
           </div>
         </div>
       ))}

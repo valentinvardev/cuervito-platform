@@ -51,6 +51,21 @@ existir: una vez es un descuido, dos es una tendencia.
   es una función (`lib/portfolio-acceso.ts`) que leen el riel, las pantallas
   y las acciones. Es exactamente la cuarta ocurrencia (el candado de /v2),
   resuelta antes de copiarla.
+- 2026-10-09, evitado a medias: las tres plantillas nuevas (Podio,
+  Fotofinish, Sendero) comparten `plantillas/comun.tsx` (formulario, menú,
+  visor, entradas). Halcyon, Meridian y Vernissage siguen con su copia del
+  formulario: si cambia el modo WhatsApp hay que tocar 4 lugares, no 6.
+  Pendiente: migrarlas a `useContacto`.
+- 2026-10-11, resuelto por borrado: Halcyon, Meridian y Vernissage se
+  sacaron del producto, así que las tres copias del formulario se fueron con
+  ellas. Las cinco plantillas que quedan (Fotofinish, Sendero, Podio, Parcial,
+  Kilómetro) usan `comun.tsx`. La deuda de «migrar a useContacto» ya no existe.
+- 2026-10-11, la sexta, encontrada al revés: `{readOnly && <Menu/>}` estaba
+  copiado en las cinco plantillas, y el menú no abría en el editor en ninguna.
+  Se arregló con un sed sobre las cinco. Es el mismo patrón —una regla
+  («el menú sólo en el sitio») escrita cinco veces— y esta vez la regla era
+  además incorrecta. Si la decisión «qué se dibuja en el editor» viviera en
+  comun.tsx (en `useMenu`, por ejemplo), habría sido un cambio y no cinco.
 - Estado: activo
 
 ## Trabajo en vuelo que nadie gobierna

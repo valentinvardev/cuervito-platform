@@ -711,7 +711,8 @@ export function PodioPlantilla({ viewport }: { viewport: Viewport }) {
       <SobreMi />
       <Contacto />
       <Pie />
-      {readOnly && <Menu menu={menu} enlaces={enlaces} fotos={galeria.map((f) => f.src)} />}
+      {/* También en el editor: el dueño tiene que poder ver el menú abierto. */}
+      <Menu menu={menu} enlaces={enlaces} fotos={galeria.map((f) => f.src)} />
       {visor && <Visor fotos={visor.fotos} inicio={visor.i} alCerrar={() => setVisor(null)} />}
     </div>
   );

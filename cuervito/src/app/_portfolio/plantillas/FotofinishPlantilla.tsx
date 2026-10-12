@@ -769,7 +769,8 @@ export function FotofinishPlantilla({ viewport }: { viewport: Viewport }) {
       <SobreMi />
       <Contacto />
       <Pie />
-      {readOnly && <Menu menu={menu} enlaces={enlaces} serie={serie} />}
+      {/* También en el editor: el dueño tiene que poder ver el menú abierto. */}
+      <Menu menu={menu} enlaces={enlaces} serie={serie} />
       {visor && <Visor fotos={visor.fotos} inicio={visor.i} alCerrar={() => setVisor(null)} />}
     </div>
   );

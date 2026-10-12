@@ -8,6 +8,7 @@ import {
   Lock,
   Monitor,
   Redo2,
+  Save,
   Smartphone,
   Tablet,
   Undo2,
@@ -61,13 +62,16 @@ const instantanea = (s: EstadoSitio): Foto => ({
   tocados: s.tocados,
 });
 
+/* Todas sans: es la línea de las plantillas. `serif` es el nombre heredado
+   del lugar de los títulos (--tpl-serif), no lo que tiene que ser. Sendero
+   arranca con Fraunces y la conserva hasta que se elija otra. */
 const PARES = [
-  { nombre: "Instrument · Geist", serif: FAMILIAS.instrumentSerif, sans: FAMILIAS.geist, mono: FAMILIAS.geistMono },
-  { nombre: "Playfair · Manrope", serif: FAMILIAS.playfair, sans: FAMILIAS.manrope, mono: FAMILIAS.plexMono },
-  { nombre: "Fraunces · Space Grotesk", serif: FAMILIAS.fraunces, sans: FAMILIAS.spaceGrotesk, mono: FAMILIAS.spaceMono },
-  { nombre: "Anton · JetBrains Mono", serif: FAMILIAS.anton, sans: FAMILIAS.jetbrainsMono, mono: FAMILIAS.jetbrainsMono },
   { nombre: "Instrument Sans", serif: FAMILIAS.instrumentSans, sans: FAMILIAS.instrumentSans, mono: FAMILIAS.instrumentSans },
-  { nombre: "Fraunces · Inter Tight", serif: FAMILIAS.fraunces, sans: FAMILIAS.interTight, mono: FAMILIAS.interTight },
+  { nombre: "Inter Tight", serif: FAMILIAS.interTight, sans: FAMILIAS.interTight, mono: FAMILIAS.interTight },
+  { nombre: "Geist", serif: FAMILIAS.geist, sans: FAMILIAS.geist, mono: FAMILIAS.geistMono },
+  { nombre: "Manrope", serif: FAMILIAS.manrope, sans: FAMILIAS.manrope, mono: FAMILIAS.manrope },
+  { nombre: "Space Grotesk · Inter Tight", serif: FAMILIAS.spaceGrotesk, sans: FAMILIAS.interTight, mono: FAMILIAS.interTight },
+  { nombre: "Anton · Inter Tight", serif: FAMILIAS.anton, sans: FAMILIAS.interTight, mono: FAMILIAS.interTight },
 ];
 
 const GRILLAS: Record<GridSettings["layout"], string> = {
@@ -79,6 +83,19 @@ const GRILLAS: Record<GridSettings["layout"], string> = {
 };
 
 const ANCHOS: Record<Viewport, number | null> = { desktop: null, tablet: 820, mobile: 390 };
+
+/** Qué parte de una foto se ve cuando el recuadro no la muestra entera. */
+const ENCUADRES: [string, string][] = [
+  ["0% 0%", "Arriba a la izquierda"],
+  ["50% 0%", "Arriba"],
+  ["100% 0%", "Arriba a la derecha"],
+  ["0% 50%", "Izquierda"],
+  ["50% 50%", "Centro"],
+  ["100% 50%", "Derecha"],
+  ["0% 100%", "Abajo a la izquierda"],
+  ["50% 100%", "Abajo"],
+  ["100% 100%", "Abajo a la derecha"],
+];
 
 export function Editor(props: {
   portfolioId: string;
@@ -118,6 +135,8 @@ function Pantalla({
   const [pestana, setPestana] = useState<"secciones" | "diseno" | "contacto">("secciones");
   const [estado, setEstado] = useState<"guardado" | "guardando" | "error">("guardado");
   const [error, setError] = useState<string | null>(null);
+  /** Hay cambios que todavía no salieron hacia el servidor. */
+  const [pendiente, setPendiente] = useState(false);
 
   /* ── Guardado automático y deshacer ─────────────────────────────────── */
   const pasado = useRef<Foto[]>([]);
@@ -125,8 +144,12 @@ function Pantalla({
   const ultima = useRef<Foto>(instantanea(store.getState()));
   const aplicando = useRef(false);
   const [, forzar] = useState(0);
+  const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const guardar = useCallback(() => {
+    if (temporizador.current) clearTimeout(temporizador.current);
+    temporizador.current = null;
+    setPendiente(false);
     setEstado("guardando");
     void guardarDisenoAction(portfolioId, disenoDe(store.getState())).then((r) => {
       setEstado(r.error ? "error" : "guardado");
@@ -135,7 +158,6 @@ function Pantalla({
   }, [portfolioId, store]);
 
   useEffect(() => {
-    let temporizador: ReturnType<typeof setTimeout> | null = null;
     const desuscribir = store.subscribe((s, antes) => {
       const cambioDiseno =
         s.nodes !== antes.nodes ||
@@ -152,15 +174,46 @@ function Pantalla({
       }
       ultima.current = instantanea(s);
       forzar((n) => n + 1);
+      setPendiente(true);
       setEstado("guardando");
-      if (temporizador) clearTimeout(temporizador);
-      temporizador = setTimeout(guardar, 900);
+      if (temporizador.current) clearTimeout(temporizador.current);
+      temporizador.current = setTimeout(guardar, 900);
     });
     return () => {
       desuscribir();
-      if (temporizador) clearTimeout(temporizador);
+      if (temporizador.current) clearTimeout(temporizador.current);
     };
   }, [store, guardar]);
+
+  /* El sitio se dibuja dentro de un marco que hace scroll, no en la ventana.
+     Lo que en la página es fijo —el menú, el visor— acá se ancla a la parte
+     visible del marco con estas dos variables (ver .pfe-marco en el CSS). */
+  const lienzo = useRef<HTMLDivElement>(null);
+  const marco = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const l = lienzo.current;
+    const m = marco.current;
+    if (!l || !m) return;
+    let pedido = 0;
+    const medir = () => {
+      pedido = 0;
+      const arriba = l.getBoundingClientRect().top - m.getBoundingClientRect().top;
+      m.style.setProperty("--pfe-scroll", `${Math.max(0, Math.round(arriba))}px`);
+      m.style.setProperty("--pfe-alto", `${l.clientHeight}px`);
+    };
+    const pedir = () => {
+      if (!pedido) pedido = requestAnimationFrame(medir);
+    };
+    medir();
+    l.addEventListener("scroll", pedir, { passive: true });
+    const ro = new ResizeObserver(pedir);
+    ro.observe(l);
+    return () => {
+      l.removeEventListener("scroll", pedir);
+      ro.disconnect();
+      if (pedido) cancelAnimationFrame(pedido);
+    };
+  }, []);
 
   function viajar(de: React.MutableRefObject<Foto[]>, a: React.MutableRefObject<Foto[]>) {
     const f = de.current.at(-1);
@@ -174,7 +227,7 @@ function Pantalla({
 
   useEffect(() => {
     const teclas = (e: KeyboardEvent) => {
-      const enCampo = (e.target as HTMLElement).closest("input, textarea");
+      const enCampo = e.target instanceof Element && e.target.closest("input, textarea");
       if (enCampo || !(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z") return;
       e.preventDefault();
       if (e.shiftKey) viajar(futuro, pasado);
@@ -205,7 +258,13 @@ function Pantalla({
           <div>
             <b>{nombre}</b>
             <small className={estado === "error" ? "mal" : ""}>
-              {estado === "guardando" ? "Guardando…" : estado === "error" ? (error ?? "No se pudo guardar") : "Guardado"}
+              {pendiente
+                ? "Cambios sin guardar"
+                : estado === "guardando"
+                  ? "Guardando…"
+                  : estado === "error"
+                    ? (error ?? "No se pudo guardar")
+                    : "Guardado"}
             </small>
           </div>
         </div>
@@ -229,9 +288,14 @@ function Pantalla({
           </button>
         </div>
         <div className="pfe-der">
-          <a href={url} target="_blank" rel="noopener" className="btn btn-ghost btn-sm">
+          <a href={url} target="_blank" rel="noopener" className="btn btn-ghost btn-sm pfe-ver">
             <ExternalLink /> {publicado ? "Ver página" : "Vista previa"}
           </a>
+          {/* Se guarda solo al segundo de cada cambio. El botón es para
+              guardar ya, sin esperar, y para reintentar si falló. */}
+          <button type="button" className="btn btn-pri btn-sm" disabled={!pendiente && estado !== "error"} onClick={guardar}>
+            <Save /> {pendiente || estado === "error" ? "Guardar" : estado === "guardando" ? "Guardando…" : "Guardado"}
+          </button>
         </div>
       </header>
 
@@ -253,8 +317,8 @@ function Pantalla({
           {pestana === "contacto" && <Contacto store={store} />}
         </aside>
 
-        <div className="pfe-lienzo" onClick={() => store.getState().selectNode(null)}>
-          <div className="pfe-marco" style={ancho ? { width: ancho } : undefined} onClick={(e) => e.stopPropagation()}>
+        <div ref={lienzo} className="pfe-lienzo" onClick={() => store.getState().selectNode(null)}>
+          <div ref={marco} className="pfe-marco" style={ancho ? { width: ancho } : undefined} onClick={(e) => e.stopPropagation()}>
             <Lienzo store={store} />
           </div>
         </div>
@@ -269,6 +333,7 @@ function Secciones({ store }: { store: StoreSitio }) {
   const templateId = useStore(store, (s) => s.templateId);
   const ocultas = useStore(store, (s) => s.hiddenSections);
   const elegido = useStore(store, (s) => s.selectedId);
+  const nodes = useStore(store, (s) => s.nodes);
   const secciones = PLANTILLAS[templateId].sections;
   const seccionDelElegido = secciones.find((x) => x.elements.some((e) => e.nodeId === elegido))?.id ?? null;
   const [abierta, setAbierta] = useState<string | null>(seccionDelElegido ?? secciones[1]?.id ?? null);
@@ -310,12 +375,14 @@ function Secciones({ store }: { store: StoreSitio }) {
                       key={el.nodeId}
                       type="button"
                       aria-current={elegido === el.nodeId}
+                      data-oculto={nodes[el.nodeId]?.hidden ? "" : undefined}
                       onClick={() => {
                         store.getState().selectNode(el.nodeId);
                         document.querySelector(`[data-node-id="${el.nodeId}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
                       }}
                     >
                       {el.label}
+                      {nodes[el.nodeId]?.hidden && <EyeOff aria-label="Quitado" />}
                     </button>
                   ))}
                 </div>
@@ -324,7 +391,12 @@ function Secciones({ store }: { store: StoreSitio }) {
           );
         })}
       </ul>
-      {!elegido && <p className="pista pfe-ayuda">Tocá cualquier texto o foto del sitio para cambiarlo. El ojo oculta una sección sin borrarla.</p>}
+      {!elegido && (
+        <p className="pista pfe-ayuda">
+          Tocá cualquier texto o foto del sitio para cambiarlo. El ojo oculta una sección sin borrarla; para sacar un
+          texto o una foto sueltos, elegilos y tocá Quitar.
+        </p>
+      )}
     </div>
   );
 }
@@ -348,13 +420,40 @@ function Elemento({ store, id }: { store: StoreSitio; id: string }) {
 
   if (!nodo) return null;
 
+  /* Quitar es ocultar: el nodo sigue en la plantilla y se vuelve a mostrar
+     desde acá o desde la lista de secciones, donde queda con el ojo tachado. */
+  const cabecera = (
+    <div className="pfe-elemento-h">
+      <span>{etiqueta}</span>
+      <span className="pfe-elemento-acc">
+        <button type="button" className="btn btn-quiet btn-sm" onClick={() => store.getState().updateNode(id, { hidden: !nodo.hidden })}>
+          {nodo.hidden ? <><Eye /> Mostrar</> : <><EyeOff /> Quitar</>}
+        </button>
+        <button type="button" className="btn btn-quiet btn-sm" onClick={() => store.getState().selectNode(null)}>Listo</button>
+      </span>
+    </div>
+  );
+
   if (nodo.type === "image") {
     const actual = srcDeImagen(nodo.src, fotos);
+    const encuadre = nodo.objectPosition ?? "50% 50%";
     return (
       <div className="pfe-elemento">
-        <div className="pfe-elemento-h">
-          <span>{etiqueta}</span>
-          <button type="button" className="btn btn-quiet btn-sm" onClick={() => store.getState().selectNode(null)}>Listo</button>
+        {cabecera}
+        <div className="pfe-encuadre">
+          <span>Encuadre: qué parte se ve cuando la foto no entra entera.</span>
+          <div className="pfe-encuadre-grilla" role="group" aria-label="Encuadre">
+            {ENCUADRES.map(([pos, nombre]) => (
+              <button
+                key={pos}
+                type="button"
+                aria-pressed={encuadre === pos}
+                aria-label={nombre}
+                data-tip={nombre}
+                onClick={() => store.getState().updateNode(id, { objectPosition: pos })}
+              />
+            ))}
+          </div>
         </div>
         <div className="pfe-fotos">
           {fotos
@@ -377,10 +476,7 @@ function Elemento({ store, id }: { store: StoreSitio; id: string }) {
 
   return (
     <div className="pfe-elemento">
-      <div className="pfe-elemento-h">
-        <span>{etiqueta}</span>
-        <button type="button" className="btn btn-quiet btn-sm" onClick={() => store.getState().selectNode(null)}>Listo</button>
-      </div>
+      {cabecera}
       <textarea
         ref={campo}
         className="ta"

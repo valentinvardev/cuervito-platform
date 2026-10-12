@@ -68,7 +68,10 @@ export function Clic({
   children: React.ReactNode;
 } & Partial<Record<`data-${string}`, string | number>>) {
   const readOnly = useEditorStore((s) => s.readOnly);
-  if (!readOnly) return <span className={className} style={style} {...datos}>{children}</span>;
+  // En el editor los links son texto: navegar se llevaría al dueño fuera de
+  // su edición. Los botones (menú, filtros, visor) sí funcionan, que para eso
+  // están ahí: el dueño tiene que poder ver el menú abierto.
+  if (!readOnly && (href || !alActivar)) return <span className={className} style={style} {...datos}>{children}</span>;
   if (href) {
     return (
       <a

@@ -134,6 +134,9 @@
 .pfa-form { width: 100%; max-width: 560px; display: grid; gap: var(--s-6); align-content: start; }
 .pfa-titulo { display: grid; gap: 10px; }
 .pfa-titulo .cap { font-size: 10.5px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); }
+/* Mayúsculas y el peso del display, como .head h1 del resto del panel: en
+   minúscula los títulos del asistente parecían de otro producto. */
+.pfa-titulo h1, .pfa-fotos-h h1 { font-weight: var(--display-weight); text-transform: uppercase; letter-spacing: var(--display-track); }
 .pfa-titulo h1 { font-size: clamp(24px, 3vw, 32px); line-height: 1.06; }
 .pfa-titulo p { font-size: 15px; font-weight: 300; line-height: 1.55; color: var(--ink-2); }
 
@@ -262,11 +265,20 @@
 .pf-url button:hover { background: var(--ghost-hov); color: var(--ink); }
 .pf-url svg { width: 14px; height: 14px; }
 
-.pf-pestanas { display: flex; gap: 26px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
-.pf-pestanas a { padding: 0 0 12px; font-size: 14px; color: var(--ink-2); white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.pf-pestanas { position: relative; display: flex; gap: 26px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.pf-pestanas a { display: inline-flex; align-items: center; gap: 7px; padding: 0 0 12px; font-size: 14px; color: var(--ink-2); white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 160ms ease; }
+.pf-pestanas a svg { width: 15px; height: 15px; }
 .pf-pestanas a:hover { color: var(--ink); }
-.pf-pestanas a[aria-current="page"] { color: var(--ink); font-weight: 500; border-bottom-color: var(--ink); }
+.pf-pestanas a[aria-current="page"] { color: var(--ink); font-weight: 500; }
+/* Hasta que el subrayado deslizante mida (o sin JS), la elegida se subraya sola. */
+.pf-pestanas:not(:has(.pf-pestanas-ind)) a[aria-current="page"] { border-bottom-color: var(--ink); }
 .pf-pestanas a b { color: var(--accent); font-weight: 600; }
+/* Un solo subrayado que viaja hasta la pestaña elegida (ver _pestanas.tsx),
+   y el contenido que entra desde abajo al cambiar. */
+.pf-pestanas-ind { position: absolute; bottom: -1px; height: 2px; background: var(--ink); transition: left 280ms cubic-bezier(.2, .8, .3, 1), width 280ms cubic-bezier(.2, .8, .3, 1); }
+.pf-pestana-cuerpo { animation: pf-entra 260ms cubic-bezier(.2, .8, .3, 1) both; }
+@keyframes pf-entra { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) { .pf-pestanas-ind { transition: none; } .pf-pestana-cuerpo { animation: none; } }
 
 .pf-dos { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: var(--s-4); align-items: start; }
 @media (max-width: 1000px) { .pf-dos { grid-template-columns: 1fr; } }
@@ -283,6 +295,14 @@
 .pf-tira { display: flex; flex-wrap: wrap; gap: 6px; }
 .pf-mini { position: relative; width: 74px; height: 88px; border-radius: 3px; overflow: hidden; background: var(--paper-3); }
 .pf-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Arrastrar para ordenar, con mouse. En el teléfono quedan las flechas. */
+.pf-mini[draggable="true"] { cursor: grab; }
+.pf-mini[data-arrastrando] { opacity: .35; }
+.pf-mini[data-sobre]::after { content: ""; position: absolute; top: 2px; bottom: 2px; width: 3px; border-radius: 2px; background: var(--accent); z-index: 2; }
+.pf-mini[data-sobre="antes"]::after { left: 0; }
+.pf-mini[data-sobre="despues"]::after { right: 0; }
+.pf-tira-fin { width: 26px; height: 88px; border-radius: 3px; border: 1px dashed var(--line); }
+.pf-tira-fin[data-sobre] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .pf-mini .acc {
   position: absolute; inset: 0; display: flex; align-items: flex-start; justify-content: flex-end; gap: 2px; padding: 4px;
   background: linear-gradient(rgba(0, 0, 0, .45), transparent 55%); opacity: 0; transition: opacity 150ms ease;
@@ -335,7 +355,7 @@
 .pfe-izq small.mal { color: var(--bad-txt); }
 .pfe-centro { display: flex; align-items: center; gap: 10px; }
 .pfe-centro .seg button svg { width: 15px; height: 15px; }
-.pfe-der { display: flex; justify-content: flex-end; }
+.pfe-der { display: flex; justify-content: flex-end; gap: 8px; }
 
 .pfe-cuerpo { flex: 1; min-height: 0; display: flex; }
 .pfe-panel {
@@ -378,12 +398,26 @@
 .pfe-letra[aria-pressed="true"] { border-color: var(--ink); }
 .pfe-letra span { font-size: 20px; }
 .pfe-letra small { font-size: 12.5px; color: var(--ink-2); }
+.pfe-elemento-acc { display: flex; gap: 2px; }
+.pfe-elementos button[data-oculto] { color: var(--ink-3); }
+.pfe-elementos button svg { width: 13px; height: 13px; margin-left: 6px; vertical-align: -2px; }
+.pfe-encuadre { display: grid; gap: 8px; font-size: 12.5px; color: var(--ink-2); }
+.pfe-encuadre-grilla { display: grid; grid-template-columns: repeat(3, 22px); gap: 3px; }
+.pfe-encuadre-grilla button { width: 22px; height: 22px; padding: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--paper-2); cursor: pointer; }
+.pfe-encuadre-grilla button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); }
 .pfe-rango { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--ink-2); }
 .pfe-rango input { flex: 1; accent-color: var(--ink); }
 .pfe-rango b { width: 38px; text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; }
 
 .pfe-lienzo { flex: 1; min-width: 0; overflow-y: auto; padding: 24px; display: flex; justify-content: center; align-items: flex-start; }
-.pfe-marco { width: 100%; max-width: 1280px; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 40px rgba(18, 17, 15, .14); transition: width 250ms ease; }
+.pfe-marco { position: relative; width: 100%; max-width: 1280px; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 40px rgba(18, 17, 15, .14); transition: width 250ms ease; }
+/* Lo que en la página es fijo (el menú, el visor) acá se ancla a la parte
+   visible del marco, que hace de ventana. Las dos variables las pone el
+   editor al hacer scroll (ver _editor.tsx). Cada plantilla marca su capa
+   fija con data-capa; las de antes van por clase. */
+.pfe-marco [data-editor] :is([data-capa], .ff-menu-capa, .pd-menu, .sd-menu, .pc-menu-capa, .km-menu, .pf-visor) {
+  position: absolute; top: var(--pfe-scroll, 0px); bottom: auto; height: var(--pfe-alto, 100vh);
+}
 .pfe-marco .pf-sitio { min-height: 0 !important; }
 
 /* Lo editable, en el editor: se marca al pasar y queda marcado al elegirlo. */
@@ -397,7 +431,7 @@
   .pfe-lienzo { padding: 10px; }
   .pfe-barra { grid-template-columns: 1fr auto; }
   .pfe-centro .seg { display: none; }
-  .pfe-der { display: none; }
+  .pfe-ver { display: none; }
 }
 
 /* Las pistas fuera de un .campo (asistente, editor, fotos). */

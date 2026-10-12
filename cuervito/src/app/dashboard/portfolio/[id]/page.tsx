@@ -1,7 +1,7 @@
-import { ExternalLink, Pencil } from "lucide-react";
+import { ExternalLink, Globe, Images, MessageSquare, Pencil, Settings2 } from "lucide-react";
 import Link from "next/link";
 
-import { PLANTILLA_POR_DEFECTO } from "~/app/_portfolio/plantillas/registro";
+import { plantillaValida } from "~/app/_portfolio/plantillas/registro";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 import { disenoDe } from "~/server/portfolio";
@@ -13,15 +13,16 @@ import { Consultas } from "./_consultas";
 import { CopiarUrl } from "./_copiar";
 import { Datos } from "./_datos";
 import { Fotos, type GrupoPanel } from "./_fotos";
+import { Pestanas } from "./_pestanas";
 import { Publicar } from "./_publicar";
 
 export const dynamic = "force-dynamic";
 
 const PESTANAS = [
-  { id: "fotos", texto: "Fotos" },
-  { id: "consultas", texto: "Consultas" },
-  { id: "datos", texto: "Dirección y Google" },
-  { id: "ajustes", texto: "Ajustes" },
+  { id: "fotos", texto: "Fotos", icono: <Images /> },
+  { id: "consultas", texto: "Consultas", icono: <MessageSquare /> },
+  { id: "datos", texto: "Dirección y Google", icono: <Globe /> },
+  { id: "ajustes", texto: "Ajustes", icono: <Settings2 /> },
 ] as const;
 type Pestana = (typeof PESTANAS)[number]["id"];
 
@@ -45,7 +46,7 @@ export default async function DetallePortfolio({
       select: {
         photoId: true,
         grupo: true,
-        photo: { select: { thumbKey: true, previewKey: true, portfolioKey: true } },
+        photo: { select: { previewCleanKey: true, portfolioKey: true } },
       },
     }),
     pestana === "consultas"
@@ -62,7 +63,8 @@ export default async function DetallePortfolio({
   // Los grupos, en el orden en que aparece su primera foto.
   const grupos: GrupoPanel[] = [];
   for (const f of fotos) {
-    const clave = f.photo.thumbKey ?? f.photo.previewKey;
+    // Sin marca: la del portfolio si ya está, si no la limpia del panel.
+    const clave = f.photo.portfolioKey ?? f.photo.previewCleanKey;
     if (!clave) continue;
     let g = grupos.find((x) => x.nombre === f.grupo);
     if (!g) {
@@ -73,7 +75,7 @@ export default async function DetallePortfolio({
   }
 
   const url = `/${slug}/p/${p.slug}`;
-  const plantilla = disenoDe(p).templateId ?? PLANTILLA_POR_DEFECTO;
+  const plantilla = plantillaValida(disenoDe(p).templateId);
 
   return (
     <main className="canvas">
@@ -110,53 +112,49 @@ export default async function DetallePortfolio({
           </div>
         </div>
 
-        <nav className="pf-pestanas">
-          {PESTANAS.map((t) => (
-            <Link
-              key={t.id}
-              href={t.id === "fotos" ? `/dashboard/portfolio/${id}` : `/dashboard/portfolio/${id}?pestana=${t.id}`}
-              aria-current={pestana === t.id ? "page" : undefined}
-              scroll={false}
-            >
-              {t.texto}
-              {t.id === "consultas" && sinLeer > 0 && <> <b>{sinLeer}</b></>}
-            </Link>
-          ))}
-        </nav>
+        <Pestanas
+          base={`/dashboard/portfolio/${id}`}
+          activa={pestana}
+          items={PESTANAS.map((t) => ({ ...t, aviso: t.id === "consultas" ? sinLeer : 0 }))}
+        />
 
-        {pestana === "fotos" && (
-          <div className="pf-dos">
-            <Fotos portfolioId={id} grupos={grupos} />
-            <section className="card" style={{ display: "grid", gap: 14 }}>
-              <div className="card-h" style={{ marginBottom: 0 }}>
-                <div>
-                  <h2>Cómo se ve</h2>
-                  <div className="sub">Así lo ve un visitante, con tus cambios guardados</div>
+        {/* Con key, el contenido se vuelve a montar al cambiar de pestaña y
+            entra con su animación (.pf-pestana-cuerpo). */}
+        <div key={pestana} className="pf-pestana-cuerpo">
+          {pestana === "fotos" && (
+            <div className="pf-dos">
+              <Fotos portfolioId={id} grupos={grupos} />
+              <section className="card" style={{ display: "grid", gap: 14 }}>
+                <div className="card-h" style={{ marginBottom: 0 }}>
+                  <div>
+                    <h2>Cómo se ve</h2>
+                    <div className="sub">Así lo ve un visitante, con tus cambios guardados</div>
+                  </div>
+                  <Link href={`/dashboard/portfolio/${id}/editor`} className="btn btn-sm btn-ghost">Editar</Link>
                 </div>
-                <Link href={`/dashboard/portfolio/${id}/editor`} className="btn btn-sm btn-ghost">Editar</Link>
-              </div>
-              <VistaEscalada src={url} ancho={1280} alto={1600} className="pf-previa" titulo="Vista previa" />
-              <div className="pf-nota">
-                <span>
-                  Las fotos van sin marca de agua y achicadas a 1600 px: se ven bien en cualquier pantalla y nadie se
-                  lleva el archivo que vendés.
-                </span>
-              </div>
-            </section>
-          </div>
-        )}
+                <VistaEscalada src={url} ancho={1280} alto={1600} className="pf-previa" titulo="Vista previa" />
+                <div className="pf-nota">
+                  <span>
+                    Las fotos van sin marca de agua y achicadas a 1600 px: se ven bien en cualquier pantalla y nadie se
+                    lleva el archivo que vendés.
+                  </span>
+                </div>
+              </section>
+            </div>
+          )}
 
-        {pestana === "consultas" && <Consultas consultas={consultas} />}
+          {pestana === "consultas" && <Consultas consultas={consultas} />}
 
-        {pestana === "datos" && (
-          <Datos
-            portfolioId={id}
-            slugFotografo={slug}
-            inicial={{ nombre: p.nombre, slug: p.slug, seoTitulo: p.seoTitulo ?? "", seoDescripcion: p.seoDescripcion ?? "" }}
-          />
-        )}
+          {pestana === "datos" && (
+            <Datos
+              portfolioId={id}
+              slugFotografo={slug}
+              inicial={{ nombre: p.nombre, slug: p.slug, seoTitulo: p.seoTitulo ?? "", seoDescripcion: p.seoDescripcion ?? "" }}
+            />
+          )}
 
-        {pestana === "ajustes" && <Ajustes portfolioId={id} plantilla={plantilla} />}
+          {pestana === "ajustes" && <Ajustes portfolioId={id} plantilla={plantilla} />}
+        </div>
       </div>
     </main>
   );
