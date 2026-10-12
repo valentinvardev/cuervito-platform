@@ -10,6 +10,7 @@ import type { FotoSitio } from "~/app/_portfolio/store";
 import { puedeUsarPortfolio } from "~/lib/portfolio-acceso";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
+import { tonoDeLogo } from "~/server/logo-tono";
 import { resolveMediaUrl } from "~/server/media";
 import { cifrasDe, eventosDe } from "~/server/portfolio";
 
@@ -59,7 +60,7 @@ export default async function VistaPortfolio({
   // De quién son las fotos: el que mira, salvo un admin pidiendo otro.
   const fotografo = await db.user.findFirst({
     where: q.fotografo && yo.role === "ADMIN" ? { slug: q.fotografo } : { id: yo.id },
-    select: { id: true, slug: true, name: true, location: true, instagramUrl: true, websiteUrl: true },
+    select: { id: true, slug: true, name: true, location: true, instagramUrl: true, websiteUrl: true, logoKey: true },
   });
   if (!fotografo) notFound();
 
@@ -105,9 +106,11 @@ export default async function VistaPortfolio({
   }
 
   const ua = (await headers()).get("user-agent") ?? "";
-  const [cifras, publicados] = await Promise.all([
+  const [cifras, publicados, logo, logoTono] = await Promise.all([
     cifrasDe(fotografo.id),
     fotografo.slug ? eventosDe(fotografo.id, fotografo.slug, null) : [],
+    fotografo.logoKey ? resolveMediaUrl(fotografo.logoKey) : null,
+    tonoDeLogo(fotografo.id, fotografo.logoKey),
   ]);
 
   return (
@@ -121,6 +124,8 @@ export default async function VistaPortfolio({
           web: fotografo.websiteUrl,
           cifras,
           eventos: publicados,
+          logo,
+          logoTono,
         }}
         fotos={conMuestra(fotos)}
         slug={null}

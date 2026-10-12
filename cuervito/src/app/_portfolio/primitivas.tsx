@@ -54,9 +54,12 @@ export function LogoImage({
   crop?: ImageCrop;
   style?: React.CSSProperties;
 }) {
+  // El filtro lo pone el sitio (--ed-logo-filtro): invierte el logo cuando su
+  // tono no contrasta con el fondo de la plantilla.
+  const filtro = "var(--ed-logo-filtro, none)";
   if (!crop) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={alt ?? ""} style={{ width, height: "auto", objectFit: "contain", display: "block", ...style }} />;
+    return <img src={src} alt={alt ?? ""} style={{ width, height: "auto", objectFit: "contain", display: "block", filter: filtro, ...style }} />;
   }
   return (
     <div style={{ width, aspectRatio: crop.aspectRatio, overflow: "hidden", position: "relative", display: "block", ...style }}>
@@ -71,6 +74,7 @@ export function LogoImage({
           width: `${(100 / crop.w) * 100}%`,
           height: `${(100 / crop.h) * 100}%`,
           maxWidth: "none",
+          filter: filtro,
         }}
       />
     </div>

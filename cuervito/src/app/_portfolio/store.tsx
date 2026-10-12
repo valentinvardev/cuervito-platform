@@ -96,6 +96,10 @@ export type PerfilSitio = {
   /** Sus últimos eventos publicados: las plantillas que listan eventos
    *  llevan a la galería de cada uno, donde el atleta busca sus fotos. */
   eventos?: EventoSitio[];
+  /** El logo de su tienda, ya resuelto a URL, y de qué tono es (ver
+   *  server/logo-tono): con fondo oscuro un logo negro se invierte. */
+  logo?: string | null;
+  logoTono?: "claro" | "oscuro" | null;
 };
 
 /**
@@ -209,7 +213,12 @@ function completar(
     const rotulo = id.replace(/-value$/, "-label");
     if (rotulo !== id && nodes[rotulo]) nodes[rotulo] = { ...nodes[rotulo], hidden: true };
   }
-  return { ...d, nodes, logo: { ...d.logo, text: d.logo.text.replaceAll("{nombre}", perfil.nombre) } };
+  const text = d.logo.text.replaceAll("{nombre}", perfil.nombre);
+  // Con logo en la tienda, el portfolio lo usa en vez del nombre escrito: las
+  // plantillas lo dibujan a su ancho con la altura en proporción.
+  const logo =
+    perfil.logo && !d.logo.imageUrl ? { ...d.logo, text, mode: "image" as const, imageUrl: perfil.logo, width: 120 } : { ...d.logo, text };
+  return { ...d, nodes, logo };
 }
 
 export function crearStoreSitio(inicial: {

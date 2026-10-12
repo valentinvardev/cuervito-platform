@@ -49,14 +49,14 @@ export default async function DetallePortfolio({
         photo: { select: { previewCleanKey: true, portfolioKey: true } },
       },
     }),
-    pestana === "consultas"
-      ? db.consultaPortfolio.findMany({
-          where: { portfolioId: id },
-          orderBy: { createdAt: "desc" },
-          take: 200,
-          select: { id: true, nombre: true, email: true, mensaje: true, createdAt: true, leidaAt: true },
-        })
-      : Promise.resolve([]),
+    // Siempre, no sólo en su pestaña: las pestañas cambian en el navegador
+    // sin volver al servidor, así que todo tiene que estar ya cargado.
+    db.consultaPortfolio.findMany({
+      where: { portfolioId: id },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: { id: true, nombre: true, email: true, mensaje: true, createdAt: true, leidaAt: true },
+    }),
     db.consultaPortfolio.count({ where: { portfolioId: id, leidaAt: null } }),
   ]);
 
@@ -112,49 +112,45 @@ export default async function DetallePortfolio({
           </div>
         </div>
 
+        {/* Los cuatro paneles van armados; cuál se ve lo decide el navegador
+            (ver _pestanas.tsx), así el cambio es instantáneo. */}
         <Pestanas
           base={`/dashboard/portfolio/${id}`}
           activa={pestana}
           items={PESTANAS.map((t) => ({ ...t, aviso: t.id === "consultas" ? sinLeer : 0 }))}
-        />
-
-        {/* Con key, el contenido se vuelve a montar al cambiar de pestaña y
-            entra con su animación (.pf-pestana-cuerpo). */}
-        <div key={pestana} className="pf-pestana-cuerpo">
-          {pestana === "fotos" && (
-            <div className="pf-dos">
-              <Fotos portfolioId={id} grupos={grupos} />
-              <section className="card" style={{ display: "grid", gap: 14 }}>
-                <div className="card-h" style={{ marginBottom: 0 }}>
-                  <div>
-                    <h2>Cómo se ve</h2>
-                    <div className="sub">Así lo ve un visitante, con tus cambios guardados</div>
+          paneles={{
+            fotos: (
+              <div className="pf-dos">
+                <Fotos portfolioId={id} grupos={grupos} />
+                <section className="card" style={{ display: "grid", gap: 14 }}>
+                  <div className="card-h" style={{ marginBottom: 0 }}>
+                    <div>
+                      <h2>Cómo se ve</h2>
+                      <div className="sub">Así lo ve un visitante, con tus cambios guardados</div>
+                    </div>
+                    <Link href={`/dashboard/portfolio/${id}/editor`} className="btn btn-sm btn-ghost">Editar</Link>
                   </div>
-                  <Link href={`/dashboard/portfolio/${id}/editor`} className="btn btn-sm btn-ghost">Editar</Link>
-                </div>
-                <VistaEscalada src={url} ancho={1280} alto={1600} className="pf-previa" titulo="Vista previa" />
-                <div className="pf-nota">
-                  <span>
-                    Las fotos van sin marca de agua y achicadas a 1600 px: se ven bien en cualquier pantalla y nadie se
-                    lleva el archivo que vendés.
-                  </span>
-                </div>
-              </section>
-            </div>
-          )}
-
-          {pestana === "consultas" && <Consultas consultas={consultas} />}
-
-          {pestana === "datos" && (
-            <Datos
-              portfolioId={id}
-              slugFotografo={slug}
-              inicial={{ nombre: p.nombre, slug: p.slug, seoTitulo: p.seoTitulo ?? "", seoDescripcion: p.seoDescripcion ?? "" }}
-            />
-          )}
-
-          {pestana === "ajustes" && <Ajustes portfolioId={id} plantilla={plantilla} />}
-        </div>
+                  <VistaEscalada src={url} ancho={1280} alto={1600} className="pf-previa" titulo="Vista previa" />
+                  <div className="pf-nota">
+                    <span>
+                      Las fotos van sin marca de agua y achicadas a 1600 px: se ven bien en cualquier pantalla y nadie
+                      se lleva el archivo que vendés.
+                    </span>
+                  </div>
+                </section>
+              </div>
+            ),
+            consultas: <Consultas consultas={consultas} />,
+            datos: (
+              <Datos
+                portfolioId={id}
+                slugFotografo={slug}
+                inicial={{ nombre: p.nombre, slug: p.slug, seoTitulo: p.seoTitulo ?? "", seoDescripcion: p.seoDescripcion ?? "" }}
+              />
+            ),
+            ajustes: <Ajustes portfolioId={id} plantilla={plantilla} />,
+          }}
+        />
       </div>
     </main>
   );

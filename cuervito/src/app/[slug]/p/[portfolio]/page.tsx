@@ -9,6 +9,8 @@ import { SitioPortfolio } from "~/app/_portfolio/sitio";
 import { urlPublica } from "~/lib/url-publica";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
+import { tonoDeLogo } from "~/server/logo-tono";
+import { resolveMediaUrl } from "~/server/media";
 import { cifrasDe, disenoDe, eventosDe, fotosDePortfolio, traerPortfolio } from "~/server/portfolio";
 
 import { traerFotografo } from "../../_datos";
@@ -67,10 +69,12 @@ export default async function PaginaPortfolio({ params }: Props) {
   const { fotografo, p, esDueno } = d;
 
   const dominio = fotografo.customDomains[0]?.hostname;
-  const [fotos, cifras, eventos] = await Promise.all([
+  const [fotos, cifras, eventos, logo, logoTono] = await Promise.all([
     fotosDePortfolio(p.id, esDueno),
     cifrasDe(fotografo.id),
     eventosDe(fotografo.id, slug, dominio),
+    fotografo.logoKey ? resolveMediaUrl(fotografo.logoKey) : null,
+    tonoDeLogo(fotografo.id, fotografo.logoKey),
   ]);
   const ua = (await headers()).get("user-agent") ?? "";
 
@@ -127,6 +131,8 @@ export default async function PaginaPortfolio({ params }: Props) {
           web: fotografo.websiteUrl,
           cifras,
           eventos,
+          logo,
+          logoTono,
         }}
         fotos={fotos}
         slug={slug}

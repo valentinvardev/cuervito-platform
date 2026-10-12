@@ -6,16 +6,28 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 export type Pestana = { id: string; texto: string; icono: React.ReactNode; aviso?: number };
 
 /**
- * Las pestañas del portfolio. Son links (cada pestaña es la misma página con
- * ?pestana=) y el subrayado es un solo elemento que se desliza hasta la
- * elegida, en vez de un borde en cada una: así el cambio se ve como un
- * movimiento y no como un parpadeo.
+ * Las pestañas del portfolio, con su contenido.
  *
- * La elegida se marca al hacer click, antes de que el servidor conteste, para
- * que el subrayado no espere a la red; cuando llega la página nueva, `activa`
- * confirma.
+ * Los cuatro paneles llegan ya armados del servidor y el cambio es un estado
+ * del navegador: instantáneo, sin esperar una página nueva. La dirección se
+ * actualiza igual (?pestana=) para que recargar o compartir el link abra la
+ * misma pestaña, y los links siguen siendo links: con la rueda o Ctrl se
+ * abren en otra pestaña del navegador.
+ *
+ * El subrayado es un solo elemento que se desliza hasta la elegida, y el
+ * contenido entra con una animación corta (key por pestaña).
  */
-export function Pestanas({ items, activa, base }: { items: Pestana[]; activa: string; base: string }) {
+export function Pestanas({
+  items,
+  activa,
+  base,
+  paneles,
+}: {
+  items: Pestana[];
+  activa: string;
+  base: string;
+  paneles: Record<string, React.ReactNode>;
+}) {
   const [actual, setActual] = useState(activa);
   useEffect(() => setActual(activa), [activa]);
 
@@ -35,23 +47,37 @@ export function Pestanas({ items, activa, base }: { items: Pestana[]; activa: st
     return () => ro.disconnect();
   }, [actual]);
 
+  const hrefDe = (id: string) => (id === items[0]?.id ? base : `${base}?pestana=${id}`);
+
+  function elegir(e: React.MouseEvent, id: string) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    setActual(id);
+    window.history.replaceState(null, "", hrefDe(id));
+  }
+
   return (
-    <nav ref={nav} className="pf-pestanas" aria-label="Secciones del portfolio">
-      {items.map((t, i) => (
-        <Link
-          key={t.id}
-          data-id={t.id}
-          href={i === 0 ? base : `${base}?pestana=${t.id}`}
-          aria-current={actual === t.id ? "page" : undefined}
-          scroll={false}
-          onClick={() => setActual(t.id)}
-        >
-          {t.icono}
-          {t.texto}
-          {t.aviso ? <b>{t.aviso}</b> : null}
-        </Link>
-      ))}
-      {marca && <span className="pf-pestanas-ind" style={{ left: marca.left, width: marca.width }} aria-hidden="true" />}
-    </nav>
+    <>
+      <nav ref={nav} className="pf-pestanas" aria-label="Secciones del portfolio">
+        {items.map((t) => (
+          <Link
+            key={t.id}
+            data-id={t.id}
+            href={hrefDe(t.id)}
+            aria-current={actual === t.id ? "page" : undefined}
+            scroll={false}
+            onClick={(e) => elegir(e, t.id)}
+          >
+            {t.icono}
+            {t.texto}
+            {t.aviso ? <b>{t.aviso}</b> : null}
+          </Link>
+        ))}
+        {marca && <span className="pf-pestanas-ind" style={{ left: marca.left, width: marca.width }} aria-hidden="true" />}
+      </nav>
+      <div key={actual} className="pf-pestana-cuerpo">
+        {paneles[actual]}
+      </div>
+    </>
   );
 }

@@ -67,6 +67,16 @@ export function SitioPortfolio({
 }
 
 /** La plantilla con las variables de diseño (--ed-*, --tpl-*) que lee. */
+/** Si un color #rrggbb es oscuro (luminancia relativa por debajo de 0,45). */
+function esOscuro(hex: string): boolean {
+  const n = parseInt(hex.replace("#", ""), 16);
+  if (Number.isNaN(n)) return false;
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.45;
+}
+
 export function Lienzo({ store }: { store: StoreSitio }) {
   const templateId = useStore(store, (s) => s.templateId);
   const viewport = useStore(store, (s) => s.viewport);
@@ -74,9 +84,15 @@ export function Lienzo({ store }: { store: StoreSitio }) {
   const typography = useStore(store, (s) => s.typography);
   const buttons = useStore(store, (s) => s.buttons);
   const hiddenSections = useStore(store, (s) => s.hiddenSections);
+  const logoTono = useStore(store, (s) => s.perfil.logoTono);
   const Plantilla = COMPONENTES[templateId];
 
+  // El logo de la tienda se invierte cuando su tono es el del fondo: uno
+  // negro sobre Podio, uno blanco sobre Fotofinish. Lo lee LogoImage.
+  const logoFiltro = logoTono && logoTono === (esOscuro(palette.bg) ? "oscuro" : "claro") ? "invert(1)" : "none";
+
   const variables = {
+    "--ed-logo-filtro": logoFiltro,
     "--ed-bg": palette.bg,
     "--ed-fg": palette.fg,
     "--ed-accent": palette.accent,

@@ -1,5 +1,7 @@
 import { clasesFuentes } from "~/app/_portfolio/fuentes";
 import { db } from "~/server/db";
+import { tonoDeLogo } from "~/server/logo-tono";
+import { resolveMediaUrl } from "~/server/media";
 import { cifrasDe, disenoDe, eventosDe, fotosDePortfolio } from "~/server/portfolio";
 
 import { portfolioPropio, sesionPortfolio } from "../../_acceso";
@@ -20,9 +22,13 @@ export default async function EditorPortfolio({ params }: { params: Promise<{ id
   // La vista del dueño: también las fotos cuya versión todavía se prepara.
   const [fotos, perfil, cifras, eventos] = await Promise.all([
     fotosDePortfolio(id, true),
-    db.user.findUnique({ where: { id: userId }, select: { location: true } }),
+    db.user.findUnique({ where: { id: userId }, select: { location: true, logoKey: true } }),
     cifrasDe(userId),
     eventosDe(userId, slug, null),
+  ]);
+  const [logo, logoTono] = await Promise.all([
+    perfil?.logoKey ? resolveMediaUrl(perfil.logoKey) : null,
+    tonoDeLogo(userId, perfil?.logoKey ?? null),
   ]);
 
   return (
@@ -41,6 +47,8 @@ export default async function EditorPortfolio({ params }: { params: Promise<{ id
           web: yo?.websiteUrl ?? null,
           cifras,
           eventos,
+          logo,
+          logoTono,
         }}
       />
     </div>
