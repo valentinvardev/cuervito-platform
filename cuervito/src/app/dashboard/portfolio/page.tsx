@@ -2,7 +2,7 @@ import { ArrowRight, Eye, Plus } from "lucide-react";
 import Link from "next/link";
 
 import { clasesFuentes } from "~/app/_portfolio/fuentes";
-import { PLANTILLA_POR_DEFECTO, PLANTILLAS } from "~/app/_portfolio/plantillas/registro";
+import { PLANTILLAS, plantillaValida } from "~/app/_portfolio/plantillas/registro";
 import { disenoDe } from "~/server/portfolio";
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
@@ -12,7 +12,7 @@ import { sesionPortfolio } from "./_acceso";
 
 export const dynamic = "force-dynamic";
 
-const MUESTRAS = [PLANTILLAS.halcyon, PLANTILLAS.meridian, PLANTILLAS.vernissage];
+const MUESTRAS = [PLANTILLAS.fotofinish, PLANTILLAS.sendero, PLANTILLAS.podio];
 
 export default async function PortfolioPagina() {
   const { userId, slug } = await sesionPortfolio();
@@ -33,7 +33,7 @@ export default async function PortfolioPagina() {
           where: { photo: { deletedAt: null } },
           orderBy: { orden: "asc" },
           take: 1,
-          select: { photo: { select: { portfolioKey: true, thumbKey: true } } },
+          select: { photo: { select: { portfolioKey: true, previewCleanKey: true } } },
         },
         _count: {
           select: {
@@ -61,8 +61,8 @@ export default async function PortfolioPagina() {
   const tarjetas = await Promise.all(
     portfolios.map(async (p) => {
       const f = p.fotos[0]?.photo;
-      const clave = f?.portfolioKey ?? f?.thumbKey;
-      const plantilla = PLANTILLAS[disenoDe(p).templateId ?? PLANTILLA_POR_DEFECTO];
+      const clave = f?.portfolioKey ?? f?.previewCleanKey;
+      const plantilla = PLANTILLAS[plantillaValida(disenoDe(p).templateId)];
       return { ...p, portada: clave ? await resolveMediaUrl(clave) : null, plantilla };
     }),
   );

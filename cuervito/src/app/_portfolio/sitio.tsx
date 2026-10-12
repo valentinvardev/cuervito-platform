@@ -26,7 +26,7 @@ function viewportDeAncho(ancho: number): Viewport {
  * primera vuelta son el estado inicial, igual que un formulario no
  * controlado.
  *
- * LO RESPONSIVE. Meridian y Vernissage no usan media queries: arman el layout
+ * LO RESPONSIVE. Las plantillas no usan media queries: arman el layout
  * según `viewport`, que en el editor sale del selector de dispositivo. En el
  * sitio sale del ancho de la ventana, y el servidor no lo conoce. Por eso la
  * página le pasa una primera suposición sacada del User-Agent (celular o

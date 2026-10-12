@@ -42,8 +42,9 @@ export function disenoDe(p: { diseno: unknown }): PortfolioDesign {
  * En la página pública van SÓLO las que ya tienen su versión de portfolio
  * (sin marca, 1600px): mostrar la limpia de 2400 sería regalar la foto en
  * calidad de venta, y mostrar la marcada en un portfolio no tiene sentido.
- * En la vista previa del dueño, la que falta se ve con la miniatura marcada
- * mientras se genera la suya.
+ * En la vista previa del dueño, la que falta se ve con la limpia del panel
+ * mientras se genera la suya. Nunca la marcada: es lo que el dueño eligió
+ * mostrar sin marca, y verla con marca parece un error.
  */
 export const fotosDePortfolio = cache(async (portfolioId: string, vistaDelDueno: boolean): Promise<FotoSitio[]> => {
   const filas = await db.portfolioFoto.findMany({
@@ -58,8 +59,8 @@ export const fotosDePortfolio = cache(async (portfolioId: string, vistaDelDueno:
       photo: {
         select: {
           portfolioKey: true,
-          thumbKey: true,
-          previewKey: true,
+          // Sólo para la vista del dueño (ver arriba): la pública ya filtró.
+          previewCleanKey: true,
           width: true,
           height: true,
           event: { select: { eventDate: true } },
@@ -69,7 +70,7 @@ export const fotosDePortfolio = cache(async (portfolioId: string, vistaDelDueno:
   });
   const fotos: FotoSitio[] = [];
   for (const f of filas) {
-    const clave = f.photo.portfolioKey ?? f.photo.thumbKey ?? f.photo.previewKey;
+    const clave = f.photo.portfolioKey ?? (vistaDelDueno ? f.photo.previewCleanKey : null);
     if (!clave) continue;
     fotos.push({
       id: f.photoId,

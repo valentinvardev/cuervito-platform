@@ -9,7 +9,7 @@
   --pd-tenue: var(--ed-muted, #8A8A8A);
   --pd-linea: color-mix(in srgb, var(--pd-fg) 14%, var(--pd-bg));
   --pd-display: var(--tpl-serif, Impact, sans-serif);
-  --pd-texto: var(--tpl-sans, ui-monospace, monospace);
+  --pd-texto: var(--tpl-sans, system-ui, sans-serif);
   --pd-curva: cubic-bezier(.16, 1, .3, 1);
   --pd-px: 48px;
   --visor-acento: var(--pd-acento);
@@ -40,7 +40,8 @@
 
 .pd-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-/* Letras de base: Anton para mostrar, mono para todo lo demás. */
+/* Letras de base: Anton para mostrar, una sans (Inter Tight) para todo lo
+   demás. Era mono; las cifras chicas siguen alineadas con tabular-nums. */
 .pd-titulo, .pd-hero-titulo, .pd-sobre-h, .pd-contacto-h, .pd-pie-nombre, .pd-cifra-valor,
 .pd-marca-nombre, .pd-marca-sello, .pd-cinta, .pd-ev-nombre, .pd-menu-t {
   font-family: var(--pd-display);
@@ -56,6 +57,8 @@
   letter-spacing: .16em;
   text-transform: uppercase;
   line-height: 1.4;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Botones ── */

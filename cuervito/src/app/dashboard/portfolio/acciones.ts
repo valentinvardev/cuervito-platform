@@ -70,7 +70,11 @@ export async function fotosDeEventoAction(
   if (!ev) return { error: "No encontramos ese evento.", fotos: [], hayMas: false, orden };
 
   const listas = { deletedAt: null, previewCleanKey: { not: null } } as const;
-  const sel = { id: true, thumbKey: true, previewKey: true } as const;
+  /* La limpia, no la miniatura: thumbKey es la de la grilla de la tienda y
+     lleva marca de agua, y acá el fotógrafo elige qué mostrar SIN marca. Es
+     la misma que ve en el panel del evento; pesa más, por eso las imágenes
+     del selector cargan a medida que se ven (loading="lazy"). */
+  const sel = { id: true, previewCleanKey: true } as const;
 
   if (orden === "vendidas") {
     const ventas = await db.saleItem.groupBy({
@@ -88,7 +92,7 @@ export async function fotosDeEventoAction(
       const salida: FotoParaElegir[] = [];
       for (const v of ventas.slice(0, POR_PAGINA)) {
         const f = v.photoId ? porId.get(v.photoId) : undefined;
-        const clave = f?.thumbKey ?? f?.previewKey;
+        const clave = f?.previewCleanKey;
         if (f && clave) salida.push({ id: f.id, src: await resolveMediaUrl(clave), ventas: v._count._all });
       }
       return { error: null, fotos: salida, hayMas: ventas.length > POR_PAGINA, orden: "vendidas" };
@@ -106,7 +110,7 @@ export async function fotosDeEventoAction(
   });
   const salida: FotoParaElegir[] = [];
   for (const f of fotos.slice(0, POR_PAGINA)) {
-    const clave = f.thumbKey ?? f.previewKey;
+    const clave = f.previewCleanKey;
     if (clave) salida.push({ id: f.id, src: await resolveMediaUrl(clave), ventas: 0 });
   }
   return { error: null, fotos: salida, hayMas: fotos.length > POR_PAGINA, orden };

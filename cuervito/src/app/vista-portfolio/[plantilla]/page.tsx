@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { clasesFuentes } from "~/app/_portfolio/fuentes";
+import { conMuestra } from "~/app/_portfolio/muestra";
 import { esPlantilla } from "~/app/_portfolio/plantillas/registro";
 import { SitioPortfolio } from "~/app/_portfolio/sitio";
 import type { FotoSitio } from "~/app/_portfolio/store";
@@ -17,14 +18,16 @@ import { cifrasDe, eventosDe } from "~/server/portfolio";
  * portfolio. La usa el asistente para mostrar cada plantilla con las fotos
  * elegidas (en un iframe), y sirve para probar plantillas a mano:
  *
- *   /vista-portfolio/halcyon?fotos=<id>,<id>,…   fotos propias, en ese orden
- *   /vista-portfolio/halcyon?fotografo=<slug>     (admins) los últimos eventos
+ *   /vista-portfolio/fotofinish?fotos=<id>,<id>,…   fotos propias, en ese orden
+ *   /vista-portfolio/fotofinish?fotografo=<slug>     (admins) los últimos eventos
  *                                                 publicados de ese fotógrafo
  *
- * Las fotos van con la miniatura de 560px marcada: es una vista de elegir,
- * dentro del panel, y mostrar acá la limpia sería servirla a cualquiera que
- * arme la URL con ids ajenos. Por eso también, con `fotos`, sólo cuentan las
- * del usuario que mira.
+ * Las fotos van SIN marca, con la vista previa limpia: es como va a quedar el
+ * portfolio, y con la marcada parecía que el portfolio la iba a llevar. No
+ * regala nada porque sólo se ven fotos propias: con `fotos` cuentan sólo las
+ * del usuario que mira, y `fotografo` es sólo para admins. Las URL son las
+ * mismas en las seis vistas del asistente, así que el navegador baja cada
+ * foto una vez.
  *
  * No va en /dashboard porque allá todo va dentro del riel del panel, y lo que
  * se ve es la página a ancho completo, como la va a ver un visitante.
@@ -66,12 +69,12 @@ export default async function VistaPortfolio({
   if (ids.length > 0) {
     const filas = await db.photo.findMany({
       where: { id: { in: ids }, ownerId: fotografo.id, deletedAt: null },
-      select: { id: true, thumbKey: true, previewKey: true, event: { select: { name: true, eventDate: true } } },
+      select: { id: true, previewCleanKey: true, event: { select: { name: true, eventDate: true } } },
     });
     const porId = new Map(filas.map((f) => [f.id, f]));
     for (const id of ids) {
       const f = porId.get(id);
-      const clave = f?.thumbKey ?? f?.previewKey;
+      const clave = f?.previewCleanKey;
       if (f && clave) {
         fotos.push({ id, src: await resolveMediaUrl(clave), group: f.event.name, date: f.event.eventDate?.toISOString().slice(0, 10) });
       }
@@ -80,23 +83,23 @@ export default async function VistaPortfolio({
     const cantEventos = Math.min(Math.max(Number(q.eventos) || 3, 1), 8);
     const porEvento = Math.min(Math.max(Number(q.porEvento) || 8, 1), 24);
     const eventos = await db.event.findMany({
-      where: { ownerId: fotografo.id, isPublished: true, photos: { some: { deletedAt: null, thumbKey: { not: null } } } },
+      where: { ownerId: fotografo.id, isPublished: true, photos: { some: { deletedAt: null, previewCleanKey: { not: null } } } },
       orderBy: { eventDate: "desc" },
       take: cantEventos,
       select: {
         name: true,
         eventDate: true,
         photos: {
-          where: { deletedAt: null, thumbKey: { not: null } },
+          where: { deletedAt: null, previewCleanKey: { not: null } },
           orderBy: { createdAt: "asc" },
           take: porEvento,
-          select: { thumbKey: true },
+          select: { previewCleanKey: true },
         },
       },
     });
     for (const ev of eventos) {
       for (const f of ev.photos) {
-        fotos.push({ src: await resolveMediaUrl(f.thumbKey!), group: ev.name, date: ev.eventDate?.toISOString().slice(0, 10) });
+        fotos.push({ src: await resolveMediaUrl(f.previewCleanKey!), group: ev.name, date: ev.eventDate?.toISOString().slice(0, 10) });
       }
     }
   }
@@ -119,7 +122,7 @@ export default async function VistaPortfolio({
           cifras,
           eventos: publicados,
         }}
-        fotos={fotos}
+        fotos={conMuestra(fotos)}
         slug={null}
         viewportInicial={/Mobi|Android|iPhone/i.test(ua) ? "mobile" : "desktop"}
       />

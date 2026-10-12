@@ -46,7 +46,7 @@ const spaceMono = Space_Mono({ subsets: ["latin"], display: "swap", preload: fal
 const anton = Anton({ subsets: ["latin"], display: "swap", preload: false, weight: "400", variable: "--pf-anton" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], display: "swap", preload: false, weight: ["400", "500", "700"], variable: "--pf-jetbrains-mono" });
 const instrumentSans = Instrument_Sans({ subsets: ["latin"], display: "swap", preload: false, weight: ["400", "500", "600"], variable: "--pf-instrument-sans" });
-const interTight = Inter_Tight({ subsets: ["latin"], display: "swap", preload: false, weight: ["400", "500", "600"], variable: "--pf-inter-tight" });
+const interTight = Inter_Tight({ subsets: ["latin"], display: "swap", preload: false, weight: ["400", "500", "600", "700"], variable: "--pf-inter-tight" });
 
 /** Las clases que definen las variables. Van en el contenedor del sitio. */
 export const clasesFuentes = [

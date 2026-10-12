@@ -28,17 +28,18 @@ export default async function NuevoPortfolio() {
       coverUrl: true,
       _count: { select: { photos: { where: { deletedAt: null } } } },
       photos: {
-        where: { deletedAt: null, thumbKey: { not: null } },
+        where: { deletedAt: null, previewCleanKey: { not: null } },
         orderBy: { createdAt: "asc" },
         take: 1,
-        select: { thumbKey: true },
+        select: { previewCleanKey: true },
       },
     },
   });
 
   const lista: EventoParaElegir[] = await Promise.all(
     eventos.map(async (e) => {
-      const tapa = e.photos[0]?.thumbKey ?? e.coverUrl;
+      // Sin marca de agua, como todo lo que se elige para un portfolio.
+      const tapa = e.photos[0]?.previewCleanKey ?? e.coverUrl;
       return {
         id: e.id,
         nombre: e.name,

@@ -3,7 +3,7 @@
 import { createContext, useContext } from "react";
 import { createStore, useStore, type StoreApi } from "zustand";
 
-import { PLANTILLAS, PLANTILLA_POR_DEFECTO, type IdPlantilla } from "./plantillas/registro";
+import { PLANTILLAS, plantillaValida, type IdPlantilla } from "./plantillas/registro";
 import type {
   ButtonStyle,
   ColorPalette,
@@ -151,7 +151,9 @@ export type StoreSitio = StoreApi<EstadoSitio>;
 
 /** El diseño guardado, completado con los valores de la plantilla. */
 function resolverDiseno(d: PortfolioDesign) {
-  const templateId = d.templateId && PLANTILLAS[d.templateId] ? d.templateId : PLANTILLA_POR_DEFECTO;
+  // Un diseño guardado con una plantilla que ya no existe se dibuja con la
+  // por defecto.
+  const templateId = plantillaValida(d.templateId);
   const tpl = PLANTILLAS[templateId];
   return {
     templateId,

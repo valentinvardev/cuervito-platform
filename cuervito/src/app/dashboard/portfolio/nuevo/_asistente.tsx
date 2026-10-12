@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
+import { MINIMO_FOTOS_VISTA } from "~/app/_portfolio/muestra";
 import { PLANTILLA_POR_DEFECTO, PLANTILLAS, type IdPlantilla } from "~/app/_portfolio/plantillas/registro";
 
 import { slugDeNombre } from "../../_components/formato";
@@ -346,7 +347,11 @@ export function Asistente({ eventos, slugFotografo }: { eventos: EventoParaElegi
           <div className="pfa-fotos-h" style={{ padding: "var(--s-6) var(--s-6) var(--s-4)" }}>
             <div>
               <h1>Elegí cómo se ve</h1>
-              <p>Ya tienen tus {elegidas.length} fotos. Colores, letras y textos se cambian después en el editor.</p>
+              <p>
+                Ya tienen tus {elegidas.length} fotos. Colores, letras y textos se cambian después en el editor.
+                {elegidas.length < MINIMO_FOTOS_VISTA &&
+                  " Como son pocas, la vista se completa con fotos de muestra que no quedan en tu portfolio."}
+              </p>
             </div>
           </div>
           <div className="pfa-plantillas">
