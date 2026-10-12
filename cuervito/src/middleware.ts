@@ -40,6 +40,12 @@ function isPrimaryHost(host: string): boolean {
    encontrate.app/casa. */
 const HOSTS_VIEJOS = new Set(["cuervito.app", "www.cuervito.app"]);
 
+/* www.encontrate.app también manda al dominio pelado. Servía las mismas
+   páginas con 200, y para Google eran dos sitios con el mismo contenido:
+   «Duplicate without user-selected canonical» en Search Console. Un solo
+   host indexable, el que dicen los canonical y el sitemap (SITIO). */
+const HOSTS_QUE_REDIRIGEN = new Set([...HOSTS_VIEJOS, "www.encontrate.app"]);
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const host = req.headers.get("host") ?? "";
@@ -61,7 +67,7 @@ export async function middleware(req: NextRequest) {
      301 y no 307: es una mudanza de dominio de verdad, y es lo que le dice a
      Google que mueva el posicionamiento al dominio nuevo. Los navegadores lo
      cachean fuerte, así que conviene probarlo antes de darlo por hecho. */
-  if (HOSTS_VIEJOS.has(h) && !pathname.startsWith("/api/")) {
+  if (HOSTS_QUE_REDIRIGEN.has(h) && !pathname.startsWith("/api/")) {
     const destino = new URL(pathname + req.nextUrl.search, "https://encontrate.app");
     return NextResponse.redirect(destino, 301);
   }

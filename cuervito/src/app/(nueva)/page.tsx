@@ -49,6 +49,10 @@ export const metadata: Metadata = {
   title: "encontrate.app · Vendé las fotos del partido",
   description:
     "Subís las fotos y listo: reconocemos cara y número, armamos tu página de venta con tu marca, y cada compra entra directo a tu Mercado Pago.",
+  // Sin esto, Google veía la portada en encontrate.app y en www, y con
+  // cualquier ?utm=, como páginas distintas sin dueño («Duplicate without
+  // user-selected canonical»). Se resuelve contra metadataBase.
+  alternates: { canonical: "/" },
   // Se pisa lo del layout raíz, que todavía dice Cuervito. El resto de la
   // marca —siteName, metadataBase, el dominio— sigue siendo la vieja y se
   // cambia cuando se migre el resto, no acá.

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidad · cuervito",
+  title: "Política de Privacidad · encontrate.app",
   description:
-    "Cómo cuervito recopila, usa y protege tus datos personales.",
+    "Cómo encontrate.app recopila, usa y protege tus datos personales.",
+  alternates: { canonical: "/privacidad" },
 };
 
 function Placeholder({ children }: { children: React.ReactNode }) {

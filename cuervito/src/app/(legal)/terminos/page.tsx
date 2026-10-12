@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Términos y Condiciones · cuervito",
+  title: "Términos y Condiciones · encontrate.app",
   description:
-    "Términos y condiciones de uso de cuervito, plataforma de venta de fotos deportivas.",
+    "Términos y condiciones de uso de encontrate.app, plataforma de venta de fotos deportivas.",
+  alternates: { canonical: "/terminos" },
 };
 
 const TOC = [
