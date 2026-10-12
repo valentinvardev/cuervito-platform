@@ -50,6 +50,5 @@ export function lugarBonito(lugar: string | null | undefined): string | null {
 
 /** La ciudad de un lugar escrito como «Ciudad, Provincia». */
 export function ciudadDe(lugar: string | null | undefined): string | null {
-  const c = lugarBonito(lugar?.split(",")[0]);
-  return c ? c : null;
+  return lugarBonito(lugar?.split(",")[0]);
 }
