@@ -14,7 +14,10 @@ import { ahora, lento } from "~/server/medir";
 import { resolveMediaUrl } from "~/server/media";
 import { getMpTestMode } from "~/server/settings";
 
+import { relacionadosDe } from "~/server/eventos-relacionados";
+
 import { estaALaVenta, traerEvento, traerFotografo } from "../_datos";
+import { EventoCerrado } from "./cerrado/evento-cerrado";
 import { EncontrateShell } from "./encontrate/shell";
 import { GaleriaProgresiva } from "./galeria-progresiva";
 import { EventoPrivado } from "./privado/evento-privado";
@@ -73,6 +76,21 @@ export async function generateMetadata(props: {
   if (!photographer) return {};
   const event = await traerEvento(photographer.id, eventSlug);
   if (!event) return {};
+  // Archivado: la galería cerró pero la página sigue, indexable. Lo que esa
+  // página ganó en Google para «fotos [carrera] [año]» no se tira al archivar.
+  if (event.status === "ARCHIVED") {
+    const anio = event.eventDate?.getUTCFullYear();
+    const titulo = `Fotos de ${event.name}${anio && !event.name.includes(String(anio)) ? ` ${anio}` : ""} · galería cerrada`;
+    const url = urlPublica(slug, photographer.customDomains[0]?.hostname, event.slug);
+    const descripcion = `La galería de ${event.name} de ${photographer.name ?? "el fotógrafo"} ya cerró. Mirá sus últimos eventos y las otras ediciones de esta carrera.`;
+    return {
+      title: titulo,
+      description: descripcion,
+      alternates: { canonical: url },
+      openGraph: { type: "website", title: titulo, description: descripcion, url },
+    };
+  }
+
   // Sin publicar: se ve el aviso, pero no es una página para los buscadores.
   if (!estaALaVenta(event)) {
     return {
@@ -130,11 +148,14 @@ export default async function PublicEventPage(props: {
   const event = await traerEvento(photographer.id, eventSlug);
   if (!event) notFound();
 
+  if (event.status === "ARCHIVED") {
+    return <EventoCerrado fotografo={photographer} slug={slug} evento={event} ediciones={await relacionadosDe(event)} />;
+  }
   if (!estaALaVenta(event)) {
     return <EventoPrivado fotografo={photographer} slug={slug} evento={event} />;
   }
 
-  const coverSignedUrl = await urlPortada(event.coverUrl);
+  const [coverSignedUrl, ediciones] = await Promise.all([urlPortada(event.coverUrl), relacionadosDe(event)]);
 
   // Load all committed photos. We require `previewKey` to exist —
   // without it the falling back to `storageKey` would leak the original
@@ -394,7 +415,7 @@ export default async function PublicEventPage(props: {
         }}
       />
       {layout === "encontrate" ? (
-        <EncontrateShell {...shellProps} />
+        <EncontrateShell {...shellProps} ediciones={ediciones} />
       ) : (
         /* Las viejas filtran en el navegador, así que necesitan tener todas
            las fotos —pero NO antes de dibujar—. Abren con las primeras 60 y

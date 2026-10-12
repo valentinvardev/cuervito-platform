@@ -17,6 +17,7 @@ import type { PublicDiscount } from "../event-coverage-shell";
 import { usuarioInstagram } from "~/lib/instagram";
 import { NOMBRE, SITIO } from "~/lib/marca";
 import type { TonoLogo } from "~/lib/tema-tienda";
+import type { Edicion } from "~/server/eventos-relacionados";
 
 import { BotonTemaTienda } from "../../encontrate/boton-tema";
 import { PillInstagram } from "../../encontrate/pill-instagram";
@@ -129,6 +130,8 @@ export function EncontrateShell(props: {
   conReconocimiento?: boolean;
   /** Qué es esta página, en una oración: lo lee el visitante y lo lee Google. */
   resumen?: string;
+  /** La misma carrera en otros años o por otros fotógrafos. */
+  ediciones?: Edicion[];
 }) {
   return (
     <CartProvider
@@ -152,6 +155,7 @@ function Adentro({
   buscaPorDorsal = true,
   conReconocimiento = true,
   resumen,
+  ediciones = [],
 }: {
   photographer: Photographer;
   event: EventInfo;
@@ -164,6 +168,8 @@ function Adentro({
   conReconocimiento?: boolean;
   /** Qué es esta página, en una oración: lo lee el visitante y lo lee Google. */
   resumen?: string;
+  /** La misma carrera en otros años o por otros fotógrafos. */
+  ediciones?: Edicion[];
 }) {
   const { items, add, remove, isInCart, open, openCart } = useCart();
 
@@ -555,6 +561,23 @@ function Adentro({
           </div>
         )}
       </div>
+
+      {ediciones.length > 0 && (
+        <section className="et-ediciones" aria-labelledby="et-ediciones-t">
+          <h2 id="et-ediciones-t">Otras ediciones de esta carrera</h2>
+          <ul>
+            {ediciones.map((e) => (
+              <li key={e.url}>
+                <a href={e.url}>
+                  {e.nombre}
+                  {e.anio ? ` · ${e.anio}` : ""}
+                  {!e.mismoFotografo && <small>{e.fotografo}</small>}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <footer className="et-pie">
         <span>

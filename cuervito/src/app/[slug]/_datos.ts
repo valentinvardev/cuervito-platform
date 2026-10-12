@@ -73,6 +73,9 @@ export const traerEvento = cache((ownerId: string, eventSlug: string) =>
       recognition: true,
       isPublished: true,
       status: true,
+      // Para la galería cerrada: archivar es la última modificación.
+      updatedAt: true,
+      ownerId: true,
       // Si el evento no lee dorsales, la tienda no ofrece buscar por dorsal:
       // mandar a escribir un número que no va a encontrar nada es peor que no
       // ofrecerlo.

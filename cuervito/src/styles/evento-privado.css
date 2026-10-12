@@ -123,3 +123,21 @@
 }
 .ep-otros:hover { color: var(--text-primary, #12110F); }
 .ep-otros svg { width: 15px; height: 15px; }
+
+/* Listas de la galería cerrada: lo último del fotógrafo y las otras
+   ediciones de la carrera. Son enlaces internos, que es lo que la página
+   tiene para ofrecer cuando ya no tiene fotos. */
+.ep-lista { width: 100%; display: grid; gap: 2px; margin-top: 6px; }
+.ep-lista-t {
+  font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text-tertiary, var(--et-tenue, rgba(18, 17, 15, .55)));
+  margin-bottom: 6px;
+}
+.ep-lista a {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--border-subtle, var(--et-linea, rgba(18, 17, 15, .1)));
+  color: var(--text-primary, #12110F); text-decoration: none; font-size: 14px; font-weight: 500;
+}
+.ep-lista a:hover span { text-decoration: underline; }
+.ep-lista a small { flex-shrink: 0; font-size: 12.5px; font-weight: 400; color: var(--text-tertiary, var(--et-tenue, rgba(18, 17, 15, .55))); }

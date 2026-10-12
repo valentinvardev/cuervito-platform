@@ -697,6 +697,26 @@
 .et-pie a { color: inherit; text-decoration: none; }
 .et-pie a:hover { color: var(--text-primary, #12110F); }
 
+/* ── Otras ediciones ────────────────────────────────────────────────────────
+   La misma carrera en otros años o por otros fotógrafos. Para el atleta que
+   corrió la edición anterior, y para Google: enlaza las páginas que compiten
+   por la misma búsqueda. */
+.et-ediciones {
+  margin: 40px clamp(16px, 4vw, 40px) 0;
+  padding-top: 22px;
+  border-top: 1px solid var(--et-linea);
+}
+.et-ediciones h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--et-tenue); }
+.et-ediciones ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.et-ediciones a {
+  display: inline-flex; align-items: baseline; gap: 8px;
+  padding: 8px 12px; border-radius: 999px;
+  border: 1px solid var(--et-linea); color: var(--text-primary, #12110F); text-decoration: none;
+  font-size: 13.5px; font-weight: 500;
+}
+.et-ediciones a:hover { border-color: var(--text-primary, #12110F); }
+.et-ediciones a small { font-size: 12px; font-weight: 400; color: var(--et-tenue); }
+
 /* ── Esqueleto de carga ─────────────────────────────────────────────────────
    El color sale de --text-primary con poca opacidad, no de un gris fijo: así
    funciona igual sobre fondo claro y sobre fondo oscuro, que es lo que hace
