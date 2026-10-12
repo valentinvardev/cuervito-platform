@@ -216,7 +216,7 @@ export function portfolioPronto(d: Destinatario): Mail {
         ${antetitulo("Muy pronto")}
         ${titular(conNombre(d, "tus mejores fotos van a tener una página propia."))}
         ${texto("La tienda es para vender: fotos con precio, buscador, carrito. Pero cuando un organizador o una marca te pregunta qué hacés, lo que querés mandar es otra cosa: tus veinte mejores fotos, grandes, sin marca de agua y con tu nombre arriba. Eso es Portfolio, y lo estamos terminando.")}
-        ${pieza(imagen, "Dos pantallas de un portfolio con la plantilla Fotofinish, en el celular: la portada con la tira de fotos y una serie destacada", 488, 736)}
+        ${pieza(imagen, "Dos pantallas de un portfolio con las plantillas Sendero y Fotofinish, en el celular", 488, 657)}
         ${aire}
         ${texto("Elegís las fotos de tus eventos —las que más se vendieron, o las que quieras—, una plantilla, y queda en encontrate.app con tu dirección. Quien lo ve te escribe desde ahí, y cada evento del portfolio lleva a su galería en tu tienda.")}
         ${boton("Ir a mi panel", url)}
