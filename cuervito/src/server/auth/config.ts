@@ -207,7 +207,7 @@ export const authConfig = {
      * lastLoginAt on the User row so the admin dashboard can show recency.
      * Best-effort — a failed write doesn't block the sign-in.
      */
-    signIn: async ({ user }) => {
+    signIn: async ({ user, profile }) => {
       const id = (user as { id?: string }).id;
       if (!id) return;
       try {
@@ -217,6 +217,15 @@ export const authConfig = {
         });
       } catch (err) {
         console.error("[auth] failed to stamp lastLoginAt:", err);
+      }
+      /* La foto de Google es un link temporal: se copia a S3 ahora, que está
+         fresco, sin hacer esperar al inicio de sesión. El módulo se importa
+         acá adentro porque trae sharp, que no existe en el runtime edge. */
+      const foto = (profile as { picture?: unknown } | undefined)?.picture;
+      if (typeof foto === "string" && foto.startsWith("https://")) {
+        void import("~/server/avatar-google")
+          .then((m) => m.copiarAvatarDeGoogle(id, foto))
+          .catch((err: unknown) => console.error("[auth] no se pudo copiar la foto de Google:", err));
       }
     },
   },

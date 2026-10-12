@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { auth } from "~/server/auth";
+import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 
 import { iniciales, slugDeNombre } from "./formato";
@@ -90,7 +91,9 @@ export async function perfilDelRiel(s: Awaited<ReturnType<typeof sesionPanel>>):
     bio: yo?.bio ?? "",
     instagramUrl: yo?.instagramUrl ?? "",
     websiteUrl: yo?.websiteUrl ?? "",
-    foto: yo?.image ?? null,
+    // Resuelta a URL: en la base es una clave de S3 (o, en cuentas viejas, un
+    // link de Google que venció). Cruda, el riel mostraba una imagen rota.
+    foto: await resolveAvatarUrl(yo?.image),
   };
 }
 
