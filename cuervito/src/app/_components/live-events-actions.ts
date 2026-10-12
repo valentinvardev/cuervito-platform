@@ -79,6 +79,8 @@ export async function searchLiveEvents(query: string): Promise<LiveEvent[]> {
               day: "numeric",
               month: "short",
               year: "numeric",
+              // Se guarda a medianoche UTC: en hora argentina es el día anterior.
+              timeZone: "UTC",
             })
           : null,
         location: e.location,

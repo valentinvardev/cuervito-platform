@@ -879,3 +879,29 @@ section { position: relative; }
   .pad { padding: var(--s-7) 0; }
   .faq { margin-top: var(--s-5); }
 }
+
+/* ── Listados por disciplina y provincia (/eventos/[filtro], /fotografos/[provincia]) ──
+   Las píldoras son links, no filtros: cada una es una página con su dirección. */
+.evs-filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--s-5); }
+.evs-filtros a {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px;
+  font-size: 13.5px; color: var(--ink); text-decoration: none;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.evs-filtros a:hover { border-color: var(--ink-3); background: var(--paper-2); }
+.evs-filtros a span { font-family: var(--meta); font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.evs-volver { margin-top: var(--s-6); font-size: 14px; }
+.evs-volver a { color: var(--ink-2); }
+
+.fg-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--s-4); }
+.fg {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: var(--s-4); border: 1px solid var(--line); border-radius: var(--r-3);
+  background: var(--paper); color: var(--ink); text-decoration: none;
+  transition: box-shadow 150ms ease;
+}
+.fg:hover { box-shadow: var(--shadow-card); }
+.fg b { font-family: var(--sans); font-size: 18px; font-weight: 500; letter-spacing: -0.03em; }
+.fg span { font-size: 13.5px; color: var(--ink-3); }
+.fg em { margin-top: auto; padding-top: var(--s-3); font-style: normal; font-size: 13.5px; color: var(--accent); }

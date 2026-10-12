@@ -1,7 +1,10 @@
 import { type Metadata } from "next";
 
+import Link from "next/link";
+
 import { searchLiveEvents } from "~/app/_components/live-events-actions";
 import { auth } from "~/server/auth";
+import { combosConPaginas } from "~/server/listados";
 
 import { Pie } from "../_pie";
 import { Encabezado } from "../_piezas";
@@ -30,10 +33,14 @@ export default async function EventosPage() {
   // cargar: si esa llamada fallaba —un reinicio en pleno deploy, una pestaña
   // vieja—, la página entera caía en "Application error". Si falla acá, el
   // buscador la vuelve a pedir y muestra el error en su lugar.
-  const [sesion, iniciales] = await Promise.all([
+  const [sesion, iniciales, combos] = await Promise.all([
     auth().catch(() => null),
     searchLiveEvents("").catch(() => null),
+    // Las páginas por disciplina y provincia que existen: links desde acá es
+    // como Google las encuentra. Si falla, la página sigue sin ellos.
+    combosConPaginas().catch(() => ({ disciplinas: [], provincias: [] })),
   ]);
+  const filtros = [...combos.disciplinas, ...combos.provincias];
 
   return (
     <>
@@ -52,6 +59,15 @@ export default async function EventosPage() {
             dorsal o con una selfie, que no se guarda. Las comprás y las bajás al instante, sin
             crear cuenta.
           </p>
+          {filtros.length > 0 && (
+            <nav className="evs-filtros" aria-label="Por disciplina y provincia">
+              {filtros.map((c) => (
+                <Link key={`${c.tipo}-${c.slug}`} href={`/eventos/${c.slug}`}>
+                  {c.nombre} <span>{c.eventos}</span>
+                </Link>
+              ))}
+            </nav>
+          )}
         </div>
       </header>
 

@@ -4,6 +4,7 @@ import { SITIO } from "~/lib/marca";
 import { slugReservado } from "~/lib/slugs-reservados";
 import { categoriasConPosts, listarPosts } from "~/server/blog";
 import { db } from "~/server/db";
+import { combosConPaginas } from "~/server/listados";
 
 /* Se arma en cada pedido y no en el build: el build no tiene por qué depender
    de la base, y Google lo pide un par de veces por día. */
@@ -32,8 +33,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const eventos = await db.event.findMany({
     where: {
-      isPublished: true,
-      NOT: { status: "ARCHIVED" },
+      // Los archivados también: su página sigue existiendo («la galería
+      // cerró», con las otras ediciones), y es la que conserva lo que la
+      // galería posicionó. Van al final, como algo que casi no cambia.
+      OR: [{ isPublished: true, NOT: { status: "ARCHIVED" } }, { status: "ARCHIVED" }],
       owner: {
         status: "ACTIVE",
         onboardingCompletedAt: { not: null },
@@ -46,6 +49,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       slug: true,
       updatedAt: true,
       eventDate: true,
+      status: true,
       owner: { select: { slug: true, updatedAt: true } },
     },
   });
@@ -69,8 +73,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     deEventos.push({
       url: `${SITIO}/${slug}/${e.slug}`,
       lastModified: e.updatedAt,
-      changeFrequency: frecuencia(e.eventDate),
-      priority: haceDias(e.eventDate) < 30 ? 0.9 : 0.7,
+      changeFrequency: e.status === "ARCHIVED" ? "yearly" : frecuencia(e.eventDate),
+      priority: e.status === "ARCHIVED" ? 0.3 : haceDias(e.eventDate) < 30 ? 0.9 : 0.7,
     });
 
     const ultima = e.updatedAt > e.owner.updatedAt ? e.updatedAt : e.owner.updatedAt;
@@ -130,5 +134,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   ];
 
-  return [...fijas, ...delBlog, ...deTiendas, ...dePortfolios, ...deEventos];
+  // Las páginas por disciplina y por provincia: sólo las que existen, que
+  // son las que llegan al mínimo de eventos (ver server/listados).
+  const { disciplinas, provincias } = await combosConPaginas();
+  const deListados: MetadataRoute.Sitemap = [
+    ...disciplinas.map((c) => ({ url: `${SITIO}/eventos/${c.slug}`, changeFrequency: "weekly" as const, priority: 0.7 })),
+    ...provincias.map((c) => ({ url: `${SITIO}/eventos/${c.slug}`, changeFrequency: "weekly" as const, priority: 0.7 })),
+    ...provincias.map((c) => ({ url: `${SITIO}/fotografos/${c.slug}`, changeFrequency: "weekly" as const, priority: 0.7 })),
+  ];
+
+  return [...fijas, ...delBlog, ...deListados, ...deTiendas, ...dePortfolios, ...deEventos];
 }
