@@ -20,6 +20,14 @@ borrador: true               # se ve en desarrollo, no en producción
 Si algo está mal —un campo que falta, un título largo, un archivo que se llama
 igual que una sección (`fotografos.mdx`)— el build falla y dice qué archivo.
 
+## Un post por carrera grande
+
+`fotos-de-la-carrera-plantilla.mdx` es una plantilla (está en borrador y no se
+publica). La semana después de una carrera grande: copiarla con el nombre de
+la carrera, completar los corchetes con las galerías que la cubrieron, sacar
+`borrador: true`. Apunta a la búsqueda exacta «fotos [carrera] [año]», que es
+la que existe; un artículo genérico sobre fotografía deportiva no la atrapa.
+
 ## Componentes
 
 - `<Llamado para="fotografos" />` o `para="atletas"`: botón a crear cuenta o a
