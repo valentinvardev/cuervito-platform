@@ -64,6 +64,11 @@ export function EventFeedShell(props: {
    *  Cambia lo que se lee —no hay precio ni "pagar"— pero el precio real lo
    *  sigue decidiendo el servidor al comprar. */
   regalo?: boolean;
+  /** Si el evento usa reconocimiento. Sin él no hay búsqueda por cara ni por
+   *  dorsal: el atleta recorre la galería como en cualquier álbum. */
+  conReconocimiento?: boolean;
+  /** Si además se leen los dorsales (Event.bibDetection). */
+  buscaPorDorsal?: boolean;
 }) {
   return (
     <CartProvider
@@ -83,6 +88,8 @@ function FeedInner({
   discounts = [],
   testMode,
   regalo = false,
+  conReconocimiento = true,
+  buscaPorDorsal = true,
 }: {
   photographer: Photographer;
   event: EventInfo;
@@ -93,6 +100,11 @@ function FeedInner({
    *  Cambia lo que se lee —no hay precio ni "pagar"— pero el precio real lo
    *  sigue decidiendo el servidor al comprar. */
   regalo?: boolean;
+  /** Si el evento usa reconocimiento. Sin él no hay búsqueda por cara ni por
+   *  dorsal: el atleta recorre la galería como en cualquier álbum. */
+  conReconocimiento?: boolean;
+  /** Si además se leen los dorsales (Event.bibDetection). */
+  buscaPorDorsal?: boolean;
 }) {
   const { items, openCart, isInCart, add, remove, subtotalCents } = useCart();
   const [shown, setShown] = useState(PAGE_SIZE);
@@ -309,95 +321,107 @@ function FeedInner({
               margin: "0 auto 28px",
             }}
           >
-            Buscá por número de dorsal o subí una selfie. Te mostramos solo las
-            fotos donde aparecés.
+            {!conReconocimiento
+              ? "Recorré la galería y tocá las fotos donde aparecés para sumarlas al carrito."
+              : buscaPorDorsal
+                ? "Buscá por número de dorsal o subí una selfie. Te mostramos solo las fotos donde aparecés."
+                : "Subí una selfie y te mostramos solo las fotos donde aparecés."}
           </p>
 
-          {/* ── Search module — THE focus of this layout ── */}
-          <div
-            style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-default)",
-              borderRadius: 16,
-              padding: 14,
-              boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
-              textAlign: "left",
-            }}
-          >
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "12px 16px",
-                background: "var(--bg-base)",
-                border: "1px solid var(--border-subtle)",
-                borderRadius: 12,
-                marginBottom: 10,
-                transition: "border-color 150ms",
-              }}
-            >
-              <i
-                className="ti ti-search"
-                style={{ fontSize: 20, color: "var(--accent)", flexShrink: 0 }}
-              />
-              <input
-                placeholder="Número de dorsal"
-                inputMode="numeric"
-                value={query}
-                onChange={(e) => handleQueryChange(e.target.value)}
-                style={{
-                  flex: 1,
-                  border: "none",
-                  outline: "none",
-                  background: "transparent",
-                  color: "var(--text-primary)",
-                  fontSize: 18,
-                  fontFamily: "var(--font-mono)",
-                  minWidth: 0,
-                }}
-              />
-              {query && (
-                <button
-                  type="button"
-                  onClick={() => setQuery("")}
-                  aria-label="Limpiar"
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "var(--text-tertiary)",
-                    cursor: "pointer",
-                    padding: 4,
-                    display: "inline-flex",
-                  }}
-                >
-                  <i className="ti ti-x" style={{ fontSize: 16 }} />
-                </button>
-              )}
-            </label>
-
+          {/* ── Search module — THE focus of this layout ──
+              Sin reconocimiento no existe: ni caras ni dorsales se
+              procesaron, y un buscador que nunca encuentra nada es peor que
+              no tenerlo. */}
+          {conReconocimiento && (
             <div
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "4px 4px 10px",
-                fontSize: 11,
-                color: "var(--text-tertiary)",
-                fontFamily: "var(--font-mono)",
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border-default)",
+                borderRadius: 16,
+                padding: 14,
+                boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
+                textAlign: "left",
               }}
             >
-              <span style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
-              <span>o también</span>
-              <span style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
-            </div>
+              {buscaPorDorsal && (
+                <>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "12px 16px",
+                      background: "var(--bg-base)",
+                      border: "1px solid var(--border-subtle)",
+                      borderRadius: 12,
+                      marginBottom: 10,
+                      transition: "border-color 150ms",
+                    }}
+                  >
+                    <i
+                      className="ti ti-search"
+                      style={{ fontSize: 20, color: "var(--accent)", flexShrink: 0 }}
+                    />
+                    <input
+                      placeholder="Número de dorsal"
+                      inputMode="numeric"
+                      value={query}
+                      onChange={(e) => handleQueryChange(e.target.value)}
+                      style={{
+                        flex: 1,
+                        border: "none",
+                        outline: "none",
+                        background: "transparent",
+                        color: "var(--text-primary)",
+                        fontSize: 18,
+                        fontFamily: "var(--font-mono)",
+                        minWidth: 0,
+                      }}
+                    />
+                    {query && (
+                      <button
+                        type="button"
+                        onClick={() => setQuery("")}
+                        aria-label="Limpiar"
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--text-tertiary)",
+                          cursor: "pointer",
+                          padding: 4,
+                          display: "inline-flex",
+                        }}
+                      >
+                        <i className="ti ti-x" style={{ fontSize: 16 }} />
+                      </button>
+                    )}
+                  </label>
 
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <SelfieSearchButton eventId={event.id} onResult={handleSelfie} />
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "4px 4px 10px",
+                      fontSize: 11,
+                      color: "var(--text-tertiary)",
+                      fontFamily: "var(--font-mono)",
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    <span style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
+                    <span>o también</span>
+                    <span style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
+                  </div>
+                </>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <SelfieSearchButton eventId={event.id} onResult={handleSelfie} />
+              </div>
             </div>
-          </div>
+          )}
 
           {selfieMessage && (
             <div

@@ -71,6 +71,11 @@ export function EventCoverageShell(props: {
    *  Cambia lo que se lee —no hay precio ni "pagar"— pero el precio real lo
    *  sigue decidiendo el servidor al comprar. */
   regalo?: boolean;
+  /** Si el evento usa reconocimiento. Sin él no hay búsqueda por cara ni por
+   *  dorsal: el atleta recorre la galería como en cualquier álbum. */
+  conReconocimiento?: boolean;
+  /** Si además se leen los dorsales (Event.bibDetection). */
+  buscaPorDorsal?: boolean;
 }) {
   return (
     <CartProvider
@@ -90,6 +95,8 @@ function ShellInner({
   discounts = [],
   testMode,
   regalo = false,
+  conReconocimiento = true,
+  buscaPorDorsal = true,
 }: {
   photographer: Photographer;
   event: EventInfo;
@@ -100,6 +107,11 @@ function ShellInner({
    *  Cambia lo que se lee —no hay precio ni "pagar"— pero el precio real lo
    *  sigue decidiendo el servidor al comprar. */
   regalo?: boolean;
+  /** Si el evento usa reconocimiento. Sin él no hay búsqueda por cara ni por
+   *  dorsal: el atleta recorre la galería como en cualquier álbum. */
+  conReconocimiento?: boolean;
+  /** Si además se leen los dorsales (Event.bibDetection). */
+  buscaPorDorsal?: boolean;
 }) {
   const { items, openCart, isInCart, add, remove } = useCart();
   const [shown, setShown] = useState(PAGE_SIZE);
@@ -264,27 +276,34 @@ function ShellInner({
             </div>
           </div>
 
-          <div className="search-card in-hero">
-            <div className="input-with-icon">
-              <i className="ti ti-search"></i>
-              <input
-                placeholder="Buscar por número de dorsal…"
-                inputMode="numeric"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
+          {/* Sin reconocimiento no hay qué buscar: ni las caras ni los
+              dorsales se procesaron, y un buscador que nunca encuentra nada
+              es peor que no tenerlo. Se recorre la galería. */}
+          {conReconocimiento && (
+            <div className="search-card in-hero">
+              {buscaPorDorsal && (
+                <div className="input-with-icon">
+                  <i className="ti ti-search"></i>
+                  <input
+                    placeholder="Buscar por número de dorsal…"
+                    inputMode="numeric"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                </div>
+              )}
+              <SelfieSearchButton eventId={event.id} onResult={handleSelfie} />
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  // Bib filter runs as you type already; this is a no-op affordance.
+                }}
+              >
+                <i className="ti ti-search"></i>Buscar
+              </button>
             </div>
-            <SelfieSearchButton eventId={event.id} onResult={handleSelfie} />
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => {
-                // Bib filter runs as you type already; this is a no-op affordance.
-              }}
-            >
-              <i className="ti ti-search"></i>Buscar
-            </button>
-          </div>
+          )}
         </div>
       </header>
 

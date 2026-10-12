@@ -274,6 +274,12 @@ export default async function PublicEventPage(props: {
     discounts: activeDiscounts,
     testMode,
     regalo,
+    /* Lo que el atleta puede usar para buscar. Sin reconocimiento no se
+       procesó ninguna cara ni ningún dorsal, así que no se ofrece ninguno:
+       bibDetection puede haber quedado en true (es su valor de fábrica) en
+       un evento que nunca pasó por el OCR. */
+    conReconocimiento: event.recognition,
+    buscaPorDorsal: event.recognition && event.bibDetection,
   };
 
   /* Lo mismo que dice la página, en la forma en que lo lee un agente: qué
@@ -335,7 +341,7 @@ export default async function PublicEventPage(props: {
     <div style={pageStyle}>
       <JsonLd datos={datosEstructurados} />
       {layout === "encontrate" ? (
-        <EncontrateShell {...shellProps} buscaPorDorsal={event.bibDetection} />
+        <EncontrateShell {...shellProps} />
       ) : (
         /* Las viejas filtran en el navegador, así que necesitan tener todas
            las fotos —pero NO antes de dibujar—. Abren con las primeras 60 y

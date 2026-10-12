@@ -124,6 +124,9 @@ export function EncontrateShell(props: {
   regalo?: boolean;
   /** Si el evento lee dorsales. Sale de Event.bibDetection. */
   buscaPorDorsal?: boolean;
+  /** Si el evento usa reconocimiento (Event.recognition). Sin él no hay
+   *  búsqueda: el atleta recorre la galería como en cualquier álbum. */
+  conReconocimiento?: boolean;
 }) {
   return (
     <CartProvider
@@ -145,6 +148,7 @@ function Adentro({
   testMode,
   regalo = false,
   buscaPorDorsal = true,
+  conReconocimiento = true,
 }: {
   photographer: Photographer;
   event: EventInfo;
@@ -154,6 +158,7 @@ function Adentro({
   testMode?: boolean;
   regalo?: boolean;
   buscaPorDorsal?: boolean;
+  conReconocimiento?: boolean;
 }) {
   const { items, add, remove, isInCart, open, openCart } = useCart();
 
@@ -326,80 +331,86 @@ function Adentro({
           )}
         </section>
 
-        <section className="et-buscar">
-          <div className="et-buscar-tit">
-            <b>Encontrá tus fotos</b>
-            <span>
-              {buscaPorDorsal
-                ? "Poné tu número de dorsal, o sacate (o subí) una selfie."
-                : "Sacate (o subí) una selfie y te mostramos en cuáles saliste."}
-            </span>
-          </div>
-
-          {/* El dorsal es un CAMPO y va primero: es lo que prueba el que llega
-              con su número en la mano. Cuando el evento no lee dorsales el
-              campo no existe, porque mandarlo a escribir un número que no va a
-              encontrar nada es peor que no ofrecerlo. */}
-          {buscaPorDorsal && (
-            <>
-              <div className="et-dorsal">
-                <div className="et-campo">
-                  <span>#</span>
-                  <input
-                    inputMode="numeric"
-                    placeholder="Tu dorsal"
-                    aria-label="Buscar por número de dorsal"
-                    value={dorsal}
-                    onChange={(e) => {
-                      setDorsal(e.target.value.replace(/\D/g, "").slice(0, 6));
-                                        setSelfie(null);
-                    }}
-                  />
-                </div>
-                {dorsal && (
-                  <button
-                    className="et-btn et-btn-icono"
-                    onClick={() => setDorsal("")}
-                    aria-label="Borrar el dorsal"
-                  >
-                    <X />
-                  </button>
-                )}
-              </div>
-
-              <div className="et-o">o</div>
-            </>
-          )}
-
-          <input
-            ref={selfieRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              e.target.value = "";
-              if (f) void buscarSelfie(f);
-            }}
-          />
-          <button className="et-selfie" onClick={abrirSelfie} disabled={buscandoSelfie}>
-            <span className="et-selfie-i">
-              <ScanFace />
-            </span>
-            <span className="et-selfie-t">
-              <b>{buscandoSelfie ? "Buscando tu cara…" : "Buscar con una selfie"}</b>
+        {/* Sin reconocimiento la sección no existe: ni las caras ni los
+            dorsales se procesaron, y un buscador que nunca encuentra nada es
+            peor que no tenerlo. Se recorre la galería, como en cualquier
+            álbum. */}
+        {conReconocimiento && (
+          <section className="et-buscar">
+            <div className="et-buscar-tit">
+              <b>Encontrá tus fotos</b>
               <span>
-                {buscandoSelfie
-                  ? "Puede tardar unos segundos"
-                  : "Sacate (o subí) una foto y encontramos todas en las que estás"}
+                {buscaPorDorsal
+                  ? "Poné tu número de dorsal, o sacate (o subí) una selfie."
+                  : "Sacate (o subí) una selfie y te mostramos en cuáles saliste."}
               </span>
-            </span>
-          </button>
+            </div>
 
-          {errorSelfie && (
-            <div style={{ fontSize: 13, color: "var(--accent, #F0410F)" }}>{errorSelfie}</div>
-          )}
-        </section>
+            {/* El dorsal es un CAMPO y va primero: es lo que prueba el que llega
+                con su número en la mano. Cuando el evento no lee dorsales el
+                campo no existe, porque mandarlo a escribir un número que no va a
+                encontrar nada es peor que no ofrecerlo. */}
+            {buscaPorDorsal && (
+              <>
+                <div className="et-dorsal">
+                  <div className="et-campo">
+                    <span>#</span>
+                    <input
+                      inputMode="numeric"
+                      placeholder="Tu dorsal"
+                      aria-label="Buscar por número de dorsal"
+                      value={dorsal}
+                      onChange={(e) => {
+                        setDorsal(e.target.value.replace(/\D/g, "").slice(0, 6));
+                                          setSelfie(null);
+                      }}
+                    />
+                  </div>
+                  {dorsal && (
+                    <button
+                      className="et-btn et-btn-icono"
+                      onClick={() => setDorsal("")}
+                      aria-label="Borrar el dorsal"
+                    >
+                      <X />
+                    </button>
+                  )}
+                </div>
+
+                <div className="et-o">o</div>
+              </>
+            )}
+
+            <input
+              ref={selfieRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (f) void buscarSelfie(f);
+              }}
+            />
+            <button className="et-selfie" onClick={abrirSelfie} disabled={buscandoSelfie}>
+              <span className="et-selfie-i">
+                <ScanFace />
+              </span>
+              <span className="et-selfie-t">
+                <b>{buscandoSelfie ? "Buscando tu cara…" : "Buscar con una selfie"}</b>
+                <span>
+                  {buscandoSelfie
+                    ? "Puede tardar unos segundos"
+                    : "Sacate (o subí) una foto y encontramos todas en las que estás"}
+                </span>
+              </span>
+            </button>
+
+            {errorSelfie && (
+              <div style={{ fontSize: 13, color: "var(--accent, #F0410F)" }}>{errorSelfie}</div>
+            )}
+          </section>
+        )}
 
         {/* Qué se está filtrando ahora mismo. Sin esto, alguien que buscó su
             dorsal y encontró tres fotos cree que el evento tiene tres fotos. */}
