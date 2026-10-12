@@ -16,7 +16,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { mailCompartir } from "../src/server/correos/compartir";
 import { eventoPublicadoHtml, pedidoPublicacionHtml } from "../src/server/correos/espera";
 import { MUESTRAS } from "../src/server/correos/transaccionales";
-import { historias, promo1, promo2, promo3, sinMp } from "../src/server/correos/plantillas";
+import { historias, portfolioPronto, promo1, promo2, promo3, sinMp } from "../src/server/correos/plantillas";
 
 const out = process.argv[2];
 if (!out) {
@@ -54,6 +54,7 @@ const mails: Record<string, string> = {
   "campana-promo-1": promo1(d).html,
   "campana-promo-2": promo2(d).html,
   "campana-promo-3": promo3(d).html,
+  "campana-portfolio-pronto": portfolioPronto(d).html,
 };
 for (const [nombre, html] of Object.entries(mails)) writeFileSync(`${out}/${nombre}.html`, html);
 console.log(`${Object.keys(mails).length} mails en ${out}`);

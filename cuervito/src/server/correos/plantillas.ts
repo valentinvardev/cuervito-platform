@@ -199,6 +199,43 @@ Armar un descuento: ${url}${pieTexto(d.bajaUrl)}`,
   };
 }
 
+/* ── 6. Anuncio: viene Portfolio ─────────────────────────────────────────── */
+
+export function portfolioPronto(d: Destinatario): Mail {
+  const url = `${BASE}/dashboard`;
+  // La imagen es una captura real de la plantilla Fotofinish con fotos
+  // deportivas sin marca de agua (public/correos), a 2x para pantallas retina.
+  const imagen = `${BASE}/correos/portfolio-fotofinish.jpg`;
+  return {
+    asunto: "Tus mejores fotos van a tener una página propia",
+    html: marco({
+      titulo: "Tus mejores fotos van a tener una página propia",
+      preheader: "Estamos terminando Portfolio: tus mejores fotos, sin precio ni carrito, en una página con tu nombre.",
+      rotulo: "Novedades",
+      tarjeta: cuerpo(`
+        ${antetitulo("Muy pronto")}
+        ${titular(conNombre(d, "tus mejores fotos van a tener una página propia."))}
+        ${texto("La tienda es para vender: fotos con precio, buscador, carrito. Pero cuando un organizador o una marca te pregunta qué hacés, lo que querés mandar es otra cosa: tus veinte mejores fotos, grandes, sin marca de agua y con tu nombre arriba. Eso es Portfolio, y lo estamos terminando.")}
+        ${pieza(imagen, "Un portfolio armado con la plantilla Fotofinish: la portada y la tira de fotos", 488, 397)}
+        ${aire}
+        ${texto("Elegís las fotos de tus eventos —las que más se vendieron, o las que quieras—, una plantilla, y queda en encontrate.app con tu dirección. Quien lo ve te escribe desde ahí, y cada evento del portfolio lleva a su galería en tu tienda.")}
+        ${boton("Ir a mi panel", url)}
+        ${nota("Lo vas a ver en tu panel en las próximas semanas, en la sección Portfolio. Mientras tanto, un consejo: subí los eventos que te faltan, porque las fotos del portfolio salen de ahí.")}
+      `),
+      pie: pie(d.bajaUrl),
+    }),
+    texto: `${saludo(d)}tus mejores fotos van a tener una página propia.
+
+La tienda es para vender: fotos con precio, buscador, carrito. Pero cuando un organizador o una marca te pregunta qué hacés, lo que querés mandar es otra cosa: tus veinte mejores fotos, grandes, sin marca de agua y con tu nombre arriba. Eso es Portfolio, y lo estamos terminando.
+
+Elegís las fotos de tus eventos —las que más se vendieron, o las que quieras—, una plantilla, y queda en encontrate.app con tu dirección. Quien lo ve te escribe desde ahí, y cada evento del portfolio lleva a su galería en tu tienda.
+
+Lo vas a ver en tu panel en las próximas semanas, en la sección Portfolio. Mientras tanto, subí los eventos que te faltan: las fotos del portfolio salen de ahí.
+
+Ir a mi panel: ${url}${pieTexto(d.bajaUrl)}`,
+  };
+}
+
 export function promo3(d: Destinatario): Mail {
   const url = `${BASE}/dashboard/nuevo`;
   const pagina = `${BASE}/dashboard/pagina`;

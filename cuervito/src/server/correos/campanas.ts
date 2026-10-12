@@ -20,7 +20,7 @@ import * as P from "./plantillas";
  * nada a nadie: el registro de envío es la memoria.
  */
 
-export const CAMPANAS_IDS = ["sin-mp", "historias", "promo-1", "promo-2", "promo-3"] as const;
+export const CAMPANAS_IDS = ["sin-mp", "historias", "promo-1", "promo-2", "promo-3", "portfolio-pronto"] as const;
 export type CampanaId = (typeof CAMPANAS_IDS)[number];
 
 export type Candidato = { id: string; email: string; name: string | null };
@@ -123,6 +123,15 @@ export const CAMPANAS: Record<CampanaId, Campana> = {
       AND: [base("promo-3"), despuesDe("promo-2", 7, ahora)],
     }),
     armar: P.promo3,
+  },
+
+  "portfolio-pronto": {
+    id: "portfolio-pronto",
+    nombre: "Portfolio, muy pronto",
+    descripcion:
+      "Un anuncio, una sola vez, a toda cuenta activa: viene Portfolio, con una muestra de la plantilla Fotofinish. Sin espera ni serie: es una novedad, no un recordatorio.",
+    donde: () => base("portfolio-pronto"),
+    armar: P.portfolioPronto,
   },
 };
 
