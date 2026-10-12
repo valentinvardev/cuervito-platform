@@ -13,14 +13,14 @@ import {
 } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 
+import { DISCIPLINAS } from "~/lib/disciplinas";
+
 import { Desplegable } from "../_components/desplegable";
 import { Fecha } from "../_components/fecha";
 import { crearEventoAction } from "./acciones";
 import { COMISION_CON, COMISION_SIN } from "./tarifas";
 
 const PASOS = ["El evento", "Cómo se encuentran", "Precio"];
-
-const DISCIPLINAS = ["Running", "Ciclismo", "Trail", "Duatlón", "Triatlón", "MTB", "Otra"];
 
 const PRECIO_INICIAL = 1800;
 

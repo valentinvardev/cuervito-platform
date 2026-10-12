@@ -69,6 +69,8 @@ export function EventFeedShell(props: {
   conReconocimiento?: boolean;
   /** Si además se leen los dorsales (Event.bibDetection). */
   buscaPorDorsal?: boolean;
+  /** Qué es esta página, en una oración: lo lee el visitante y lo lee Google. */
+  resumen?: string;
 }) {
   return (
     <CartProvider
@@ -90,6 +92,7 @@ function FeedInner({
   regalo = false,
   conReconocimiento = true,
   buscaPorDorsal = true,
+  resumen,
 }: {
   photographer: Photographer;
   event: EventInfo;
@@ -105,6 +108,8 @@ function FeedInner({
   conReconocimiento?: boolean;
   /** Si además se leen los dorsales (Event.bibDetection). */
   buscaPorDorsal?: boolean;
+  /** Qué es esta página, en una oración: lo lee el visitante y lo lee Google. */
+  resumen?: string;
 }) {
   const { items, openCart, isInCart, add, remove, subtotalCents } = useCart();
   const [shown, setShown] = useState(PAGE_SIZE);
@@ -327,6 +332,11 @@ function FeedInner({
                 ? "Buscá por número de dorsal o subí una selfie. Te mostramos solo las fotos donde aparecés."
                 : "Subí una selfie y te mostramos solo las fotos donde aparecés."}
           </p>
+          {resumen && (
+            <p style={{ fontSize: 13.5, color: "var(--text-tertiary)", lineHeight: 1.55, maxWidth: 520, margin: "-12px auto 28px" }}>
+              {resumen}
+            </p>
+          )}
 
           {/* ── Search module — THE focus of this layout ──
               Sin reconocimiento no existe: ni caras ni dorsales se

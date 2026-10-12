@@ -113,3 +113,8 @@
 /* Una píldora al lado del nombre en un renglón de ajuste. .aj-t pone cada
    span en bloque (es el renglón de abajo); la píldora no es ese renglón. */
 .aj-t .pill { display: inline-flex; margin-top: 0; }
+
+/* Datos de eventos (/admin/eventos/datos): evento, disciplina, lugar, guardar. */
+.admin-datos-lista .row { grid-template-columns: minmax(0, 1.4fr) 180px minmax(0, 1fr) 120px; align-items: center; }
+.admin-datos-lista .row-h span { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+@media (max-width: 800px) { .admin-datos-lista .row { grid-template-columns: 1fr; } .admin-datos-lista .row-h { display: none; } }

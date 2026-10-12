@@ -76,6 +76,8 @@ export function EventCoverageShell(props: {
   conReconocimiento?: boolean;
   /** Si además se leen los dorsales (Event.bibDetection). */
   buscaPorDorsal?: boolean;
+  /** Qué es esta página, en una oración: lo lee el visitante y lo lee Google. */
+  resumen?: string;
 }) {
   return (
     <CartProvider
@@ -97,6 +99,7 @@ function ShellInner({
   regalo = false,
   conReconocimiento = true,
   buscaPorDorsal = true,
+  resumen,
 }: {
   photographer: Photographer;
   event: EventInfo;
@@ -112,6 +115,8 @@ function ShellInner({
   conReconocimiento?: boolean;
   /** Si además se leen los dorsales (Event.bibDetection). */
   buscaPorDorsal?: boolean;
+  /** Qué es esta página, en una oración: lo lee el visitante y lo lee Google. */
+  resumen?: string;
 }) {
   const { items, openCart, isInCart, add, remove } = useCart();
   const [shown, setShown] = useState(PAGE_SIZE);
@@ -275,6 +280,11 @@ function ShellInner({
               </span>
             </div>
           </div>
+          {resumen && (
+            <p style={{ margin: "12px 0 0", maxWidth: 620, fontSize: 14, lineHeight: 1.55, color: "var(--text-secondary)" }}>
+              {resumen}
+            </p>
+          )}
 
           {/* Sin reconocimiento no hay qué buscar: ni las caras ni los
               dorsales se procesaron, y un buscador que nunca encuentra nada

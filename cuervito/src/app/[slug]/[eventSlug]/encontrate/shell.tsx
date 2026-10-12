@@ -127,6 +127,8 @@ export function EncontrateShell(props: {
   /** Si el evento usa reconocimiento (Event.recognition). Sin él no hay
    *  búsqueda: el atleta recorre la galería como en cualquier álbum. */
   conReconocimiento?: boolean;
+  /** Qué es esta página, en una oración: lo lee el visitante y lo lee Google. */
+  resumen?: string;
 }) {
   return (
     <CartProvider
@@ -149,6 +151,7 @@ function Adentro({
   regalo = false,
   buscaPorDorsal = true,
   conReconocimiento = true,
+  resumen,
 }: {
   photographer: Photographer;
   event: EventInfo;
@@ -159,6 +162,8 @@ function Adentro({
   regalo?: boolean;
   buscaPorDorsal?: boolean;
   conReconocimiento?: boolean;
+  /** Qué es esta página, en una oración: lo lee el visitante y lo lee Google. */
+  resumen?: string;
 }) {
   const { items, add, remove, isInCart, open, openCart } = useCart();
 
@@ -306,6 +311,7 @@ function Adentro({
             )}
           </div>
           <h1>{event.name}</h1>
+          {resumen && <p className="et-hero-resumen">{resumen}</p>}
           <div className="et-hero-pie">
             <b>{event.photosCount.toLocaleString("es-AR")}</b>
             <span>fotos</span>

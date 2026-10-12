@@ -50,6 +50,7 @@ export function GaleriaProgresiva({
   regalo?: boolean;
   conReconocimiento?: boolean;
   buscaPorDorsal?: boolean;
+  resumen?: string;
 }) {
   const { fotos, hayMas, trayendoMas, cargarMas } = useFotos({
     eventId: props.event.id,

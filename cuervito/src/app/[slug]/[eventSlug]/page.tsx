@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { JsonLd } from "~/app/_components/json-ld";
+import { ciudadDe, disciplinaDe, lugarBonito } from "~/lib/disciplinas";
 import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
 import { urlPublica } from "~/lib/url-publica";
 import { resolveAvatarUrl } from "~/server/avatar";
@@ -32,6 +33,35 @@ function comoSeBusca(e: { recognition: boolean; bibDetection: boolean }): string
   return e.bibDetection ? "por número de dorsal o con una selfie" : "con una selfie";
 }
 
+/** La fecha del evento, en UTC: se guarda a medianoche UTC. */
+function fechaLarga(d: Date | null): string | null {
+  return d ? d.toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }) : null;
+}
+
+/**
+ * Qué es esta página, en una oración, armada con lo que ya sabemos del
+ * evento. Es la descripción para Google y el párrafo bajo el título: una
+ * página de evento era un título y una grilla de fotos, y para un buscador
+ * eso es una página sin texto. Lo que el fotógrafo escribió va aparte.
+ */
+function resumenEvento(e: {
+  nombre: string;
+  disciplina: string | null;
+  lugar: string | null;
+  fecha: string | null;
+  fotos?: number;
+  fotografo: string;
+  como: string;
+  precio?: string | null;
+}): string {
+  const lugar = lugarBonito(e.lugar);
+  const que = [e.disciplina ? e.disciplina.toLowerCase() : null, lugar ? `en ${lugar}` : null].filter(Boolean).join(" ");
+  const cuando = e.fecha ? `, ${e.fecha}` : "";
+  const cuantas = e.fotos ? `${e.fotos.toLocaleString("es-AR")} fotos` : "Fotos";
+  const cuanto = e.precio === null ? ", gratis" : e.precio ? `, ${e.precio} cada una` : "";
+  return `Fotos de ${e.nombre}${que ? `, ${que}` : ""}${cuando}. ${cuantas} de ${e.fotografo}: buscá las tuyas ${e.como} y descargalas al instante${cuanto}, sin crear cuenta.`;
+}
+
 /* El título es lo que se busca: «fotos maratón de rosario». Hasta acá todas
    las páginas de evento heredaban el título de la landing, así que para Google
    eran cientos de páginas que decían lo mismo. */
@@ -51,19 +81,20 @@ export async function generateMetadata(props: {
     };
   }
 
-  const fecha = event.eventDate
-    ? event.eventDate.toLocaleDateString("es-AR", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        timeZone: "America/Argentina/Buenos_Aires",
-      })
-    : null;
+  // En UTC, como se guarda: en hora argentina salía el día anterior.
+  const fecha = fechaLarga(event.eventDate);
   const fotografo = photographer.name ?? "el fotógrafo";
   const como = comoSeBusca(event);
 
-  const titulo = `Fotos de ${event.name}${fecha ? ` · ${fecha}` : ""}`;
-  const descripcion = `Buscá tus fotos de ${event.name}${event.location ? ` en ${event.location}` : ""} ${como}. Fotos de ${fotografo}: comprás y descargás al instante, sin crear cuenta.`;
+  // «fotos [carrera] [año]» es lo que se busca el lunes después; la
+  // disciplina y la ciudad afinan, y quedan cuando el evento tiene las dos.
+  const disciplina = disciplinaDe(event.discipline) ?? event.discipline?.trim() ?? null;
+  const ciudad = ciudadDe(event.location);
+  const anio = event.eventDate?.getUTCFullYear();
+  const titulo = `Fotos de ${event.name}${anio && !event.name.includes(String(anio)) ? ` ${anio}` : ""}${
+    disciplina && ciudad ? ` · ${disciplina} en ${ciudad}` : fecha ? ` · ${fecha}` : ""
+  }`;
+  const descripcion = resumenEvento({ nombre: event.name, disciplina, lugar: event.location, fecha, fotografo, como });
   const url = urlPublica(slug, photographer.customDomains[0]?.hostname, event.slug);
   const portada = await urlPortada(event.coverUrl);
 
@@ -274,6 +305,16 @@ export default async function PublicEventPage(props: {
     discounts: activeDiscounts,
     testMode,
     regalo,
+    resumen: resumenEvento({
+      nombre: event.name,
+      disciplina: disciplinaDe(event.discipline) ?? event.discipline?.trim() ?? null,
+      lugar: event.location,
+      fecha: fechaLarga(event.eventDate),
+      fotos: totalFotos,
+      fotografo: photographer.name ?? "el fotógrafo",
+      como: comoSeBusca(event),
+      precio: regalo ? null : `$${Math.round(Number(event.pricePerPhoto)).toLocaleString("es-AR")}`,
+    }),
     /* Lo que el atleta puede usar para buscar. Sin reconocimiento no se
        procesó ninguna cara ni ningún dorsal, así que no se ofrece ninguno:
        bibDetection puede haber quedado en true (es su valor de fábrica) en
@@ -340,6 +381,18 @@ export default async function PublicEventPage(props: {
   return (
     <div style={pageStyle}>
       <JsonLd datos={datosEstructurados} />
+      {/* Las migas: fotógrafo → evento. Google las muestra bajo el título del
+          resultado y entiende que esta página cuelga de la del fotógrafo. */}
+      <JsonLd
+        datos={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: photographer.name ?? "Fotógrafo", item: urlPublica(slug, photographer.customDomains[0]?.hostname) },
+            { "@type": "ListItem", position: 2, name: event.name, item: urlPublica(slug, photographer.customDomains[0]?.hostname, event.slug) },
+          ],
+        }}
+      />
       {layout === "encontrate" ? (
         <EncontrateShell {...shellProps} />
       ) : (

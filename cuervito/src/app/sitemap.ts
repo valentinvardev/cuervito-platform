@@ -45,9 +45,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     select: {
       slug: true,
       updatedAt: true,
+      eventDate: true,
       owner: { select: { slug: true, updatedAt: true } },
     },
   });
+
+  // Un evento recién corrido cambia todos los días (suben fotos, se vende);
+  // uno de hace meses, casi nunca. Decirlo es lo que hace que Google vuelva
+  // seguido a los nuevos y no gaste rastreo en los viejos.
+  const haceDias = (d: Date | null) => (d ? (Date.now() - d.getTime()) / 86_400_000 : 999);
+  const frecuencia = (d: Date | null): "daily" | "weekly" | "monthly" =>
+    haceDias(d) < 30 ? "daily" : haceDias(d) < 120 ? "weekly" : "monthly";
 
   // La tienda cambia cuando cambia el perfil o cualquiera de sus eventos.
   const tiendas = new Map<string, Date>();
@@ -61,8 +69,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     deEventos.push({
       url: `${SITIO}/${slug}/${e.slug}`,
       lastModified: e.updatedAt,
-      changeFrequency: "weekly",
-      priority: 0.8,
+      changeFrequency: frecuencia(e.eventDate),
+      priority: haceDias(e.eventDate) < 30 ? 0.9 : 0.7,
     });
 
     const ultima = e.updatedAt > e.owner.updatedAt ? e.updatedAt : e.owner.updatedAt;

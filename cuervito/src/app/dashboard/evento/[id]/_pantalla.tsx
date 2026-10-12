@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
+import { DISCIPLINAS } from "~/lib/disciplinas";
+
 import { Desplegable } from "../../_components/desplegable";
 import { Fecha } from "../../_components/fecha";
 import { iniciales as siglas } from "../../_components/formato";
@@ -57,7 +59,6 @@ const MAX_PORTADA = 8 * 1024 * 1024;
 
 // Las mismas que ofrece el alta: con dos listas distintas, el mismo deporte
 // queda escrito distinto según por dónde se cargó.
-const DISCIPLINAS = ["Running", "Ciclismo", "Trail", "Duatlón", "Triatlón", "MTB", "Otra"];
 
 const FILTROS = [
   { k: "todas", txt: "Todas" },

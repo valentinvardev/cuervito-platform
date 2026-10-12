@@ -211,6 +211,13 @@
   width: 3px; height: 3px; border-radius: 50%;
   background: currentColor; align-self: center;
 }
+/* El párrafo que dice qué es esta página: evento, disciplina, lugar, fecha,
+   cuántas fotos y cómo se buscan. Para quien llega desde Google, y para
+   Google: sin texto, la página era un título y una grilla. */
+.et-hero-resumen {
+  margin-top: 14px; max-width: 62ch;
+  font-size: 14.5px; line-height: 1.55; color: var(--et-tenue);
+}
 
 /* ── Buscar ──────────────────────────────────────────────────────────────────
    El dorsal es un CAMPO, no un botón que revela un campo. Es lo primero que
