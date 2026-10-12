@@ -1,0 +1,6 @@
+/* El párrafo del perfil que dice qué cubre el fotógrafo, armado con sus
+   eventos (ver [slug]/_resumen.ts). Va debajo de la bio, o en su lugar. */
+.et-perfil-resumen {
+  margin-top: 10px; max-width: 62ch;
+  font-size: 14.5px; line-height: 1.55; color: var(--et-tenue);
+}

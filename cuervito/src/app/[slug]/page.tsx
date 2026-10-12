@@ -3,6 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import "~/styles/tienda-perfil.css";
+
+import { JsonLd } from "~/app/_components/json-ld";
+import { ciudadDe } from "~/lib/disciplinas";
 import { usuarioInstagram } from "~/lib/instagram";
 import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
 import { urlPublica } from "~/lib/url-publica";
@@ -12,6 +16,7 @@ import { tonoDeLogo } from "~/server/logo-tono";
 import { resolveMediaUrl } from "~/server/media";
 
 import { type Fotografo, traerFotografo } from "./_datos";
+import { perfilDerivado, textoPerfil } from "./_resumen";
 import { PerfilEncontrate } from "./encontrate/perfil";
 
 export async function generateMetadata(props: {
@@ -22,10 +27,14 @@ export async function generateMetadata(props: {
   if (!user) return {};
 
   const nombre = user.name ?? "Fotógrafo";
-  const titulo = `${nombre} · Fotos de eventos deportivos`;
-  const descripcion =
-    user.bio?.trim() ||
-    `Las fotos de ${nombre}${user.location ? ` en ${user.location}` : ""}. Buscá las tuyas por número de dorsal o con una selfie y descargalas al instante, sin crear cuenta.`;
+  // «fotógrafo deportivo en [ciudad]» es lo que busca un organizador. Sin
+  // ciudad en el perfil, el título no la inventa.
+  const ciudad = ciudadDe(user.location);
+  const titulo = `${nombre} · Fotógrafo deportivo${ciudad ? ` en ${ciudad}` : ""}`;
+  // La descripción se arma con sus eventos (disciplinas, cantidades), no con
+  // la bio: la bio habla de la persona; esto dice qué va a encontrar quien
+  // busca.
+  const descripcion = textoPerfil(ciudad, await perfilDerivado(user.id));
   const url = urlPublica(slug, user.customDomains[0]?.hostname);
 
   return {
@@ -99,7 +108,7 @@ async function Tienda({
     },
   });
 
-  const [events, avatarUrl] = await Promise.all([
+  const [events, avatarUrl, derivado] = await Promise.all([
     Promise.all(
       eventsRaw.map(async (e) => ({
         ...e,
@@ -111,7 +120,35 @@ async function Tienda({
       })),
     ),
     resolveAvatarUrl(user.image),
+    perfilDerivado(user.id),
   ]);
+
+  const ciudad = ciudadDe(user.location);
+  const resumen = textoPerfil(ciudad, derivado);
+  const url = urlPublica(slug, user.customDomains[0]?.hostname);
+  const instagram = usuarioInstagram(user.instagramUrl);
+
+  /* Quién es, para Google: una ProfilePage cuya entidad es la persona, con la
+     ciudad y sus redes. Es lo que hace que «fotógrafo deportivo en [ciudad]»
+     pueda devolver esta página y no solo la de un evento. */
+  const datosEstructurados = {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    url,
+    mainEntity: {
+      "@type": "Person",
+      name: user.name ?? "Fotógrafo",
+      url,
+      jobTitle: "Fotógrafo deportivo",
+      description: resumen,
+      ...(avatarUrl ? { image: avatarUrl } : {}),
+      ...(ciudad ? { address: { "@type": "PostalAddress", addressLocality: ciudad, addressCountry: "AR" } } : {}),
+      ...(() => {
+        const sameAs = [instagram ? `https://instagram.com/${instagram}` : null, user.websiteUrl].filter(Boolean);
+        return sameAs.length > 0 ? { sameAs } : {};
+      })(),
+    },
+  };
 
   const initials =
     user.name
@@ -128,13 +165,15 @@ async function Tienda({
   if (getTemplate(user.storefrontTemplate).layout === "encontrate") {
     return (
       <div style={pageStyle}>
+        <JsonLd datos={datosEstructurados} />
         <PerfilEncontrate
           fotografo={{
             slug,
             nombre: user.name ?? "Fotógrafo",
             bio: user.bio,
+            resumen,
             lugar: user.location,
-            instagram: usuarioInstagram(user.instagramUrl),
+            instagram,
             web: user.websiteUrl,
             iniciales: initials,
             avatarUrl,
@@ -150,8 +189,7 @@ async function Tienda({
               ? new Date(e.eventDate).toLocaleDateString("es-AR", {
                   day: "numeric",
                   month: "long",
-                  year: "numeric",
-                })
+                  year: "numeric", timeZone: "UTC" })
               : null,
             lugar: e.location,
             fotos: e._count.photos,
@@ -164,6 +202,7 @@ async function Tienda({
 
   return (
     <div style={pageStyle}>
+      <JsonLd datos={datosEstructurados} />
       <nav className="nav">
         <div className="nav-left">
           <Link href="/" className="back-btn" aria-label="Volver al inicio">
@@ -228,6 +267,11 @@ async function Tienda({
                   </>
                 )}
               </div>
+              {/* Qué cubre, con sus números: lo lee el organizador que llega
+                  buscando un fotógrafo, y lo lee Google. */}
+              <p style={{ margin: "10px 0 0", maxWidth: 620, fontSize: 14, lineHeight: 1.55, color: "var(--text-secondary)" }}>
+                {resumen}
+              </p>
             </div>
           </div>
         </div>
@@ -318,8 +362,7 @@ async function Tienda({
                         {new Date(e.eventDate).toLocaleDateString("es-AR", {
                           day: "numeric",
                           month: "short",
-                          year: "numeric",
-                        })}
+                          year: "numeric", timeZone: "UTC" })}
                       </span>
                     )}
                     {e.location && (

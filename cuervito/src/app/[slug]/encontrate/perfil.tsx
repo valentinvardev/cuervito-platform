@@ -39,6 +39,8 @@ export function PerfilEncontrate({
     slug: string;
     nombre: string;
     bio: string | null;
+    /** Qué cubre, con sus números, armado con sus eventos (ver ../_resumen.ts). */
+    resumen?: string;
     lugar: string | null;
     /** El usuario de Instagram, sin arroba. */
     instagram: string | null;
@@ -102,6 +104,9 @@ export function PerfilEncontrate({
           <h1>{fotografo.nombre}</h1>
 
           {fotografo.bio && <p className="et-perfil-bio">{fotografo.bio}</p>}
+          {/* Debajo de la bio o en su lugar: la bio es quién es; esto es qué
+              va a encontrar quien busca, y es lo que lee Google. */}
+          {fotografo.resumen && <p className="et-perfil-resumen">{fotografo.resumen}</p>}
 
           {eventos.length > 0 && (
             <div className="et-hero-pie">
