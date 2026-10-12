@@ -42,7 +42,11 @@ import {
   type FotoVisor,
 } from "./comun";
 
-const ROMANOS = ["I", "II", "III", "IV", "V"];
+/** El numeral del rótulo, para el menú: sin la raya, y nada si lo quitaron. */
+function useNumero(id: string): string {
+  const n = useEditorStore((s) => s.nodes[id]);
+  return n?.hidden ? "" : aTexto(n?.content ?? "").replace(/s*[—–-]s*$/, "").trim();
+}
 const MAX_EVENTOS = 10;
 const imagenLlena = { width: "100%", height: "100%", objectFit: "cover", display: "block" } as const;
 
@@ -314,7 +318,9 @@ function Cronicas({ alAbrir }: { alAbrir: (fotos: FotoVisor[], i: number) => voi
       <div className="sd-seccion-cab">
         <div className="sd-cab-izq">
           <span className="sd-rotulo">
-            I —&nbsp;
+            <EditableNode id="sd-cron-num" tag="span" className="sd-rotulo-n">
+              <EditableText id="sd-cron-num" display="inline" />
+            </EditableNode>
             <EditableNode id="sd-cron-label" tag="span">
               <EditableText id="sd-cron-label" display="inline" />
             </EditableNode>
@@ -408,7 +414,9 @@ function Ruta() {
     <section id="sd-ruta" className="sd-ruta">
       <div className="sd-ruta-cab">
         <span className="sd-rotulo">
-          II —&nbsp;
+          <EditableNode id="sd-ruta-num" tag="span" className="sd-rotulo-n">
+            <EditableText id="sd-ruta-num" display="inline" />
+          </EditableNode>
           <EditableNode id="sd-ruta-label" tag="span">
             <EditableText id="sd-ruta-label" display="inline" />
           </EditableNode>
@@ -491,7 +499,9 @@ function SobreMi() {
       </div>
       <div className="sd-sobre-texto">
         <span className="sd-rotulo">
-          III —&nbsp;
+          <EditableNode id="sd-about-num" tag="span" className="sd-rotulo-n">
+            <EditableText id="sd-about-num" display="inline" />
+          </EditableNode>
           <EditableNode id="sd-about-label" tag="span">
             <EditableText id="sd-about-label" display="inline" />
           </EditableNode>
@@ -523,7 +533,9 @@ function Contacto() {
       <div className="sd-contacto-caja">
         <div className="sd-contacto-texto">
           <span className="sd-rotulo sd-rotulo-claro">
-            IV —&nbsp;
+            <EditableNode id="sd-contact-num" tag="span" className="sd-rotulo-n">
+              <EditableText id="sd-contact-num" display="inline" />
+            </EditableNode>
             <EditableNode id="sd-contact-label" tag="span">
               <EditableText id="sd-contact-label" display="inline" />
             </EditableNode>
@@ -605,14 +617,18 @@ export function SenderoPlantilla({ viewport }: { viewport: Viewport }) {
   const tRuta = aTexto(useContenido("sd-ruta-label"));
   const tSobre = aTexto(useContenido("sd-about-label"));
   const tContacto = aTexto(useContenido("sd-contact-label"));
+  const nCronicas = useNumero("sd-cron-num");
+  const nRuta = useNumero("sd-ruta-num");
+  const nSobre = useNumero("sd-about-num");
+  const nContacto = useNumero("sd-contact-num");
 
   useRevelar(raiz, `${galeria.length}-${eventos?.length ?? 0}-${viewport}`);
 
   const enlaces = [
-    galeria.length > 0 && visible("sd-cronicas") && { id: "sd-cronicas", texto: tCronicas, numero: ROMANOS[0]! },
-    (eventos?.length ?? 0) > 0 && visible("sd-ruta") && { id: "sd-ruta", texto: tRuta, numero: ROMANOS[1]! },
-    visible("sd-about") && { id: "sd-about", texto: tSobre, numero: ROMANOS[2]! },
-    visible("sd-contact") && { id: "sd-contact", texto: tContacto, numero: ROMANOS[3]! },
+    galeria.length > 0 && visible("sd-cronicas") && { id: "sd-cronicas", texto: tCronicas, numero: nCronicas },
+    (eventos?.length ?? 0) > 0 && visible("sd-ruta") && { id: "sd-ruta", texto: tRuta, numero: nRuta },
+    visible("sd-about") && { id: "sd-about", texto: tSobre, numero: nSobre },
+    visible("sd-contact") && { id: "sd-contact", texto: tContacto, numero: nContacto },
   ].filter((x): x is Enlace => Boolean(x));
 
   return (

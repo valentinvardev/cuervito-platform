@@ -66,6 +66,11 @@ existir: una vez es un descuido, dos es una tendencia.
   («el menú sólo en el sitio») escrita cinco veces— y esta vez la regla era
   además incorrecta. Si la decisión «qué se dibuja en el editor» viviera en
   comun.tsx (en `useMenu`, por ejemplo), habría sido un cambio y no cinco.
+- 2026-10-12, la séptima, en CSS: los velos de degradado sobre una foto
+  (`.sd-cita-velo`, `.pd-hero-velo`) tapaban el clic en el editor. Se
+  arreglaron uno por uno con `pointer-events: none`. Un test de «cada nodo
+  de imagen recibe el clic en su centro» (el que se corrió a mano con CDP)
+  habría encontrado los dos de una, y encontraría el próximo.
 - Estado: activo
 
 ## Trabajo en vuelo que nadie gobierna

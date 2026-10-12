@@ -31,6 +31,7 @@ export const FOTOFINISH_NODES: Record<string, EditorNode> = {
   "ff-work-label": { id: "ff-work-label", type: "paragraph", content: "Trabajo" },
 
   /* Cifras */
+  "ff-cifras-letra": { id: "ff-cifras-letra", type: "paragraph", content: "(A)" },
   "ff-cifras-label": { id: "ff-cifras-label", type: "paragraph", content: "En números" },
   "ff-cifras-text":  { id: "ff-cifras-text",  type: "paragraph", content: "Parado en el mismo lugar que nadie quiere: el vadeo helado, la última subida, los diez metros antes de la meta." },
   "ff-stat-1-value": { id: "ff-stat-1-value", type: "paragraph", content: "{eventos}" },
@@ -41,19 +42,23 @@ export const FOTOFINISH_NODES: Record<string, EditorNode> = {
   "ff-stat-3-label": { id: "ff-stat-3-label", type: "paragraph", content: "temporadas en la ruta" },
 
   /* Serie destacada */
+  "ff-serie-letra": { id: "ff-serie-letra", type: "paragraph", content: "(B)" },
   "ff-serie-label": { id: "ff-serie-label", type: "paragraph", content: "Serie destacada" },
 
   /* Índice de eventos */
+  "ff-index-letra": { id: "ff-index-letra", type: "paragraph", content: "(C)" },
   "ff-index-label": { id: "ff-index-label", type: "paragraph", content: "Índice de eventos" },
   "ff-index-intro": { id: "ff-index-intro", type: "paragraph", content: "Cada evento abre su galería en encontrate: buscá tu dorsal o subí una selfie." },
 
   /* Sobre mí */
+  "ff-about-letra": { id: "ff-about-letra", type: "paragraph", content: "(D)" },
   "ff-about-label": { id: "ff-about-label", type: "paragraph", content: "Sobre mí" },
   "ff-about-image": { id: "ff-about-image", type: "image",     src: "", alt: "Retrato" },
   "ff-about-lead":  { id: "ff-about-lead",  type: "paragraph", content: "Empecé sacándole fotos a mis amigos en las carreras del pueblo y nunca bajé la cámara." },
   "ff-about-body":  { id: "ff-about-body",  type: "paragraph", content: "Trabajo con organizadores de mountain bike, trail y running. Llego antes de la largada, elijo el punto donde la carrera se pone difícil y me quedo hasta el último corredor. Cada foto se sube con búsqueda por dorsal y por cara, así cada atleta encuentra la suya." },
 
   /* Contacto */
+  "ff-contact-letra": { id: "ff-contact-letra", type: "paragraph", content: "(E)" },
   "ff-contact-label":   { id: "ff-contact-label",   type: "paragraph", content: "Contacto" },
   "ff-contact-heading": { id: "ff-contact-heading", type: "heading",   content: "¿Tu próxima<br/>carrera?" },
   "ff-contact-body":    { id: "ff-contact-body",    type: "paragraph", content: "Contame la fecha, el lugar y cuántos corredores esperás. Respondo en el día." },
@@ -81,6 +86,7 @@ export const FOTOFINISH_SECTIONS: SectionDef[] = [
     ] },
   { id: "ff-cifras", label: "En números", icon: <IconoCifras />, locked: false,
     elements: [
+      { nodeId: "ff-cifras-letra", label: "Letra", type: "text" },
       { nodeId: "ff-cifras-label", label: "Rótulo",           type: "text" },
       { nodeId: "ff-cifras-text",  label: "Texto",            type: "text" },
       { nodeId: "ff-stat-1-value", label: "Cifra 1 — valor",  type: "text" },
@@ -92,15 +98,18 @@ export const FOTOFINISH_SECTIONS: SectionDef[] = [
     ] },
   { id: "ff-serie", label: "Serie destacada", icon: <IconoPortada />, locked: false,
     elements: [
+      { nodeId: "ff-serie-letra", label: "Letra", type: "text" },
       { nodeId: "ff-serie-label", label: "Rótulo", type: "text" },
     ] },
   { id: "ff-index", label: "Índice de eventos", icon: <IconoLista />, locked: false,
     elements: [
+      { nodeId: "ff-index-letra", label: "Letra", type: "text" },
       { nodeId: "ff-index-label", label: "Rótulo", type: "text" },
       { nodeId: "ff-index-intro", label: "Texto",  type: "text" },
     ] },
   { id: "ff-about", label: "Sobre mí", icon: <IconoPersona />, locked: false,
     elements: [
+      { nodeId: "ff-about-letra", label: "Letra", type: "text" },
       { nodeId: "ff-about-label", label: "Rótulo",  type: "text" },
       { nodeId: "ff-about-image", label: "Retrato", type: "image" },
       { nodeId: "ff-about-lead",  label: "Entrada", type: "text" },
@@ -108,6 +117,7 @@ export const FOTOFINISH_SECTIONS: SectionDef[] = [
     ] },
   { id: "ff-contact", label: "Contacto", icon: <IconoMail />, locked: false,
     elements: [
+      { nodeId: "ff-contact-letra", label: "Letra", type: "text" },
       { nodeId: "ff-contact-label",   label: "Rótulo", type: "text" },
       { nodeId: "ff-contact-heading", label: "Título", type: "text" },
       { nodeId: "ff-contact-body",    label: "Texto",  type: "text" },

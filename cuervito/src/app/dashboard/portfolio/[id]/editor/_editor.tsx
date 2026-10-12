@@ -2,11 +2,17 @@
 
 import {
   ArrowLeft,
+  Check,
   Eye,
   EyeOff,
   ExternalLink,
+  Inbox,
+  Layers,
   Lock,
+  MessageCircle,
+  MessageSquare,
   Monitor,
+  Palette,
   Redo2,
   Save,
   Smartphone,
@@ -83,6 +89,19 @@ const GRILLAS: Record<GridSettings["layout"], string> = {
 };
 
 const ANCHOS: Record<Viewport, number | null> = { desktop: null, tablet: 820, mobile: 390 };
+
+/* El panel y el sitio se hablan por el DOM: cada sección lleva su id y cada
+   nodo su data-node-id. Al tocar una sección el sitio va hasta ella; al pasar
+   el mouse por una sección o un elemento, se marca en el sitio. */
+function irA(selector: string) {
+  document.querySelector(`.pfe-marco ${selector}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function resaltar(selector: string | null) {
+  for (const e of document.querySelectorAll(".pfe-marco [data-pfe-hover]")) e.removeAttribute("data-pfe-hover");
+  if (selector) document.querySelector(`.pfe-marco ${selector}`)?.setAttribute("data-pfe-hover", "");
+}
+const porId = (id: string) => `#${CSS.escape(id)}`;
+const porNodo = (id: string) => `[data-node-id="${CSS.escape(id)}"]`;
 
 /** Qué parte de una foto se ve cuando el recuadro no la muestra entera. */
 const ENCUADRES: [string, string][] = [
@@ -301,17 +320,19 @@ function Pantalla({
 
       <div className="pfe-cuerpo">
         <aside className="pfe-panel">
-          <div className="seg pfe-pestanas" role="group" aria-label="Panel">
+          {/* Un índice con subrayado, no un interruptor: son tres partes del
+              panel, no tres estados de una misma cosa. */}
+          <nav className="pfe-indice" aria-label="Panel">
             {([
-              ["secciones", "Secciones"],
-              ["diseno", "Diseño"],
-              ["contacto", "Contacto"],
-            ] as const).map(([id, t]) => (
+              ["secciones", Layers, "Secciones"],
+              ["diseno", Palette, "Diseño"],
+              ["contacto", MessageSquare, "Contacto"],
+            ] as const).map(([id, Icono, t]) => (
               <button key={id} type="button" aria-pressed={pestana === id} onClick={() => setPestana(id)}>
-                {t}
+                <Icono /> {t}
               </button>
             ))}
-          </div>
+          </nav>
           {pestana === "secciones" && <Secciones store={store} />}
           {pestana === "diseno" && <Diseno store={store} />}
           {pestana === "contacto" && <Contacto store={store} />}
@@ -349,9 +370,17 @@ function Secciones({ store }: { store: StoreSitio }) {
         {secciones.map((sec) => {
           const oculta = ocultas.includes(sec.id);
           return (
-            <li key={sec.id} data-abierta={abierta === sec.id}>
+            <li key={sec.id} data-abierta={abierta === sec.id} onMouseEnter={() => resaltar(porId(sec.id))} onMouseLeave={() => resaltar(null)}>
               <div className="pfe-sec">
-                <button type="button" className="nombre" onClick={() => setAbierta((a) => (a === sec.id ? null : sec.id))} style={oculta ? { opacity: 0.5 } : undefined}>
+                <button
+                  type="button"
+                  className="nombre"
+                  onClick={() => {
+                    setAbierta((a) => (a === sec.id ? null : sec.id));
+                    irA(porId(sec.id));
+                  }}
+                  style={oculta ? { opacity: 0.5 } : undefined}
+                >
                   {sec.label}
                 </button>
                 {sec.locked ? (
@@ -376,9 +405,11 @@ function Secciones({ store }: { store: StoreSitio }) {
                       type="button"
                       aria-current={elegido === el.nodeId}
                       data-oculto={nodes[el.nodeId]?.hidden ? "" : undefined}
+                      onMouseEnter={() => resaltar(porNodo(el.nodeId))}
+                      onMouseLeave={() => resaltar(porId(sec.id))}
                       onClick={() => {
                         store.getState().selectNode(el.nodeId);
-                        document.querySelector(`[data-node-id="${el.nodeId}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        document.querySelector(`.pfe-marco ${porNodo(el.nodeId)}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
                       }}
                     >
                       {el.label}
@@ -574,7 +605,7 @@ function Diseno({ store }: { store: StoreSitio }) {
         <h3>Botones</h3>
         <label className="pfe-rango">
           <span>Esquinas</span>
-          <input type="range" min={0} max={24} value={buttons.radius} onChange={(e) => s.setButtons({ radius: Number(e.target.value) })} />
+          <input type="range" min={0} max={100} value={buttons.radius} onChange={(e) => s.setButtons({ radius: Number(e.target.value) })} />
           <b>{buttons.radius}px</b>
         </label>
       </section>
@@ -591,17 +622,24 @@ function Contacto({ store }: { store: StoreSitio }) {
     <div className="pfe-diseno">
       <section>
         <h3>Adónde llegan las consultas</h3>
-        <div className="seg" role="group" style={{ width: "100%" }}>
-          <button type="button" aria-pressed={contact.mode === "inbox"} onClick={() => s.setContact({ mode: "inbox" })}>
-            A mi mail y al panel
-          </button>
-          <button type="button" aria-pressed={contact.mode === "whatsapp"} onClick={() => s.setContact({ mode: "whatsapp" })}>
-            A WhatsApp
-          </button>
+        {/* Dos opciones con su explicación, no un interruptor: lo que cambia
+            es adónde va cada consulta, y eso hay que leerlo antes de elegir. */}
+        <div className="pfe-opciones" role="radiogroup" aria-label="Adónde llegan las consultas">
+          {([
+            ["inbox", Inbox, "A tu mail y al panel", "Cada consulta queda en la pestaña Consultas del portfolio y te llega por mail."],
+            ["whatsapp", MessageCircle, "A WhatsApp", "Al tocar Enviar se abre un chat con tu número y el mensaje ya escrito."],
+          ] as const).map(([modo, Icono, titulo, detalle]) => (
+            <button key={modo} type="button" role="radio" aria-checked={contact.mode === modo} onClick={() => s.setContact({ mode: modo })}>
+              <Icono />
+              <span>
+                <b>{titulo}</b>
+                <small>{detalle}</small>
+              </span>
+              <Check className="tilde" aria-hidden="true" />
+            </button>
+          ))}
         </div>
-        {contact.mode === "inbox" ? (
-          <p className="pista">Cada consulta te llega por mail y queda en la pestaña Consultas del portfolio.</p>
-        ) : (
+        {contact.mode === "whatsapp" && (
           <>
             <div className="campo">
               <label htmlFor="pfe-wa">Tu número</label>

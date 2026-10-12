@@ -12,7 +12,7 @@ import { disenoDe } from "~/server/portfolio";
 import { borrarVersionesHuerfanas, empujarPortfolio } from "~/server/portfolio-fotos";
 
 import { usuarioPortfolio } from "./_acceso";
-import { sanearDiseno } from "./_sanear";
+import { motivoDisenoInvalido, sanearDiseno } from "./_sanear";
 
 /**
  * Las acciones del panel de Portfolio. Cada una empieza por usuarioPortfolio()
@@ -294,7 +294,8 @@ export async function guardarDisenoAction(portfolioId: string, diseno: unknown):
   const userId = await usuarioPortfolio();
   if (!userId) return SIN_ACCESO;
   const limpio = sanearDiseno(diseno);
-  if (!limpio) return { error: "El diseño no es válido." };
+  // Con el campo que falla: «no es válido» a secas no dice qué tocar.
+  if (!limpio) return { error: `El diseño no es válido (${motivoDisenoInvalido(diseno) ?? "?"}).` };
   const r = await db.portfolio.updateMany({ where: { id: portfolioId, ownerId: userId }, data: { diseno: limpio as Prisma.InputJsonValue } });
   if (r.count === 0) return SIN_ACCESO;
   refrescar(portfolioId);

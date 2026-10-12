@@ -61,7 +61,9 @@ const disenoSchema = z.object({
   nodes: z.record(z.string().max(80), nodo).optional(),
   palette: z.object({ bg: hex, fg: hex, accent: hex, muted: hex }).optional(),
   typography: z.object({ serif: familia, sans: familia, mono: familia }).optional(),
-  buttons: z.object({ radius: z.number().min(0).max(40), bg: hex.or(z.literal("")), fg: hex.or(z.literal("")) }).optional(),
+  // Hasta 100: Sendero y Kilómetro arrancan con botones píldora (radius 100),
+  // y con el tope anterior (40) ningún cambio en esas plantillas se guardaba.
+  buttons: z.object({ radius: z.number().min(0).max(100), bg: hex.or(z.literal("")), fg: hex.or(z.literal("")) }).optional(),
   grid: z
     .object({
       layout: z.enum(["mosaic", "uniform", "masonry", "index", "corridor"]),
@@ -91,6 +93,14 @@ const disenoSchema = z.object({
     .optional(),
   hiddenSections: z.array(z.string().regex(/^[\w-]{1,60}$/)).max(30).optional(),
 });
+
+/** Por qué un diseño no pasa: el campo que falla, para no adivinar. */
+export function motivoDisenoInvalido(entrada: unknown): string | null {
+  const d = disenoSchema.safeParse(entrada);
+  if (d.success) return null;
+  const i = d.error.issues[0];
+  return i ? `${i.path.join(".") || "diseño"}: ${i.message}` : "diseño";
+}
 
 export function sanearDiseno(entrada: unknown): PortfolioDesign | null {
   const d = disenoSchema.safeParse(entrada);

@@ -35,6 +35,7 @@ export const SENDERO_NODES: Record<string, EditorNode> = {
   "sd-sello-label":  { id: "sd-sello-label",  type: "paragraph", content: "carreras cubiertas" },
 
   /* Crónicas */
+  "sd-cron-num":     { id: "sd-cron-num",     type: "paragraph", content: "I —" },
   "sd-cron-label":   { id: "sd-cron-label",   type: "paragraph", content: "Crónicas" },
   "sd-cron-heading": { id: "sd-cron-heading", type: "heading",   content: "Tres carreras, <em>tres historias.</em>" },
   "sd-cron-intro":   { id: "sd-cron-intro",   type: "paragraph", content: "Cada crónica junta las mejores fotos de un evento en el orden en que pasó: de la largada a la última llegada." },
@@ -45,11 +46,13 @@ export const SENDERO_NODES: Record<string, EditorNode> = {
   "sd-cita-caption": { id: "sd-cita-caption", type: "paragraph", content: "{ubicacion}" },
 
   /* Cuaderno de ruta */
+  "sd-ruta-num":     { id: "sd-ruta-num",     type: "paragraph", content: "II —" },
   "sd-ruta-label":   { id: "sd-ruta-label",   type: "paragraph", content: "Cuaderno de ruta" },
   "sd-ruta-heading": { id: "sd-ruta-heading", type: "heading",   content: "Todas las carreras, <em>una por una.</em>" },
   "sd-ruta-intro":   { id: "sd-ruta-intro",   type: "paragraph", content: "Tocá un evento para ver su galería completa y buscar tus fotos por dorsal o con una selfie." },
 
   /* Sobre mí */
+  "sd-about-num":     { id: "sd-about-num",     type: "paragraph", content: "III —" },
   "sd-about-label":   { id: "sd-about-label",   type: "paragraph", content: "Sobre mí" },
   "sd-about-image":   { id: "sd-about-image",   type: "image",     src: "", alt: "Retrato" },
   "sd-about-image-2": { id: "sd-about-image-2", type: "image",     src: "", alt: "" },
@@ -57,6 +60,7 @@ export const SENDERO_NODES: Record<string, EditorNode> = {
   "sd-about-body":    { id: "sd-about-body",    type: "paragraph", content: "Trabajo con organizadores de carreras de montaña. Llego antes de la largada, elijo el punto donde la carrera se pone difícil y me quedo hasta el último corredor. Las fotos se suben el mismo día, y cada atleta encuentra las suyas con su dorsal o una selfie." },
 
   /* Contacto */
+  "sd-contact-num":     { id: "sd-contact-num",     type: "paragraph", content: "IV —" },
   "sd-contact-label":   { id: "sd-contact-label",   type: "paragraph", content: "Contacto" },
   "sd-contact-heading": { id: "sd-contact-heading", type: "heading",   content: "Escribime y <em>vamos</em> a tu carrera." },
   "sd-contact-body":    { id: "sd-contact-body",    type: "paragraph", content: "Contame la fecha, el lugar y cuántos corredores esperás. Respondo en el día." },
@@ -84,6 +88,7 @@ export const SENDERO_SECTIONS: SectionDef[] = [
     ] },
   { id: "sd-cronicas", label: "Crónicas", icon: <IconoGrilla />, locked: false,
     elements: [
+      { nodeId: "sd-cron-num", label: "Número", type: "text" },
       { nodeId: "sd-cron-label",   label: "Rótulo (y menú)", type: "text" },
       { nodeId: "sd-cron-heading", label: "Título",          type: "text" },
       { nodeId: "sd-cron-intro",   label: "Texto",           type: "text" },
@@ -96,12 +101,14 @@ export const SENDERO_SECTIONS: SectionDef[] = [
     ] },
   { id: "sd-ruta", label: "Cuaderno de ruta", icon: <IconoLista />, locked: false,
     elements: [
+      { nodeId: "sd-ruta-num", label: "Número", type: "text" },
       { nodeId: "sd-ruta-label",   label: "Rótulo (y menú)", type: "text" },
       { nodeId: "sd-ruta-heading", label: "Título",          type: "text" },
       { nodeId: "sd-ruta-intro",   label: "Texto",           type: "text" },
     ] },
   { id: "sd-about", label: "Sobre mí", icon: <IconoPersona />, locked: false,
     elements: [
+      { nodeId: "sd-about-num", label: "Número", type: "text" },
       { nodeId: "sd-about-label",   label: "Rótulo (y menú)", type: "text" },
       { nodeId: "sd-about-image",   label: "Retrato",         type: "image" },
       { nodeId: "sd-about-image-2", label: "Foto chica",      type: "image" },
@@ -110,6 +117,7 @@ export const SENDERO_SECTIONS: SectionDef[] = [
     ] },
   { id: "sd-contact", label: "Contacto", icon: <IconoMail />, locked: false,
     elements: [
+      { nodeId: "sd-contact-num", label: "Número", type: "text" },
       { nodeId: "sd-contact-label",   label: "Rótulo (y menú)", type: "text" },
       { nodeId: "sd-contact-heading", label: "Título",          type: "text" },
       { nodeId: "sd-contact-body",    label: "Texto",           type: "text" },

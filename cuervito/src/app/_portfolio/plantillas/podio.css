@@ -133,8 +133,10 @@
 .pd[data-vp="mobile"][data-editor] .pd-hero { min-height: 760px; }
 .pd-hero-foto { inset: 0; z-index: -2; overflow: hidden; animation: pd-asienta 1.4s var(--pd-curva) both; }
 .pd-hero-foto img { object-position: center 30%; }
+/* Sin pointer-events: es decoración y tapaba la foto de portada, que en el
+   editor tiene que poder tocarse para cambiarla o moverla. */
 .pd-hero-velo {
-  position: absolute; inset: 0; z-index: -1;
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--pd-bg) 70%, transparent) 0%, color-mix(in srgb, var(--pd-bg) 15%, transparent) 55%, transparent 75%),
     linear-gradient(180deg, color-mix(in srgb, var(--pd-bg) 55%, transparent) 0%, transparent 22%, transparent 40%, color-mix(in srgb, var(--pd-bg) 95%, transparent) 100%);
@@ -143,6 +145,10 @@
   background: linear-gradient(180deg, color-mix(in srgb, var(--pd-bg) 60%, transparent) 0%, transparent 18%, color-mix(in srgb, var(--pd-bg) 45%, transparent) 36%, color-mix(in srgb, var(--pd-bg) 97%, transparent) 66%);
 }
 .pd-hero-cuerpo { display: flex; flex-direction: column; gap: 28px; }
+/* En el editor el bloque de texto no tapa la foto de fondo: los textos siguen
+   tocándose, y entre ellos el clic llega a la foto para cambiarla o moverla. */
+.pd[data-editor] .pd-hero-cuerpo { pointer-events: none; }
+.pd[data-editor] .pd-hero-cuerpo > * { pointer-events: auto; }
 .pd[data-vp="mobile"] .pd-hero-cuerpo { gap: 18px; }
 .pd-volanta { display: flex; align-items: center; gap: 14px; color: var(--pd-acento); font-size: 13px; letter-spacing: .18em; animation: pd-aparece .8s .1s both; }
 .pd-volanta i { width: 40px; height: 2px; background: currentColor; flex-shrink: 0; }

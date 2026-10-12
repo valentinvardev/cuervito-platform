@@ -63,11 +63,19 @@ function Marca() {
   );
 }
 
-/** El rótulo de sección: la letra fija y el texto editable. */
-function Riel({ letra, id, children }: { letra: string; id: string; children?: React.ReactNode }) {
+/** La letra del rótulo, para el menú: sin paréntesis, y nada si la quitaron. */
+function useLetra(id: string): string {
+  const n = useEditorStore((s) => s.nodes[id]);
+  return n?.hidden ? "" : aTexto(n?.content ?? "").replace(/[()]/g, "").trim();
+}
+
+/** El rótulo de sección: la letra y el texto, los dos editables. */
+function Riel({ letraId, id, children }: { letraId: string; id: string; children?: React.ReactNode }) {
   return (
     <div className="ff-riel">
-      <span className="ff-letra">({letra})</span>
+      <EditableNode id={letraId} tag="span" className="ff-letra">
+        <EditableText id={letraId} display="inline" />
+      </EditableNode>
       <EditableNode id={id} tag="span" className="ff-riel-t">
         <EditableText id={id} display="inline" />
       </EditableNode>
@@ -78,7 +86,7 @@ function Riel({ letra, id, children }: { letra: string; id: string; children?: R
 
 /* ── Nav y menú ─────────────────────────────────────────────────────────── */
 
-type Enlace = { id: string; texto: string };
+type Enlace = { id: string; texto: string; letra?: string };
 
 function Nav({ alAbrir, abierto }: { alAbrir: () => void; abierto: boolean }) {
   return (
@@ -160,7 +168,7 @@ function Menu({
                 menu.ir(l.id);
               }}
             >
-              <span className="ff-menu-letra">{String.fromCharCode(65 + i)}</span>
+              <span className="ff-menu-letra">{l.letra ?? String.fromCharCode(65 + i)}</span>
               <span className="ff-menu-t">{l.texto}</span>
             </a>
           ))}
@@ -415,7 +423,7 @@ function Cifras() {
   if (cifras.length === 0) return null;
   return (
     <section id="ff-cifras" className="ff-seccion ff-cifras">
-      <Riel letra="A" id="ff-cifras-label" />
+      <Riel letraId="ff-cifras-letra" id="ff-cifras-label" />
       <div className="ff-cuerpo">
         <EditableNode id="ff-cifras-text" tag="p" className="ff-cifras-texto" >
           <EditableText id="ff-cifras-text" />
@@ -501,7 +509,7 @@ function Serie({ serie, alAbrir }: { serie: Proyecto | null; alAbrir: (fotos: Fo
   return (
     <section id="ff-serie" className="ff-seccion ff-serie">
       <div className="ff-serie-cab">
-        <Riel letra="B" id="ff-serie-label" />
+        <Riel letraId="ff-serie-letra" id="ff-serie-label" />
         <h2 className="ff-serie-titulo ff-titular" data-rv="">
           <span className="ff-linea" style={{ "--i": 0 } as React.CSSProperties}>
             <span>{serie.title}</span>
@@ -581,7 +589,7 @@ function Indice() {
 
   return (
     <section id="ff-index" className="ff-seccion ff-indice">
-      <Riel letra="C" id="ff-index-label">
+      <Riel letraId="ff-index-letra" id="ff-index-label">
         <EditableNode id="ff-index-intro" tag="p" className="ff-riel-p">
           <EditableText id="ff-index-intro" />
         </EditableNode>
@@ -627,7 +635,7 @@ function SobreMi() {
   const { instagram, tienda, web } = useEnlaces();
   return (
     <section id="ff-about" className="ff-seccion ff-sobre">
-      <Riel letra="D" id="ff-about-label" />
+      <Riel letraId="ff-about-letra" id="ff-about-label" />
       <div className="ff-cuerpo ff-sobre-cuerpo">
         <div className="ff-sobre-retrato" data-rv="">
           <EditableNode id="ff-about-image" style={{ position: "absolute", inset: 0 }}>
@@ -661,7 +669,7 @@ function Contacto() {
   return (
     <section id="ff-contact" className="ff-contacto">
       <div className="ff-seccion-fila">
-        <Riel letra="E" id="ff-contact-label" />
+        <Riel letraId="ff-contact-letra" id="ff-contact-label" />
         <div className="ff-cuerpo">
           <EditableNode id="ff-contact-heading" tag="h2" className="ff-contacto-h ff-titular" >
             <span data-rv="" className="ff-titular-in">
@@ -737,6 +745,10 @@ export function FotofinishPlantilla({ viewport }: { viewport: Viewport }) {
   const tIndice = aTexto(useContenido("ff-index-label"));
   const tSobre = aTexto(useContenido("ff-about-label"));
   const tContacto = aTexto(useContenido("ff-contact-label"));
+  const lSerie = useLetra("ff-serie-letra");
+  const lIndice = useLetra("ff-index-letra");
+  const lSobre = useLetra("ff-about-letra");
+  const lContacto = useLetra("ff-contact-letra");
 
   useRevelar(raiz, `${galeria.length}-${viewport}`);
 
@@ -746,10 +758,10 @@ export function FotofinishPlantilla({ viewport }: { viewport: Viewport }) {
 
   const enlaces: Enlace[] = [
     galeria.length > 0 && visible("ff-work") && { id: "ff-work", texto: tTrabajo },
-    serie && visible("ff-serie") && { id: "ff-serie", texto: tSerie },
-    (eventos?.length ?? 0) > 0 && visible("ff-index") && { id: "ff-index", texto: tIndice },
-    visible("ff-about") && { id: "ff-about", texto: tSobre },
-    visible("ff-contact") && { id: "ff-contact", texto: tContacto },
+    serie && visible("ff-serie") && { id: "ff-serie", texto: tSerie, letra: lSerie },
+    (eventos?.length ?? 0) > 0 && visible("ff-index") && { id: "ff-index", texto: tIndice, letra: lIndice },
+    visible("ff-about") && { id: "ff-about", texto: tSobre, letra: lSobre },
+    visible("ff-contact") && { id: "ff-contact", texto: tContacto, letra: lContacto },
   ].filter((x): x is Enlace => Boolean(x));
 
   return (

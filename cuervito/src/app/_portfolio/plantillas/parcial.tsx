@@ -29,6 +29,7 @@ export const PARCIAL_NODES: Record<string, EditorNode> = {
   "pc-hero-meta":    { id: "pc-hero-meta",    type: "paragraph", content: "{ubicacion}" },
 
   /* Parciales */
+  "pc-splits-num": { id: "pc-splits-num", type: "paragraph", content: "01" },
   "pc-splits-label": { id: "pc-splits-label", type: "paragraph", content: "Parciales" },
   "pc-stat-1-value": { id: "pc-stat-1-value", type: "paragraph", content: "{eventos}" },
   "pc-stat-1-label": { id: "pc-stat-1-label", type: "paragraph", content: "eventos cubiertos" },
@@ -38,20 +39,24 @@ export const PARCIAL_NODES: Record<string, EditorNode> = {
   "pc-stat-3-label": { id: "pc-stat-3-label", type: "paragraph", content: "temporadas en la ruta" },
 
   /* Trabajo */
+  "pc-work-num": { id: "pc-work-num", type: "paragraph", content: "02" },
   "pc-work-label": { id: "pc-work-label", type: "paragraph", content: "Trabajo" },
   "pc-work-title": { id: "pc-work-title", type: "heading",   content: "Lo último que pasó<br/>frente a la cámara." },
 
   /* Planilla de eventos */
+  "pc-events-num": { id: "pc-events-num", type: "paragraph", content: "03" },
   "pc-events-label": { id: "pc-events-label", type: "paragraph", content: "Planilla de eventos" },
   "pc-events-intro": { id: "pc-events-intro", type: "paragraph", content: "Cada fila abre la galería del evento en encontrate: buscá tu dorsal o subí una selfie." },
 
   /* Sobre mí */
+  "pc-about-num": { id: "pc-about-num", type: "paragraph", content: "04" },
   "pc-about-label": { id: "pc-about-label", type: "paragraph", content: "Sobre mí" },
   "pc-about-image": { id: "pc-about-image", type: "image",     src: "", alt: "Retrato" },
   "pc-about-lead":  { id: "pc-about-lead",  type: "paragraph", content: "Llego antes de la largada y me voy con el último corredor." },
   "pc-about-body":  { id: "pc-about-body",  type: "paragraph", content: "Trabajo con organizadores de running, trail y ciclismo. Elijo el punto donde la carrera se pone difícil, y cada foto se sube con búsqueda por dorsal y por cara para que cada atleta encuentre la suya." },
 
   /* Contacto */
+  "pc-contact-num": { id: "pc-contact-num", type: "paragraph", content: "05" },
   "pc-contact-label":   { id: "pc-contact-label",   type: "paragraph", content: "Contacto" },
   "pc-contact-heading": { id: "pc-contact-heading", type: "heading",   content: "¿Largás<br/>pronto?" },
   "pc-contact-body":    { id: "pc-contact-body",    type: "paragraph", content: "Contame la fecha, el lugar y cuántos corredores esperás. Respondo en el día." },
@@ -76,6 +81,7 @@ export const PARCIAL_SECTIONS: SectionDef[] = [
     ] },
   { id: "pc-splits", label: "Parciales", icon: <IconoCifras />, locked: false,
     elements: [
+      { nodeId: "pc-splits-num", label: "Número", type: "text" },
       { nodeId: "pc-splits-label", label: "Rótulo",           type: "text" },
       { nodeId: "pc-stat-1-value", label: "Cifra 1 — valor",  type: "text" },
       { nodeId: "pc-stat-1-label", label: "Cifra 1 — rótulo", type: "text" },
@@ -86,16 +92,19 @@ export const PARCIAL_SECTIONS: SectionDef[] = [
     ] },
   { id: "pc-work", label: "Trabajo", icon: <IconoGrilla />, locked: false,
     elements: [
+      { nodeId: "pc-work-num", label: "Número", type: "text" },
       { nodeId: "pc-work-label", label: "Rótulo", type: "text" },
       { nodeId: "pc-work-title", label: "Título", type: "text" },
     ] },
   { id: "pc-events", label: "Planilla de eventos", icon: <IconoLista />, locked: false,
     elements: [
+      { nodeId: "pc-events-num", label: "Número", type: "text" },
       { nodeId: "pc-events-label", label: "Rótulo", type: "text" },
       { nodeId: "pc-events-intro", label: "Texto",  type: "text" },
     ] },
   { id: "pc-about", label: "Sobre mí", icon: <IconoPersona />, locked: false,
     elements: [
+      { nodeId: "pc-about-num", label: "Número", type: "text" },
       { nodeId: "pc-about-label", label: "Rótulo",  type: "text" },
       { nodeId: "pc-about-image", label: "Retrato", type: "image" },
       { nodeId: "pc-about-lead",  label: "Entrada", type: "text" },
@@ -103,6 +112,7 @@ export const PARCIAL_SECTIONS: SectionDef[] = [
     ] },
   { id: "pc-contact", label: "Contacto", icon: <IconoMail />, locked: false,
     elements: [
+      { nodeId: "pc-contact-num", label: "Número", type: "text" },
       { nodeId: "pc-contact-label",   label: "Rótulo", type: "text" },
       { nodeId: "pc-contact-heading", label: "Título", type: "text" },
       { nodeId: "pc-contact-body",    label: "Texto",  type: "text" },

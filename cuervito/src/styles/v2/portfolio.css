@@ -362,8 +362,34 @@
   width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px;
   padding: 14px 12px; overflow-y: auto; background: var(--paper-2); border-right: 1px solid var(--line-soft);
 }
-.pfe-pestanas { width: 100%; }
-.pfe-pestanas button { flex: 1; }
+/* Las tres partes del panel, como un índice: subrayado en la elegida. */
+.pfe-indice { display: flex; gap: 18px; border-bottom: 1px solid var(--line); }
+.pfe-indice button { display: inline-flex; align-items: center; gap: 6px; padding: 2px 0 10px; margin-bottom: -1px; background: none; border: 0; border-bottom: 2px solid transparent; font: inherit; font-size: 13px; color: var(--ink-3); cursor: pointer; transition: color .18s ease, border-color .18s ease; }
+.pfe-indice button svg { width: 14px; height: 14px; }
+.pfe-indice button:hover { color: var(--ink); }
+.pfe-indice button[aria-pressed="true"] { color: var(--ink); font-weight: 500; border-bottom-color: var(--ink); }
+
+/* Opciones excluyentes con su explicación (adónde llegan las consultas). */
+.pfe-opciones { display: grid; gap: 8px; }
+.pfe-opciones button { display: grid; grid-template-columns: 18px 1fr 16px; align-items: start; gap: 10px; padding: 11px 12px; text-align: left; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-2); font: inherit; color: var(--ink); cursor: pointer; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
+.pfe-opciones button svg { width: 16px; height: 16px; margin-top: 1px; color: var(--ink-2); }
+.pfe-opciones button b { display: block; font-size: 13px; font-weight: 500; }
+.pfe-opciones button small { display: block; margin-top: 2px; font-size: 12px; line-height: 1.4; color: var(--ink-3); }
+.pfe-opciones button .tilde { opacity: 0; transform: scale(.6); transition: opacity .18s ease, transform .18s ease; }
+.pfe-opciones button:hover { border-color: var(--ink-3); transform: translateX(2px); }
+.pfe-opciones button[aria-checked="true"] { border-color: var(--ink); background: var(--paper-2); }
+.pfe-opciones button[aria-checked="true"] .tilde { opacity: 1; transform: none; color: var(--ink); }
+
+/* El índice de secciones y sus elementos: al pasar el mouse se corren un
+   toque hacia la derecha, suave. */
+.pfe-sec .nombre { border-radius: var(--r-2); transition: background .18s ease, transform .18s ease; }
+.pfe-sec .nombre:hover { background: var(--ghost-hov); transform: translateX(2px); }
+.pfe-elementos button { transition: background .18s ease, color .18s ease, transform .18s ease; }
+.pfe-elementos button:hover { background: var(--ghost-hov); transform: translateX(2px); }
+@media (prefers-reduced-motion: reduce) {
+  .pfe-sec .nombre, .pfe-elementos button, .pfe-opciones button, .pfe-indice button { transition: none; }
+  .pfe-sec .nombre:hover, .pfe-elementos button:hover, .pfe-opciones button:hover { transform: none; }
+}
 
 .pfe-secciones ul { list-style: none; display: grid; gap: 1px; }
 .pfe-secciones li[data-abierta="true"] { background: var(--paper-3); border-radius: var(--r-2); }
@@ -424,6 +450,11 @@
 .pfe-marco [data-editor-node] { cursor: pointer; }
 .pfe-marco [data-editor-node]:hover { outline: 1px dashed color-mix(in srgb, #F0410F 70%, transparent); outline-offset: 2px; }
 .pfe-marco [data-selected="true"] { outline: 2px solid #F0410F !important; outline-offset: 2px; }
+/* Lo que el panel señala con el mouse (una sección o un elemento). */
+.pfe-marco [data-pfe-hover] { outline: 2px dashed #F0410F; outline-offset: -2px; }
+/* Una foto elegida se arrastra para encuadrarla (ver primitivas.tsx). */
+.pfe-marco [data-editor-node][data-tipo="image"][data-selected="true"] { cursor: move; }
+.pfe-marco [data-editor-node][data-tipo="image"][data-selected="true"] img { user-select: none; -webkit-user-drag: none; }
 
 @media (max-width: 860px) {
   .pfe-cuerpo { flex-direction: column-reverse; }

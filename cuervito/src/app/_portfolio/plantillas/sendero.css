@@ -51,6 +51,7 @@
 .sd em { font-style: italic; }
 .sd-rotulo { font-size: 13px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--sd-acento); display: inline-flex; }
 .sd-rotulo-claro { color: var(--sd-salvia); }
+.sd-rotulo-n { margin-right: .35em; }
 .sd-vacio { padding: 40px 0; color: var(--sd-tenue); }
 
 /* ── Píldoras y chips ── */
@@ -231,7 +232,9 @@
 .sd[data-vp="mobile"] .sd-cita-marco { height: 560px; padding: 28px 24px; border-radius: 28px; }
 .sd-cita-foto { position: absolute; left: 0; right: 0; top: -14%; height: 128%; z-index: -2; will-change: translate; }
 .sd-cita-foto img { object-position: center 40%; }
-.sd-cita-velo { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, transparent 25%, color-mix(in srgb, var(--sd-fg) 55%, transparent) 60%, color-mix(in srgb, var(--sd-fg) 90%, transparent) 100%); }
+/* Sin pointer-events: es decoración y tapaba la foto, que en el editor tiene
+   que poder tocarse para cambiarla o moverla. */
+.sd-cita-velo { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, transparent 25%, color-mix(in srgb, var(--sd-fg) 55%, transparent) 60%, color-mix(in srgb, var(--sd-fg) 90%, transparent) 100%); }
 .sd-cita-pie { position: relative; display: flex; justify-content: space-between; align-items: flex-end; gap: 48px; color: var(--sd-bg); }
 .sd-cita-texto { max-width: 900px; font-style: italic; font-weight: 300; font-size: clamp(40px, 5.5cqw, 76px); line-height: 1.08; letter-spacing: -.025em; }
 .sd-cita-dato { flex-shrink: 0; padding-bottom: 12px; font-weight: 500; font-size: 14px; color: var(--sd-salvia); }

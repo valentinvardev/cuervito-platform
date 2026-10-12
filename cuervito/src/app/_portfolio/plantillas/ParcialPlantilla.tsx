@@ -88,11 +88,19 @@ function Reloj() {
   );
 }
 
-/** El rótulo de sección: número fijo, texto editable. */
-function Rotulo({ n, id }: { n: string; id: string }) {
+/** El número del rótulo, para el menú: nada si lo quitaron. */
+function useNumero(id: string): string {
+  const n = useEditorStore((s) => s.nodes[id]);
+  return n?.hidden ? "" : aTexto(n?.content ?? "").trim();
+}
+
+/** El rótulo de sección: el número y el texto, los dos editables. */
+function Rotulo({ nId, id }: { nId: string; id: string }) {
   return (
     <div className="pc-rotulo">
-      <span className="pc-rotulo-n">{n}</span>
+      <EditableNode id={nId} tag="span" className="pc-rotulo-n">
+        <EditableText id={nId} display="inline" />
+      </EditableNode>
       <EditableNode id={id} tag="span" className="pc-rotulo-t">
         <EditableText id={id} display="inline" />
       </EditableNode>
@@ -102,7 +110,7 @@ function Rotulo({ n, id }: { n: string; id: string }) {
 
 /* ── Nav y menú ─────────────────────────────────────────────────────────── */
 
-type Enlace = { id: string; texto: string };
+type Enlace = { id: string; texto: string; numero: string };
 
 function Nav({ alAbrir, abierto }: { alAbrir: () => void; abierto: boolean }) {
   return (
@@ -155,7 +163,7 @@ function Menu({ menu, enlaces }: { menu: ReturnType<typeof useMenu>; enlaces: En
                 menu.ir(l.id);
               }}
             >
-              <span className="pc-menu-n">{dos(i + 1)}</span>
+              <span className="pc-menu-n">{l.numero}</span>
               <span className="pc-menu-t">{l.texto}</span>
               <span className="pc-menu-flecha" aria-hidden>→</span>
             </a>
@@ -262,7 +270,7 @@ function Parciales() {
   if (cifras.length === 0) return null;
   return (
     <section id="pc-splits" className="pc-seccion pc-parciales">
-      <Rotulo n="01" id="pc-splits-label" />
+      <Rotulo nId="pc-splits-num" id="pc-splits-label" />
       <div className="pc-parciales-fila" style={{ "--n": cifras.length } as React.CSSProperties}>
         {cifras.map((n, i) => (
           <div key={n} className="pc-parcial" data-rv="" style={{ "--i": i } as React.CSSProperties}>
@@ -302,7 +310,7 @@ function Trabajo({ alAbrir }: { alAbrir: (fotos: FotoVisor[], i: number) => void
   return (
     <section id="pc-work" className="pc-seccion pc-trabajo">
       <div className="pc-trabajo-cab">
-        <Rotulo n="02" id="pc-work-label" />
+        <Rotulo nId="pc-work-num" id="pc-work-label" />
         <EditableNode id="pc-work-title" tag="h2" className="pc-titular">
           <span data-rv="" className="pc-titular-in">
             <Lineas id="pc-work-title" className="pc-linea" />
@@ -383,7 +391,7 @@ function Planilla() {
   return (
     <section id="pc-events" className="pc-seccion pc-planilla">
       <div className="pc-planilla-cab">
-        <Rotulo n="03" id="pc-events-label" />
+        <Rotulo nId="pc-events-num" id="pc-events-label" />
         <EditableNode id="pc-events-intro" tag="p" className="pc-planilla-intro">
           <EditableText id="pc-events-intro" />
         </EditableNode>
@@ -427,7 +435,7 @@ function SobreMi() {
   const { instagram, tienda, web } = useEnlaces();
   return (
     <section id="pc-about" className="pc-seccion pc-sobre">
-      <Rotulo n="04" id="pc-about-label" />
+      <Rotulo nId="pc-about-num" id="pc-about-label" />
       <div className="pc-sobre-cuerpo">
         <div className="pc-sobre-retrato" data-rv="">
           <EditableNode id="pc-about-image" style={{ position: "absolute", inset: 0 }}>
@@ -461,7 +469,7 @@ function Contacto() {
   return (
     <section id="pc-contact" className="pc-contacto">
       <div className="pc-contacto-cab">
-        <Rotulo n="05" id="pc-contact-label" />
+        <Rotulo nId="pc-contact-num" id="pc-contact-label" />
         <EditableNode id="pc-contact-heading" tag="h2" className="pc-contacto-h">
           <span data-rv="" className="pc-titular-in">
             <Lineas id="pc-contact-heading" className="pc-linea" />
@@ -532,6 +540,10 @@ export function ParcialPlantilla({ viewport }: { viewport: Viewport }) {
   const tEventos = aTexto(useContenido("pc-events-label"));
   const tSobre = aTexto(useContenido("pc-about-label"));
   const tContacto = aTexto(useContenido("pc-contact-label"));
+  const nTrabajo = useNumero("pc-work-num");
+  const nEventos = useNumero("pc-events-num");
+  const nSobre = useNumero("pc-about-num");
+  const nContacto = useNumero("pc-contact-num");
 
   useRevelar(raiz, `${galeria.length}-${viewport}`);
 
@@ -540,10 +552,10 @@ export function ParcialPlantilla({ viewport }: { viewport: Viewport }) {
   };
 
   const enlaces: Enlace[] = [
-    galeria.length > 0 && visible("pc-work") && { id: "pc-work", texto: tTrabajo },
-    (eventos?.length ?? 0) > 0 && visible("pc-events") && { id: "pc-events", texto: tEventos },
-    visible("pc-about") && { id: "pc-about", texto: tSobre },
-    visible("pc-contact") && { id: "pc-contact", texto: tContacto },
+    galeria.length > 0 && visible("pc-work") && { id: "pc-work", texto: tTrabajo, numero: nTrabajo },
+    (eventos?.length ?? 0) > 0 && visible("pc-events") && { id: "pc-events", texto: tEventos, numero: nEventos },
+    visible("pc-about") && { id: "pc-about", texto: tSobre, numero: nSobre },
+    visible("pc-contact") && { id: "pc-contact", texto: tContacto, numero: nContacto },
   ].filter((x): x is Enlace => Boolean(x));
 
   return (

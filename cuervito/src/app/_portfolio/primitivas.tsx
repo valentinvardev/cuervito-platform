@@ -9,8 +9,33 @@
  * cambia es de dónde leen: el store por sitio de ./store, no uno global.
  */
 
+import { useRef } from "react";
+
 import { srcDeImagen, useEditorStore } from "./store";
 import type { ImageCrop } from "./tipos";
+
+/** "50% 40%" → [50, 40]. Lo que no se entiende es el centro. */
+function posicionDe(s: string | undefined): [number, number] {
+  const m = /^(-?[\d.]+)%\s+(-?[\d.]+)%$/.exec(s ?? "");
+  return m ? [Number(m[1]), Number(m[2])] : [50, 50];
+}
+
+const limitar = (n: number) => Math.min(100, Math.max(0, n));
+
+/** Lo que hace falta para mover una foto dentro de su recuadro con el mouse. */
+type Arrastre = {
+  x: number;
+  y: number;
+  px: number;
+  py: number;
+  /** Cuánto sobra de la foto en cada eje con object-fit: cover; 0 = no se mueve. */
+  sobraX: number;
+  sobraY: number;
+  nx: number;
+  ny: number;
+  movio: boolean;
+  img: HTMLImageElement;
+};
 
 /**
  * El logo como imagen, con el recorte opcional del panel. El ancho es el de
@@ -71,7 +96,10 @@ export function EditableNode({
   const readOnly = useEditorStore((s) => s.readOnly);
   const selectNode = useEditorStore((s) => s.selectNode);
   const setEditing = useEditorStore((s) => s.setEditing);
+  const updateNode = useEditorStore((s) => s.updateNode);
   const isTextNode = node?.type === "heading" || node?.type === "paragraph" || node?.type === "logo";
+  const esImagen = node?.type === "image";
+  const arrastre = useRef<Arrastre | null>(null);
 
   if (node?.hidden) return null;
 
@@ -95,13 +123,62 @@ export function EditableNode({
     );
   }
 
+  /* Una foto elegida se mueve arrastrándola: el encuadre (object-position)
+     sigue al mouse mientras se arrastra, directo sobre el <img> para no pasar
+     por el store en cada movimiento, y se guarda una sola vez al soltar. El
+     recorrido se calcula con lo que sobra de la foto en cada eje; si no sobra
+     nada en un eje, en ese eje no se mueve. */
+  const empezarArrastre = (e: React.PointerEvent<HTMLElement>) => {
+    if (!esImagen || !selected || e.button !== 0) return;
+    const img = e.currentTarget.querySelector("img");
+    if (!img?.naturalWidth) return;
+    const caja = e.currentTarget.getBoundingClientRect();
+    const escala = Math.max(caja.width / img.naturalWidth, caja.height / img.naturalHeight);
+    const [px, py] = posicionDe(getComputedStyle(img).objectPosition);
+    arrastre.current = {
+      x: e.clientX,
+      y: e.clientY,
+      px,
+      py,
+      sobraX: img.naturalWidth * escala - caja.width,
+      sobraY: img.naturalHeight * escala - caja.height,
+      nx: px,
+      ny: py,
+      movio: false,
+      img,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const moverArrastre = (e: React.PointerEvent<HTMLElement>) => {
+    const a = arrastre.current;
+    if (!a) return;
+    const dx = e.clientX - a.x;
+    const dy = e.clientY - a.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) a.movio = true;
+    a.nx = a.sobraX > 1 ? limitar(a.px - (dx / a.sobraX) * 100) : a.px;
+    a.ny = a.sobraY > 1 ? limitar(a.py - (dy / a.sobraY) * 100) : a.py;
+    a.img.style.objectPosition = `${Math.round(a.nx)}% ${Math.round(a.ny)}%`;
+  };
+  const soltarArrastre = (e: React.PointerEvent<HTMLElement>) => {
+    const a = arrastre.current;
+    arrastre.current = null;
+    if (!a) return;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    if (a.movio) updateNode(id, { objectPosition: `${Math.round(a.nx)}% ${Math.round(a.ny)}%` });
+  };
+
   return (
     <El
       data-editor-node=""
       data-node-id={id}
+      data-tipo={node?.type}
       className={className}
       data-selected={selected ? "true" : undefined}
       data-editing={editing ? "true" : undefined}
+      onPointerDown={empezarArrastre}
+      onPointerMove={moverArrastre}
+      onPointerUp={soltarArrastre}
+      onPointerCancel={soltarArrastre}
       onClick={(e) => {
         e.stopPropagation();
         if (editing) return;
@@ -115,7 +192,7 @@ export function EditableNode({
         selectNode(id);
         setEditing(id);
       }}
-      style={{ position: "relative", ...style, ...overrides }}
+      style={{ position: "relative", ...style, ...overrides, ...(esImagen && selected ? { touchAction: "none" } : {}) }}
     >
       {children}
     </El>
