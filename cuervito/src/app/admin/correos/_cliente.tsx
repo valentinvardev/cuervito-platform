@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 
 import type { estadoCorreos } from "~/server/correos/enviar";
 
-import { correrAhoraAction, enviarPruebaAction, toggleCampanaAction } from "./actions";
+import { correrAhoraAction, enviarPruebaAction, enviarPruebaTransaccionalAction, toggleCampanaAction } from "./actions";
 
 type Estado = Awaited<ReturnType<typeof estadoCorreos>>;
 
@@ -46,6 +46,18 @@ export function Correos({ estado }: { estado: Estado }) {
       // la pantalla entera se caiga.
       try {
         const r = await enviarPruebaAction(id);
+        setAviso((v) => ({ ...v, [id]: r.detalle }));
+      } catch (e) {
+        setAviso((v) => ({ ...v, [id]: e instanceof Error ? e.message : "No se pudo mandar la prueba" }));
+      }
+    });
+  }
+
+  function pruebaMail(id: string) {
+    setAviso((v) => ({ ...v, [id]: "Enviando…" }));
+    empezar(async () => {
+      try {
+        const r = await enviarPruebaTransaccionalAction(id);
         setAviso((v) => ({ ...v, [id]: r.detalle }));
       } catch (e) {
         setAviso((v) => ({ ...v, [id]: e instanceof Error ? e.message : "No se pudo mandar la prueba" }));
@@ -154,6 +166,42 @@ export function Correos({ estado }: { estado: Estado }) {
             </div>
           </section>
         ))}
+
+        {/* Los mails que salen solos no se prenden ni se apagan: acá sólo se
+            piden de prueba, para leerlos con datos de ejemplo —y con fotos
+            propias, si hay— antes de corregirlos. */}
+        <section className="card">
+          <div className="card-h">
+            <div>
+              <h2>Mails de la cuenta</h2>
+              <div className="sub">
+                Ventas, entrega, bienvenida… Salen solos cuando pasa algo; de acá sólo se mandan de prueba, con datos
+                de ejemplo y tus fotos.
+              </div>
+            </div>
+          </div>
+          <div style={{ display: "grid" }}>
+            {estado.transaccionales.map((t) => (
+              <div
+                key={t.id}
+                className="aj"
+                style={{ padding: "12px 0", borderTop: "1px solid var(--line-soft)", alignItems: "center" }}
+              >
+                <div className="aj-t">
+                  <b>
+                    {t.nombre}{" "}
+                    <span style={{ fontWeight: 400, color: "var(--ink-3)", fontSize: 12 }}>{t.id}</span>
+                  </b>
+                  <span>{t.descripcion}</span>
+                  {aviso[t.id] && <span style={{ display: "block", marginTop: 4, fontSize: 12.5, color: "var(--ink-2)" }}>{aviso[t.id]}</span>}
+                </div>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => pruebaMail(t.id)} disabled={pending}>
+                  <Send /> Enviarme una prueba
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section className="card">
           <div className="card-h">

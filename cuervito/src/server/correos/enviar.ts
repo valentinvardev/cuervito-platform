@@ -11,6 +11,7 @@ import { leerBandera } from "~/server/settings";
 import { CAMPANAS, CAMPANAS_IDS, contarElegibles, elegibles, type CampanaId } from "./campanas";
 import { contarCompartir, enviarCompartir, ID_COMPARTIR } from "./compartir";
 import { avisarPublicados } from "./espera";
+import { MUESTRAS_INFO, muestras, type ContextoMuestra, type MuestraId } from "./transaccionales";
 
 /**
  * El remitente de campañas.
@@ -253,6 +254,23 @@ export async function enviarPrueba(
   return r?.id ?? null;
 }
 
+export const MUESTRAS_IDS = Object.keys(MUESTRAS_INFO) as MuestraId[];
+
+/**
+ * Un mail de la cuenta (venta, entrega, bienvenida…) a una dirección, con
+ * datos de ejemplo y las fotos de `ctx` si hay. Para leerlo y corregirlo
+ * antes de que lo reciba un fotógrafo de verdad.
+ */
+export async function enviarPruebaTransaccional(
+  id: MuestraId,
+  to: string,
+  ctx: ContextoMuestra,
+): Promise<string | null> {
+  const html = muestras(ctx)[id]();
+  const r = await sendEmail({ to, subject: `[prueba] ${MUESTRAS_INFO[id].asunto}`, html, text: MUESTRAS_INFO[id].descripcion });
+  return r?.id ?? null;
+}
+
 export async function estadoCorreos() {
   const ahora = new Date();
   const campanas: {
@@ -334,6 +352,8 @@ export async function estadoCorreos() {
     cadaMin: TICK_MS / 60_000,
     ultimoResumen: estado.ultimoResumen,
     campanas,
+    // Los mails de la cuenta, sólo para mandarse una prueba: salen solos.
+    transaccionales: MUESTRAS_IDS.map((id) => ({ id, ...MUESTRAS_INFO[id] })),
     ultimos: ultimos.map((e) => ({
       id: e.id,
       campana: e.campana,

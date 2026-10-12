@@ -524,19 +524,44 @@ export function collaboratorInviteHtml(i: CollaboratorInviteInput): string {
    salen vacías; con un envío de prueba desde /admin/correos se ven las de
    verdad. */
 
-const VENTA_EJEMPLO: SaleItemSummary = {
-  saleId: "venta-ejemplo",
-  eventId: "evento-ejemplo",
-  photoIds: ["foto-1", "foto-2", "foto-3"],
-  eventName: "Medio Maratón de las Sierras",
-  itemCount: 3,
-  totalCents: 540000,
-  sellerNetCents: 486000,
-  buyerName: "Tomás Ibarra",
-  paidAt: new Date().toISOString(),
-};
+/** Con qué fotos se arma una muestra: las de verdad, si quien la pide tiene. */
+export type ContextoMuestra = { fotos?: string[]; eventId?: string };
 
-export const MUESTRAS = {
+/** Lo que el panel muestra de cada mail de la cuenta, y el asunto de la prueba. */
+export const MUESTRAS_INFO = {
+  venta: { nombre: "Venta · una foto vendida", asunto: "¡Vendiste una foto!", descripcion: "Al fotógrafo, cuando entra una compra suelta." },
+  ventas: { nombre: "Ventas · varias juntas", asunto: "Vendiste 4 veces en la última hora", descripcion: "Al fotógrafo, cuando en poco tiempo entran varias compras: una lista en vez de un mail por cada una." },
+  "se-vende": { nombre: "Ventas · el evento se vende", asunto: "Tu evento se está vendiendo", descripcion: "Al fotógrafo, cuando un evento arranca fuerte: el resumen de muchas compras en pocas horas." },
+  entrega: { nombre: "Entrega al comprador", asunto: "Tus fotos están listas", descripcion: "Al atleta, con el link de descarga, apenas paga." },
+  bienvenida: { nombre: "Bienvenida", asunto: "Bienvenida a encontrate", descripcion: "Al crear la cuenta: el primer paso que falta." },
+  contrasena: { nombre: "Cambiar contraseña", asunto: "Cambiá tu contraseña", descripcion: "Con el link de un solo uso." },
+  invitacion: { nombre: "Invitación a cubrir un evento", asunto: "Te invitan a cubrir un evento", descripcion: "A un colaborador, con lo que va a poder y lo que no." },
+} as const;
+
+export type MuestraId = keyof typeof MUESTRAS_INFO;
+
+/**
+ * Cada mail con datos de ejemplo, para verlos sin mandar nada
+ * (npm run mails:preview y «Enviarme una prueba» en /admin/correos). Los
+ * nombres son inventados: el repo es público. Las fotos salen de `ctx` cuando
+ * quien pide la prueba tiene; sin eso, ids que no existen y esas imágenes
+ * salen vacías.
+ */
+export function muestras(ctx: ContextoMuestra = {}): Record<MuestraId, () => string> {
+  const fotos = ctx.fotos?.length ? ctx.fotos.slice(0, 3) : ["foto-1", "foto-2", "foto-3"];
+  const eventId = ctx.eventId ?? "evento-ejemplo";
+  const VENTA_EJEMPLO: SaleItemSummary = {
+    saleId: "venta-ejemplo",
+    eventId,
+    photoIds: fotos,
+    eventName: "Medio Maratón de las Sierras",
+    itemCount: 3,
+    totalCents: 540000,
+    sellerNetCents: 486000,
+    buyerName: "Tomás Ibarra",
+    paidAt: new Date().toISOString(),
+  };
+  return {
   bienvenida: () => welcomeEmailHtml({ name: "Martina Gómez", hasMpConnected: false, hasFirstEvent: false }),
   entrega: () =>
     deliveryEmailHtml({
@@ -545,7 +570,7 @@ export const MUESTRAS = {
       photoCount: 7,
       downloadUrl: `${BASE}/descarga/demo`,
       expiresAt: new Date(Date.now() + 72 * 3600 * 1000),
-      fotos: ["foto-1", "foto-2", "foto-3"],
+      fotos,
       fechaEvento: new Date(Date.UTC(2026, 9, 12)),
       fotografo: { nombre: "Sofía Ríos", instagram: "sofiarios.foto" },
     }),
@@ -579,8 +604,12 @@ export const MUESTRAS = {
       acceptUrl: `${BASE}/invitacion/demo`,
       pct: 70,
       alcance: "OWN",
-      eventId: "evento-ejemplo",
+      eventId,
       conPortada: true,
       fechaEvento: new Date(Date.UTC(2026, 10, 2)),
     }),
-} as const;
+  };
+}
+
+/** Las muestras con datos inventados, para `npm run mails:preview`. */
+export const MUESTRAS = muestras();

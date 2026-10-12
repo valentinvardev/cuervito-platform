@@ -4,7 +4,16 @@ import { revalidatePath, revalidateTag } from "next/cache";
 
 import { auth } from "~/server/auth";
 import { enviarPruebaCompartir, ID_COMPARTIR } from "~/server/correos/compartir";
-import { CORREOS_IDS, claveActiva, correrCorreos, enviarPrueba, type CorreoId } from "~/server/correos/enviar";
+import {
+  CORREOS_IDS,
+  MUESTRAS_IDS,
+  claveActiva,
+  correrCorreos,
+  enviarPrueba,
+  enviarPruebaTransaccional,
+  type CorreoId,
+} from "~/server/correos/enviar";
+import type { MuestraId } from "~/server/correos/transaccionales";
 import { db } from "~/server/db";
 import { escribirBandera } from "~/server/settings";
 
@@ -71,6 +80,35 @@ export async function enviarPruebaAction(id: string): Promise<{ ok: boolean; det
             ? "No se mandó: hace falta un evento publicado con fotos procesadas, y RESEND_API_KEY"
             : "No hay proveedor de mail configurado (RESEND_API_KEY)",
       };
+}
+
+/**
+ * Un mail de la cuenta (venta, entrega…) a mi propio mail, con datos de
+ * ejemplo y, si tengo fotos, con tres de las mías para que las imágenes se
+ * vean de verdad.
+ */
+export async function enviarPruebaTransaccionalAction(id: string): Promise<{ ok: boolean; detalle: string }> {
+  const yo = await admin();
+  if (!(MUESTRAS_IDS as readonly string[]).includes(id)) return { ok: false, detalle: "Mail desconocido" };
+  if (!yo.email) return { ok: false, detalle: "Tu cuenta no tiene mail" };
+  const mias = await db.photo.findMany({
+    where: { ownerId: yo.id, deletedAt: null, previewCleanKey: { not: null } },
+    orderBy: { createdAt: "desc" },
+    take: 3,
+    select: { id: true, eventId: true },
+  });
+  try {
+    const r = await enviarPruebaTransaccional(id as MuestraId, yo.email, {
+      fotos: mias.map((f) => f.id),
+      eventId: mias[0]?.eventId,
+    });
+    return r
+      ? { ok: true, detalle: `Enviado a ${yo.email}` }
+      : { ok: false, detalle: "No hay proveedor de mail configurado (RESEND_API_KEY)" };
+  } catch (e) {
+    console.error(`[admin correos] la prueba de ${id} falló:`, e);
+    return { ok: false, detalle: `No se mandó: ${e instanceof Error ? e.message : String(e)}` };
+  }
 }
 
 /** Una pasada ahora, sin esperar el tick. Dispara y vuelve. */
