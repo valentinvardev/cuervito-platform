@@ -19,8 +19,12 @@
    panel: la tarjeta se dibujaba con las ocho columnas de esta tabla. */
 .avt { grid-template-columns: 92px 82px minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1.25fr) 92px 84px 92px; }
 
-/* Métricas: fotógrafo · eventos · fotos · ventas · vendidas · conv · recaudado */
-.mt { grid-template-columns: minmax(0, 1.5fr) 68px 96px 68px 96px 88px 104px; }
+/* Métricas: fotógrafo · eventos · fotos · ventas · vendidas · conv · recaudado · comisión */
+.mt { grid-template-columns: minmax(0, 1.5fr) 68px 96px 68px 96px 88px 104px 104px; }
+/* La comisión lleva abajo el porcentaje efectivo: mezcla eventos al 5 % y al
+   10 %, y el número solo no dice cuál rigió. */
+.mt-com { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25; }
+.mt-com small { font-size: 11px; color: var(--ink-3); }
 
 /* Correos: quién · campaña · cuándo */
 .ct { grid-template-columns: minmax(0, 1fr) 104px 124px; }
@@ -74,7 +78,8 @@
 @media (max-width: 900px) {
   .ut { grid-template-columns: 30px minmax(0, 1fr) 84px; }
   .avt { grid-template-columns: 92px minmax(0, 1fr) 92px; }
-  .mt { grid-template-columns: minmax(0, 1fr) 88px 104px; }
+  /* En celular queda el eje de la página (conversión) y la comisión. */
+  .mt { grid-template-columns: minmax(0, 1fr) 84px 96px; }
   .ct { grid-template-columns: minmax(0, 1fr) 104px; }
   .oc { display: none; }
   .sum.k4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }

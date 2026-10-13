@@ -39,11 +39,14 @@ export default async function AdminMetricasPage() {
         },
         orderBy: { createdAt: "asc" },
       }),
-      // Total recaudado + count de ventas PAID por vendedor
+      // Total recaudado + comisión + count de ventas PAID por vendedor. La
+      // comisión se suma de lo guardado en cada venta, no se recalcula: cada
+      // evento tiene su porcentaje (5 %, 10 %, el default) y la venta quedó
+      // con el que regía cuando se cobró.
       db.sale.groupBy({
         by: ["sellerId"],
         where: { status: "PAID" },
-        _sum: { totalCents: true, sellerNetCents: true },
+        _sum: { totalCents: true, sellerNetCents: true, platformFeeCents: true },
         _count: true,
       }),
       // Cantidad de SaleItems (fotos vendidas) por sellerId de sales PAID
@@ -101,6 +104,7 @@ export default async function AdminMetricasPage() {
         salesCount: r._count,
         grossCents: r._sum.totalCents ?? 0,
         netCents: r._sum.sellerNetCents ?? 0,
+        feeCents: r._sum.platformFeeCents ?? 0,
       },
     ]),
   );
@@ -117,6 +121,8 @@ export default async function AdminMetricasPage() {
     soldPhotos: number;
     grossCents: number;
     netCents: number;
+    /** Lo que se quedó la plataforma, sumando el porcentaje de cada venta. */
+    feeCents: number;
     /** Fotos vendidas por 1000 fotos subidas. Null si no subió fotos. */
     conversionPer1000: number | null;
   };
@@ -136,6 +142,7 @@ export default async function AdminMetricasPage() {
       soldPhotos: sold,
       grossCents: sales?.grossCents ?? 0,
       netCents: sales?.netCents ?? 0,
+      feeCents: sales?.feeCents ?? 0,
       conversionPer1000: photos > 0 ? (sold / photos) * 1000 : null,
     };
   });
@@ -149,14 +156,18 @@ export default async function AdminMetricasPage() {
       acc.photos += r.photosCount;
       acc.sold += r.soldPhotos;
       acc.gross += r.grossCents;
+      acc.fee += r.feeCents;
       return acc;
     },
-    { photographers: 0, events: 0, photos: 0, sold: 0, gross: 0 },
+    { photographers: 0, events: 0, photos: 0, sold: 0, gross: 0, fee: 0 },
   );
   const platformConversion = totals.photos > 0 ? (totals.sold / totals.photos) * 1000 : null;
 
   const n = (x: number) => x.toLocaleString("es-AR");
   const pesos = (c: number) => `$${Math.round(c / 100).toLocaleString("es-AR")}`;
+  // Comisión efectiva: qué porcentaje del bruto quedó. Mezcla eventos al 5 %
+  // y al 10 %, por eso no es un número redondo.
+  const tasa = (fee: number, gross: number) => (gross > 0 ? `${((fee / gross) * 100).toFixed(1)} %` : null);
 
   return (
     <main className="canvas">
@@ -182,6 +193,11 @@ export default async function AdminMetricasPage() {
             acento
           />
           <Cifra rotulo="Recaudado bruto" valor={pesos(totals.gross)} />
+          <Cifra
+            rotulo="Comisión encontrate"
+            valor={pesos(totals.fee)}
+            sub={tasa(totals.fee, totals.gross) ?? undefined}
+          />
         </section>
 
         {/* Origen de las ventas: el dato que define el modelo de cobro. */}
@@ -267,7 +283,8 @@ export default async function AdminMetricasPage() {
             <span className="num oc">Ventas</span>
             <span className="num oc">Vendidas</span>
             <span className="num">Conv / 1.000</span>
-            <span className="num">Recaudado</span>
+            <span className="num oc">Recaudado</span>
+            <span className="num">Comisión</span>
           </div>
           {rows.map((r) => (
             <div key={r.id} className="row mt">
@@ -302,7 +319,11 @@ export default async function AdminMetricasPage() {
               >
                 {r.conversionPer1000 == null ? "—" : r.conversionPer1000.toFixed(1)}
               </span>
-              <span className="num tnum neto">{pesos(r.grossCents)}</span>
+              <span className="num tnum neto oc">{pesos(r.grossCents)}</span>
+              <span className="num tnum mt-com">
+                {pesos(r.feeCents)}
+                {tasa(r.feeCents, r.grossCents) && <small>{tasa(r.feeCents, r.grossCents)}</small>}
+              </span>
             </div>
           ))}
           <p style={{ marginTop: "var(--s-4)", fontSize: 12.5, color: "var(--ink-3)", lineHeight: 1.55 }}>
@@ -316,11 +337,22 @@ export default async function AdminMetricasPage() {
   );
 }
 
-function Cifra({ rotulo, valor, acento = false }: { rotulo: string; valor: string; acento?: boolean }) {
+function Cifra({
+  rotulo,
+  valor,
+  sub,
+  acento = false,
+}: {
+  rotulo: string;
+  valor: string;
+  sub?: string;
+  acento?: boolean;
+}) {
   return (
     <div className={`card${acento ? " neto" : ""}`}>
       <div className="k-lab">{rotulo}</div>
       <div className="k-n tnum">{valor}</div>
+      {sub && <div className="k-sub tnum">{sub}</div>}
     </div>
   );
 }
