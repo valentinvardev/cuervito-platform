@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Sendero — crónica de montaña: hueso, roca y verde verdín, Fraunces e Inter
- * Tight, fotos en arcos y tarjetas redondeadas.
+ * Sendero — crónica de montaña: hueso, roca y verde verdín, Geist en todo,
+ * fotos en arcos y tarjetas redondeadas.
  *
  * Diseñada en Paper (archivo «encontrate — Portfolio», página 6). Todo se
  * mueve con peso y sin apuro, con una sola curva (--sd-curva): el arco de la
@@ -437,7 +437,7 @@ function Ruta() {
             return (
               <Clic key={e.href} href={e.href} className="sd-fila" data-rv="" style={{ "--i": i } as React.CSSProperties}>
                 <span className="sd-fila-fecha">
-                  <b>{f?.dia ?? "—"}</b>
+                  <b>{f?.dia ?? ""}</b>
                   <small>{f ? `${f.mes} ${f.anio}` : "sin fecha"}</small>
                 </span>
                 {e.portada && (

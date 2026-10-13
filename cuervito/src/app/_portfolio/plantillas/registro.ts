@@ -37,11 +37,11 @@ export const PLANTILLAS: Record<IdPlantilla, TemplateDef> = {
   sendero: {
     id: "sendero",
     name: "Sendero",
-    descripcion: "Crónica de montaña: arcos, hueso y verde verdín.",
+    descripcion: "Crónica de montaña: arcos, hueso, verde verdín y Geist.",
     initialNodes: SENDERO_NODES,
     sections: SENDERO_SECTIONS,
     defaultPalette: { bg: "#EEEBE3", fg: "#1E1F1C", accent: "#3F7F6E", muted: "#77786F" },
-    defaultTypography: { serif: FAMILIAS.fraunces, sans: FAMILIAS.interTight, mono: FAMILIAS.interTight },
+    defaultTypography: { serif: FAMILIAS.geist, sans: FAMILIAS.geist, mono: FAMILIAS.geist },
     defaultButtons: { radius: 100, bg: "", fg: "" },
     defaultLogo: { ...DEFAULT_LOGO, text: "{nombre}" },
     // Las crónicas en abanico son el diseño: no hay grilla que elegir.
