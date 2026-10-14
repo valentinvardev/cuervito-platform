@@ -134,6 +134,14 @@ export function lambdaConfigurada(): boolean {
   return Boolean(env.PROCESADOR_LAMBDA);
 }
 
+/**
+ * Configurada y sin pausa: lo que se le pida ahora va a la Lambda y no al VPS.
+ * No reserva la prueba de fin de pausa; sólo mira.
+ */
+export function lambdaDisponible(): boolean {
+  return lambdaConfigurada() && estado.pausaHasta === 0;
+}
+
 function anotarExito(): void {
   estado.fallos = 0;
   estado.pausaHasta = 0;

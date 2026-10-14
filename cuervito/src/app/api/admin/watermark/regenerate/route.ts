@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
+import { env } from "~/env";
+import { lambdaDisponible } from "~/server/derivados-lambda";
 import { createCFInvalidation } from "~/server/s3";
 import { generatePreview } from "~/server/watermark";
 
@@ -23,6 +25,12 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const TANDA = 20;
+
+/* Los turnos de la Lambda son los mismos que usa la cola (derivados-lambda.ts),
+   así que esto no se pasa del límite de la cuenta: a lo sumo espera turno. El
+   tope de 8 es por si la Lambda se cae a mitad de tanda y lo que queda vuelve
+   al VPS: son a lo sumo 8 originales de 16 MB en memoria, no veinte. */
+const LAMBDA_A_LA_VEZ = Math.min(env.PROCESADOR_LAMBDA_A_LA_VEZ, 8);
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -58,21 +66,33 @@ export async function POST(req: NextRequest) {
     select: { id: true },
   });
 
-  /* De a una, en serie.
+  /* En el VPS, de a una, en serie.
 
      Estaba con Promise.all sobre la tanda entera. El semáforo de sharp limita
      cuántas se PROCESAN a la vez, pero no cuántas ESPERAN: veinte llamadas
      arrancan sus veinte descargas de S3 y retienen veinte originales de 16 MB
      mientras hacen cola. Son 320 MB por tanda, encima de lo que ya está
      haciendo el procesador. En serie tarda lo mismo de punta a punta —el
-     cuello es el semáforo igual— y no acumula nada. */
+     cuello es el semáforo igual— y no acumula nada.
+
+     Con la Lambda el VPS no baja nada: sólo espera la respuesta. Ahí el cuello
+     es la vuelta de cada pedido, y en serie una tanda tardaba lo que veinte
+     vueltas: más de un minuto por pedido, al borde del corte de nginx, que
+     por defecto espera sesenta segundos. Van de a varias. */
+  const aLaVez = lambdaDisponible() ? LAMBDA_A_LA_VEZ : 1;
   let done = 0;
   let failed = 0;
-  for (const p of fotos) {
-    const r = await generatePreview(p.id);
-    if (r.watermarkedKey) done++;
-    else failed++;
-  }
+  let siguiente = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(aLaVez, fotos.length) }, async () => {
+      while (siguiente < fotos.length) {
+        const p = fotos[siguiente++]!;
+        const r = await generatePreview(p.id);
+        if (r.watermarkedKey) done++;
+        else failed++;
+      }
+    }),
+  );
 
   const cursor = fotos.length === TANDA ? fotos[fotos.length - 1]!.id : null;
 

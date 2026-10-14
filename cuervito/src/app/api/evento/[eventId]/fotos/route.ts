@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { db } from "~/server/db";
-import { resolveMediaUrl } from "~/server/media";
+import { urlDerivado } from "~/server/media";
 
 /**
  * Las fotos de un evento, de a tandas.
@@ -121,6 +121,7 @@ export async function GET(
       // anteriores al cambio.
       thumbKey: true,
       previewKey: true,
+      previewGeneratedAt: true,
       bibNumbers: true,
       width: true,
       height: true,
@@ -137,8 +138,8 @@ export async function GET(
       fotos: await Promise.all(
         tanda.map(async (f) => ({
           id: f.id,
-          previewUrl: await resolveMediaUrl(f.thumbKey ?? f.previewKey!),
-          fullUrl: await resolveMediaUrl(f.previewKey!),
+          previewUrl: await urlDerivado(f.thumbKey ?? f.previewKey!, f.previewGeneratedAt),
+          fullUrl: await urlDerivado(f.previewKey!, f.previewGeneratedAt),
           bibNumbers: f.bibNumbers,
           width: f.width,
           height: f.height,
