@@ -477,7 +477,7 @@ siempre, y tres de ésas detienen el procesamiento sin un solo error en el log.
 encabezados.
 
 **El middleware corre en Edge y no puede usar Prisma.** Por eso la resolución de
-dominios propios pasa por `/api/_internal/domain-map`, un route handler en Node
+dominios propios pasa por `/api/interno/domain-map`, un route handler en Node
 que el middleware consulta con caché de 60s.
 
 **Las hojas de estilo se pisan entre rutas.** En una navegación SPA, Next mantiene

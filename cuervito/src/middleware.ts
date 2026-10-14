@@ -26,6 +26,10 @@ const PRIMARY_HOSTS = new Set([
   "localhost",
 ]);
 
+/* Las rutas de /api que usa la tienda pública desde el navegador. Se sirven
+   en cualquier dominio; ver el comentario donde se usan. */
+const API_TIENDA = ["/api/face-search", "/api/mp/checkout", "/api/mp/descuento", "/api/download/"];
+
 function isPrimaryHost(host: string): boolean {
   const h = host.toLowerCase().split(":")[0] ?? "";
   if (PRIMARY_HOSTS.has(h)) return true;
@@ -78,6 +82,13 @@ export async function middleware(req: NextRequest) {
   // [slug] routes serve the right content. The browser keeps showing
   // anaphoto.com.ar — internal only.
   if (!isPrimaryHost(host)) {
+    /* Lo que la tienda llama desde el navegador tiene que contestar EN el
+       dominio del fotógrafo. Si se redirige a encontrate.app, el fetch sigue
+       la redirección a otro origen, el navegador pide CORS, nadie lo manda y
+       la búsqueda por selfie, el carrito y la descarga fallan en silencio.
+       El resto de /api (panel, auth, webhooks) sí vuelve al dominio nuestro. */
+    if (API_TIENDA.some((p) => pathname.startsWith(p))) return NextResponse.next();
+
     // Don't serve dashboard / admin / api / auth on custom domains —
     // redirect those back to cuervito.app.
     if (
@@ -95,8 +106,23 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    const slug = await resolveSlugForHost(host);
+    // Sin el puerto: el mapa guarda hostnames pelados.
+    const slug = await resolveSlugForHost(h);
     if (slug) {
+      /* Los links de adentro de la tienda llevan el slug («/{slug}/evento»),
+         porque se escriben pensando en encontrate.app. En el dominio propio
+         eso quedaría «/{slug}/{slug}/evento» y un 404. Se manda al camino
+         limpio con un 308: el navegador muestra «dominio.com.ar/evento» y la
+         reescritura de abajo hace el resto. */
+      const prefijo = `/${slug}`;
+      if (pathname === prefijo || pathname.startsWith(`${prefijo}/`)) {
+        // Con el host del pedido y no con req.nextUrl: detrás de nginx,
+        // nextUrl dice localhost y el puerto interno, y ahí mandaría al
+        // comprador.
+        const proto = req.headers.get("x-forwarded-proto") ?? req.nextUrl.protocol.replace(":", "");
+        const limpio = pathname.slice(prefijo.length) || "/";
+        return NextResponse.redirect(`${proto}://${host}${limpio}${req.nextUrl.search}`, 308);
+      }
       // Map `/` → `/{slug}`, `/foo` → `/{slug}/foo` (event subpages, etc).
       const targetPath =
         pathname === "/" ? `/${slug}` : `/${slug}${pathname}`;

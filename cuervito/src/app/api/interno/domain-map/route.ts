@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { db } from "~/server/db";
 
-// Node runtime — the middleware runs on Edge (can't use Prisma) so it fetches
+// Node runtime — el middleware corre en Edge (sin Prisma) y pide
 // this endpoint every 60s to get the hostname → slug map. Payload is small
 // (hundreds of rows max) and the data is effectively public (custom domains
 // resolve to slugs anyway), so no auth is needed.
