@@ -517,6 +517,59 @@ export function collaboratorInviteHtml(i: CollaboratorInviteInput): string {
   });
 }
 
+/* ── 6) El chat de soporte ───────────────────────────────────────────────── */
+
+/** Lo que escribió el otro, como cita: texto plano escapado, con sus saltos. */
+function cita(extracto: string): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px;"><tr>
+    <td style="border-left:3px solid ${D.cordon};padding:4px 0 4px 16px;font-family:${SANS};font-size:15.5px;line-height:24px;color:${D.tinta};white-space:pre-wrap;">${esc(extracto)}</td>
+  </tr></table>`;
+}
+
+export type ChatRespuestaInput = { name: string | null; extracto: string; url: string };
+
+/**
+ * Al usuario, cuando un admin le responde y no está en el panel. Uno por día
+ * como mucho (chat.ts): lo que llegue después de éste se ve al entrar.
+ */
+export function chatRespuestaHtml(i: ChatRespuestaInput): string {
+  const nombre = primerNombre(i.name);
+  return marco({
+    titulo: "Te respondieron en encontrate.app",
+    preheader: i.extracto.slice(0, 120),
+    rotulo: "Soporte",
+    tarjeta: cuerpo(
+      `${antetitulo("Chat del panel")}
+      ${titular(nombre ? `${nombre}, te respondimos.` : "Te respondimos.")}
+      ${texto("Nos escribiste por el chat del panel y ya tenés respuesta:")}
+      ${cita(i.extracto)}
+      ${boton("Ver la conversación", i.url)}
+      <div style="font-family:${SANS};font-size:14px;line-height:20px;color:${D.tenue};padding-top:12px;">Si hay más mensajes hoy no te mandamos otro mail: los ves en el panel, en la burbuja de abajo.</div>`,
+    ),
+    pie: `Te llegó porque escribiste por el chat del panel. Si preferís, ${ayuda()}.`,
+  });
+}
+
+export type ChatMensajeInput = { usuario: string; email: string | null; extracto: string; url: string };
+
+/** A los admins, cuando escribe un usuario y nadie tiene la bandeja abierta. */
+export function chatMensajeHtml(i: ChatMensajeInput): string {
+  return marco({
+    titulo: `${i.usuario} te escribió por el chat`,
+    preheader: i.extracto.slice(0, 120),
+    rotulo: "Soporte",
+    tarjeta: cuerpo(
+      `${antetitulo("Chat del panel")}
+      ${titular(`${esc(i.usuario)} te escribió.`)}
+      ${texto(i.email ? `Desde su panel, con la cuenta ${fuerte(esc(i.email))}:` : "Desde su panel:")}
+      ${cita(i.extracto)}
+      ${boton("Responder", i.url)}
+      <div style="font-family:${SANS};font-size:14px;line-height:20px;color:${D.tenue};padding-top:12px;">Un aviso por conversación y por día. Con la bandeja abierta no se manda ninguno: ahí lo ves llegar.</div>`,
+    ),
+    pie: "Te llegó porque sos administrador de encontrate.app.",
+  });
+}
+
 /* ── Muestras ─────────────────────────────────────────────────────────────
    Cada mail con datos de ejemplo, para verlos sin mandar nada
    (npm run mails:preview). Los nombres son inventados: el repo es público.
@@ -536,6 +589,8 @@ export const MUESTRAS_INFO = {
   bienvenida: { nombre: "Bienvenida", asunto: "Bienvenida a encontrate", descripcion: "Al crear la cuenta: el primer paso que falta." },
   contrasena: { nombre: "Cambiar contraseña", asunto: "Cambiá tu contraseña", descripcion: "Con el link de un solo uso." },
   invitacion: { nombre: "Invitación a cubrir un evento", asunto: "Te invitan a cubrir un evento", descripcion: "A un colaborador, con lo que va a poder y lo que no." },
+  "chat-respuesta": { nombre: "Chat · te respondieron", asunto: "Te respondieron en encontrate.app", descripcion: "Al fotógrafo, cuando un admin le responde por el chat y no está en el panel. Uno por día." },
+  "chat-mensaje": { nombre: "Chat · te escribieron", asunto: "Alguien te escribió por el chat", descripcion: "A los admins, cuando un fotógrafo escribe y nadie tiene la bandeja abierta. Uno por conversación y por día." },
 } as const;
 
 export type MuestraId = keyof typeof MUESTRAS_INFO;
@@ -607,6 +662,20 @@ export function muestras(ctx: ContextoMuestra = {}): Record<MuestraId, () => str
       eventId,
       conPortada: true,
       fechaEvento: new Date(Date.UTC(2026, 10, 2)),
+    }),
+  "chat-respuesta": () =>
+    chatRespuestaHtml({
+      name: "Martina Gómez",
+      extracto:
+        "Hola Martina, ya está: las fotos del Duatlón del Lago quedaron publicadas. Era el procesado, que se había trabado con dos archivos. Avisanos si ves algo raro.",
+      url: `${BASE}/dashboard?chat=1`,
+    }),
+  "chat-mensaje": () =>
+    chatMensajeHtml({
+      usuario: "Martina Gómez",
+      email: "martina@ejemplo.com",
+      extracto: "Hola, subí 600 fotos al Duatlón del Lago hace dos horas y la galería sigue vacía. ¿Es normal que tarde tanto?",
+      url: `${BASE}/admin/chat?c=conversacion-ejemplo`,
     }),
   };
 }

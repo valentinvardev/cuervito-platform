@@ -179,6 +179,8 @@ model User {
     commissionsEarned SaleCommission[]    @relation("CommissionEarner")
     correos           EmailEnvio[]
     portfolios        Portfolio[]
+    conversacion      Conversacion?
+    mensajesChat      MensajeChat[]
 }
 
 // =============================================================================
@@ -287,6 +289,55 @@ model EmailEnvio {
 // =============================================================================
 // Events
 // =============================================================================
+
+enum ConversacionEstado {
+    ABIERTA
+    RESUELTA
+}
+
+/// El chat de soporte del panel: UNA conversación por usuario, que se abre
+/// con el primer mensaje y sigue para siempre; "resuelta" es un estado que
+/// ordena la bandeja del admin, no un cierre. Los compradores de las tiendas
+/// públicas no entran acá: su soporte es el fotógrafo.
+model Conversacion {
+    id     String @id @default(cuid())
+    userId String @unique
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    estado          ConversacionEstado @default(ABIERTA)
+    /// Para ordenar la bandeja. Se escribe junto con cada mensaje.
+    ultimoMensajeAt DateTime           @default(now())
+    /// Hasta cuándo leyó cada lado. Los no leídos se cuentan contra esto:
+    /// mensajes del otro lado con createdAt posterior.
+    leidoPorUsuarioAt DateTime?
+    leidoPorAdminAt   DateTime?
+    /// Último aviso por mail a cada lado. Es el límite de uno por día: si hace
+    /// menos de 24 h, el mensaje nuevo no manda otro.
+    avisoUsuarioAt DateTime?
+    avisoAdminAt   DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    mensajes MensajeChat[]
+
+    @@index([estado, ultimoMensajeAt])
+}
+
+model MensajeChat {
+    id             String       @id @default(cuid())
+    conversacionId String
+    conversacion   Conversacion @relation(fields: [conversacionId], references: [id], onDelete: Cascade)
+    autorId        String
+    autor          User         @relation(fields: [autorId], references: [id], onDelete: Cascade)
+    /// Si lo escribió un administrador. Se guarda y no se deduce del rol del
+    /// autor: el rol puede cambiar después y el hilo tiene que leerse igual.
+    deAdmin        Boolean
+    texto          String       @db.Text
+    createdAt      DateTime     @default(now())
+
+    @@index([conversacionId, createdAt])
+}
 
 enum EventStatus {
     DRAFT

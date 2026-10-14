@@ -24,6 +24,8 @@ export function pesos(centavos: number) {
 
 export function hace(d: Date) {
   const min = Math.round((Date.now() - d.getTime()) / 60000);
+  // "hace 0 min" es lo que decía un mensaje que acababa de llegar.
+  if (min < 1) return "recién";
   if (min < 60) return `hace ${min} min`;
   if (min < 1440) return `hace ${Math.round(min / 60)} h`;
   return `hace ${Math.round(min / 1440)} d`;

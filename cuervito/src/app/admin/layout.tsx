@@ -8,6 +8,8 @@ import "~/styles/v2/paginas.css";
    lo único propio. */
 import "~/styles/v2/admin-listas.css";
 import "~/styles/v2/admin-marca.css";
+/* La bandeja del chat de soporte y los avisos de mensaje nuevo. */
+import "~/styles/v2/chat.css";
 
 /* Las hojas del prototipo, ENVUELTAS en .adm (ver scripts/envolver-admin-css),
    para las pantallas que todavía no se portaron. Sólo alcanzan a lo que va
@@ -23,6 +25,7 @@ import { TooltipProvider } from "~/app/_components/tooltip-provider";
 
 import { Shell } from "~/app/dashboard/_components/shell";
 import { perfilDelRiel, sesionPanel } from "~/app/dashboard/_components/sesion";
+import { conversacionesPendientes } from "~/server/chat";
 
 /**
  * El panel de administración, con el mismo armazón que el del fotógrafo.
@@ -41,7 +44,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const sesion = await sesionPanel();
   const { rol, nombre, slug, iniciales } = sesion;
   if (rol !== "ADMIN") redirect("/dashboard");
-  const perfil = await perfilDelRiel(sesion);
+  // El número del riel (conversaciones con algo sin leer) sale con cada
+  // pantalla, en paralelo con el perfil: una consulta chica sobre Conversacion.
+  const [perfil, chatPendientes] = await Promise.all([perfilDelRiel(sesion), conversacionesPendientes()]);
 
   return (
     <div style={{ "--meta": "var(--sans)" } as React.CSSProperties}>
@@ -51,7 +56,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css"
       />
 
-      <Shell modo="admin" esAdmin nombre={nombre} slug={slug} iniciales={iniciales} perfil={perfil}>
+      <Shell
+        modo="admin"
+        esAdmin
+        chatPendientes={chatPendientes}
+        nombre={nombre}
+        slug={slug}
+        iniciales={iniciales}
+        perfil={perfil}
+      >
         {children}
       </Shell>
       <TooltipProvider />

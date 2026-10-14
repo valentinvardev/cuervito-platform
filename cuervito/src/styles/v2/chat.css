@@ -1,0 +1,291 @@
+/* ═══════════════════════════════ CHAT ═══════════════════════════════════
+   El chat de soporte: la burbuja y su panel en el panel del fotógrafo, y la
+   bandeja de /admin/chat. Los dos dibujan el mismo hilo (.chat-m) con el
+   mismo vocabulario de panel.css: píldoras, campos, botones, filas.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── La burbuja ──────────────────────────────────────────────────────────
+   Fija, a --dr del borde derecho y --db del de abajo: la posición la decide
+   el fotógrafo arrastrándola y queda guardada. El panel se abre del lado
+   donde hay lugar (data-h / data-v, calculados con la posición). */
+.chat-raiz { --tam: 52px; }
+
+.chat-burbuja {
+  position: fixed;
+  right: var(--dr); bottom: var(--db);
+  z-index: 60;
+  width: var(--tam); height: var(--tam);
+  border-radius: 50%;
+  border: 0;
+  background: var(--cta-bg); color: var(--cta-fg);
+  box-shadow: 0 10px 30px rgba(18, 17, 15, .28);
+  display: grid; place-items: center;
+  cursor: grab;
+  /* Es arrastrable con el dedo: sin esto el navegador se queda con el gesto
+     para hacer scroll y la burbuja no se mueve. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 160ms cubic-bezier(.2, .8, .3, 1), background 140ms ease;
+}
+.chat-burbuja:hover { transform: scale(1.05); background: var(--cta-bg-hov); }
+.chat-burbuja:active { cursor: grabbing; transform: scale(.97); }
+.chat-burbuja svg { width: 22px; height: 22px; stroke-width: 1.9; pointer-events: none; }
+
+.chat-n {
+  position: absolute; top: -4px; right: -4px;
+  min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: 100px;
+  background: var(--accent); color: #fff;
+  font-size: 11.5px; font-weight: 600; line-height: 20px; text-align: center;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 2px var(--paper);
+  pointer-events: none;
+}
+
+/* "Escribinos" del riel era un link a WhatsApp y ahora es un botón que abre
+   el chat: lo que .rail-wa no tenía que decir de un <a>. */
+button.rail-wa { width: 100%; border: 0; font-family: var(--sans); cursor: pointer; }
+
+/* ── El panel ──────────────────────────────────────────────────────────── */
+.chat-panel {
+  position: fixed;
+  z-index: 59;
+  width: 360px;
+  max-width: calc(100vw - 16px);
+  display: flex; flex-direction: column;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-4);
+  box-shadow: var(--shadow-obj);
+  overflow: hidden;
+  animation: chat-entra 220ms cubic-bezier(.2, .8, .3, 1) both;
+}
+@keyframes chat-entra {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+/* De qué lado de la burbuja. A la derecha: el borde derecho del panel coincide
+   con el de la burbuja. A la izquierda: el izquierdo. */
+.chat-raiz[data-h="der"] .chat-panel { right: var(--dr); }
+.chat-raiz[data-h="izq"] .chat-panel { right: calc(var(--dr) + var(--tam) - 360px); }
+/* Arriba de la burbuja (lo normal: la burbuja vive abajo) o debajo, si la
+   llevaron arriba. La altura se acota al espacio que queda de ese lado. */
+.chat-raiz[data-v="arriba"] .chat-panel {
+  bottom: calc(var(--db) + var(--tam) + 12px);
+  height: min(560px, calc(100vh - var(--db) - var(--tam) - 28px));
+}
+.chat-raiz[data-v="abajo"] .chat-panel {
+  top: calc(100vh - var(--db) + 12px);
+  height: min(560px, calc(var(--db) - 28px));
+}
+
+.chat-cab {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-2);
+  padding: 12px 10px 12px 16px;
+  border-bottom: 1px solid var(--line-soft);
+  flex-shrink: 0;
+}
+.chat-cab-t { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.chat-cab-t b { font-size: 14.5px; font-weight: 600; }
+
+.chat-hilo {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  padding: 14px 14px 6px;
+  display: flex; flex-direction: column; gap: 6px;
+  overscroll-behavior: contain;
+}
+
+.chat-vacio { margin: auto 0; text-align: center; padding: var(--s-4) var(--s-3); }
+.chat-vacio h3 { font-size: 15.5px; font-weight: 600; margin-bottom: 6px; }
+.chat-vacio p { font-size: 13.5px; color: var(--ink-3); line-height: 1.5; max-width: 30ch; margin: 0 auto; }
+
+.chat-dia { display: flex; flex-direction: column; gap: 6px; }
+.chat-dia-t {
+  align-self: center;
+  margin: 8px 0 4px;
+  font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Un mensaje. Los míos a la derecha en tinta; los del otro a la izquierda en
+   papel. En la bandeja del admin "yo" es el admin, así que es la misma regla
+   vista desde el otro lado. */
+.chat-m {
+  max-width: 84%;
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 8px 11px 6px;
+  border-radius: 14px;
+  font-size: 14px; line-height: 1.45;
+}
+.chat-m[data-de="yo"] {
+  align-self: flex-end;
+  background: var(--cta-bg); color: var(--cta-fg);
+  border-bottom-right-radius: 4px;
+}
+.chat-m[data-de="ellos"] {
+  align-self: flex-start;
+  background: var(--paper-3); color: var(--ink);
+  border-bottom-left-radius: 4px;
+}
+.chat-m-t { white-space: pre-wrap; overflow-wrap: anywhere; }
+.chat-m-h { font-size: 10.5px; opacity: .6; align-self: flex-end; font-variant-numeric: tabular-nums; }
+
+.chat-nota {
+  margin: 0 14px 6px;
+  padding: 7px 10px;
+  border-radius: var(--r-2);
+  background: var(--paper-3);
+  font-size: 12.5px; color: var(--ink-2);
+  flex-shrink: 0;
+}
+.chat-nota.bad { background: color-mix(in srgb, var(--bad) 10%, var(--paper-2)); color: var(--bad-txt); }
+
+.chat-form {
+  display: flex; align-items: flex-end; gap: 8px;
+  padding: 8px 10px 8px 14px;
+  border-top: 1px solid var(--line-soft);
+  flex-shrink: 0;
+}
+.chat-ta {
+  min-height: 40px; max-height: 120px;
+  padding: 9px 12px;
+  resize: none;
+  font-size: 14px;
+}
+.chat-enviar { width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; }
+.chat-enviar:disabled { opacity: .35; cursor: default; }
+
+/* WhatsApp abajo de todo, en el verde que se lee (el mismo de .rail-wa). */
+.chat-wa {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px;
+  background: #0A7C42; color: #fff;
+  font-size: 13px; font-weight: 500;
+  flex-shrink: 0;
+  transition: filter 140ms ease;
+}
+.chat-wa:hover { filter: brightness(1.12); }
+.chat-wa .wa { width: 15px; height: 15px; fill: currentColor; }
+
+/* En el teléfono el panel es una hoja a pantalla completa, esté donde esté la
+   burbuja: 360 px flotantes al lado de un dedo no se usan. */
+@media (max-width: 740px) {
+  .chat-raiz .chat-panel {
+    inset: 0 !important;
+    width: auto; max-width: none; height: auto !important;
+    border-radius: 0; border: 0;
+    animation: chat-sube 240ms cubic-bezier(.2, .8, .3, 1) both;
+  }
+  @keyframes chat-sube {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .chat-raiz:has(.chat-panel) .chat-burbuja { display: none; }
+  .chat-m { max-width: 88%; }
+}
+
+/* ── Los avisos del admin ────────────────────────────────────────────────
+   Abajo a la derecha, donde el fotógrafo tiene la burbuja: el admin no la
+   tiene (no se escribe a sí mismo) y ventas en vivo ya ocupa arriba. */
+.chat-avisos {
+  position: fixed;
+  right: var(--s-4); bottom: var(--s-4);
+  z-index: 55;
+  display: grid; gap: var(--s-2);
+  justify-items: end;
+  pointer-events: none;
+}
+.chat-aviso {
+  pointer-events: auto;
+  display: grid; grid-template-columns: 30px minmax(0, 1fr); align-items: center; gap: 11px;
+  width: 316px; max-width: calc(100vw - var(--s-4) * 2);
+  padding: 10px 12px;
+  border-radius: var(--r-3);
+  background: var(--paper-2);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: 0 14px 38px rgba(18, 17, 15, .22);
+  color: inherit; text-decoration: none;
+  animation: venta-entra 420ms cubic-bezier(.2, .8, .3, 1) both;
+}
+.chat-aviso[data-yendo="1"] { animation: venta-sale 260ms ease forwards; }
+.chat-aviso-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--accent-wash); color: var(--acento-txt);
+}
+.chat-aviso-av svg { width: 15px; height: 15px; }
+.chat-aviso-t { min-width: 0; line-height: 1.3; }
+.chat-aviso-t b { display: block; font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-aviso-t span { display: block; font-size: 11.5px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── La bandeja (/admin/chat) ────────────────────────────────────────────
+   Dos columnas: la lista y el hilo elegido. En el teléfono, una u otra. */
+.bandeja {
+  display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: var(--s-4);
+  align-items: start;
+}
+.bandeja-lista { display: grid; gap: 2px; }
+.bandeja-f {
+  display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  padding: 10px 10px;
+  border-radius: var(--r-2);
+  color: inherit; text-decoration: none;
+  transition: background 140ms ease;
+}
+.bandeja-f:hover { background: var(--paper-3); }
+.bandeja-f[aria-current="true"] { background: var(--cta-bg); color: var(--cta-fg); }
+.bandeja-f[aria-current="true"] .bandeja-f-x, .bandeja-f[aria-current="true"] .bandeja-f-h { color: color-mix(in srgb, var(--cta-fg) 62%, transparent); }
+.bandeja-f-t { min-width: 0; }
+.bandeja-f-t b { display: block; font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bandeja-f-x { display: block; font-size: 12px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bandeja-f-x i { font-style: normal; opacity: .7; }
+.bandeja-f-r { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.bandeja-f-h { font-size: 11px; color: var(--ink-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bandeja-n {
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 100px;
+  background: var(--accent); color: #fff;
+  font-size: 11px; font-weight: 600; line-height: 18px; text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.bandeja-av {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink-2);
+  font-size: 12px; font-weight: 600;
+  overflow: hidden;
+}
+.bandeja-av img { width: 100%; height: 100%; object-fit: cover; }
+.bandeja-f[aria-current="true"] .bandeja-av { background: color-mix(in srgb, var(--cta-fg) 16%, transparent); color: var(--cta-fg); }
+
+.hilo-admin { display: flex; flex-direction: column; min-height: 560px; height: calc(100vh - 62px - var(--s-6) * 2 - 90px); }
+.hilo-admin .chat-hilo { padding: var(--s-3) var(--s-2) 6px; }
+.hilo-admin .chat-form { padding: 10px 0 0; border-top: 1px solid var(--line-soft); }
+.hilo-cab {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-3);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+.hilo-quien { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.hilo-quien b { display: block; font-size: 14.5px; font-weight: 600; }
+.hilo-quien-s { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--ink-3); }
+.hilo-quien-s a { color: inherit; }
+.hilo-acciones { display: flex; gap: var(--s-2); flex-shrink: 0; }
+.hilo-vacio { margin: auto; text-align: center; color: var(--ink-3); font-size: 14px; max-width: 34ch; line-height: 1.5; }
+
+/* Sólo en el teléfono, donde la lista se esconde detrás del hilo. */
+.hilo-volver { display: none; }
+
+@media (max-width: 900px) {
+  .bandeja { grid-template-columns: minmax(0, 1fr); }
+  .hilo-volver {
+    display: block; margin-top: var(--s-3);
+    font-size: 13px; color: var(--ink-2); text-decoration: underline;
+  }
+  .bandeja[data-con-hilo="1"] .bandeja-lista-card { display: none; }
+  .hilo-admin { height: auto; min-height: 60vh; }
+  .hilo-acciones .btn span { display: none; }
+}

@@ -71,6 +71,12 @@ existir: una vez es un descuido, dos es una tendencia.
   arreglaron uno por uno con `pointer-events: none`. Un test de «cada nodo
   de imagen recibe el clic en su centro» (el que se corrió a mano con CDP)
   habría encontrado los dos de una, y encontraría el próximo.
+- 2026-10-14, evitado antes del commit: el chat de soporte nació con el hilo
+  (`.chat-m`, `unirMensajes`, `porDia`) compartido entre la burbuja y la
+  bandeja del admin, pero el largo máximo del mensaje quedó escrito tres
+  veces (`chat.ts`, `burbuja.tsx`, `_bandeja.tsx`). Se juntó en
+  `formato-chat.ts` al revisar el diff, no al escribirlo: la constante
+  «chica» es la que más fácil se copia.
 - Estado: activo
 
 ## Trabajo en vuelo que nadie gobierna
@@ -93,7 +99,14 @@ existir: una vez es un descuido, dos es una tendencia.
   en la base y liberación de reclamos colgados. Publicar sólo EMPUJA una
   pasada (`void`), y si el proceso muere, la siguiente retoma. Es la primera
   vez que el trabajo suelto tiene un reconciliador desde el día uno.
-- Estado: mejorando
+- 2026-10-14, la tercera, a sabiendas: el aviso por mail del chat
+  (`chat.ts` → `avisarPorMail`) escribe `avisoUsuarioAt` ANTES de mandar y
+  después sale con `void`. Si Resend falla, el aviso se pierde y no se
+  reintenta hasta el día siguiente. Se eligió «como mucho una vez» sobre
+  «al menos una vez» para no mandar dos mails, pero no hay nada que liste
+  los avisos marcados y no enviados. Si aparece un aviso perdido, el arreglo
+  es guardar el id de Resend como hace EmailEnvio y borrar la marca si no hay.
+- Estado: activo
 
 ## Estado derivado que se calcula una vez y nunca se reconcilia
 - Primera vez: 2026-09-08 (registrado; la primera aparición fue el relleno de miniaturas)

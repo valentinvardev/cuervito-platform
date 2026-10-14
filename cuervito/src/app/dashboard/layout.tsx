@@ -3,6 +3,8 @@ import "~/styles/v2/base.css";
 import "~/styles/v2/panel.css";
 import "~/styles/v2/dashboard.css";
 import "~/styles/v2/paginas.css";
+/* La burbuja del chat de soporte. */
+import "~/styles/v2/chat.css";
 
 import { TooltipProvider } from "~/app/_components/tooltip-provider";
 

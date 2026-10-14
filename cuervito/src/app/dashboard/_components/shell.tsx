@@ -13,6 +13,7 @@ import {
   LogOut,
   Mail,
   Menu,
+  MessageCircle,
   Moon,
   Palette,
   Plus,
@@ -29,9 +30,10 @@ import {
 import { Suspense, useCallback, useEffect, useState, useTransition } from "react";
 
 import { PORTFOLIO_ROTULO } from "~/lib/portfolio-acceso";
-import { whatsappUrl } from "~/lib/support";
 
 import { Buscador } from "./buscador";
+import { ChatAdminEnVivo } from "./chat/admin-en-vivo";
+import { BurbujaChat, abrirChat } from "./chat/burbuja";
 import { cerrarSesionAction } from "./cuenta";
 import { GlifoWhatsapp } from "./glifo-whatsapp";
 import { type DatosPerfil, PerfilModal } from "./perfil-modal";
@@ -53,6 +55,8 @@ type ItemRiel = {
   texto: string;
   /** Una etiqueta al final del ítem, para lo que todavía no ve todo el mundo. */
   rotulo?: string | null;
+  /** Un número al final del ítem (conversaciones sin leer). Cero no se dibuja. */
+  contador?: number;
 };
 
 const NAV: ItemRiel[] = [
@@ -82,8 +86,11 @@ const ADMIN_ITEM = { id: "admin", href: "/admin/users", icono: ShieldCheck, text
  * destinos: la marca, el buscador, el tema y el aviso de ventas se comparten
  * y no hay dos maneras de hacer lo mismo.
  */
-const NAV_ADMIN = [
+const NAV_ADMIN: ItemRiel[] = [
   { id: "users", href: "/admin/users", icono: Users, texto: "Usuarios" },
+  // El chat de soporte. El número es cuántas conversaciones tienen algo sin
+  // leer; viene del servidor con cada pantalla (ver admin/layout).
+  { id: "chat", href: "/admin/chat", icono: MessageCircle, texto: "Chat" },
   { id: "eventos", href: "/admin/eventos", icono: CalendarDays, texto: "Eventos" },
   { id: "sales", href: "/admin/sales", icono: ReceiptText, texto: "Ventas" },
   { id: "metricas", href: "/admin/metricas", icono: BarChart3, texto: "Métricas" },
@@ -157,6 +164,7 @@ export function Shell({
   portfolio = false,
   esAdmin = false,
   modo = "panel",
+  chatPendientes = 0,
   nombre,
   slug,
   iniciales,
@@ -171,6 +179,8 @@ export function Shell({
   esAdmin?: boolean;
   /** "admin" dibuja el riel de administración en vez del del fotógrafo. */
   modo?: "panel" | "admin";
+  /** Conversaciones del chat con algo sin leer, para el riel del admin. */
+  chatPendientes?: number;
   nombre: string;
   slug: string;
   iniciales: string;
@@ -256,9 +266,11 @@ export function Shell({
     >
       <i.icono /> {i.texto}
       {i.rotulo && <span className="rl-rotulo">{i.rotulo}</span>}
+      {!!i.contador && <span className="rl-n hot">{i.contador}</span>}
     </Link>
   );
 
+  const navAdmin = NAV_ADMIN.map((i) => (i.id === "chat" ? { ...i, contador: chatPendientes } : i));
   const principal = [...NAV, ...(historias ? [HISTORIAS] : []), ...(portfolio ? [PORTFOLIO] : [])];
   const pronto = [...(portfolio ? [] : PRONTO), ...(historias ? [] : [HISTORIAS_PRONTO])];
 
@@ -273,7 +285,7 @@ export function Shell({
 
         {admin ? (
           <>
-            <nav className="rail-nav">{NAV_ADMIN.map(item)}</nav>
+            <nav className="rail-nav">{navAdmin.map(item)}</nav>
 
             <div>
               <div className="rail-sep" />
@@ -322,17 +334,21 @@ export function Shell({
         <div className="rail-bot">
           {/* Acá y no sólo dentro de Ayuda: cuando algo no funciona nadie busca
               la respuesta en una sección llamada Ayuda, busca a quién
-              escribirle. */}
-          <a
-            href={whatsappUrl()}
-            target="_blank"
-            rel="noopener"
-            className="rail-wa"
-            onClick={() => setCajon(false)}
-          >
-            <GlifoWhatsapp />
-            Escribinos
-          </a>
+              escribirle. Abre el chat del panel; WhatsApp sigue estando, pero
+              adentro del chat. En el admin no va: el admin es quien atiende. */}
+          {!admin && (
+            <button
+              type="button"
+              className="rail-wa"
+              onClick={() => {
+                setCajon(false);
+                abrirChat();
+              }}
+            >
+              <GlifoWhatsapp />
+              Escribinos
+            </button>
+          )}
 
           <div className="me-fila">
             <button type="button" className="me" onClick={abrirPerfil} aria-label="Abrir tu perfil">
@@ -420,6 +436,12 @@ export function Shell({
       {/* Acá y no en la página de inicio: la venta entra igual mientras el
           fotógrafo está subiendo fotos a un evento, que es cuando más pasa. */}
       <VentasEnVivo />
+
+      {/* La burbuja del chat, en el panel del fotógrafo. En el admin no: el
+          admin es el otro lado de ese chat, y lo que tiene es el aviso de
+          mensaje nuevo, en cualquier pantalla. */}
+      {!admin && <BurbujaChat />}
+      {esAdmin && <ChatAdminEnVivo />}
 
       <div className="rail-scrim" onClick={() => setCajon(false)} />
 
