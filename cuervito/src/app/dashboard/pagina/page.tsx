@@ -12,19 +12,32 @@ export const dynamic = "force-dynamic";
 export default async function V2Pagina() {
   const { userId, slug } = await sesionPanel();
 
-  const u = await db.user.findUnique({
-    where: { id: userId },
-    select: {
-      name: true,
-      slug: true,
-      bio: true,
-      instagramUrl: true,
-      websiteUrl: true,
-      storefrontBrandColor: true,
-      storefrontTemplate: true,
-      logoKey: true,
-    },
-  });
+  const [u, eventoPrevia] = await Promise.all([
+    db.user.findUnique({
+      where: { id: userId },
+      select: {
+        name: true,
+        slug: true,
+        bio: true,
+        instagramUrl: true,
+        websiteUrl: true,
+        storefrontBrandColor: true,
+        storefrontTemplate: true,
+        logoKey: true,
+      },
+    }),
+    // Con qué evento se muestra la plantilla: el último publicado que tenga
+    // fotos visibles. La plantilla se nota en la galería, no en el perfil.
+    db.event.findFirst({
+      where: {
+        ownerId: userId,
+        status: "ACTIVE",
+        photos: { some: { deletedAt: null, previewKey: { not: null } } },
+      },
+      orderBy: [{ eventDate: "desc" }, { createdAt: "desc" }],
+      select: { slug: true },
+    }),
+  ]);
 
   return (
     <main className="canvas">
@@ -54,6 +67,7 @@ export default async function V2Pagina() {
           colorInicial={u?.storefrontBrandColor ?? "#F0410F"}
           plantillaInicial={u?.storefrontTemplate ?? PLANTILLA_POR_DEFECTO}
           logoInicial={u?.logoKey ? await resolveMediaUrl(u.logoKey) : null}
+          eventoPrevia={eventoPrevia?.slug ?? null}
         />
       </div>
     </main>

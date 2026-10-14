@@ -1300,6 +1300,13 @@
 
 .tienda { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr); gap: var(--s-5); align-items: start; }
 .ctrl { display: grid; gap: var(--s-3); }
+/* En el teléfono, una columna: los controles y después la previa, quieta.
+   Sin este corte las dos columnas se apretaban a 390 px y la previa pegajosa
+   se montaba encima de los controles. */
+@media (max-width: 900px) {
+  .tienda { grid-template-columns: minmax(0, 1fr); }
+  .previa { position: static; }
+}
 
 .blq h2 {
   font-family: var(--sans); font-size: 14.5px; font-weight: 600;
@@ -1367,46 +1374,95 @@
 .btn-wa-sol:hover { filter: brightness(1.12); }
 .btn-wa-sol .wa { width: 16px; height: 16px; fill: currentColor; }
 
-/* ── Plantillas ──────────────────────────────────────────────────────────────
-   Miniaturas reales y no nombres en una lista: "Editorial" no le dice nada a
-   nadie hasta que lo ve. */
-.plt { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
-.pl { cursor: pointer; }
-.pl input { position: absolute; opacity: 0; pointer-events: none; }
-.pl-v {
-  aspect-ratio: 4 / 3;
-  border: 1px solid var(--line);
-  border-radius: var(--r-2);
+/* ── Plantilla ──────────────────────────────────────────────────────────────
+   La elegida, en un teléfono con la tienda de verdad, y el botón de explorar.
+   Antes eran tres miniaturas dibujadas (una barra y seis cuadrados) que no
+   decían cómo se ve la galería. */
+.pl-actual { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: var(--s-4); align-items: center; }
+.pl-actual-t { display: grid; gap: 6px; justify-items: start; }
+.pl-actual-t .label { color: var(--ink-3); }
+.pl-actual-t b { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.pl-actual-t p { font-size: 13.5px; line-height: 1.5; color: var(--ink-2); margin-bottom: 6px; }
+@media (max-width: 560px) {
+  .pl-actual { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+  .pl-actual > .fono { width: 220px; }
+  .pl-actual-t { justify-items: center; text-align: center; }
+}
+
+/* El teléfono: la página a 390 px, reducida a lo que mida el marco. */
+.fono {
+  position: relative;
+  width: 100%;
   overflow: hidden;
-  padding: 7px;
-  display: grid; gap: 4px; grid-template-rows: 8px 1fr;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--paper-3);
+  box-shadow: var(--shadow-card);
 }
-.pl:hover .pl-v { border-color: var(--line-strong); }
-.pl input:checked + .pl-v {
-  border-color: var(--ink);
-  box-shadow: 0 0 0 2px var(--ink);
+/* Se puede desplazar y tocar: es la tienda de verdad, y la grilla de fotos
+   —lo que más cambia entre plantillas— queda abajo del pliegue. */
+.fono iframe {
+  position: absolute; top: 0; left: 0;
+  border: 0;
+  transform-origin: 0 0;
+  background: #fff;
 }
-.pl-n { margin-top: 7px; font-size: 12.5px; text-align: center; color: var(--ink-2); }
-.pl input:checked ~ .pl-n { color: var(--ink); font-weight: 500; }
+.fono[data-cargando="1"]::after {
+  content: "Cargando…";
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--paper-2) 70%, transparent);
+  font-size: 13px; color: var(--ink-2);
+}
+.fono-vacio {
+  display: grid; place-items: center;
+  min-height: 200px; padding: var(--s-4);
+  font-size: 13px; color: var(--ink-3); text-align: center;
+}
 
-.pl-v i { display: block; border-radius: 2px; }
-.pl-v .barra-m { height: 8px; }
-.pl-v .rejilla { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
-.pl-v .rejilla i { border-radius: 2px; }
-
-.pl-v[data-t="claro"] { background: #FFF; }
-.pl-v[data-t="claro"] .barra-m { background: #E6E4DF; }
-.pl-v[data-t="claro"] .rejilla i { background: #D9D6D0; }
-
-.pl-v[data-t="oscuro"] { background: #131211; }
-.pl-v[data-t="oscuro"] .barra-m { background: #34302A; }
-.pl-v[data-t="oscuro"] .rejilla i { background: #2A2620; }
-
-.pl-v[data-t="editorial"] { background: #F4F2ED; padding: 10px; }
-.pl-v[data-t="editorial"] .barra-m { height: 5px; width: 60%; background: #1A1815; }
-.pl-v[data-t="editorial"] .rejilla { grid-template-columns: repeat(2, 1fr); gap: 4px; }
-.pl-v[data-t="editorial"] .rejilla i { background: #CFCAC1; }
+/* El modal: la lista a la izquierda, el teléfono a la derecha. El teléfono
+   mide lo que deje la altura de la ventana, para que no haya que bajar a ver
+   los botones. */
+.modal-caja.ancha { max-width: 860px; }
+.plm { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s-5); align-items: start; }
+.plm > .fono { width: min(300px, calc((100dvh - 300px) * 390 / 844)); min-width: 180px; }
+.plm-ops { display: grid; gap: 8px; }
+.plm-nota { margin-top: 6px; font-size: 12.5px; line-height: 1.5; color: var(--ink-3); }
+.plm-op {
+  display: grid; grid-template-columns: 54px minmax(0, 1fr) 22px; align-items: center; gap: 12px;
+  width: 100%; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: var(--r-3);
+  background: var(--paper-2); color: inherit;
+  font-family: var(--sans); text-align: left; cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+.plm-op:hover { border-color: var(--line-strong); background: var(--paper-3); }
+.plm-op[aria-checked="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+.plm-op-t { min-width: 0; display: grid; gap: 2px; }
+.plm-op-t b { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.plm-op-t span { font-size: 12.5px; line-height: 1.45; color: var(--ink-3); }
+.plm-enuso {
+  padding: 1px 7px; border-radius: 100px;
+  border: 1px solid var(--line);
+  font-size: 10px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+/* Una muestra del tono: el fondo de la plantilla y tres líneas con su tinta. */
+.plm-sw {
+  width: 54px; height: 40px; border-radius: 8px;
+  border: 1px solid var(--line);
+  display: grid; align-content: center; gap: 4px; padding: 0 10px;
+}
+.plm-sw i { display: block; height: 3px; border-radius: 2px; background: currentColor; opacity: .85; }
+.plm-sw i:nth-child(2) { width: 70%; opacity: .5; }
+.plm-sw i:nth-child(3) { width: 45%; opacity: .35; }
+.plm-tick { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; color: var(--cta-fg); background: var(--cta-bg); opacity: 0; transition: opacity 150ms ease; }
+.plm-tick svg { width: 13px; height: 13px; stroke-width: 2.4; }
+.plm-op[aria-checked="true"] .plm-tick { opacity: 1; }
+@media (max-width: 700px) {
+  .plm { grid-template-columns: minmax(0, 1fr); }
+  .plm > .fono { width: 240px; margin: 0 auto; }
+}
 
 /* ── Color ───────────────────────────────────────────────────────────────── */
 .cols { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -1483,100 +1539,6 @@
   background: var(--paper-2);
   font-size: 11px; color: var(--ink-3);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
-/* La previa vive en su propio universo de color: define sus variables y no
-   hereda las del panel. Si heredara, el tema oscuro del panel le cambiaría
-   la página al fotógrafo sin que él haya tocado nada. */
-.sf {
-  --sf-bg: #FFFFFF;
-  --sf-fg: #14120F;
-  --sf-fg2: #6E6A63;
-  --sf-line: rgba(20, 18, 15, .10);
-  --sf-acc: #F0410F;
-  background: var(--sf-bg); color: var(--sf-fg);
-  transition: background 260ms ease, color 260ms ease;
-}
-.sf[data-t="oscuro"] {
-  --sf-bg: #0E0D0C; --sf-fg: #F2F0EC; --sf-fg2: #9B968D;
-  --sf-line: rgba(242, 240, 236, .12);
-}
-.sf[data-t="editorial"] { --sf-bg: #F4F2ED; --sf-fg: #1A1815; --sf-fg2: #6B665E; }
-
-.sf-top {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 13px 16px;
-  border-bottom: 1px solid var(--sf-line);
-}
-.sf-marca { display: flex; align-items: center; gap: 8px; }
-.sf-logo {
-  width: 24px; height: 24px; border-radius: 6px;
-  background: var(--sf-acc);
-  display: grid; place-items: center;
-  color: #FFF; font-size: 11px; font-weight: 700;
-  transition: background 260ms ease;
-}
-.sf-marca b { font-size: 13.5px; font-weight: 600; letter-spacing: -0.02em; }
-.sf-buscar {
-  display: flex; align-items: center; gap: 5px;
-  padding: 4px 10px; border-radius: 100px;
-  border: 1px solid var(--sf-line);
-  font-size: 11px; color: var(--sf-fg2);
-}
-.sf-buscar svg { width: 11px; height: 11px; }
-
-.sf-hero { padding: 20px 16px; }
-.sf[data-t="editorial"] .sf-hero { padding: 26px 16px 20px; }
-.sf-hero h3 {
-  font-family: var(--display);
-  font-size: 19px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: -0.045em; line-height: 1.05;
-}
-.sf[data-t="editorial"] .sf-hero h3 { font-size: 23px; }
-.sf-hero p { margin-top: 6px; font-size: 12px; color: var(--sf-fg2); }
-.sf-cta {
-  display: inline-flex; align-items: center; gap: 5px;
-  margin-top: 12px; padding: 7px 13px;
-  border-radius: 5px;
-  background: var(--sf-acc); color: #FFF;
-  font-size: 12px; font-weight: 500;
-  transition: background 260ms ease;
-}
-.sf-cta svg { width: 12px; height: 12px; }
-
-.sf-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;
-  padding: 0 16px 18px;
-}
-.sf[data-t="editorial"] .sf-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-.sf-ph {
-  aspect-ratio: 3 / 2; border-radius: 4px;
-  background: radial-gradient(110% 82% at 64% 26%, #FFB25E, transparent 56%), linear-gradient(160deg, #35281C, #12100E);
-}
-.sf-ph:nth-child(2) { background: radial-gradient(104% 78% at 30% 34%, #7FA8D8, transparent 58%), linear-gradient(158deg, #1E2836, #0E1116); }
-.sf-ph:nth-child(3) { background: radial-gradient(110% 80% at 70% 64%, #8FD08A, transparent 56%), linear-gradient(160deg, #1D2A1C, #0E120D); }
-.sf-ph:nth-child(4) { background: radial-gradient(106% 78% at 44% 28%, #E08C7A, transparent 56%), linear-gradient(162deg, #33201D, #14100F); }
-.sf-ph:nth-child(5) { background: radial-gradient(110% 82% at 56% 38%, #C9A7E8, transparent 56%), linear-gradient(160deg, #261E33, #100E14); }
-.sf-ph:nth-child(6) { background: radial-gradient(112% 84% at 66% 24%, #FFCF7A, transparent 56%), linear-gradient(160deg, #33291B, #12100E); }
-
-/* Marca de agua sobre la previa: es la única forma de ver si tapa la foto o
-   si queda tan tenue que no protege nada. */
-.sf-ph { position: relative; overflow: hidden; }
-.sf[data-agua="1"] .sf-ph::after {
-  content: "GERMÁN SOSA";
-  position: absolute; inset: 0;
-  display: grid; place-items: center;
-  color: rgba(255, 255, 255, .5);
-  font-size: 7px; font-weight: 600; letter-spacing: 0.1em;
-  transform: rotate(-18deg);
-}
-
-@media (max-width: 1080px) {
-  .tienda { grid-template-columns: minmax(0, 1fr); }
-  .previa { position: static; }
-}
-@media (max-width: 560px) {
-  .plt { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* ── El logo del fotógrafo ───────────────────────────────────────────────────

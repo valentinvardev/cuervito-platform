@@ -126,3 +126,22 @@ existir: una vez es un descuido, dos es una tendencia.
   clave es determinística (HMAC del id), así que dos pasadas a la vez escriben
   el mismo archivo y no dejan huérfanos.
 - Estado: mejorando
+
+## Se rompe sólo para quien no somos nosotros
+- Primera vez: 2026-10-14 (registrado; la primera aparición fue el candado de /v2)
+- Ocurrencias: 2 (el candado `role !== "ADMIN"` en /api/v2/buscar, que dejaba
+  el panel en blanco a todo fotógrafo real durante semanas — 2026-09-08; los
+  dominios propios, con la ruta del mapa en una carpeta `_internal` que el
+  App Router no sirve: 404 en producción desde mayo, y nadie lo vio porque
+  nunca hubo un cliente con dominio — 2026-10-14)
+- Qué pasa: una función se prueba desde adentro —con sesión de admin, en
+  localhost, en el dominio nuestro— y queda «andando». Falla únicamente en
+  la situación del usuario real: otro rol, otro host, otro navegador.
+- Por qué importa: no hay error en los logs ni queja inmediata. El costo es
+  silencioso y se cobra en confianza: el fotógrafo asume que el producto no
+  anda, no que hay un bug.
+- Señal temprana: si la prueba que se hizo no incluye al menos una pasada
+  «como el otro» (rol fotógrafo, Host ajeno, sin sesión), la función no está
+  probada. Para dominios propios, la pasada es un `curl -H "Host: …"` contra
+  el servidor, que hoy tarda un minuto y en mayo habría encontrado el 404.
+- Estado: activo

@@ -15,6 +15,7 @@ import { StorefrontTheme } from "~/app/_components/storefront-theme";
 import { VisitorTracker } from "~/app/_components/visitor-tracker";
 import { buildTemplateCSSOverride, getTemplate } from "~/lib/storefront-templates";
 import { SCRIPT_TEMA_TIENDA } from "~/lib/tema-tienda";
+import { plantillaEfectiva } from "~/server/plantilla-previa";
 
 import { traerFotografo } from "./_datos";
 
@@ -37,8 +38,10 @@ export default async function PublicLayout({
   const user = await traerFotografo(slug);
   if (!user) notFound();
 
-  const cssOverride = buildTemplateCSSOverride(user.storefrontTemplate, user.storefrontBrandColor);
-  const encontrate = getTemplate(user.storefrontTemplate).layout === "encontrate";
+  // La guardada, o la que la dueña está probando desde Mi página.
+  const plantilla = await plantillaEfectiva(user);
+  const cssOverride = buildTemplateCSSOverride(plantilla, user.storefrontBrandColor);
+  const encontrate = getTemplate(plantilla).layout === "encontrate";
 
   return (
     <>

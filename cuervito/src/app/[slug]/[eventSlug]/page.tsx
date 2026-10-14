@@ -9,6 +9,7 @@ import { urlPublica } from "~/lib/url-publica";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { tonoDeLogo } from "~/server/logo-tono";
+import { plantillaEfectiva } from "~/server/plantilla-previa";
 import { getPresignedDownloadUrl } from "~/server/s3";
 import { ahora, lento } from "~/server/medir";
 import { resolveMediaUrl } from "~/server/media";
@@ -175,7 +176,9 @@ export default async function PublicEventPage(props: {
      Se piden 61 para saber si hay una tanda más sin gastar una segunda
      consulta contando. El resto lo pide el navegador a /api/evento/…/fotos
      cuando hace falta. */
-  const layout = getTemplate(photographer.storefrontTemplate).layout;
+  // La guardada, o la que la dueña está probando desde Mi página.
+  const plantilla = await plantillaEfectiva(photographer);
+  const layout = getTemplate(plantilla).layout;
 
   const tFotos = ahora();
   const donde = {
@@ -273,7 +276,7 @@ export default async function PublicEventPage(props: {
   ]);
 
   const pageStyle = {
-    ...buildTemplateStyle(photographer.storefrontTemplate, photographer.storefrontBrandColor),
+    ...buildTemplateStyle(plantilla, photographer.storefrontBrandColor),
     // Derive accent hover/tint variables from brand color
     ...(photographer.storefrontBrandColor
       ? {

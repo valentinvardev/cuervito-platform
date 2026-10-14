@@ -8,6 +8,7 @@ import { savePerfilAction } from "~/app/dashboard/perfil/actions";
 import { saveBrandColorAction, saveTemplateAction } from "~/app/dashboard/pagina/actions";
 
 import { Dominio } from "./_dominio";
+import { Plantillas } from "./_plantillas";
 
 /**
  * Editor de la página pública, con la página REAL al lado.
@@ -27,11 +28,6 @@ import { Dominio } from "./_dominio";
  * divergir. La dirección va por savePerfilAction justamente porque ahí ya está
  * el control de que no esté tomada.
  */
-const PLANTILLAS = [
-  { id: "encontrate", nombre: "encontrate", muestra: "claro" },
-  { id: "dark", nombre: "Oscuro", muestra: "oscuro" },
-  { id: "feed", nombre: "Editorial", muestra: "editorial" },
-] as const;
 
 const COLORES = ["#F0410F", "#1E7A4D", "#1F5FBF", "#8B3FC4", "#12110F", "#C2185B"];
 
@@ -45,12 +41,15 @@ export function Editor({
   colorInicial,
   plantillaInicial,
   logoInicial,
+  eventoPrevia,
 }: {
   perfil: { name: string; slug: string; bio: string; instagramUrl: string; websiteUrl: string };
   colorInicial: string;
   plantillaInicial: string;
   /** El logo que ya subió, resuelto a URL. Null si no tiene. */
   logoInicial: string | null;
+  /** El evento con fotos con el que se muestra la plantilla; null si no hay. */
+  eventoPrevia: string | null;
 }) {
   const [color, setColor] = useState(colorInicial);
   const [plantilla, setPlantilla] = useState(plantillaInicial);
@@ -221,34 +220,14 @@ export function Editor({
           </section>
         </form>
 
-        <section className="card blq">
-          <h2>Plantilla</h2>
-          <p className="ayuda">Cómo se ve tu galería. Se aplica a todos tus eventos.</p>
-          <div className="blq-b plt">
-            {PLANTILLAS.map((p) => (
-              <label className="pl" key={p.id}>
-                <input
-                  type="radio"
-                  name="plantilla"
-                  value={p.id}
-                  checked={plantilla === p.id}
-                  onChange={() => elegirPlantilla(p.id)}
-                />
-                {/* Miniaturas y no una lista de nombres: "Editorial" no le dice
-                    nada a nadie hasta que lo ve. */}
-                <span className="pl-v" data-t={p.muestra}>
-                  <i className="barra-m" />
-                  <span className="rejilla">
-                    {Array.from({ length: p.muestra === "editorial" ? 4 : 6 }).map((_, i) => (
-                      <i key={i} />
-                    ))}
-                  </span>
-                </span>
-                <span className="pl-n">{p.nombre}</span>
-              </label>
-            ))}
-          </div>
-        </section>
+        <Plantillas
+          actual={plantilla}
+          slug={slugVivo}
+          eventoPrevia={eventoPrevia}
+          version={version}
+          guardando={guardando}
+          onElegir={elegirPlantilla}
+        />
 
         <section className="card blq">
           <h2>Tu logo</h2>

@@ -13,6 +13,7 @@ import { urlPublica } from "~/lib/url-publica";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
 import { tonoDeLogo } from "~/server/logo-tono";
+import { plantillaEfectiva } from "~/server/plantilla-previa";
 import { resolveMediaUrl } from "~/server/media";
 
 import { type Fotografo, traerFotografo } from "./_datos";
@@ -158,11 +159,13 @@ async function Tienda({
       .slice(0, 2)
       .join("") || "?";
 
-  const pageStyle = buildTemplateStyle(user.storefrontTemplate, user.storefrontBrandColor);
+  // La guardada, o la que la dueña está probando desde Mi página.
+  const plantilla = await plantillaEfectiva(user);
+  const pageStyle = buildTemplateStyle(plantilla, user.storefrontBrandColor);
 
   // La plantilla de encontrate se dibuja entera aparte: no es este mismo perfil
   // con otros colores, es otra estructura. Las de siempre siguen abajo.
-  if (getTemplate(user.storefrontTemplate).layout === "encontrate") {
+  if (getTemplate(plantilla).layout === "encontrate") {
     return (
       <div style={pageStyle}>
         <JsonLd datos={datosEstructurados} />
