@@ -167,8 +167,19 @@ export function avatarKey(userId: string, ext = "jpg") {
   return `${prefix}/users/${userId}/avatar.${ext.replace(/^\./, "")}`;
 }
 
-export function storefrontLogoKey(userId: string) {
-  return `${prefix}/users/${userId}/storefront-logo`;
+/**
+ * El logo de la tienda. La clave lleva una versión y NO es fija por usuario:
+ * se sirve por CloudFront con un día de caché (CACHE_MOSTRAR) y, con la misma
+ * clave, cambiar el logo no cambiaba nada a la vista. La invalidación del CDN
+ * tardaba, y encima el navegador del fotógrafo tenía la imagen vieja guardada
+ * por su cuenta: subía el logo nuevo y seguía viendo el anterior.
+ *
+ * Clave nueva en cada subida: URL nueva, ninguna caché que vencer. La anterior
+ * se borra después de apuntar la base a la nueva. Qué clave tiene cada usuario
+ * lo dice `User.logoKey`, nunca esta función.
+ */
+export function storefrontLogoKey(userId: string, version: string, ext: string) {
+  return `${prefix}/users/${userId}/storefront-logo-${version}.${ext.replace(/^\./, "")}`;
 }
 
 export function eventCoverKey(userId: string, eventId: string, ext = "jpg") {

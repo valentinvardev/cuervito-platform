@@ -1,6 +1,6 @@
 import "server-only";
 
-import { revalidateTag, unstable_cache } from "next/cache";
+import { unstable_cache } from "next/cache";
 import sharp from "sharp";
 
 import type { TonoLogo } from "~/lib/tema-tienda";
@@ -16,16 +16,12 @@ import { getS3ObjectBytes } from "~/server/s3";
  *
  * Sólo cuentan los logos con transparencia. Uno con su propio fondo (un JPG,
  * un círculo dorado) se ve igual en cualquier página y no se toca.
+ *
+ * La caché va por clave de S3, y alcanza: cada subida del logo estrena clave
+ * (ver storefrontLogoKey), así que un logo nuevo es una entrada nueva y la
+ * medida del anterior simplemente deja de pedirse.
  */
 export type { TonoLogo };
-
-/** El logo se pisa en la misma clave al volver a subirlo, así que la caché no
- *  puede depender sólo del tiempo: la ruta de subida la invalida por etiqueta. */
-export const etiquetaTonoLogo = (userId: string) => `user:${userId}:logo-tono`;
-
-export function olvidarTonoLogo(userId: string) {
-  revalidateTag(etiquetaTonoLogo(userId));
-}
 
 async function medir(key: string): Promise<TonoLogo | null> {
   // La tienda espera esto para dibujarse: si S3 tarda, mejor sin tono.
@@ -61,9 +57,8 @@ async function medir(key: string): Promise<TonoLogo | null> {
 export async function tonoDeLogo(userId: string, key: string | null): Promise<TonoLogo | null> {
   if (!key) return null;
   try {
-    return await unstable_cache(() => medir(key), ["logo-tono", key], {
+    return await unstable_cache(() => medir(key), ["logo-tono", userId, key], {
       revalidate: 60 * 60 * 24 * 7,
-      tags: [etiquetaTonoLogo(userId)],
     })();
   } catch (e) {
     // Sin tono el logo se muestra como está, que es lo que pasaba antes.
