@@ -18,9 +18,19 @@ declare global {
 
 const TTL_MS = 60_000;
 
+/**
+ * A dónde se le pide el mapa: a este mismo proceso, por loopback, y NO a la
+ * URL pública. Por la URL pública el pedido salía a Cloudflare y volvía, con
+ * el bot protection en el medio. Next deja el puerto en process.env.PORT al
+ * arrancar (start-server), así que el middleware sabe dónde está el Node que
+ * lo acompaña; sin eso, el 3000 de siempre. INTERNAL_ORIGIN lo pisa.
+ */
+function origenInterno(): string {
+  return env.INTERNAL_ORIGIN ?? `http://127.0.0.1:${process.env.PORT ?? "3000"}`;
+}
+
 async function reload(): Promise<Map<string, string>> {
-  const base = env.NEXT_PUBLIC_BASE_URL.replace(/\/+$/, "");
-  const res = await fetch(`${base}/api/_internal/domain-map`, {
+  const res = await fetch(`${origenInterno()}/api/interno/domain-map`, {
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`domain-map fetch failed: ${res.status}`);

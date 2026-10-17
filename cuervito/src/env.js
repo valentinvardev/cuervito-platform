@@ -101,6 +101,8 @@ export const env = createEnv({
     CLOUDFLARE_API_TOKEN: z.string().optional(),
     CLOUDFLARE_ZONE_ID: z.string().optional(),
     CLOUDFLARE_FALLBACK_ORIGIN: z.string().default("cuervito.app"),
+    /** De dónde el middleware lee el mapa de dominios propios. Por defecto, este mismo proceso por loopback. */
+    INTERNAL_ORIGIN: z.string().url().optional(),
 
     // Retention windows (days). After a photo is soft-deleted, the daily
     // cron hard-deletes it from S3 + DB once this many days have passed.
@@ -177,6 +179,7 @@ export const env = createEnv({
     CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN,
     CLOUDFLARE_ZONE_ID: process.env.CLOUDFLARE_ZONE_ID,
     CLOUDFLARE_FALLBACK_ORIGIN: process.env.CLOUDFLARE_FALLBACK_ORIGIN,
+    INTERNAL_ORIGIN: process.env.INTERNAL_ORIGIN,
 
     PHOTO_RETENTION_DAYS: process.env.PHOTO_RETENTION_DAYS,
     DOWNLOAD_TOKEN_RETENTION_DAYS: process.env.DOWNLOAD_TOKEN_RETENTION_DAYS,

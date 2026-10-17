@@ -15,6 +15,12 @@ async function assertAdmin(): Promise<string> {
   return session.user.id;
 }
 
+/** Un campo del formulario como texto; un archivo u otra cosa cuenta como vacío. */
+function campo(fd: FormData, nombre: string): string {
+  const v = fd.get(nombre);
+  return typeof v === "string" ? v : "";
+}
+
 async function logAction(
   actorId: string,
   action: string,
@@ -217,4 +223,72 @@ export async function setQuotasAction(
 
   revalidatePath(`/admin/users/${parsed.data.userId}`);
   return { error: null, saved: true };
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Dominio propio
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Conectar un dominio del fotógrafo a su tienda.
+ *
+ * Acá sólo se anota el mapa hostname → fotógrafo (CustomDomain, ACTIVE):
+ * es lo que lee el middleware para reescribir el dominio a /{slug}. Que el
+ * dominio llegue hasta acá es DNS, y eso se hace en Cloudflare, a mano:
+ * su zona en nuestra cuenta, CNAME del dominio y de www a encontrate.app,
+ * SSL en «Full». El cliente de Cloudflare for SaaS (server/cloudflare.ts)
+ * queda para el día que esto sea autoservicio.
+ *
+ * Se cargan el dominio pelado y su www juntos: la gente escribe cualquiera
+ * de los dos y los dos tienen que abrir la tienda.
+ */
+const HOSTNAME = /^(?!-)[a-z0-9-]{1,63}(?<!-)(\.[a-z0-9-]{1,63})+$/;
+const NUESTROS = ["encontrate.app", "cuervito.app"];
+
+function normalizarHostname(crudo: string): string | null {
+  let h = crudo.trim().toLowerCase();
+  h = h.replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "");
+  if (!HOSTNAME.test(h)) return null;
+  if (NUESTROS.some((n) => h === n || h.endsWith(`.${n}`))) return null;
+  return h;
+}
+
+export async function agregarDominioAction(formData: FormData): Promise<void> {
+  const actorId = await assertAdmin();
+  const targetId = campo(formData, "userId");
+  if (!targetId) return;
+  const hostname = normalizarHostname(campo(formData, "hostname"));
+  if (!hostname) redirect(`/admin/users/${targetId}?dominio=invalido`);
+
+  const hostnames = [hostname, `www.${hostname}`];
+  const ajenos = await db.customDomain.findMany({
+    where: { hostname: { in: hostnames }, userId: { not: targetId } },
+    select: { hostname: true },
+  });
+  if (ajenos.length > 0) redirect(`/admin/users/${targetId}?dominio=ocupado`);
+
+  for (const h of hostnames) {
+    await db.customDomain.upsert({
+      where: { hostname: h },
+      create: { userId: targetId, hostname: h, status: "ACTIVE", verifiedAt: new Date() },
+      update: { status: "ACTIVE", verifiedAt: new Date(), errorMessage: null },
+    });
+  }
+  await logAction(actorId, "ADD_DOMAIN", "User", targetId, { hostname });
+
+  revalidatePath(`/admin/users/${targetId}`);
+}
+
+export async function quitarDominioAction(formData: FormData): Promise<void> {
+  const actorId = await assertAdmin();
+  const targetId = campo(formData, "userId");
+  const id = campo(formData, "id");
+  if (!targetId || !id) return;
+
+  const fila = await db.customDomain.findFirst({ where: { id, userId: targetId }, select: { hostname: true } });
+  if (!fila) return;
+  await db.customDomain.delete({ where: { id } });
+  await logAction(actorId, "REMOVE_DOMAIN", "User", targetId, { hostname: fila.hostname });
+
+  revalidatePath(`/admin/users/${targetId}`);
 }

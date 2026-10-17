@@ -90,6 +90,8 @@
 .rt { grid-template-columns: minmax(0, 1fr) 120px 96px 72px; }
 /* Descargas y actividad: quién/qué · evento · cuándo */
 .dt { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 128px; }
+/* Dominio propio (ficha del usuario): dominio · desde · quitar */
+.dm { grid-template-columns: minmax(0, 1fr) 128px 76px; }
 /* Registro: acción · quién · cuándo */
 .lt { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 128px; }
 .rt .num, .dt .num, .lt .num { white-space: nowrap; }

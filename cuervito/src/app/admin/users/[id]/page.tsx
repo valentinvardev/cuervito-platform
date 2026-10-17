@@ -7,6 +7,7 @@ import {
   Download,
   ExternalLink,
   Eye,
+  Globe,
   Hash,
   ScanFace,
   ShoppingCart,
@@ -19,6 +20,8 @@ import { formatBytes, getQuotaUsage } from "~/server/quotas";
 import { hace } from "~/app/dashboard/_components/formato";
 
 import {
+  agregarDominioAction,
+  quitarDominioAction,
   reactivateUserAction,
   setUserRoleAction,
   suspendUserAction,
@@ -40,12 +43,16 @@ export const dynamic = "force-dynamic";
  * pasó: uso de reconocimiento, descargas, actividad en la tienda y el
  * registro de lo que hicimos nosotros.
  */
-export default async function AdminUserDetail(props: { params: Promise<{ id: string }> }) {
+export default async function AdminUserDetail(props: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ dominio?: string }>;
+}) {
   const { id } = await props.params;
+  const { dominio: avisoDominio } = await props.searchParams;
   const session = await auth();
   const soyYo = session?.user?.id === id;
 
-  const [user, quota, acciones, reconocimiento, descargas, eventos, eventosGratis, regalados, fueraDeLaCuenta] =
+  const [user, quota, acciones, reconocimiento, descargas, eventos, eventosGratis, regalados, fueraDeLaCuenta, dominios] =
     await Promise.all([
       db.user.findUnique({
         where: { id },
@@ -107,6 +114,11 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
         db.photo.count({ where: { ownerId: id, deletedAt: null, fileSize: null } }),
         db.photo.count({ where: { ownerId: id, deletedAt: { not: null } } }),
       ]).then(([sinVer, noLlegaron, borradas]) => ({ sinVer, noLlegaron, borradas })),
+      db.customDomain.findMany({
+        where: { userId: id },
+        orderBy: { hostname: "asc" },
+        select: { id: true, hostname: true, status: true, createdAt: true },
+      }),
     ]);
 
   if (!user) notFound();
@@ -392,6 +404,78 @@ export default async function AdminUserDetail(props: { params: Promise<{ id: str
         </section>
 
         {/* ── Descargas ── */}
+        {/* ── Dominio propio ── */}
+        <section className="card">
+          <div className="card-h">
+            <div>
+              <h2>Dominio propio</h2>
+              <div className="sub">
+                Su tienda en su dominio. Acá se anota el mapa; que el dominio llegue es DNS, en Cloudflare:
+                su zona en nuestra cuenta, CNAME del dominio y de www a encontrate.app, SSL en «Full». Tarda
+                hasta un minuto en tomar.
+              </div>
+            </div>
+          </div>
+          {dominios.length > 0 && (
+            <>
+              <div className="row row-h dm">
+                <span>Dominio</span>
+                <span className="oc">Desde</span>
+                <span />
+              </div>
+              {dominios.map((d) => (
+                <div key={d.id} className="row dm">
+                  <span className="v-who">
+                    <b>
+                      <a href={`https://${d.hostname}`} target="_blank" rel="noopener" className="v-link">
+                        {d.hostname}
+                      </a>
+                    </b>
+                    <span>
+                      <span className={`pill ${d.status === "ACTIVE" ? "live" : "draft"}`}>
+                        <i /> {d.status === "ACTIVE" ? "Activo" : d.status.toLowerCase()}
+                      </span>
+                    </span>
+                  </span>
+                  <span className="num soft oc">{cuando(d.createdAt)}</span>
+                  <form action={quitarDominioAction} style={{ textAlign: "right" }}>
+                    <input type="hidden" name="userId" value={user.id} />
+                    <input type="hidden" name="id" value={d.id} />
+                    <button type="submit" className="btn btn-ghost btn-sm" data-tip="Deja de abrir su tienda">
+                      Quitar
+                    </button>
+                  </form>
+                </div>
+              ))}
+            </>
+          )}
+          <form action={agregarDominioAction} style={{ display: "flex", gap: 8, alignItems: "center", marginTop: dominios.length ? 14 : 0 }}>
+            <input type="hidden" name="userId" value={user.id} />
+            <input
+              className="inp"
+              name="hostname"
+              placeholder="ejemplo.com.ar"
+              autoComplete="off"
+              spellCheck={false}
+              style={{ maxWidth: 320 }}
+              required
+            />
+            <button type="submit" className="btn btn-pri btn-sm" data-tip="Carga el dominio y su www">
+              <Globe /> Conectar
+            </button>
+          </form>
+          {avisoDominio === "invalido" && (
+            <div className="ec-nota" style={{ marginTop: 8, color: "var(--bad-txt)" }}>
+              Eso no es un dominio: va sin https y sin barras, y no puede ser uno nuestro.
+            </div>
+          )}
+          {avisoDominio === "ocupado" && (
+            <div className="ec-nota" style={{ marginTop: 8, color: "var(--bad-txt)" }}>
+              Ese dominio ya está conectado a otra cuenta. Quitalo de ahí primero.
+            </div>
+          )}
+        </section>
+
         <section className="card">
           <div className="card-h">
             <div>
@@ -512,4 +596,6 @@ const ACCION: Record<string, string> = {
   DISABLE_GIFT: "regalos quitados",
   ENABLE_HISTORIAS: "historias habilitadas",
   DISABLE_HISTORIAS: "historias quitadas",
+  ADD_DOMAIN: "dominio conectado",
+  REMOVE_DOMAIN: "dominio quitado",
 };
