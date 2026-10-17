@@ -6,7 +6,8 @@ import { getPresignedDownloadUrl } from "~/server/s3";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { resolveMediaUrl } from "~/server/media";
 
-import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
+import { EstiloPlantilla } from "~/app/[slug]/_estilo-plantilla";
+import { atributosPlantilla, buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
 import { esEntregable } from "~/lib/venta";
 
 import { DescargaClient } from "./descarga-client";
@@ -39,6 +40,7 @@ export default async function DescargaPage(props: {
           id: true,
           storefrontTemplate: true,
           storefrontBrandColor: true,
+          storefrontBrandColor2: true,
           name: true,
           slug: true,
           image: true,
@@ -112,8 +114,17 @@ export default async function DescargaPage(props: {
         style={buildTemplateStyle(
           sale.seller.storefrontTemplate,
           sale.seller.storefrontBrandColor,
+          sale.seller.storefrontBrandColor2,
         )}
+        {...atributosPlantilla(sale.seller.storefrontTemplate)}
       >
+        {/* Las tipografías de la plantilla con tema: la entrega no pasa por
+            la cabeza de la tienda, así que las pone acá. */}
+        <EstiloPlantilla
+          plantilla={sale.seller.storefrontTemplate}
+          color={sale.seller.storefrontBrandColor}
+          color2={sale.seller.storefrontBrandColor2}
+        />
         <Entrega
           token={token}
           comprador={sale.buyerName ?? "Comprador"}

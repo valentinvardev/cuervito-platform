@@ -77,6 +77,43 @@ existir: una vez es un descuido, dos es una tendencia.
   veces (`chat.ts`, `burbuja.tsx`, `_bandeja.tsx`). Se juntó en
   `formato-chat.ts` al revisar el diff, no al escribirlo: la constante
   «chica» es la que más fácil se copia.
+- 2026-10-14, dos más al rediseñar la elección de plantilla: `VALID_TEMPLATES`
+  en `pagina/actions.ts` era una copia a mano de los ids del catálogo
+  (`storefront-templates.ts`); pasó a `esPlantilla()` leyendo el catálogo. Y
+  el armazón de la tienda (hojas, tema fijado, variables de la plantilla)
+  iba a copiarse del layout público al de la previa `/vista-tienda`; quedó
+  en `[slug]/_cabeza.tsx` y lo usan los dos. La página entera también:
+  `_tienda.tsx` la dibujan la ruta pública y la previa.
+- 2026-10-17, evitado desde el diseño: el segundo color de marca (Cancha)
+  podía haber sido una línea más en cada una de las siete páginas que arman
+  los tokens de la plantilla. Quedó en `variablesDe()` dentro de
+  storefront-templates.ts, que alimenta a buildTemplateStyle y a
+  buildTemplateCSSOverride, y las tipografías de las cinco plantillas con
+  tema en un solo inyector (`_estilo-plantilla.tsx`) que usan la cabeza de
+  la tienda, la previa del panel y la entrega. Las cinco plantillas nuevas
+  son CSS sobre los mismos componentes de encontrate, no cinco copias del
+  carrito: es la misma decisión que `plantillas/comun.tsx` en Portfolio.
+- Estado: activo
+
+## Clave fija más invalidación, en vez de una URL nueva
+- Primera vez: 2026-10-14 (registrado; las apariciones son de mayo)
+- Ocurrencias: 3 (`storefront-logo` — arreglado 2026-10-14; `avatar.jpg`
+  en /api/profile/avatar y avatar-google.ts; `cover.{ext}` en
+  /api/dashboard/events/[id]/cover). La regeneración de marcas de agua
+  (`createCFInvalidation(["/*"])`) es la misma idea a escala del bucket.
+- Qué pasa: un archivo que el usuario puede volver a subir vive siempre en la
+  misma clave de S3, se sirve con `max-age=86400` por CloudFront, y al
+  reemplazarlo se dispara una invalidación con `void`. La invalidación llega
+  tarde, cuesta después de las mil al mes, y no toca la caché del NAVEGADOR,
+  que es la que tiene el usuario que acaba de subir el archivo nuevo.
+- Por qué importa: el bug es invisible en desarrollo —sin `CLOUDFRONT_DOMAIN`
+  las URLs son firmadas y cambian en cada render— y en producción se ve
+  como «subí el logo y no cambió». El fotógrafo asume que no anda.
+- Señal temprana: si la clave de S3 sale de `(userId)` y no de
+  `(userId, versión)`, ese archivo no se puede reemplazar sin dejar a alguien
+  viendo el viejo. Clave nueva por subida, la base apunta a la nueva, se
+  borra la vieja después; no hay nada que invalidar.
+- Pendiente: avatar y portada de evento siguen con clave fija.
 - Estado: activo
 
 ## Trabajo en vuelo que nadie gobierna

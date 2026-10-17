@@ -1343,70 +1343,180 @@
 }
 .propio .btn { margin-left: auto; }
 
-/* El diálogo de dominio propio: tres pasos y el botón a WhatsApp. */
-.dmn-txt { font-size: 13.5px; line-height: 1.55; color: var(--ink-2); }
-.dmn-pasos { display: grid; gap: 10px; margin: 0; padding: 0; counter-reset: paso; }
-.dmn-pasos li {
-  display: flex; align-items: flex-start; gap: 10px;
-  font-size: 13.5px; line-height: 1.5; color: var(--ink-2);
-  list-style: none; counter-increment: paso;
+/* ── Plantilla ──────────────────────────────────────────────────────────────
+   En la tarjeta va SOLO la que está en uso, con su nombre y de qué va. Las
+   demás se exploran en un diálogo, cada una armada con la página de verdad.
+   Tres miniaturas abstractas lado a lado decían "clara, oscura, editorial" y
+   nada más: se elegía a ciegas y se corregía mirando la previa después. En
+   el diálogo se mira primero y se decide después. */
+.plt-act { display: flex; align-items: center; gap: var(--s-4); }
+.plt-act .mn { width: 132px; flex-shrink: 0; }
+.plt-act-t { flex: 1; min-width: 0; display: grid; gap: 3px; align-content: center; }
+.plt-act-t b { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.plt-act-t > span { font-size: 12.5px; color: var(--ink-3); line-height: 1.45; }
+.plt-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
+.plt-chips i {
+  font-style: normal; font-size: 10.5px; font-weight: 500;
+  letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 2px 7px; border: 1px solid var(--line); border-radius: 100px;
 }
-.dmn-pasos li::before {
-  content: counter(paso);
-  width: 22px; height: 22px; flex-shrink: 0;
-  display: grid; place-items: center;
-  border-radius: 50%;
-  background: var(--paper-3); color: var(--ink);
-  font-size: 12px; font-weight: 600;
-  font-variant-numeric: tabular-nums;
+@media (max-width: 560px) {
+  .plt-act { flex-wrap: wrap; }
+  .plt-act .btn { width: 100%; }
 }
 
-/* Relleno con el mismo verde del riel (no el #25D366 de la marca: con blanco
-   encima no se lee). Es la única salida del diálogo, así que va lleno. */
-.btn-wa-sol { background: #0A7C42; color: #FFFFFF; }
-.btn-wa-sol:hover { filter: brightness(1.12); }
-.btn-wa-sol .wa { width: 16px; height: 16px; fill: currentColor; }
-
-/* ── Plantillas ──────────────────────────────────────────────────────────────
-   Miniaturas reales y no nombres en una lista: "Editorial" no le dice nada a
-   nadie hasta que lo ve. */
-.plt { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
-.pl { cursor: pointer; }
-.pl input { position: absolute; opacity: 0; pointer-events: none; }
-.pl-v {
+/* ── Miniatura de una plantilla ──────────────────────────────────────────────
+   Una página dibujada en chico con la paleta REAL de la plantilla: --mn-* las
+   pone quien la dibuja a partir de las variables de la tienda, así que si
+   una plantilla cambia de fondo la miniatura cambia sola. La estructura la
+   decide la familia (encontrate, cobertura, feed), que es lo que de verdad
+   las distingue a simple vista. El acento (--mn-acc) es el color de marca
+   elegido: la miniatura lo lleva donde la página lo lleva, en el botón. */
+.mn {
+  --mn-bg: #FBFAF8; --mn-sup: #FFFFFF; --mn-tx: #12110F; --mn-tx2: #8B857D;
+  --mn-ln: rgba(18, 17, 15, .12); --mn-acc: #F0410F;
+  display: grid; gap: 5px; align-content: start;
   aspect-ratio: 4 / 3;
-  border: 1px solid var(--line);
-  border-radius: var(--r-2);
+  padding: 7px 8px;
+  border: 1px solid var(--line); border-radius: var(--r-2);
+  background: var(--mn-bg);
   overflow: hidden;
-  padding: 7px;
-  display: grid; gap: 4px; grid-template-rows: 8px 1fr;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
-.pl:hover .pl-v { border-color: var(--line-strong); }
-.pl input:checked + .pl-v {
-  border-color: var(--ink);
-  box-shadow: 0 0 0 2px var(--ink);
+.mn i { display: block; }
+.mn-top { display: flex; align-items: center; justify-content: space-between; height: 6px; }
+.mn-marca { width: 18%; height: 4px; border-radius: 2px; background: var(--mn-tx); }
+.mn-pill { width: 15%; height: 6px; border-radius: 100px; border: 1px solid var(--mn-ln); }
+.mn-nombre { width: 52%; height: 7px; border-radius: 2px; background: var(--mn-tx); margin-top: 3px; }
+.mn-sub { width: 34%; height: 3px; border-radius: 2px; background: var(--mn-tx2); opacity: .75; }
+.mn-cta { width: 22%; height: 6px; border-radius: 2px; background: var(--mn-acc); }
+.mn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 2px; }
+.mn-card { display: grid; gap: 3px; }
+.mn-ph {
+  aspect-ratio: 16 / 10; border-radius: 2px;
+  background: linear-gradient(160deg,
+    color-mix(in srgb, var(--mn-tx) 28%, var(--mn-sup)),
+    color-mix(in srgb, var(--mn-tx) 9%, var(--mn-sup)));
 }
-.pl-n { margin-top: 7px; font-size: 12.5px; text-align: center; color: var(--ink-2); }
-.pl input:checked ~ .pl-n { color: var(--ink); font-weight: 500; }
+.mn-ln { width: 70%; height: 3px; border-radius: 2px; background: var(--mn-tx2); opacity: .75; }
 
-.pl-v i { display: block; border-radius: 2px; }
-.pl-v .barra-m { height: 8px; }
-.pl-v .rejilla { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
-.pl-v .rejilla i { border-radius: 2px; }
+/* Cobertura: barra con fondo de superficie, hero con avatar, tarjetas. */
+.mn[data-f="coverage"] { padding: 0; gap: 0; }
+.mn-nav {
+  height: 11px; padding: 0 8px;
+  display: flex; align-items: center;
+  background: var(--mn-sup); border-bottom: 1px solid var(--mn-ln);
+}
+.mn-nav i { width: 16%; height: 3px; border-radius: 2px; background: var(--mn-tx); }
+.mn-hero { display: flex; align-items: center; gap: 5px; padding: 7px 8px 5px; }
+.mn-av { width: 13px; height: 13px; border-radius: 50%; background: var(--mn-acc); flex-shrink: 0; }
+.mn-quien { flex: 1; display: grid; gap: 3px; }
+.mn-quien .mn-nombre { width: 46%; height: 5px; margin: 0; }
+.mn-quien .mn-sub { width: 64%; }
+.mn[data-f="coverage"] .mn-grid { padding: 0 8px 8px; margin: 0; }
+.mn[data-f="coverage"] .mn-card {
+  gap: 0; overflow: hidden;
+  border: 1px solid var(--mn-ln); border-radius: 3px; background: var(--mn-sup);
+}
+.mn[data-f="coverage"] .mn-ph { border-radius: 0; }
+.mn[data-f="coverage"] .mn-ln { margin: 3px 3px 4px; }
 
-.pl-v[data-t="claro"] { background: #FFF; }
-.pl-v[data-t="claro"] .barra-m { background: #E6E4DF; }
-.pl-v[data-t="claro"] .rejilla i { background: #D9D6D0; }
+/* Feed: el buscador al frente, con el botón del color, y las fotos una abajo
+   de la otra. */
+.mn-buscar {
+  height: 10px; padding: 1px;
+  display: flex; justify-content: flex-end;
+  border: 1px solid var(--mn-ln); border-radius: 100px; background: var(--mn-sup);
+}
+.mn-buscar i { width: 24%; height: 100%; border-radius: 100px; background: var(--mn-acc); }
+.mn-feed { display: grid; gap: 4px; }
+.mn-feed .mn-ph { aspect-ratio: 16 / 7; }
 
-.pl-v[data-t="oscuro"] { background: #131211; }
-.pl-v[data-t="oscuro"] .barra-m { background: #34302A; }
-.pl-v[data-t="oscuro"] .rejilla i { background: #2A2620; }
+/* ── El diálogo de plantillas ────────────────────────────────────────────────
+   Ancho de verdad: a la izquierda la lista, a la derecha la página con esa
+   plantilla puesta, en escritorio o en teléfono. Es el mismo .modal del panel,
+   estirado: lo que hay que leer acá no es texto, es una página entera. */
+.plm { max-width: 1120px; height: calc(100dvh - var(--s-6)); }
+.plm .modal-h { padding-bottom: var(--s-3); border-bottom: 1px solid var(--line-soft); }
+.plm-cuerpo { flex: 1; min-height: 0; display: grid; grid-template-columns: 312px minmax(0, 1fr); }
 
-.pl-v[data-t="editorial"] { background: #F4F2ED; padding: 10px; }
-.pl-v[data-t="editorial"] .barra-m { height: 5px; width: 60%; background: #1A1815; }
-.pl-v[data-t="editorial"] .rejilla { grid-template-columns: repeat(2, 1fr); gap: 4px; }
-.pl-v[data-t="editorial"] .rejilla i { background: #CFCAC1; }
+.plm-lista {
+  overflow-y: auto; padding: var(--s-3);
+  display: grid; gap: 6px; align-content: start;
+  border-right: 1px solid var(--line-soft);
+}
+.plm-op {
+  position: relative;
+  display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 11px; align-items: center;
+  padding: 8px;
+  border: 1px solid transparent; border-radius: var(--r-2);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+.plm-op:hover { background: var(--paper-3); }
+.plm-op input { position: absolute; opacity: 0; pointer-events: none; }
+/* La elegida —la que se está mirando— lleva el filete de tinta. No es la que
+   está en uso: ésa lleva su etiqueta, y pueden no ser la misma. */
+.plm-op:has(input:checked) { border-color: var(--ink); background: var(--paper-2); box-shadow: 0 0 0 1px var(--ink); }
+.plm-op:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.plm-op .mn { width: 100%; }
+.plm-op-t { min-width: 0; display: grid; gap: 2px; }
+.plm-op-t b { display: flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; }
+.plm-op-t > span { font-size: 12px; line-height: 1.4; color: var(--ink-3); }
+.plm-uso {
+  font-style: normal; font-size: 10px; font-weight: 500;
+  letter-spacing: .05em; text-transform: uppercase;
+  color: var(--ok-txt); background: color-mix(in srgb, var(--ok) 12%, transparent);
+  padding: 2px 6px; border-radius: 100px;
+}
+
+.plm-previa { min-width: 0; display: flex; flex-direction: column; background: var(--paper-3); }
+.plm-previa-h {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4) 0;
+}
+.plm-previa-h .label { color: var(--ink-3); }
+/* .plm-area es la caja que se mide: sin relleno, para que el ancho y el alto
+   que da sean exactamente los que la pantalla puede ocupar. */
+.plm-marco { flex: 1; min-height: 0; padding: var(--s-3) var(--s-4) var(--s-4); display: flex; }
+.plm-area { flex: 1; min-width: 0; min-height: 0; display: flex; justify-content: center; }
+.plm-pantalla {
+  max-width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  border: 1px solid var(--line); border-radius: var(--r-3);
+  overflow: hidden;
+  background: var(--paper-2); box-shadow: var(--shadow-card);
+  transition: width 220ms cubic-bezier(.2, .8, .3, 1);
+}
+.plm-pantalla .crome { flex-shrink: 0; }
+.plm-visor { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--paper-3); }
+.plm-visor iframe { position: absolute; top: 0; left: 0; border: 0; transform-origin: top left; }
+.plm-cargando {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; justify-items: center; gap: 10px;
+  font-size: 12.5px; color: var(--ink-3);
+  background: var(--paper-3);
+}
+.plm-cargando .sk { width: 120px; height: 8px; border-radius: 100px; }
+
+.plm .modal-f { align-items: center; }
+.plm-f-t { margin-right: auto; font-size: 12.5px; color: var(--ink-3); }
+.plm-f-t[data-err="1"] { color: var(--bad); }
+
+@media (max-width: 900px) {
+  .plm { height: calc(100dvh - var(--s-4)); max-height: none; }
+  /* La lista pasa arriba, en una tira que se desplaza de costado, y la
+     previa se queda con el resto. */
+  .plm-cuerpo { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .plm-lista {
+    grid-auto-flow: column; grid-auto-columns: 196px;
+    overflow-x: auto; overflow-y: hidden;
+    border-right: 0; border-bottom: 1px solid var(--line-soft);
+  }
+  .plm-op { grid-template-columns: 60px minmax(0, 1fr); }
+  .plm-op-t > span { display: none; }
+  .plm-f-t { display: none; }
+}
 
 /* ── Color ───────────────────────────────────────────────────────────────── */
 .cols { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -1592,15 +1702,25 @@
 .logo-caja {
   width: 180px; height: 62px;
   flex-shrink: 0;
-  display: grid; place-items: center;
+  /* Flex y no grid. En grid la fila implícita es `auto` y se mide con el
+     alto natural de la imagen: un logo vertical de 600px hacía una fila de
+     600px, el `max-height: 100%` de la imagen se resolvía contra ESA fila
+     y no contra la caja, y el logo salía por abajo. En flex el porcentaje
+     se resuelve contra la caja, que tiene el alto fijo. */
+  display: flex; align-items: center; justify-content: center;
   padding: 10px 14px;
   border-radius: var(--r-2);
   background: var(--ink);
   border: 1px solid var(--line);
 }
 /* Se acota por ALTO: los logos vienen apaisados, cuadrados y a veces
-   verticales, y el alto es lo único que la barra no puede ceder. */
-.logo-caja img { max-height: 100%; max-width: 100%; width: auto; object-fit: contain; display: block; }
+   verticales, y el alto es lo único que la barra no puede ceder. El mínimo
+   en cero es para que el tamaño natural de la imagen no le gane al máximo. */
+.logo-caja img {
+  max-height: 100%; max-width: 100%;
+  width: auto; height: auto; min-width: 0; min-height: 0;
+  object-fit: contain; display: block;
+}
 .logo-caja[data-vacia="1"] { background: var(--paper-3); }
 .logo-caja[data-vacia="1"] svg { width: 20px; height: 20px; color: var(--ink-3); }
 
@@ -1610,6 +1730,76 @@
 @media (max-width: 560px) {
   .logo-caja { width: 100%; }
 }
+
+/* ── Colores en el diálogo de plantillas ────────────────────────────────────
+   Arriba de la previa, para cambiarlos mirando. Una fila por color: el de
+   fábrica de la plantilla primero, después los presets del editor y uno a
+   medida. El secundario sólo aparece en las plantillas de dos colores. */
+.plm-colores { display: grid; gap: 8px; padding: var(--s-3) var(--s-4) 0; }
+.plm-color { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.plm-color-t { width: 118px; flex-shrink: 0; font-size: 12.5px; color: var(--ink-2); }
+.plm-color .co, .plm-color .co-libre, .plm-color .co-libre input { width: 26px; height: 26px; }
+.plm-color .co[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--paper-3), 0 0 0 4px var(--ink); }
+.plm-color-hex { padding-left: 4px; font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.plm-color-nota { padding-left: 4px; font-size: 12px; color: var(--ink-3); }
+@media (max-width: 900px) {
+  .plm-color-t { width: 100%; }
+  .plm-color-nota { display: none; }
+}
+
+/* La etiqueta de la segunda fila de color en el editor. */
+.co-etq { font-size: 12.5px; color: var(--ink-2); margin-right: 2px; }
+
+/* Escritorio / teléfono con íconos. Dos palabras al lado de la previa
+   compiten con lo que hay que mirar; el monitor y el teléfono se entienden
+   sin leer, y el título lo dice al pasar por encima. */
+.seg-ico button { display: grid; place-items: center; width: 34px; height: 26px; padding: 0; }
+.seg-ico svg { width: 15px; height: 15px; }
+
+/* ── Miniaturas de las plantillas con tema ──────────────────────────────────
+   Lo que distingue a cada una a simple vista, en cuatro trazos: la regla y
+   los numerales de Pista, las reglas de tinta de Podio, el vidrio de Noche,
+   la banda de Cancha, las baldosas de Tablero. --mn-acc2 es el secundario. */
+.mn-led { width: 18%; height: 6px; background: var(--mn-acc); border-radius: 3px; }
+.mn-rule { height: 2px; background: var(--mn-acc); }
+.mn-filas { display: grid; gap: 4px; }
+.mn-fila { display: flex; align-items: center; gap: 4px; }
+.mn-num { width: 6px; height: 6px; background: var(--mn-acc); flex-shrink: 0; }
+.mn-fila .mn-ph { width: 18px; height: 10px; flex-shrink: 0; aspect-ratio: auto; }
+.mn-fila .mn-ln { flex: 1; width: auto; height: 4px; }
+
+.mn[data-f="pista"] i, .mn[data-f="podio"] i { border-radius: 0; }
+.mn[data-f="pista"] .mn-nombre-2 { background: var(--mn-acc); width: 34%; margin-top: 0; }
+.mn[data-f="podio"] .mn-top { height: auto; padding-bottom: 4px; border-bottom: 1px solid var(--mn-tx); }
+.mn[data-f="podio"] .mn-nombre { height: 9px; }
+.mn[data-f="podio"] .mn-nombre-2 { width: 38%; margin-top: 0; }
+.mn[data-f="podio"] .mn-cta { height: 3px; width: 16%; }
+.mn[data-f="podio"] .mn-fila { padding-bottom: 3px; border-bottom: 1px solid var(--mn-ln); }
+.mn[data-f="podio"] .mn-num { background: var(--mn-tx); }
+
+.mn[data-f="noche"] .mn-card { padding: 3px; border: 1px solid var(--mn-ln); border-radius: 4px; background: var(--mn-sup); }
+.mn[data-f="noche"] .mn-card .mn-ph { aspect-ratio: 3 / 1; border-radius: 2px; }
+.mn[data-f="noche"] .mn-ph-ancha { aspect-ratio: 16 / 5; border-radius: 4px; }
+
+.mn[data-f="cancha"] { padding: 0; gap: 0; }
+.mn[data-f="cancha"] .mn-top { height: 9px; padding: 0 6px; background: var(--mn-sup); }
+.mn[data-f="cancha"] .mn-marca { background: var(--mn-acc); }
+.mn-band { display: grid; gap: 3px; align-content: center; height: 32px; padding: 0 6px; background: var(--mn-acc); }
+.mn-band .mn-sub { width: 20%; height: 2px; background: var(--mn-acc2); opacity: 1; }
+.mn-band .mn-nombre { width: 55%; height: 8px; margin-top: 0; background: #FFF; }
+.mn-stripe { height: 2px; background: var(--mn-acc2); }
+.mn[data-f="cancha"] .mn-grid { grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 5px 6px; margin: 0; }
+.mn[data-f="cancha"] .mn-ph { aspect-ratio: 16 / 9; border-radius: 3px; background: var(--mn-sup); }
+
+.mn[data-f="tablero"] { gap: 4px; }
+.mn-bento-r { display: grid; gap: 4px; }
+.mn-bento-2 { grid-template-columns: 2fr 1fr; }
+.mn-bento-4 { grid-template-columns: repeat(4, 1fr); }
+.mn-bento-3 { grid-template-columns: repeat(3, 1fr); }
+.mn-bento-r > i { min-height: 12px; border-radius: 3px; background: var(--mn-sup); border: 1px solid var(--mn-ln); }
+.mn-bento-2 > i { min-height: 22px; }
+.mn-bento-r > .mn-ph { border: 0; }
+.mn-bento-r > .mn-ac { background: var(--mn-acc); border-color: var(--mn-acc); }
 
 /* ═══════════════ pagos/pagos.css ═══════════════ */
 /* =============================================================================
@@ -1742,6 +1932,8 @@
    lado para que no quede duda.
    ========================================================================== */
 
+.perfil { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--s-5); align-items: start; }
+.pcol { display: grid; gap: var(--s-3); }
 
 .blq h2 {
   font-family: var(--sans); font-size: 14.5px; font-weight: 600;
@@ -1799,23 +1991,27 @@
 
 /* ── Previa pública ──────────────────────────────────────────────────────── */
 .lado { position: sticky; top: calc(62px + var(--s-5)); display: grid; gap: var(--s-3); }
+.tarjeta-pub { text-align: center; padding: var(--s-5) var(--s-4); }
+.tarjeta-pub .foto-av { margin: 0 auto var(--s-3); }
+.tarjeta-pub b { display: block; font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+.tarjeta-pub .bio {
+  margin-top: 7px; font-size: 12.5px; color: var(--ink-3);
+  line-height: 1.55; min-height: 2.2em;
+}
+.tarjeta-pub .link {
+  display: inline-block; margin-top: var(--s-3);
+  font-size: 12px; color: var(--ink-2);
+  border-bottom: 1px solid var(--line-strong);
+}
+.tarjeta-pub .iconos { display: flex; justify-content: center; gap: 9px; margin-top: var(--s-4); color: var(--ink-3); }
+.tarjeta-pub .iconos svg { width: 15px; height: 15px; }
+.tarjeta-pub .iconos span[hidden] { display: none; }
+
 @media (max-width: 1080px) {
+  .perfil { grid-template-columns: minmax(0, 1fr); }
   .lado { position: static; }
 }
 @media (max-width: 560px) { .par { grid-template-columns: minmax(0, 1fr); } }
-
-/* ── Diálogo de perfil ───────────────────────────────────────────────────────
-   Arriba, en chico, lo que el atleta ve primero: la foto, el nombre y la
-   dirección. Cerrar sesión va a la izquierda del pie, lejos de Guardar: son
-   dos botones que nadie quiere confundir. */
-.pm { max-width: 520px; }
-.pm-cab { display: flex; align-items: center; gap: var(--s-4); }
-.pm-quien { min-width: 0; display: grid; gap: 2px; }
-.pm-quien b { font-size: 15px; font-weight: 600; letter-spacing: -0.015em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pm-quien span { font-size: 12.5px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pm-quien .pm-nota { margin-top: 4px; font-size: 12px; }
-.pm .campo .redes { display: grid; gap: var(--s-2); }
-.pm-salir { margin-right: auto; }
 
 /* ── Cambiar la foto ────────────────────────────────────────────────────────
    Se toca la foto de la previa, que es el único lugar donde se ve cómo va a
@@ -2052,7 +2248,6 @@
    cambiara de forma al cambiar de formato, la vista previa estaría mintiendo
    sobre lo único que el formato decide. */
 .hist-lienzo {
-  position: relative;
   aspect-ratio: var(--pv, 9 / 16);
   border-radius: var(--r-3);
   overflow: hidden;
@@ -2061,211 +2256,12 @@
   display: grid; place-items: center;
   transition: aspect-ratio 240ms cubic-bezier(.2, .8, .3, 1);
 }
-.hist-lienzo > img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.hist-lienzo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
 /* Mientras renderiza queda la imagen anterior, atenuada. Vaciar la caja hace
    que la columna salte de alto y que uno pierda la referencia de lo que estaba
    comparando, que es justo lo que vino a hacer. */
-.hist-lienzo[data-cargando="1"] > img { opacity: .38; }
-
-/* ── El encuadre ──────────────────────────────────────────────────────────── */
-/* La zona que se arrastra ocupa exactamente la caja de la foto dentro de la
-   pieza (la posición la calcula la pantalla con cajaFoto). Es invisible hasta
-   que se agarra; ahí muestra la foto sola con la misma regla de recorte que
-   usa el servidor, y se queda hasta que llega el render nuevo. */
-.hist-arr {
-  position: absolute;
-  overflow: hidden;
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.hist-lienzo[data-arr="1"] .hist-arr { cursor: grabbing; }
-.hist-arr img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  display: block;
-  opacity: 0;
-  pointer-events: none;
-}
-.hist-arr[data-viva="1"] img { opacity: 1; }
-.hist-arr[data-viva="1"] { background: var(--paper-3); }
-
-/* El aviso de que se puede arrastrar. Abajo y chico, sobre la foto, porque
-   nadie adivina que una vista previa se agarra; desaparece mientras se
-   arrastra para no tapar lo que se está encuadrando. */
-.hist-pista {
-  position: absolute;
-  left: 50%; bottom: 10px;
-  transform: translateX(-50%);
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 11px;
-  border-radius: 100px;
-  background: rgba(18, 17, 15, .72);
-  color: #fff;
-  font-size: 11.5px; font-weight: 500;
-  white-space: nowrap;
-  pointer-events: none;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-.hist-pista svg { width: 13px; height: 13px; }
-.hist-pista .armando-anillo { width: 12px; height: 12px; border-width: 2px; border-color: rgba(255,255,255,.35); border-top-color: #fff; }
-/* Mientras se arrastra el aviso cambia a "soltá para fijar": es el momento en
-   que hay que decir qué hace soltar. Y al fijarse, se pinta de listo. */
-.hist-pista[data-tipo="soltar"] { background: rgba(18, 17, 15, .82); }
-.hist-pista[data-tipo="ok"] {
-  background: var(--ok);
-  color: #fff;
-  animation: pista-ok 260ms cubic-bezier(.2, .8, .3, 1) both;
-}
-@keyframes pista-ok { from { opacity: 0; transform: translate(-50%, 6px) scale(.96); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
-
-/* Al soltar, el borde de la zona de la foto parpadea una vez con el acento:
-   es el "clic" visual de que el encuadre quedó tomado. */
-.hist-arr[data-fijado="1"] { animation: arr-fijado 700ms ease-out both; }
-@keyframes arr-fijado {
-  0% { box-shadow: inset 0 0 0 3px var(--accent); }
-  100% { box-shadow: inset 0 0 0 0 transparent; }
-}
-
-/* El chip de arriba: dice que el encuadre es manual y ofrece volver al
-   automático. Está mientras haya un encuadre fijado, porque sin él nada en
-   la pantalla dice que la foto no está donde sharp la puso. */
-.hist-chip {
-  position: absolute;
-  top: 10px; right: 10px;
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 5px 6px 5px 11px;
-  border-radius: 100px;
-  background: rgba(18, 17, 15, .72);
-  color: #fff;
-  font-size: 11.5px; font-weight: 500;
-  white-space: nowrap;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  animation: pista-aparece 220ms ease both;
-}
-.hist-chip svg { width: 12px; height: 12px; }
-.hist-chip button {
-  border: 0; cursor: pointer;
-  padding: 3px 8px; border-radius: 100px;
-  background: rgba(255, 255, 255, .16);
-  color: #fff;
-  font-family: var(--sans); font-size: 11px; font-weight: 500;
-  transition: background 140ms ease;
-}
-.hist-chip button:hover { background: rgba(255, 255, 255, .28); }
-@keyframes pista-aparece { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-
-@media (prefers-reduced-motion: reduce) {
-  .hist-arr[data-fijado="1"], .hist-pista[data-tipo="ok"], .hist-chip { animation: none; }
-}
-
-/* ── Armando la pieza ─────────────────────────────────────────────────────── */
-/* Tapa la caja entera. Con data-sobre hay una imagen anterior abajo y el
-   fondo es translúcido; sin él es el esqueleto de una historia. */
-.armando {
-  position: absolute; inset: 0;
-  display: grid; place-items: center;
-  padding: var(--s-4);
-  background: var(--paper-3);
-  overflow: hidden;
-}
-.armando[data-sobre="1"] {
-  background: color-mix(in srgb, var(--paper) 62%, transparent);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-}
-.armando-c {
-  position: relative;
-  display: grid; justify-items: center; gap: 10px;
-  text-align: center;
-  animation: armando-aparece 320ms ease both;
-}
-.armando-anillo {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  border: 2.5px solid var(--line);
-  border-top-color: var(--accent);
-  animation: armando-gira 850ms linear infinite;
-}
-.armando-t { font-size: 13.5px; font-weight: 500; color: var(--ink); margin-top: 4px; }
-.armando-s {
-  font-size: 12px; color: var(--ink-3);
-  min-height: 16px;
-  animation: armando-aparece 360ms ease both;
-}
-.armando-barra {
-  width: 132px; height: 3px;
-  margin-top: 2px;
-  border-radius: 2px;
-  background: var(--line);
-  overflow: hidden;
-}
-.armando-barra > i {
-  display: block; height: 100%; width: 0;
-  border-radius: 2px;
-  background: var(--accent);
-  /* Avanza rápido al principio y frena cerca del final sin llegar: no
-     sabemos cuánto falta, y una barra que llega al 100 % y sigue esperando
-     es peor que ninguna. */
-  animation: armando-llena 9s cubic-bezier(.12, .72, .2, 1) forwards;
-}
-
-/* El esqueleto: el degradado de abajo y las barras del título, con un brillo
-   que recorre de izquierda a derecha. */
-.armando-esq { position: absolute; inset: 0; }
-.armando-esq::before {
-  content: "";
-  position: absolute; inset: 0;
-  background: linear-gradient(to bottom, transparent 45%, rgba(18, 17, 15, .10) 100%);
-}
-.armando-esq > i {
-  position: absolute; left: 9%;
-  height: 4.5%;
-  border-radius: 4px;
-  background: linear-gradient(90deg, var(--line-soft) 0%, var(--paper-2) 40%, var(--line-soft) 80%);
-  background-size: 220% 100%;
-  animation: armando-brillo 1.6s ease-in-out infinite;
-}
-.armando-esq > i:nth-child(1) { top: 66%; width: 28%; height: 3%; border-radius: 100px; }
-.armando-esq > i:nth-child(2) { top: 72%; width: 74%; height: 6.5%; animation-delay: 120ms; }
-.armando-esq > i:nth-child(3) { top: 80.5%; width: 52%; height: 6.5%; animation-delay: 240ms; }
-.armando-esq > i:nth-child(4) { top: 90%; width: 40%; height: 3%; animation-delay: 360ms; }
-
-@keyframes armando-gira { to { transform: rotate(360deg); } }
-@keyframes armando-llena { from { width: 0; } to { width: 93%; } }
-@keyframes armando-aparece { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-@keyframes armando-brillo { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
-
-@media (prefers-reduced-motion: reduce) {
-  .armando-esq > i { animation: none; }
-  .armando-c, .armando-s { animation: none; }
-}
-
-/* ── La caja del modal "subí una a tu historia" ───────────────────────────── */
-/* 9:16 de verdad: el alto manda y el ancho sale de la proporción, así que la
-   pieza se ve ENTERA. Antes el ancho mandaba y el alto tenía un tope, la caja
-   dejaba de ser 9:16 y la imagen se recortaba con cover. */
-.hist-modal-pv {
-  position: relative;
-  /* El ancho sale del alto que entra en pantalla, y si la pantalla es más
-     angosta que eso, manda el ancho y el alto lo sigue: la caja es 9:16 en
-     los dos casos, nunca más ancha con bandas ni recortada. */
-  width: min(100%, calc(min(58dvh, 520px) * 9 / 16));
-  aspect-ratio: 9 / 16;
-  margin: 0 auto;
-  /* .modal-b es una grilla y estira a sus hijos al ancho entero. */
-  justify-self: center;
-  border-radius: var(--r-2);
-  overflow: hidden;
-  background: var(--paper-3);
-  display: grid; place-items: center;
-}
-.hist-modal-pv > img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.hist-modal-pv .hist-vacio { padding: var(--s-4); }
+.hist-lienzo[data-cargando="1"] img { opacity: .38; }
 
 .hist-vacio {
   padding: var(--s-5); text-align: center;
@@ -2273,6 +2269,17 @@
 }
 
 .hist-acc { display: grid; gap: 8px; }
+
+/* La marca de beta. Va arriba de todo y dice qué esperar, porque lo que se
+   está probando es si las imágenes sirven para publicar, y eso sólo se puede
+   contestar mirándolas. */
+.hist-beta {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px var(--s-4);
+  border: 1px dashed var(--line-strong); border-radius: var(--r-2);
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.5;
+}
+.hist-beta svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; color: var(--ink-3); }
 
 @media (max-width: 1080px) {
   .hist { grid-template-columns: minmax(0, 1fr); }
@@ -2296,7 +2303,6 @@
    romperse en la próxima copia.
    ══════════════════════════════════════════════════════════════════════ */
 .blq-b.cols { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.blq-b.plt { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
 .blq-b.redes { display: grid; gap: var(--s-3); }
 
 /* ── Previa real de la página pública ────────────────────────────────────────

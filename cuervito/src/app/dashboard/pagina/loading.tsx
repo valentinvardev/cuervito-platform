@@ -13,14 +13,26 @@ export default function Cargando() {
         <div className="ctrl">
           {[
             { t: 110, campos: 1 },
-            { t: 100, campos: 3 },
+            { t: 100, campos: "plantilla" as const },
             { t: 70, campos: 0 },
           ].map((b, i) => (
             <section className="card blq" key={i}>
               <Hueso a={b.t} alto={15} />
               <Hueso a={300} alto={12} arriba={9} bloque />
               <div className="blq-b">
-                {b.campos > 0 ? (
+                {b.campos === "plantilla" ? (
+                  /* La fila de la plantilla en uso: miniatura, dos líneas y el
+                     botón de explorar. */
+                  <div className="plt-act">
+                    <Hueso a={132} alto={99} radio="var(--r-2)" />
+                    <div className="plt-act-t">
+                      <Hueso a={90} alto={13} />
+                      <Hueso a={210} alto={11} arriba={4} />
+                      <Hueso a={56} alto={18} radio={100} arriba={6} />
+                    </div>
+                    <Hueso a={150} alto={30} radio="var(--r-2)" />
+                  </div>
+                ) : b.campos > 0 ? (
                   <div
                     style={{
                       display: "grid",
@@ -29,7 +41,7 @@ export default function Cargando() {
                     }}
                   >
                     {Array.from({ length: b.campos }).map((_, j) => (
-                      <Hueso key={j} alto={b.campos === 1 ? 40 : 96} radio="var(--r-2)" bloque />
+                      <Hueso key={j} alto={40} radio="var(--r-2)" bloque />
                     ))}
                   </div>
                 ) : (

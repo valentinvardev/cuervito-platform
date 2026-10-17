@@ -38,7 +38,11 @@ export async function EventoCerrado({
   ediciones: Edicion[];
 }) {
   const plantilla = getTemplate(fotografo.storefrontTemplate);
-  const estilo = buildTemplateStyle(fotografo.storefrontTemplate, fotografo.storefrontBrandColor);
+  const estilo = buildTemplateStyle(
+    fotografo.storefrontTemplate,
+    fotografo.storefrontBrandColor,
+    fotografo.storefrontBrandColor2,
+  );
   const nombre = fotografo.name ?? "el fotógrafo";
   const dominio = fotografo.customDomains[0]?.hostname;
 

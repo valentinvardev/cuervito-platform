@@ -3,6 +3,7 @@ import "~/styles/prototype/panel-anim.css";
 import "~/styles/prototype/descarga.css";
 import "~/styles/prototype/lightbox.css";
 import "~/styles/tienda-encontrate.css";
+import "~/styles/tienda-temas.css";
 import "~/styles/entrega-encontrate.css";
 
 import { type Metadata } from "next";

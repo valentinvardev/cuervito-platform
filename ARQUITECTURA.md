@@ -75,6 +75,10 @@ de S3 recién pasado `PHOTO_RETENTION_DAYS`.
   el borrador lo ve sólo el dueño. Por eso un evento no puede llamarse `p`
 - `/vista-portfolio/[plantilla]` — una plantilla armada con fotos propias, para
   el asistente (iframe)
+- `/vista-tienda/[plantilla]` — la página del fotógrafo que mira, dibujada con
+  esa plantilla; es la previa del diálogo de plantillas en `/dashboard/pagina`
+  (iframe), sólo con sesión. Es la misma página que `/[slug]`
+  (`src/app/[slug]/_tienda.tsx`) con la plantilla por parámetro
 - `/descarga/[token]` — descarga post-compra
 - `/pago/{exito,error,pendiente,procesando}` — retorno de Mercado Pago
 - `/invitacion/[token]` — aceptar invitación de colaborador
@@ -213,7 +217,7 @@ cuervito/
   users/{userId}/
     avatar.jpg
     watermark.png
-    storefront-logo
+    storefront-logo-{versión}.{ext}  ← clave nueva en cada subida (ver abajo)
     events/{eventId}/
       cover.jpg
       original/{photoId}.jpg        ← lo que compra el comprador
@@ -498,6 +502,15 @@ pipeline genera un JPEG aparte.
 
 **`User.image` es una key de S3, no una URL.** Hay que pasarla por
 `resolveAvatarUrl()` antes de ponerla en un `<img>`.
+
+**Un archivo que se reemplaza no puede vivir en una clave fija.** Lo que se
+sirve por CloudFront lleva un día de caché (`CACHE_MOSTRAR`), y esa caché la
+tiene también el navegador. El logo de la tienda se pisaba siempre en
+`storefront-logo`: la invalidación del CDN salía, pero el navegador del
+fotógrafo seguía mostrando el anterior, y "subí otro logo y no cambió" fue un
+bug real. Ahora cada subida estrena clave (`storefront-logo-{versión}.{ext}`),
+la base apunta a la nueva y recién después se borra la vieja. Vale para
+cualquier archivo que el usuario pueda volver a subir.
 
 **Overlays sobre fotos:** el fondo tiene que ser vidrio oscuro en ambos temas y el
 texto blanco fijo. Usar `var(--text-primary)` los vuelve negro sobre negro en modo

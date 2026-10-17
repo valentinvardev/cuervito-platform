@@ -1,13 +1,15 @@
 "use client";
 
-import { ImageOff, Pipette, Trash2, Upload } from "lucide-react";
+import { ImageOff, Monitor, Pipette, Smartphone, Trash2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 
 import { savePerfilAction } from "~/app/dashboard/perfil/actions";
 import { saveBrandColorAction, saveTemplateAction } from "~/app/dashboard/pagina/actions";
+import { acento2De, acentoDe, getTemplate } from "~/lib/storefront-templates";
 
 import { Dominio } from "./_dominio";
+import { COLORES, Plantillas, type Colores } from "./_plantillas";
 
 /**
  * Editor de la página pública, con la página REAL al lado.
@@ -26,33 +28,38 @@ import { Dominio } from "./_dominio";
  * escribir unas nuevas dejaría dos validaciones del mismo dato listas para
  * divergir. La dirección va por savePerfilAction justamente porque ahí ya está
  * el control de que no esté tomada.
+ *
+ * La plantilla tiene su propia pieza (_plantillas.tsx): la tarjeta muestra la
+ * que está en uso y el diálogo deja mirar las demás con la página de verdad,
+ * cambiando los colores sobre la marcha.
  */
-const PLANTILLAS = [
-  { id: "encontrate", nombre: "encontrate", muestra: "claro" },
-  { id: "dark", nombre: "Oscuro", muestra: "oscuro" },
-  { id: "feed", nombre: "Editorial", muestra: "editorial" },
-] as const;
-
-const COLORES = ["#F0410F", "#1E7A4D", "#1F5FBF", "#8B3FC4", "#12110F", "#C2185B"];
 
 // Ancho con el que se renderiza la página adentro del iframe antes de reducir.
 const ANCHO_ESCRITORIO = 1280;
 const ANCHO_TELEFONO = 390;
 const ALTO = 900;
 
+const igual = (a: string | null, b: string) => (a ?? "").toUpperCase() === b.toUpperCase();
+
 export function Editor({
   perfil,
   colorInicial,
+  color2Inicial,
   plantillaInicial,
   logoInicial,
 }: {
   perfil: { name: string; slug: string; bio: string; instagramUrl: string; websiteUrl: string };
-  colorInicial: string;
+  /** El color de marca guardado. Null si nunca eligió: la página lleva el
+   *  acento de fábrica de su plantilla. */
+  colorInicial: string | null;
+  /** El secundario guardado, para las plantillas de dos colores. */
+  color2Inicial: string | null;
   plantillaInicial: string;
   /** El logo que ya subió, resuelto a URL. Null si no tiene. */
   logoInicial: string | null;
 }) {
-  const [color, setColor] = useState(colorInicial);
+  const [color, setColor] = useState<string | null>(colorInicial);
+  const [color2, setColor2] = useState<string | null>(color2Inicial);
   const [plantilla, setPlantilla] = useState(plantillaInicial);
   const router = useRouter();
   const [telefono, setTelefono] = useState(false);
@@ -63,6 +70,12 @@ export function Editor({
   const [errorLogo, setErrorLogo] = useState<string | null>(null);
 
   async function subirLogo(f: File) {
+    // El archivo se ve en la caja apenas se elige, antes de que termine de
+    // subir: la subida tarda y mientras tanto el fotógrafo tiene que ver que
+    // eligió bien. Si falla, vuelve el anterior.
+    const anterior = logo;
+    const local = URL.createObjectURL(f);
+    setLogo(local);
     setTocandoLogo(true);
     setErrorLogo(null);
     try {
@@ -71,20 +84,24 @@ export function Editor({
       // de perfil aunque se le parezca.
       fd.append("logo", f);
       const r = await fetch("/api/dashboard/logo", { method: "POST", body: fd });
-      const d = (await r.json().catch(() => ({}))) as { key?: string; error?: string };
-      if (!r.ok) {
+      const d = (await r.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!r.ok || !d.url) {
+        setLogo(anterior);
         setErrorLogo(d.error ?? "No se pudo subir el logo.");
         return;
       }
-      // La respuesta trae la CLAVE de S3, no una URL servible. En vez de
-      // armarla acá —que sería duplicar la lógica de CloudFront del
-      // servidor— se muestra el archivo local y se recarga: la próxima
-      // pintada ya viene con la URL de verdad.
-      setLogo(URL.createObjectURL(f));
+      // La URL de verdad, que cambia con cada subida (la clave de S3 lleva
+      // versión). Con la misma URL de siempre, el navegador seguía mostrando
+      // el logo anterior desde su caché: "subí otro logo y no cambió".
+      setLogo(d.url);
+      // La previa lo lleva en la barra: se recarga para que lo muestre.
+      recargarPrevia();
       router.refresh();
     } catch {
+      setLogo(anterior);
       setErrorLogo("No se pudo subir el logo.");
     } finally {
+      URL.revokeObjectURL(local);
       setTocandoLogo(false);
     }
   }
@@ -99,6 +116,7 @@ export function Editor({
         return;
       }
       setLogo(null);
+      recargarPrevia();
       router.refresh();
     } catch {
       setErrorLogo("No se pudo quitar el logo.");
@@ -108,6 +126,11 @@ export function Editor({
   }
   const [guardando, empezar] = useTransition();
   const [aviso, setAviso] = useState<string | null>(null);
+
+  function avisar(texto: string) {
+    setAviso(texto);
+    setTimeout(() => setAviso(null), 1800);
+  }
 
   // La dirección va por la acción del perfil, que ya controla que no esté
   // tomada. Los demás campos viajan sin cambios en el mismo formulario: el
@@ -131,24 +154,40 @@ export function Editor({
     setVersion((v) => v + 1);
   }
 
-  function elegirColor(c: string) {
-    setColor(c);
+  function elegirColor(c: string, cual: 1 | 2 = 1) {
+    if (cual === 2) setColor2(c);
+    else setColor(c);
     empezar(async () => {
-      const r = await saveBrandColorAction(c);
-      setAviso(r.error ?? "Guardado");
+      const r = await saveBrandColorAction(c, cual);
+      avisar(r.error ?? "Guardado");
       if (!r.error) recargarPrevia();
-      setTimeout(() => setAviso(null), 1800);
     });
   }
 
-  function elegirPlantilla(id: string) {
+  // La elige el diálogo de plantillas, que espera la respuesta para cerrarse.
+  // La tarjeta cambia en el acto y vuelve atrás si no se pudo guardar. Los
+  // colores viajan con ella: son los que el fotógrafo vio al elegirla.
+  async function elegirPlantilla(id: string, colores: Colores | null): Promise<boolean> {
+    const anterior = { plantilla, color, color2 };
     setPlantilla(id);
-    empezar(async () => {
-      const r = await saveTemplateAction(id);
-      setAviso(r.error ?? "Guardado");
-      if (!r.error) recargarPrevia();
-      setTimeout(() => setAviso(null), 1800);
-    });
+    if (colores) {
+      setColor(colores.color);
+      if (colores.color2) setColor2(colores.color2);
+    }
+    const r = await saveTemplateAction(
+      id,
+      colores ? { color: colores.color, ...(colores.color2 ? { color2: colores.color2 } : {}) } : undefined,
+    );
+    if (r.error) {
+      setPlantilla(anterior.plantilla);
+      setColor(anterior.color);
+      setColor2(anterior.color2);
+      avisar(r.error);
+      return false;
+    }
+    avisar("Guardado");
+    recargarPrevia();
+    return true;
   }
 
   // La escala sale del ancho real del marco: con un número fijo, la previa se
@@ -166,6 +205,12 @@ export function Editor({
     obs.observe(el);
     return () => obs.disconnect();
   }, [ancho]);
+
+  // Lo que la página dibuja hoy: el color elegido, o el de fábrica de la
+  // plantilla si nunca eligió uno.
+  const tpl = getTemplate(plantilla);
+  const colorVivo = color ?? acentoDe(tpl);
+  const color2Vivo = tpl.tema?.dosColores ? (color2 ?? acento2De(tpl)) : null;
 
   return (
     <div className="tienda">
@@ -223,30 +268,12 @@ export function Editor({
 
         <section className="card blq">
           <h2>Plantilla</h2>
-          <p className="ayuda">Cómo se ve tu galería. Se aplica a todos tus eventos.</p>
-          <div className="blq-b plt">
-            {PLANTILLAS.map((p) => (
-              <label className="pl" key={p.id}>
-                <input
-                  type="radio"
-                  name="plantilla"
-                  value={p.id}
-                  checked={plantilla === p.id}
-                  onChange={() => elegirPlantilla(p.id)}
-                />
-                {/* Miniaturas y no una lista de nombres: "Editorial" no le dice
-                    nada a nadie hasta que lo ve. */}
-                <span className="pl-v" data-t={p.muestra}>
-                  <i className="barra-m" />
-                  <span className="rejilla">
-                    {Array.from({ length: p.muestra === "editorial" ? 4 : 6 }).map((_, i) => (
-                      <i key={i} />
-                    ))}
-                  </span>
-                </span>
-                <span className="pl-n">{p.nombre}</span>
-              </label>
-            ))}
+          <p className="ayuda">
+            Cómo se ve tu página y cada uno de tus eventos. Miralas con tus fotos antes de
+            cambiar.
+          </p>
+          <div className="blq-b">
+            <Plantillas actual={plantilla} color={color} color2={color2} onElegir={elegirPlantilla} />
           </div>
         </section>
 
@@ -317,8 +344,9 @@ export function Editor({
         <section className="card blq">
           <h2>Color</h2>
           <p className="ayuda">
-            Se usa en los botones y los enlaces. Nada más: si tiñe toda la página, compite con las
-            fotos.
+            {tpl.tema?.dosColores
+              ? "El principal va en la banda y el carrito; el secundario, en todo lo que se compra."
+              : "Se usa en los botones y los enlaces. Nada más: si tiñe toda la página, compite con las fotos."}
           </p>
           <div className="blq-b cols">
             {COLORES.map((c) => (
@@ -327,7 +355,7 @@ export function Editor({
                 key={c}
                 className="co"
                 style={{ background: c }}
-                aria-pressed={color.toUpperCase() === c.toUpperCase()}
+                aria-pressed={igual(colorVivo, c)}
                 aria-label={`Color ${c}`}
                 onClick={() => elegirColor(c)}
               />
@@ -336,7 +364,7 @@ export function Editor({
               <Pipette />
               <input
                 type="color"
-                value={color}
+                value={colorVivo}
                 aria-label="Color a medida"
                 onChange={(e) => setColor(e.target.value)}
                 onBlur={(e) => elegirColor(e.target.value)}
@@ -348,18 +376,58 @@ export function Editor({
               </span>
             )}
           </div>
+          {/* El secundario, sólo cuando la plantilla lo dibuja: un segundo
+              color en una plantilla de uno es un control que no hace nada. */}
+          {tpl.tema?.dosColores && color2Vivo && (
+            <div className="blq-b cols">
+              <span className="co-etq">Secundario</span>
+              {COLORES.map((c) => (
+                <button
+                  type="button"
+                  key={c}
+                  className="co"
+                  style={{ background: c }}
+                  aria-pressed={igual(color2Vivo, c)}
+                  aria-label={`Color secundario ${c}`}
+                  onClick={() => elegirColor(c, 2)}
+                />
+              ))}
+              <span className="co-libre">
+                <Pipette />
+                <input
+                  type="color"
+                  value={color2Vivo}
+                  aria-label="Color secundario a medida"
+                  onChange={(e) => setColor2(e.target.value)}
+                  onBlur={(e) => elegirColor(e.target.value, 2)}
+                />
+              </span>
+            </div>
+          )}
         </section>
       </div>
 
       <div className="previa">
         <div className="previa-h">
           <span className="label">Así se ve</span>
-          <div className="seg">
-            <button type="button" aria-pressed={!telefono} onClick={() => setTelefono(false)}>
-              Escritorio
+          <div className="seg seg-ico">
+            <button
+              type="button"
+              aria-pressed={!telefono}
+              aria-label="Escritorio"
+              title="Escritorio"
+              onClick={() => setTelefono(false)}
+            >
+              <Monitor />
             </button>
-            <button type="button" aria-pressed={telefono} onClick={() => setTelefono(true)}>
-              Teléfono
+            <button
+              type="button"
+              aria-pressed={telefono}
+              aria-label="Teléfono"
+              title="Teléfono"
+              onClick={() => setTelefono(true)}
+            >
+              <Smartphone />
             </button>
           </div>
         </div>

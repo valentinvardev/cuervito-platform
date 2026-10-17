@@ -36,7 +36,11 @@ export async function EventoPrivado({
   evento: Evento;
 }) {
   const plantilla = getTemplate(fotografo.storefrontTemplate);
-  const estilo = buildTemplateStyle(fotografo.storefrontTemplate, fotografo.storefrontBrandColor);
+  const estilo = buildTemplateStyle(
+    fotografo.storefrontTemplate,
+    fotografo.storefrontBrandColor,
+    fotografo.storefrontBrandColor2,
+  );
   const nombre = fotografo.name ?? "el fotógrafo";
   const primerNombre = fotografo.name?.split(" ")[0] ?? "el fotógrafo";
   const archivado = evento.status === "ARCHIVED";

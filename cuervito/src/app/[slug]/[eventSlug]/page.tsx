@@ -4,7 +4,7 @@ import { cache } from "react";
 
 import { JsonLd } from "~/app/_components/json-ld";
 import { ciudadDe, disciplinaDe, lugarBonito } from "~/lib/disciplinas";
-import { buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
+import { atributosPlantilla, buildTemplateStyle, getTemplate } from "~/lib/storefront-templates";
 import { urlPublica } from "~/lib/url-publica";
 import { resolveAvatarUrl } from "~/server/avatar";
 import { db } from "~/server/db";
@@ -273,7 +273,11 @@ export default async function PublicEventPage(props: {
   ]);
 
   const pageStyle = {
-    ...buildTemplateStyle(photographer.storefrontTemplate, photographer.storefrontBrandColor),
+    ...buildTemplateStyle(
+      photographer.storefrontTemplate,
+      photographer.storefrontBrandColor,
+      photographer.storefrontBrandColor2,
+    ),
     // Derive accent hover/tint variables from brand color
     ...(photographer.storefrontBrandColor
       ? {
@@ -400,7 +404,7 @@ export default async function PublicEventPage(props: {
   };
 
   return (
-    <div style={pageStyle}>
+    <div style={pageStyle} {...atributosPlantilla(photographer.storefrontTemplate)}>
       <JsonLd datos={datosEstructurados} />
       {/* Las migas: fotógrafo → evento. Google las muestra bajo el título del
           resultado y entiende que esta página cuelga de la del fotógrafo. */}

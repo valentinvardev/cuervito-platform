@@ -57,46 +57,180 @@
 }
 .propio .btn { margin-left: auto; }
 
-/* ── Plantillas ──────────────────────────────────────────────────────────────
-   Miniaturas reales y no nombres en una lista: "Editorial" no le dice nada a
-   nadie hasta que lo ve. */
-.plt { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
-.pl { cursor: pointer; }
-.pl input { position: absolute; opacity: 0; pointer-events: none; }
-.pl-v {
+/* ── Plantilla ──────────────────────────────────────────────────────────────
+   En la tarjeta va SOLO la que está en uso, con su nombre y de qué va. Las
+   demás se exploran en un diálogo, cada una armada con la página de verdad.
+   Tres miniaturas abstractas lado a lado decían "clara, oscura, editorial" y
+   nada más: se elegía a ciegas y se corregía mirando la previa después. En
+   el diálogo se mira primero y se decide después. */
+.plt-act { display: flex; align-items: center; gap: var(--s-4); }
+.plt-act .mn { width: 132px; flex-shrink: 0; }
+.plt-act-t { flex: 1; min-width: 0; display: grid; gap: 3px; align-content: center; }
+.plt-act-t b { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.plt-act-t > span { font-size: 12.5px; color: var(--ink-3); line-height: 1.45; }
+.plt-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
+.plt-chips i {
+  font-style: normal; font-size: 10.5px; font-weight: 500;
+  letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 2px 7px; border: 1px solid var(--line); border-radius: 100px;
+}
+@media (max-width: 560px) {
+  .plt-act { flex-wrap: wrap; }
+  .plt-act .btn { width: 100%; }
+}
+
+/* ── Miniatura de una plantilla ──────────────────────────────────────────────
+   Una página dibujada en chico con la paleta REAL de la plantilla: --mn-* las
+   pone quien la dibuja a partir de las variables de la tienda, así que si
+   una plantilla cambia de fondo la miniatura cambia sola. La estructura la
+   decide la familia (encontrate, cobertura, feed), que es lo que de verdad
+   las distingue a simple vista. El acento (--mn-acc) es el color de marca
+   elegido: la miniatura lo lleva donde la página lo lleva, en el botón. */
+.mn {
+  --mn-bg: #FBFAF8; --mn-sup: #FFFFFF; --mn-tx: #12110F; --mn-tx2: #8B857D;
+  --mn-ln: rgba(18, 17, 15, .12); --mn-acc: #F0410F;
+  display: grid; gap: 5px; align-content: start;
   aspect-ratio: 4 / 3;
-  border: 1px solid var(--line);
-  border-radius: var(--r-2);
+  padding: 7px 8px;
+  border: 1px solid var(--line); border-radius: var(--r-2);
+  background: var(--mn-bg);
   overflow: hidden;
-  padding: 7px;
-  display: grid; gap: 4px; grid-template-rows: 8px 1fr;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
-.pl:hover .pl-v { border-color: var(--line-strong); }
-.pl input:checked + .pl-v {
-  border-color: var(--ink);
-  box-shadow: 0 0 0 2px var(--ink);
+.mn i { display: block; }
+.mn-top { display: flex; align-items: center; justify-content: space-between; height: 6px; }
+.mn-marca { width: 18%; height: 4px; border-radius: 2px; background: var(--mn-tx); }
+.mn-pill { width: 15%; height: 6px; border-radius: 100px; border: 1px solid var(--mn-ln); }
+.mn-nombre { width: 52%; height: 7px; border-radius: 2px; background: var(--mn-tx); margin-top: 3px; }
+.mn-sub { width: 34%; height: 3px; border-radius: 2px; background: var(--mn-tx2); opacity: .75; }
+.mn-cta { width: 22%; height: 6px; border-radius: 2px; background: var(--mn-acc); }
+.mn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 2px; }
+.mn-card { display: grid; gap: 3px; }
+.mn-ph {
+  aspect-ratio: 16 / 10; border-radius: 2px;
+  background: linear-gradient(160deg,
+    color-mix(in srgb, var(--mn-tx) 28%, var(--mn-sup)),
+    color-mix(in srgb, var(--mn-tx) 9%, var(--mn-sup)));
 }
-.pl-n { margin-top: 7px; font-size: 12.5px; text-align: center; color: var(--ink-2); }
-.pl input:checked ~ .pl-n { color: var(--ink); font-weight: 500; }
+.mn-ln { width: 70%; height: 3px; border-radius: 2px; background: var(--mn-tx2); opacity: .75; }
 
-.pl-v i { display: block; border-radius: 2px; }
-.pl-v .barra-m { height: 8px; }
-.pl-v .rejilla { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
-.pl-v .rejilla i { border-radius: 2px; }
+/* Cobertura: barra con fondo de superficie, hero con avatar, tarjetas. */
+.mn[data-f="coverage"] { padding: 0; gap: 0; }
+.mn-nav {
+  height: 11px; padding: 0 8px;
+  display: flex; align-items: center;
+  background: var(--mn-sup); border-bottom: 1px solid var(--mn-ln);
+}
+.mn-nav i { width: 16%; height: 3px; border-radius: 2px; background: var(--mn-tx); }
+.mn-hero { display: flex; align-items: center; gap: 5px; padding: 7px 8px 5px; }
+.mn-av { width: 13px; height: 13px; border-radius: 50%; background: var(--mn-acc); flex-shrink: 0; }
+.mn-quien { flex: 1; display: grid; gap: 3px; }
+.mn-quien .mn-nombre { width: 46%; height: 5px; margin: 0; }
+.mn-quien .mn-sub { width: 64%; }
+.mn[data-f="coverage"] .mn-grid { padding: 0 8px 8px; margin: 0; }
+.mn[data-f="coverage"] .mn-card {
+  gap: 0; overflow: hidden;
+  border: 1px solid var(--mn-ln); border-radius: 3px; background: var(--mn-sup);
+}
+.mn[data-f="coverage"] .mn-ph { border-radius: 0; }
+.mn[data-f="coverage"] .mn-ln { margin: 3px 3px 4px; }
 
-.pl-v[data-t="claro"] { background: #FFF; }
-.pl-v[data-t="claro"] .barra-m { background: #E6E4DF; }
-.pl-v[data-t="claro"] .rejilla i { background: #D9D6D0; }
+/* Feed: el buscador al frente, con el botón del color, y las fotos una abajo
+   de la otra. */
+.mn-buscar {
+  height: 10px; padding: 1px;
+  display: flex; justify-content: flex-end;
+  border: 1px solid var(--mn-ln); border-radius: 100px; background: var(--mn-sup);
+}
+.mn-buscar i { width: 24%; height: 100%; border-radius: 100px; background: var(--mn-acc); }
+.mn-feed { display: grid; gap: 4px; }
+.mn-feed .mn-ph { aspect-ratio: 16 / 7; }
 
-.pl-v[data-t="oscuro"] { background: #131211; }
-.pl-v[data-t="oscuro"] .barra-m { background: #34302A; }
-.pl-v[data-t="oscuro"] .rejilla i { background: #2A2620; }
+/* ── El diálogo de plantillas ────────────────────────────────────────────────
+   Ancho de verdad: a la izquierda la lista, a la derecha la página con esa
+   plantilla puesta, en escritorio o en teléfono. Es el mismo .modal del panel,
+   estirado: lo que hay que leer acá no es texto, es una página entera. */
+.plm { max-width: 1120px; height: calc(100dvh - var(--s-6)); }
+.plm .modal-h { padding-bottom: var(--s-3); border-bottom: 1px solid var(--line-soft); }
+.plm-cuerpo { flex: 1; min-height: 0; display: grid; grid-template-columns: 312px minmax(0, 1fr); }
 
-.pl-v[data-t="editorial"] { background: #F4F2ED; padding: 10px; }
-.pl-v[data-t="editorial"] .barra-m { height: 5px; width: 60%; background: #1A1815; }
-.pl-v[data-t="editorial"] .rejilla { grid-template-columns: repeat(2, 1fr); gap: 4px; }
-.pl-v[data-t="editorial"] .rejilla i { background: #CFCAC1; }
+.plm-lista {
+  overflow-y: auto; padding: var(--s-3);
+  display: grid; gap: 6px; align-content: start;
+  border-right: 1px solid var(--line-soft);
+}
+.plm-op {
+  position: relative;
+  display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 11px; align-items: center;
+  padding: 8px;
+  border: 1px solid transparent; border-radius: var(--r-2);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+.plm-op:hover { background: var(--paper-3); }
+.plm-op input { position: absolute; opacity: 0; pointer-events: none; }
+/* La elegida —la que se está mirando— lleva el filete de tinta. No es la que
+   está en uso: ésa lleva su etiqueta, y pueden no ser la misma. */
+.plm-op:has(input:checked) { border-color: var(--ink); background: var(--paper-2); box-shadow: 0 0 0 1px var(--ink); }
+.plm-op:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.plm-op .mn { width: 100%; }
+.plm-op-t { min-width: 0; display: grid; gap: 2px; }
+.plm-op-t b { display: flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; }
+.plm-op-t > span { font-size: 12px; line-height: 1.4; color: var(--ink-3); }
+.plm-uso {
+  font-style: normal; font-size: 10px; font-weight: 500;
+  letter-spacing: .05em; text-transform: uppercase;
+  color: var(--ok-txt); background: color-mix(in srgb, var(--ok) 12%, transparent);
+  padding: 2px 6px; border-radius: 100px;
+}
+
+.plm-previa { min-width: 0; display: flex; flex-direction: column; background: var(--paper-3); }
+.plm-previa-h {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4) 0;
+}
+.plm-previa-h .label { color: var(--ink-3); }
+/* .plm-area es la caja que se mide: sin relleno, para que el ancho y el alto
+   que da sean exactamente los que la pantalla puede ocupar. */
+.plm-marco { flex: 1; min-height: 0; padding: var(--s-3) var(--s-4) var(--s-4); display: flex; }
+.plm-area { flex: 1; min-width: 0; min-height: 0; display: flex; justify-content: center; }
+.plm-pantalla {
+  max-width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  border: 1px solid var(--line); border-radius: var(--r-3);
+  overflow: hidden;
+  background: var(--paper-2); box-shadow: var(--shadow-card);
+  transition: width 220ms cubic-bezier(.2, .8, .3, 1);
+}
+.plm-pantalla .crome { flex-shrink: 0; }
+.plm-visor { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--paper-3); }
+.plm-visor iframe { position: absolute; top: 0; left: 0; border: 0; transform-origin: top left; }
+.plm-cargando {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; justify-items: center; gap: 10px;
+  font-size: 12.5px; color: var(--ink-3);
+  background: var(--paper-3);
+}
+.plm-cargando .sk { width: 120px; height: 8px; border-radius: 100px; }
+
+.plm .modal-f { align-items: center; }
+.plm-f-t { margin-right: auto; font-size: 12.5px; color: var(--ink-3); }
+.plm-f-t[data-err="1"] { color: var(--bad); }
+
+@media (max-width: 900px) {
+  .plm { height: calc(100dvh - var(--s-4)); max-height: none; }
+  /* La lista pasa arriba, en una tira que se desplaza de costado, y la
+     previa se queda con el resto. */
+  .plm-cuerpo { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .plm-lista {
+    grid-auto-flow: column; grid-auto-columns: 196px;
+    overflow-x: auto; overflow-y: hidden;
+    border-right: 0; border-bottom: 1px solid var(--line-soft);
+  }
+  .plm-op { grid-template-columns: 60px minmax(0, 1fr); }
+  .plm-op-t > span { display: none; }
+  .plm-f-t { display: none; }
+}
 
 /* ── Color ───────────────────────────────────────────────────────────────── */
 .cols { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -282,15 +416,25 @@
 .logo-caja {
   width: 180px; height: 62px;
   flex-shrink: 0;
-  display: grid; place-items: center;
+  /* Flex y no grid. En grid la fila implícita es `auto` y se mide con el
+     alto natural de la imagen: un logo vertical de 600px hacía una fila de
+     600px, el `max-height: 100%` de la imagen se resolvía contra ESA fila
+     y no contra la caja, y el logo salía por abajo. En flex el porcentaje
+     se resuelve contra la caja, que tiene el alto fijo. */
+  display: flex; align-items: center; justify-content: center;
   padding: 10px 14px;
   border-radius: var(--r-2);
   background: var(--ink);
   border: 1px solid var(--line);
 }
 /* Se acota por ALTO: los logos vienen apaisados, cuadrados y a veces
-   verticales, y el alto es lo único que la barra no puede ceder. */
-.logo-caja img { max-height: 100%; max-width: 100%; width: auto; object-fit: contain; display: block; }
+   verticales, y el alto es lo único que la barra no puede ceder. El mínimo
+   en cero es para que el tamaño natural de la imagen no le gane al máximo. */
+.logo-caja img {
+  max-height: 100%; max-width: 100%;
+  width: auto; height: auto; min-width: 0; min-height: 0;
+  object-fit: contain; display: block;
+}
 .logo-caja[data-vacia="1"] { background: var(--paper-3); }
 .logo-caja[data-vacia="1"] svg { width: 20px; height: 20px; color: var(--ink-3); }
 
@@ -300,3 +444,73 @@
 @media (max-width: 560px) {
   .logo-caja { width: 100%; }
 }
+
+/* ── Colores en el diálogo de plantillas ────────────────────────────────────
+   Arriba de la previa, para cambiarlos mirando. Una fila por color: el de
+   fábrica de la plantilla primero, después los presets del editor y uno a
+   medida. El secundario sólo aparece en las plantillas de dos colores. */
+.plm-colores { display: grid; gap: 8px; padding: var(--s-3) var(--s-4) 0; }
+.plm-color { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.plm-color-t { width: 118px; flex-shrink: 0; font-size: 12.5px; color: var(--ink-2); }
+.plm-color .co, .plm-color .co-libre, .plm-color .co-libre input { width: 26px; height: 26px; }
+.plm-color .co[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--paper-3), 0 0 0 4px var(--ink); }
+.plm-color-hex { padding-left: 4px; font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.plm-color-nota { padding-left: 4px; font-size: 12px; color: var(--ink-3); }
+@media (max-width: 900px) {
+  .plm-color-t { width: 100%; }
+  .plm-color-nota { display: none; }
+}
+
+/* La etiqueta de la segunda fila de color en el editor. */
+.co-etq { font-size: 12.5px; color: var(--ink-2); margin-right: 2px; }
+
+/* Escritorio / teléfono con íconos. Dos palabras al lado de la previa
+   compiten con lo que hay que mirar; el monitor y el teléfono se entienden
+   sin leer, y el título lo dice al pasar por encima. */
+.seg-ico button { display: grid; place-items: center; width: 34px; height: 26px; padding: 0; }
+.seg-ico svg { width: 15px; height: 15px; }
+
+/* ── Miniaturas de las plantillas con tema ──────────────────────────────────
+   Lo que distingue a cada una a simple vista, en cuatro trazos: la regla y
+   los numerales de Pista, las reglas de tinta de Podio, el vidrio de Noche,
+   la banda de Cancha, las baldosas de Tablero. --mn-acc2 es el secundario. */
+.mn-led { width: 18%; height: 6px; background: var(--mn-acc); border-radius: 3px; }
+.mn-rule { height: 2px; background: var(--mn-acc); }
+.mn-filas { display: grid; gap: 4px; }
+.mn-fila { display: flex; align-items: center; gap: 4px; }
+.mn-num { width: 6px; height: 6px; background: var(--mn-acc); flex-shrink: 0; }
+.mn-fila .mn-ph { width: 18px; height: 10px; flex-shrink: 0; aspect-ratio: auto; }
+.mn-fila .mn-ln { flex: 1; width: auto; height: 4px; }
+
+.mn[data-f="pista"] i, .mn[data-f="podio"] i { border-radius: 0; }
+.mn[data-f="pista"] .mn-nombre-2 { background: var(--mn-acc); width: 34%; margin-top: 0; }
+.mn[data-f="podio"] .mn-top { height: auto; padding-bottom: 4px; border-bottom: 1px solid var(--mn-tx); }
+.mn[data-f="podio"] .mn-nombre { height: 9px; }
+.mn[data-f="podio"] .mn-nombre-2 { width: 38%; margin-top: 0; }
+.mn[data-f="podio"] .mn-cta { height: 3px; width: 16%; }
+.mn[data-f="podio"] .mn-fila { padding-bottom: 3px; border-bottom: 1px solid var(--mn-ln); }
+.mn[data-f="podio"] .mn-num { background: var(--mn-tx); }
+
+.mn[data-f="noche"] .mn-card { padding: 3px; border: 1px solid var(--mn-ln); border-radius: 4px; background: var(--mn-sup); }
+.mn[data-f="noche"] .mn-card .mn-ph { aspect-ratio: 3 / 1; border-radius: 2px; }
+.mn[data-f="noche"] .mn-ph-ancha { aspect-ratio: 16 / 5; border-radius: 4px; }
+
+.mn[data-f="cancha"] { padding: 0; gap: 0; }
+.mn[data-f="cancha"] .mn-top { height: 9px; padding: 0 6px; background: var(--mn-sup); }
+.mn[data-f="cancha"] .mn-marca { background: var(--mn-acc); }
+.mn-band { display: grid; gap: 3px; align-content: center; height: 32px; padding: 0 6px; background: var(--mn-acc); }
+.mn-band .mn-sub { width: 20%; height: 2px; background: var(--mn-acc2); opacity: 1; }
+.mn-band .mn-nombre { width: 55%; height: 8px; margin-top: 0; background: #FFF; }
+.mn-stripe { height: 2px; background: var(--mn-acc2); }
+.mn[data-f="cancha"] .mn-grid { grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 5px 6px; margin: 0; }
+.mn[data-f="cancha"] .mn-ph { aspect-ratio: 16 / 9; border-radius: 3px; background: var(--mn-sup); }
+
+.mn[data-f="tablero"] { gap: 4px; }
+.mn-bento-r { display: grid; gap: 4px; }
+.mn-bento-2 { grid-template-columns: 2fr 1fr; }
+.mn-bento-4 { grid-template-columns: repeat(4, 1fr); }
+.mn-bento-3 { grid-template-columns: repeat(3, 1fr); }
+.mn-bento-r > i { min-height: 12px; border-radius: 3px; background: var(--mn-sup); border: 1px solid var(--mn-ln); }
+.mn-bento-2 > i { min-height: 22px; }
+.mn-bento-r > .mn-ph { border: 0; }
+.mn-bento-r > .mn-ac { background: var(--mn-acc); border-color: var(--mn-acc); }

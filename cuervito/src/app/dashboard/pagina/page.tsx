@@ -21,6 +21,7 @@ export default async function V2Pagina() {
       instagramUrl: true,
       websiteUrl: true,
       storefrontBrandColor: true,
+      storefrontBrandColor2: true,
       storefrontTemplate: true,
       logoKey: true,
     },
@@ -51,7 +52,8 @@ export default async function V2Pagina() {
             instagramUrl: u?.instagramUrl ?? "",
             websiteUrl: u?.websiteUrl ?? "",
           }}
-          colorInicial={u?.storefrontBrandColor ?? "#F0410F"}
+          colorInicial={u?.storefrontBrandColor ?? null}
+          color2Inicial={u?.storefrontBrandColor2 ?? null}
           plantillaInicial={u?.storefrontTemplate ?? PLANTILLA_POR_DEFECTO}
           logoInicial={u?.logoKey ? await resolveMediaUrl(u.logoKey) : null}
         />

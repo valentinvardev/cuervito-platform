@@ -73,23 +73,28 @@
 
             <section class="card blq">
               <h2>Plantilla</h2>
-              <p class="ayuda">Cómo se ve tu galería. Se aplica a todos tus eventos.</p>
-              <div class="blq-b plt" id="plt">
-                <label class="pl">
-                  <input type="radio" name="plantilla" value="claro" checked>
-                  <span class="pl-v" data-t="claro"><i class="barra-m"></i><span class="rejilla"><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
-                  <span class="pl-n">Claro</span>
-                </label>
-                <label class="pl">
-                  <input type="radio" name="plantilla" value="oscuro">
-                  <span class="pl-v" data-t="oscuro"><i class="barra-m"></i><span class="rejilla"><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
-                  <span class="pl-n">Oscuro</span>
-                </label>
-                <label class="pl">
-                  <input type="radio" name="plantilla" value="editorial">
-                  <span class="pl-v" data-t="editorial"><i class="barra-m"></i><span class="rejilla"><i></i><i></i><i></i><i></i></span></span>
-                  <span class="pl-n">Editorial</span>
-                </label>
+              <p class="ayuda">Cómo se ve tu página y cada uno de tus eventos. Miralas con tus fotos antes de cambiar.</p>
+              <div class="blq-b">
+                <!-- Sólo la que está en uso. Las demás, en el diálogo, con la
+                     página de verdad: elegir mirando tres miniaturas era
+                     adivinar. -->
+                <div class="plt-act" id="plt-act">
+                  <span class="mn" data-f="encontrate" aria-hidden="true">
+                    <i class="mn-top"><i class="mn-marca"></i><i class="mn-pill"></i></i>
+                    <i class="mn-nombre"></i><i class="mn-sub"></i><i class="mn-cta"></i>
+                    <i class="mn-grid">
+                      <i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i>
+                      <i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i>
+                      <i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i>
+                    </i>
+                  </span>
+                  <div class="plt-act-t">
+                    <b id="plt-nombre">encontrate</b>
+                    <span id="plt-desc">Claro y minimalista — la foto es lo único con color</span>
+                    <span class="plt-chips" id="plt-chips"><i>Clara</i><i>Por defecto</i></span>
+                  </div>
+                  <button type="button" class="btn btn-ghost btn-sm" id="plt-abrir"><i data-lucide="layout-template"></i> Explorar plantillas</button>
+                </div>
               </div>
             </section>
 
@@ -183,6 +188,113 @@
   </div>
 </div>
 
+<!-- ═══════════════ EL DIÁLOGO DE PLANTILLAS ═══════════════
+     A la izquierda la lista, con la miniatura de cada una pintada con su
+     paleta real; a la derecha, la página con esa plantilla puesta. En la app
+     la previa es un iframe de la página de verdad; acá va la maqueta .sf,
+     cambiando de tono con la elegida. -->
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="plm-titulo" id="plm" hidden>
+  <div class="modal-caja plm">
+    <div class="modal-h">
+      <div>
+        <h2 id="plm-titulo">Elegí tu plantilla</h2>
+        <div class="sub">Cada una, armada con tu página de verdad. No cambia nada hasta que la uses.</div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-icon" id="plm-cerrar" aria-label="Cerrar"><i data-lucide="x"></i></button>
+    </div>
+
+    <div class="plm-cuerpo">
+      <div class="plm-lista" role="radiogroup" aria-label="Plantillas" id="plm-lista">
+        <label class="plm-op">
+          <input type="radio" name="plm" value="encontrate" data-t="claro" data-nombre="encontrate" data-desc="Claro y minimalista — la foto es lo único con color" data-chips="Clara|Por defecto" checked>
+          <span class="mn" data-f="encontrate" aria-hidden="true">
+            <i class="mn-top"><i class="mn-marca"></i><i class="mn-pill"></i></i>
+            <i class="mn-nombre"></i><i class="mn-sub"></i><i class="mn-cta"></i>
+            <i class="mn-grid"><i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i><i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i><i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i></i>
+          </span>
+          <span class="plm-op-t"><b>encontrate <em class="plm-uso">En uso</em></b><span>Claro y minimalista — la foto es lo único con color</span></span>
+        </label>
+        <label class="plm-op">
+          <input type="radio" name="plm" value="dark" data-t="oscuro" data-nombre="Oscuro" data-desc="Cálido y profundo — hace resaltar tus fotos" data-chips="Oscura">
+          <span class="mn" data-f="coverage" style="--mn-bg:#0F0D0B;--mn-sup:#181511;--mn-tx:#F0EBE3;--mn-tx2:#6B5D50;--mn-ln:rgba(240,235,227,.12)" aria-hidden="true">
+            <i class="mn-nav"><i></i></i>
+            <i class="mn-hero"><i class="mn-av"></i><i class="mn-quien"><i class="mn-nombre"></i><i class="mn-sub"></i></i></i>
+            <i class="mn-grid"><i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i><i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i><i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i></i>
+          </span>
+          <span class="plm-op-t"><b>Oscuro</b><span>Cálido y profundo — hace resaltar tus fotos</span></span>
+        </label>
+        <label class="plm-op">
+          <input type="radio" name="plm" value="light" data-t="claro" data-nombre="Claro" data-desc="Limpio y editorial — estilo galería de arte" data-chips="Clara">
+          <span class="mn" data-f="coverage" style="--mn-bg:#F7F4F0;--mn-sup:#FFFFFF;--mn-tx:#1A1410;--mn-tx2:#9C8C7A;--mn-ln:rgba(0,0,0,.12)" aria-hidden="true">
+            <i class="mn-nav"><i></i></i>
+            <i class="mn-hero"><i class="mn-av"></i><i class="mn-quien"><i class="mn-nombre"></i><i class="mn-sub"></i></i></i>
+            <i class="mn-grid"><i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i><i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i><i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i></i>
+          </span>
+          <span class="plm-op-t"><b>Claro</b><span>Limpio y editorial — estilo galería de arte</span></span>
+        </label>
+        <label class="plm-op">
+          <input type="radio" name="plm" value="sport" data-t="oscuro" data-nombre="Deportivo" data-desc="Negro puro, contraste máximo — energía de competencia" data-chips="Oscura">
+          <span class="mn" data-f="coverage" style="--mn-bg:#000000;--mn-sup:#0D0D0D;--mn-tx:#FFFFFF;--mn-tx2:#777777;--mn-ln:rgba(255,255,255,.12)" aria-hidden="true">
+            <i class="mn-nav"><i></i></i>
+            <i class="mn-hero"><i class="mn-av"></i><i class="mn-quien"><i class="mn-nombre"></i><i class="mn-sub"></i></i></i>
+            <i class="mn-grid"><i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i><i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i><i class="mn-card"><i class="mn-ph"></i><i class="mn-ln"></i></i></i>
+          </span>
+          <span class="plm-op-t"><b>Deportivo</b><span>Negro puro, contraste máximo — energía de competencia</span></span>
+        </label>
+        <label class="plm-op">
+          <input type="radio" name="plm" value="feed" data-t="editorial" data-nombre="Feed" data-desc="Búsqueda al frente, fotos en feed vertical — pensado para mobile" data-chips="Oscura|Para teléfono">
+          <span class="mn" data-f="feed" style="--mn-bg:#0B0908;--mn-sup:#141110;--mn-tx:#F0EBE3;--mn-tx2:#6B5D50;--mn-ln:rgba(240,235,227,.12)" aria-hidden="true">
+            <i class="mn-top"><i class="mn-marca"></i><i class="mn-pill"></i></i>
+            <i class="mn-buscar"><i></i></i>
+            <i class="mn-feed"><i class="mn-ph"></i><i class="mn-ph"></i></i>
+          </span>
+          <span class="plm-op-t"><b>Feed</b><span>Búsqueda al frente, fotos en feed vertical — pensado para mobile</span></span>
+        </label>
+      </div>
+
+      <div class="plm-previa">
+        <div class="plm-previa-h">
+          <span class="label">Así se vería</span>
+          <div class="seg" id="plm-disp">
+            <button type="button" data-d="escritorio" aria-pressed="true">Escritorio</button>
+            <button type="button" data-d="telefono">Teléfono</button>
+          </div>
+        </div>
+        <div class="plm-marco">
+          <div class="plm-area">
+            <div class="plm-pantalla" id="plm-pantalla" style="width:100%">
+              <div class="crome"><i></i><i></i><i></i><span class="url" id="plm-url">Tu página con encontrate</span></div>
+              <div class="plm-visor">
+                <div class="sf" id="plm-sf" data-t="claro" style="position:absolute;inset:0;overflow:auto">
+                  <div class="sf-top">
+                    <div class="sf-marca"><span class="sf-logo">GS</span><b>Germán Sosa</b></div>
+                    <span class="sf-buscar"><i data-lucide="search"></i> Buscar mi cara</span>
+                  </div>
+                  <div class="sf-hero">
+                    <h3>Duatlón Club<br>Ciclista Chivilcoy</h3>
+                    <p>2.162 fotos · 13 de agosto</p>
+                    <span class="sf-cta">Buscarme <i data-lucide="arrow-right"></i></span>
+                  </div>
+                  <div class="sf-grid">
+                    <div class="sf-ph"></div><div class="sf-ph"></div><div class="sf-ph"></div>
+                    <div class="sf-ph"></div><div class="sf-ph"></div><div class="sf-ph"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-f">
+      <span class="plm-f-t" id="plm-f-t">Es la que usás ahora.</span>
+      <button type="button" class="btn btn-ghost" id="plm-cancelar">Cancelar</button>
+      <button type="button" class="btn btn-pri" id="plm-usar" disabled>Usar encontrate</button>
+    </div>
+  </div>
+</div>
+
 <script src="../panel.js?v=1786906781" defer></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -191,9 +303,71 @@
     try {
       var sf = document.getElementById("sf");
 
-      /* ── Plantilla ── */
-      document.getElementById("plt").addEventListener("change", function (ev) {
-        sf.dataset.t = ev.target.value;
+      /* ── Plantilla: el diálogo ──────────────────────────────────────────
+         Se abre desde la tarjeta, se recorre con los radios (las flechas
+         funcionan solas) y recién "Usar" cambia la tarjeta y la previa. */
+      var plm = document.getElementById("plm");
+      var enUso = "encontrate";
+      var vista = enUso;
+      function datosDe(id) {
+        return document.querySelector('#plm-lista input[value="' + id + '"]');
+      }
+      function abrirPlm() {
+        plm.hidden = false;
+        vista = enUso;
+        datosDe(enUso).checked = true;
+        mirar(enUso);
+        requestAnimationFrame(function () {
+          document.documentElement.dataset.modal = "open";
+          datosDe(enUso).focus();
+        });
+      }
+      function cerrarPlm() {
+        document.documentElement.dataset.modal = "";
+        setTimeout(function () { plm.hidden = true; }, 220);
+      }
+      function mirar(id) {
+        vista = id;
+        var d = datosDe(id);
+        document.getElementById("plm-sf").dataset.t = d.dataset.t;
+        document.getElementById("plm-url").textContent = "Tu página con " + d.dataset.nombre;
+        var usar = document.getElementById("plm-usar");
+        usar.disabled = id === enUso;
+        usar.textContent = "Usar " + d.dataset.nombre;
+        document.getElementById("plm-f-t").textContent =
+          id === enUso ? "Es la que usás ahora." : "Se aplica a tu página y a todos tus eventos.";
+      }
+      document.getElementById("plt-abrir").addEventListener("click", abrirPlm);
+      document.getElementById("plm-cerrar").addEventListener("click", cerrarPlm);
+      document.getElementById("plm-cancelar").addEventListener("click", cerrarPlm);
+      plm.addEventListener("click", function (ev) { if (ev.target === plm) cerrarPlm(); });
+      window.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape" && !plm.hidden) cerrarPlm();
+      });
+      document.getElementById("plm-lista").addEventListener("change", function (ev) {
+        mirar(ev.target.value);
+      });
+      document.getElementById("plm-disp").addEventListener("click", function (ev) {
+        var b = ev.target.closest("button");
+        if (!b) return;
+        this.querySelectorAll("button").forEach(function (x) { x.removeAttribute("aria-pressed"); });
+        b.setAttribute("aria-pressed", "true");
+        document.getElementById("plm-pantalla").style.width = b.dataset.d === "telefono" ? "390px" : "100%";
+      });
+      document.getElementById("plm-usar").addEventListener("click", function () {
+        var d = datosDe(vista);
+        enUso = vista;
+        /* La tarjeta pasa a decir la nueva: miniatura, nombre, de qué va. */
+        var act = document.getElementById("plt-act");
+        act.replaceChild(d.parentNode.querySelector(".mn").cloneNode(true), act.querySelector(".mn"));
+        document.getElementById("plt-nombre").textContent = d.dataset.nombre;
+        document.getElementById("plt-desc").textContent = d.dataset.desc;
+        document.getElementById("plt-chips").innerHTML = d.dataset.chips.split("|").map(function (c) { return "<i>" + c + "</i>"; }).join("");
+        document.querySelectorAll(".plm-uso").forEach(function (e) { e.remove(); });
+        var em = document.createElement("em"); em.className = "plm-uso"; em.textContent = "En uso";
+        d.parentNode.querySelector(".plm-op-t b").appendChild(em);
+        sf.dataset.t = d.dataset.t;
+        cerrarPlm();
       });
 
       /* ── Color ──────────────────────────────────────────────────────────

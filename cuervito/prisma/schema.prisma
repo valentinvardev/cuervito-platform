@@ -145,6 +145,8 @@ model User {
 
     // Storefront customization
     storefrontBrandColor String?  // hex, e.g. "#F5820A"
+    /// El secundario, para las plantillas de dos colores (Cancha). Null = el de fábrica de la plantilla.
+    storefrontBrandColor2 String?
     storefrontTemplate   String?  // template id from frontend catalog
     storefrontDomain     String?  @unique // custom domain
     storefrontPublished  Boolean  @default(false)

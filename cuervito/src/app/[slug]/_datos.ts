@@ -31,6 +31,7 @@ export const traerFotografo = cache(async (slug: string) => {
       websiteUrl: true,
       image: true,
       storefrontBrandColor: true,
+      storefrontBrandColor2: true,
       storefrontTemplate: true,
       logoKey: true,
       status: true,
