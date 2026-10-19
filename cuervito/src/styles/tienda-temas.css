@@ -113,7 +113,10 @@
 [data-plantilla="pista"] .et-buscar { padding: 28px 32px 32px; }
 [data-plantilla="pista"] .et-buscar-tit b { font-family: var(--et-display); font-weight: 800; font-size: 32px; text-transform: uppercase; letter-spacing: 0; }
 [data-plantilla="pista"] .et-buscar-tit span { font-size: 15px; }
-[data-plantilla="pista"] .et-campo { background: var(--bg-base); border-color: var(--et-linea-fuerte); }
+/* El radio también: la base trae 11px fijos (no la variable), y en una piel
+   cuadrada el campo era lo único redondeado de la página. */
+[data-plantilla="pista"] .et-campo { background: var(--bg-base); border-color: var(--et-linea-fuerte); border-radius: 0; }
+[data-plantilla="pista"] .et-promo-cod { border-radius: 0; }
 [data-plantilla="pista"] .et-campo:focus-within {
   border-color: var(--accent, #FFB000);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #FFB000) 25%, transparent);
@@ -270,7 +273,11 @@
 [data-plantilla="podio"] .et-hero + .et-buscar { border-top: 0; }
 [data-plantilla="podio"] .et-buscar-tit b { font-family: var(--et-display); font-weight: 400; font-size: 28px; letter-spacing: -0.02em; }
 [data-plantilla="podio"] .et-buscar-tit span { font-size: 15px; }
-[data-plantilla="podio"] .et-campo { border: 2px solid #0A0A0A; background: #FFFFFF; }
+[data-plantilla="podio"] .et-campo { border: 2px solid #0A0A0A; background: #FFFFFF; border-radius: 0; }
+[data-plantilla="podio"] .et-promo-cod { border-radius: 0; }
+/* En Podio lo redondo son las acciones; cerrar el cajón es un recuadro de
+   tinta, como sus bordes. */
+[data-plantilla="podio"] .et-cajon-h .et-btn { border-radius: 0; }
 [data-plantilla="podio"] .et-campo:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #1F3BE6) 25%, transparent); }
 [data-plantilla="podio"] .et-campo > span { font-family: var(--et-display); font-size: 22px; color: var(--accent, #1F3BE6); }
 [data-plantilla="podio"] .et-dorsal .et-campo input { font-size: 19px; font-weight: 400; }
@@ -375,6 +382,10 @@
 [data-plantilla="noche"] .et-av { border-radius: 999px; }
 
 [data-plantilla="noche"] .et-btn { border-radius: 999px; background: rgba(15, 20, 17, .85); font-weight: 500; }
+/* Los de ancho completo del cajón (volver) van con el radio del de pagar,
+   no en píldora: son pareja. */
+[data-plantilla="noche"] .et-cajon-f .et-btn { border-radius: 12px; }
+[data-plantilla="noche"] .et-promo-cod { border-radius: 12px; }
 [data-plantilla="noche"] .et-btn-lleno, [data-plantilla="noche"] .et-btn-acento {
   background: var(--accent, #3DF27C); border-color: var(--accent, #3DF27C); color: #060807;
   font-weight: 600; border-radius: 12px;
@@ -630,6 +641,10 @@
 [data-plantilla="tablero"] .et-av { border-radius: 10px; background: var(--accent, #1F5E3A); color: #FFFFFF; }
 
 [data-plantilla="tablero"] .et-btn { border-radius: 10px; background: #FFFFFF; border-color: var(--et-linea); font-weight: 500; }
+/* Los grandes llevan 12, como el de pagar; 10 queda para los chicos y los de ícono. */
+[data-plantilla="tablero"] .et-cajon-f .et-btn,
+[data-plantilla="tablero"] .et-mas-fotos .et-btn { border-radius: 12px; }
+[data-plantilla="tablero"] .et-promo-cod { border-radius: 12px; }
 [data-plantilla="tablero"] .et-btn:hover { border-color: var(--et-linea-fuerte); }
 [data-plantilla="tablero"] .et-btn-lleno { background: var(--text-primary); border-color: var(--text-primary); color: #FFFFFF; border-radius: 12px; }
 [data-plantilla="tablero"] .et-btn-lleno:has(+ .et-btn),
