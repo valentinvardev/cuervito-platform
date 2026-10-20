@@ -30,6 +30,12 @@ import type { ClaveFuente } from "~/lib/storefront-templates";
 const barlow = Barlow({ subsets: ["latin"], weight: ["400", "500", "600"], display: "swap", preload: false });
 const barlowCondensed = Barlow_Condensed({ subsets: ["latin"], weight: ["700", "800"], display: "swap", preload: false });
 const archivo = Archivo({ subsets: ["latin"], display: "swap", preload: false });
+// La de Velvet: Archivo con el eje de ancho, y SÓLO itálica. next/font
+// registra las dos Archivo con el mismo nombre de familia, así que comparten
+// familia en el navegador; siendo ésta sólo itálica, el texto recto de Podio
+// no puede caer en este archivo (90 KB contra 35) y Velvet, que pide la
+// display siempre en itálica, no puede caer en la de Podio, que no tiene ancho.
+const archivoAncha = Archivo({ subsets: ["latin"], axes: ["wdth"], style: "italic", display: "swap", preload: false });
 const archivoBlack = Archivo_Black({ subsets: ["latin"], weight: "400", display: "swap", preload: false });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], display: "swap", preload: false });
 const inter = Inter({ subsets: ["latin"], display: "swap", preload: false });
@@ -42,6 +48,7 @@ export const FUENTES_PLANTILLA: Record<ClaveFuente, { style: { fontFamily: strin
   "barlow-condensed": barlowCondensed,
   archivo,
   "archivo-black": archivoBlack,
+  "archivo-ancha": archivoAncha,
   "space-grotesk": spaceGrotesk,
   inter,
   sora,

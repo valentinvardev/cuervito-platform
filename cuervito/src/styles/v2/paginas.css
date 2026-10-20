@@ -1801,6 +1801,20 @@
 .mn-bento-r > .mn-ph { border: 0; }
 .mn-bento-r > .mn-ac { background: var(--mn-acc); border-color: var(--mn-acc); }
 
+/* Velvet: la cinta inclinada del color de marca, cruzando detrás del título. */
+.mn[data-f="velvet"] { position: relative; }
+.mn[data-f="velvet"] i { border-radius: 1px; }
+.mn[data-f="velvet"] .mn-top { box-shadow: 0 1px 0 var(--mn-acc); padding-bottom: 2px; height: 8px; }
+.mn[data-f="velvet"] .mn-marca { width: 9%; height: 6px; background: var(--mn-acc); }
+.mn-cinta {
+  position: absolute; right: -6%; top: 18px;
+  width: 44%; height: 24px;
+  background: var(--mn-acc); transform: skewX(-16deg);
+}
+.mn[data-f="velvet"] .mn-nombre { position: relative; width: 62%; height: 9px; transform: skewX(-12deg); }
+.mn[data-f="velvet"] .mn-cta { position: relative; transform: skewX(-12deg); }
+.mn[data-f="velvet"] .mn-ph { border-radius: 1px; }
+
 /* ═══════════════ pagos/pagos.css ═══════════════ */
 /* =============================================================================
    encontrate · panel · métodos de pago

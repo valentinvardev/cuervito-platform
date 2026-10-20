@@ -8,7 +8,8 @@ export type TemplateId =
   | "podio"
   | "noche"
   | "cancha"
-  | "tablero";
+  | "tablero"
+  | "velvet";
 
 /**
  * Layout family: templates with the same layout share the same React shell
@@ -27,6 +28,7 @@ export type ClaveFuente =
   | "barlow-condensed"
   | "archivo"
   | "archivo-black"
+  | "archivo-ancha"
   | "space-grotesk"
   | "inter"
   | "sora"
@@ -261,6 +263,32 @@ export const TEMPLATES: readonly StorefrontTemplate[] = [
       "--border-strong":  "#C9D3D9",
       "--nav-bg":         "rgba(246,248,249,0.92)",
       "--accent":         "#1F5E3A",
+    },
+  },
+  {
+    // Hecha para una marca de fotografía deportiva de logo rojo: negro, el
+    // rojo como único color fuera de las fotos, títulos anchos e itálicos y
+    // todo entrando animado. El rojo es el acento de fábrica; si el
+    // fotógrafo elige otro color, lo reemplaza como en las demás.
+    id: "velvet",
+    name: "Velvet",
+    description: "Negro y rojo — títulos itálicos, una cinta inclinada y fotos que entran en cascada",
+    layout: "encontrate",
+    tema: { fuentes: { sans: "barlow", display: "archivo-ancha" } },
+    cssVars: {
+      "--bg-base":        "#0A0A0A",
+      "--bg-surface":     "#121212",
+      "--bg-elevated":    "#1A1A1A",
+      "--bg-subtle":      "#232323",
+      "--text-primary":   "#FFFFFF",
+      "--text-secondary": "#B3B3B3",
+      "--text-tertiary":  "#8A8A8A",
+      "--text-on-accent": "#FFFFFF",
+      "--border-subtle":  "rgba(255,255,255,0.06)",
+      "--border-default": "rgba(255,255,255,0.12)",
+      "--border-strong":  "rgba(255,255,255,0.22)",
+      "--nav-bg":         "rgba(10,10,10,0.82)",
+      "--accent":         "#E30A1C",
     },
   },
 ] as const;

@@ -1,0 +1,398 @@
+/* =============================================================================
+   Velvet · página de venta
+   -----------------------------------------------------------------------------
+   Otra de las plantillas con tema (ver tienda-temas.css): la estructura es la
+   de encontrate —mismo buscador, misma grilla, mismo carrito— y esto es sólo
+   la piel, detrás de [data-plantilla="velvet"]. Lo común a la familia (sin
+   botón de claro/oscuro, el buscador en una fila) ya lo pone tienda-temas.
+
+   Hecha para una marca de fotografía deportiva con un logo rojo: negro de
+   fondo, el rojo como único color fuera de las fotos, títulos en una sans
+   ancha, negra e itálica —la inclinación del logo— y números angostos, como
+   un marcador. Todo entra animado: el título se descubre de abajo, el resto
+   sube en cascada, y las fotos aparecen a medida que entran en pantalla.
+
+   El rojo es el acento de fábrica (--accent): si el fotógrafo elige otro
+   color en el panel, la cinta, los botones y los dorsales pasan a ese. Los
+   tonos vivo y hondo salen de mezclarlo, así acompañan cualquier color.
+   ========================================================================== */
+
+[data-plantilla="velvet"] .et {
+  color-scheme: dark;
+  --vv-rojo: var(--accent, #E30A1C);
+  --vv-rojo-vivo: color-mix(in srgb, var(--vv-rojo) 80%, white);
+  --vv-rojo-hondo: color-mix(in srgb, var(--vv-rojo) 55%, black);
+  --vv-ease: cubic-bezier(.16, 1, .3, 1);
+
+  --et-linea: rgba(255, 255, 255, .09);
+  --et-linea-fuerte: rgba(255, 255, 255, .18);
+  --et-tenue: rgba(255, 255, 255, .58);
+  --et-radio: 6px;
+  --et-radio-chico: 4px;
+  --et-sans: var(--fuente-plantilla-sans, "Barlow"), system-ui, sans-serif;
+  --et-display: var(--fuente-plantilla-display, "Archivo"), var(--et-sans);
+}
+
+[data-plantilla="velvet"] .et {
+  font-size: 15px;
+  /* Un resplandor rojo arriba, apenas: da profundidad al negro sin volverlo
+     un fondo de color. */
+  background:
+    radial-gradient(120% 60% at 85% -10%, color-mix(in srgb, var(--vv-rojo) 22%, transparent), transparent 60%),
+    var(--bg-base);
+  background-repeat: no-repeat;
+  /* La cinta del encabezado se asoma por la derecha; clip y no hidden, para
+     no romper la barra pegajosa. */
+  overflow-x: clip;
+}
+
+/* Las dos voces de Archivo: ancha para gritar, angosta para contar. */
+[data-plantilla="velvet"] .et-hero h1,
+[data-plantilla="velvet"] .et-buscar-tit b,
+[data-plantilla="velvet"] .et-cajon-h h2,
+[data-plantilla="velvet"] .et-vacio h3,
+[data-plantilla="velvet"] .et-ev-cuerpo b {
+  font-family: var(--et-display);
+  font-style: italic;
+  font-weight: 900;
+  font-stretch: 125%;
+  text-transform: uppercase;
+}
+[data-plantilla="velvet"] .et-hero-meta,
+[data-plantilla="velvet"] .et-hero-pie,
+[data-plantilla="velvet"] .et-o,
+[data-plantilla="velvet"] .et-foto-dorsal,
+[data-plantilla="velvet"] .et-mas,
+[data-plantilla="velvet"] .et-ev-fotos,
+[data-plantilla="velvet"] .et-ev-meta,
+[data-plantilla="velvet"] .et-ediciones h2,
+[data-plantilla="velvet"] .et-carrito-n {
+  /* Itálica también acá: la Archivo ancha sólo existe en itálica (ver
+     v2/fuentes-plantillas.ts). */
+  font-family: var(--et-display); font-style: italic;
+  font-stretch: 70%;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+/* ── Barra ───────────────────────────────────────────────────────────────── */
+[data-plantilla="velvet"] .et-top {
+  background: rgba(8, 8, 8, .78);
+  border-bottom: 0;
+  box-shadow: inset 0 -2px 0 var(--vv-rojo);
+  animation: vv-baja 700ms var(--vv-ease) both;
+}
+[data-plantilla="velvet"] .et-av {
+  border-radius: 50%;
+  background: var(--vv-rojo); color: #FFFFFF;
+  font-family: var(--et-display); font-style: italic; font-weight: 900;
+}
+[data-plantilla="velvet"] .et-quien b {
+  font-family: var(--et-display); font-style: italic; font-weight: 800;
+  font-stretch: 112%;
+  text-transform: uppercase; letter-spacing: .01em;
+}
+[data-plantilla="velvet"] .et-logo { max-height: 40px; }
+/* Sobre negro el que se pierde es el logo oscuro, no el claro. */
+[data-plantilla="velvet"] .et-logo[data-tono="claro"] { filter: none; }
+[data-plantilla="velvet"] .et-logo[data-tono="oscuro"] { filter: invert(1) hue-rotate(180deg); }
+
+[data-plantilla="velvet"] .et-carrito-n {
+  border-radius: 3px; font-size: 12px; font-weight: 800;
+  box-shadow: 0 0 0 2px #0A0A0A;
+}
+
+/* ── Botones ─────────────────────────────────────────────────────────────── */
+[data-plantilla="velvet"] .et-btn {
+  border-radius: var(--et-radio-chico);
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+[data-plantilla="velvet"] .et-btn:hover { border-color: var(--vv-rojo); }
+[data-plantilla="velvet"] .et-btn-lleno,
+[data-plantilla="velvet"] .et-btn-acento {
+  background: var(--vv-rojo); border-color: var(--vv-rojo); color: #FFFFFF;
+  font-family: var(--et-display); font-style: italic; font-weight: 800;
+  font-stretch: 110%;
+  text-transform: uppercase; letter-spacing: .03em;
+  box-shadow: 0 10px 28px -10px color-mix(in srgb, var(--vv-rojo) 70%, transparent);
+}
+[data-plantilla="velvet"] .et-btn-lleno:hover,
+[data-plantilla="velvet"] .et-btn-acento:hover {
+  background: var(--vv-rojo-vivo); border-color: var(--vv-rojo-vivo);
+}
+
+/* ── Encabezado ──────────────────────────────────────────────────────────── */
+[data-plantilla="velvet"] .et-hero {
+  position: relative;
+  padding: clamp(36px, 7vw, 84px) 0 clamp(22px, 4vw, 36px);
+}
+/* La cinta: una franja roja inclinada que corta el encabezado. Es la marca
+   puesta en el piso de la página, no un adorno al costado. */
+[data-plantilla="velvet"] .et-hero::before {
+  content: "";
+  position: absolute; z-index: -1;
+  right: max(-40px, -4vw); top: clamp(18px, 4vw, 40px);
+  width: min(46%, 460px); height: clamp(120px, 22vw, 230px);
+  background:
+    repeating-linear-gradient(115deg, transparent 0 14px, rgba(255, 255, 255, .06) 14px 16px),
+    linear-gradient(115deg, var(--vv-rojo), var(--vv-rojo-hondo));
+  transform: skewX(-14deg);
+  opacity: .9;
+  animation: vv-cinta 1100ms var(--vv-ease) 150ms both;
+}
+/* En el teléfono la cinta arranca debajo de la fecha: el texto rojo sobre la
+   cinta roja no se lee. Pasa por detrás del título, que es blanco. */
+@media (max-width: 620px) {
+  [data-plantilla="velvet"] .et-hero::before {
+    top: 78px; height: 132px; width: 52%;
+  }
+}
+[data-plantilla="velvet"] .et-in { position: relative; z-index: 0; }
+
+[data-plantilla="velvet"] .et-hero h1 {
+  font-size: clamp(34px, 6.6vw, 78px);
+  line-height: .92;
+  letter-spacing: -0.02em;
+  max-width: 20ch;
+  /* El título se descubre de abajo hacia arriba, como un cartel que entra. */
+  animation: vv-descubre 900ms var(--vv-ease) 120ms both;
+}
+[data-plantilla="velvet"] .et-hero-meta {
+  font-size: 13px; font-weight: 600; color: var(--vv-rojo-vivo);
+  margin-bottom: 16px;
+  animation: vv-sube 700ms var(--vv-ease) 40ms both;
+}
+[data-plantilla="velvet"] .et-hero-meta::before {
+  content: ""; width: 26px; height: 3px; background: var(--vv-rojo);
+  transform: skewX(-20deg);
+}
+[data-plantilla="velvet"] .et-hero-meta i { background: var(--et-tenue); }
+[data-plantilla="velvet"] .et-hero-resumen,
+[data-plantilla="velvet"] .et-perfil-bio,
+[data-plantilla="velvet"] .et-perfil-resumen {
+  animation: vv-sube 800ms var(--vv-ease) 320ms both;
+}
+[data-plantilla="velvet"] .et-hero-pie {
+  gap: 12px; font-size: 13px;
+  animation: vv-sube 800ms var(--vv-ease) 420ms both;
+}
+/* Los números grandes, como en un marcador. */
+[data-plantilla="velvet"] .et-hero-pie b {
+  font-size: clamp(24px, 3.4vw, 34px);
+  font-weight: 800; letter-spacing: 0;
+  line-height: 1;
+}
+[data-plantilla="velvet"] .et-hero-pie i {
+  width: 6px !important; height: 6px !important; border-radius: 0 !important;
+  background: var(--vv-rojo) !important;
+  transform: skewX(-20deg);
+}
+[data-plantilla="velvet"] .et-perfil-links {
+  animation: vv-sube 800ms var(--vv-ease) 500ms both;
+}
+[data-plantilla="velvet"] .et-red { border-radius: var(--et-radio-chico); }
+[data-plantilla="velvet"] .et-red:hover {
+  border-color: var(--vv-rojo);
+  background: color-mix(in srgb, var(--vv-rojo) 14%, transparent);
+}
+
+/* ── Buscar ──────────────────────────────────────────────────────────────── */
+[data-plantilla="velvet"] .et-buscar {
+  position: relative; overflow: hidden;
+  background: linear-gradient(160deg, #161616, #0F0F0F);
+  border-color: var(--et-linea);
+  border-left: 3px solid var(--vv-rojo);
+  animation: vv-sube 800ms var(--vv-ease) 520ms both;
+}
+[data-plantilla="velvet"] .et-buscar-tit b { font-size: clamp(18px, 2.2vw, 22px); letter-spacing: 0; }
+[data-plantilla="velvet"] .et-campo {
+  border-radius: var(--et-radio-chico);
+  background: #0A0A0A;
+  height: 52px;
+}
+[data-plantilla="velvet"] .et-campo:focus-within {
+  border-color: var(--vv-rojo);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vv-rojo) 28%, transparent);
+}
+[data-plantilla="velvet"] .et-campo > span {
+  color: var(--vv-rojo); font-family: var(--et-display); font-style: italic; font-weight: 900; font-size: 18px;
+}
+[data-plantilla="velvet"] .et-dorsal .et-campo input {
+  font-family: var(--et-display); font-style: italic; font-weight: 800; font-size: 20px;
+  font-stretch: 80%; letter-spacing: .04em;
+}
+[data-plantilla="velvet"] .et-selfie {
+  border-radius: var(--et-radio-chico);
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+[data-plantilla="velvet"] .et-selfie:hover {
+  border-color: var(--vv-rojo);
+  background: color-mix(in srgb, var(--vv-rojo) 8%, transparent);
+  transform: translateX(3px);
+}
+[data-plantilla="velvet"] .et-selfie-i {
+  border-radius: var(--et-radio-chico);
+  background: var(--vv-rojo); color: #FFFFFF;
+}
+[data-plantilla="velvet"] .et-filtrando {
+  border-radius: var(--et-radio-chico);
+  background: color-mix(in srgb, var(--vv-rojo) 12%, transparent);
+  border-left: 3px solid var(--vv-rojo);
+  animation: vv-sube 400ms var(--vv-ease) both;
+}
+
+/* ── Descuento ───────────────────────────────────────────────────────────── */
+[data-plantilla="velvet"] .et-promo {
+  border-radius: var(--et-radio);
+  background:
+    repeating-linear-gradient(115deg, transparent 0 18px, rgba(255, 255, 255, .05) 18px 20px),
+    linear-gradient(115deg, var(--vv-rojo), var(--vv-rojo-hondo));
+  color: #FFFFFF;
+  animation: vv-sube 800ms var(--vv-ease) 600ms both;
+}
+[data-plantilla="velvet"] .et-promo::before { display: none; }
+[data-plantilla="velvet"] .et-promo-i { background: #FFFFFF; color: var(--vv-rojo); border-radius: var(--et-radio-chico); }
+[data-plantilla="velvet"] .et-promo-t b {
+  font-family: var(--et-display); font-style: italic; font-weight: 900;
+  font-stretch: 115%; text-transform: uppercase; letter-spacing: .01em;
+}
+
+/* ── Grilla ──────────────────────────────────────────────────────────────── */
+[data-plantilla="velvet"] .et-grilla { gap: 6px; }
+[data-plantilla="velvet"] .et-foto {
+  border-radius: 2px;
+  background: #151515;
+  animation: vv-foto 700ms var(--vv-ease) both;
+}
+/* Las primeras entran en cascada al cargar la página; las que llegan después
+   (Ver más) entran juntas, sin hacer esperar. */
+[data-plantilla="velvet"] .et-foto:nth-child(1)  { animation-delay: 620ms; }
+[data-plantilla="velvet"] .et-foto:nth-child(2)  { animation-delay: 680ms; }
+[data-plantilla="velvet"] .et-foto:nth-child(3)  { animation-delay: 740ms; }
+[data-plantilla="velvet"] .et-foto:nth-child(4)  { animation-delay: 800ms; }
+[data-plantilla="velvet"] .et-foto:nth-child(5)  { animation-delay: 860ms; }
+[data-plantilla="velvet"] .et-foto:nth-child(6)  { animation-delay: 920ms; }
+[data-plantilla="velvet"] .et-foto:nth-child(7)  { animation-delay: 980ms; }
+[data-plantilla="velvet"] .et-foto:nth-child(8)  { animation-delay: 1040ms; }
+/* Donde el navegador sabe atar la animación al scroll, cada foto entra al
+   aparecer en pantalla y no todas al cargar. */
+@supports (animation-timeline: view()) {
+  [data-plantilla="velvet"] .et-foto:nth-child(n + 9) {
+    animation: vv-foto linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 70%;
+  }
+}
+
+/* Una barra roja que cruza la base al pasar: dice «esta» sin tapar la foto. */
+[data-plantilla="velvet"] .et-foto::before {
+  content: ""; position: absolute; z-index: 1;
+  left: 0; right: 0; bottom: 0; height: 3px;
+  background: var(--vv-rojo);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 360ms var(--vv-ease);
+}
+[data-plantilla="velvet"] .et-foto:hover::before { transform: scaleX(1); }
+[data-plantilla="velvet"] .et-foto:hover img { transform: scale(1.06); }
+[data-plantilla="velvet"] .et-foto::after {
+  background: linear-gradient(to top, rgba(0, 0, 0, .62), transparent 45%);
+}
+[data-plantilla="velvet"] .et-foto-dorsal {
+  border-radius: 2px;
+  background: var(--vv-rojo); color: #FFFFFF;
+  font-size: 13px; font-weight: 800; font-style: italic;
+  transform: skewX(-8deg);
+}
+[data-plantilla="velvet"] .et-mas {
+  border-radius: 3px;
+  background: rgba(255, 255, 255, .95);
+  color: #0A0A0A;
+  font-size: 12.5px; font-weight: 800;
+}
+[data-plantilla="velvet"] .et-mas:hover { background: var(--vv-rojo); color: #FFFFFF; }
+[data-plantilla="velvet"] .et-foto.et-elegida { outline: 3px solid var(--vv-rojo); outline-offset: -3px; }
+[data-plantilla="velvet"] .et-foto.et-elegida .et-mas { animation: vv-late 360ms cubic-bezier(.3, 1.5, .5, 1); }
+
+[data-plantilla="velvet"] .et-vacio-i { background: color-mix(in srgb, var(--vv-rojo) 16%, transparent); border-radius: var(--et-radio-chico); }
+[data-plantilla="velvet"] .et-vacio-i svg { color: var(--vv-rojo-vivo); }
+
+/* ── Perfil: los eventos ─────────────────────────────────────────────────── */
+[data-plantilla="velvet"] .et-ev {
+  border-radius: var(--et-radio-chico);
+  background: #111111;
+  animation: vv-sube 800ms var(--vv-ease) both;
+  transition: transform 260ms var(--vv-ease), box-shadow 260ms ease, border-color 260ms ease;
+}
+[data-plantilla="velvet"] .et-ev:nth-child(1) { animation-delay: 560ms; }
+[data-plantilla="velvet"] .et-ev:nth-child(2) { animation-delay: 640ms; }
+[data-plantilla="velvet"] .et-ev:nth-child(3) { animation-delay: 720ms; }
+[data-plantilla="velvet"] .et-ev:nth-child(4) { animation-delay: 800ms; }
+[data-plantilla="velvet"] .et-ev:nth-child(n + 5) { animation-delay: 880ms; }
+[data-plantilla="velvet"] .et-ev:hover {
+  transform: translateY(-4px);
+  border-color: var(--vv-rojo);
+  box-shadow: 0 18px 40px -12px color-mix(in srgb, var(--vv-rojo) 45%, transparent);
+}
+[data-plantilla="velvet"] .et-ev-cuerpo b { font-size: 18px; line-height: 1.05; letter-spacing: 0; }
+[data-plantilla="velvet"] .et-ev-fotos { border-radius: 2px; background: var(--vv-rojo); font-weight: 700; }
+[data-plantilla="velvet"] .et-ev-precio b { color: var(--vv-rojo-vivo); font-weight: 600; }
+
+/* ── Carrito y visor ─────────────────────────────────────────────────────── */
+[data-plantilla="velvet"] .et-scrim { background: rgba(0, 0, 0, .6); }
+[data-plantilla="velvet"] .et-cajon {
+  background: #0E0E0E;
+  border-left: 3px solid var(--vv-rojo);
+  box-shadow: -30px 0 80px rgba(0, 0, 0, .6);
+}
+[data-plantilla="velvet"] .et-cajon-h h2 { font-size: 20px; letter-spacing: 0; }
+[data-plantilla="velvet"] .et-linea-mini { border-radius: 2px; }
+[data-plantilla="velvet"] .et-cuenta .et-total b {
+  font-family: var(--et-display); font-weight: 900; font-size: 24px; font-style: italic;
+}
+[data-plantilla="velvet"] .et-visor .et-btn-acento { border-color: var(--vv-rojo); }
+
+/* ── Otras ediciones y pie ───────────────────────────────────────────────── */
+[data-plantilla="velvet"] .et-ediciones a { border-radius: var(--et-radio-chico); }
+[data-plantilla="velvet"] .et-ediciones a:hover { border-color: var(--vv-rojo); }
+[data-plantilla="velvet"] .et-pie {
+  border-top: 2px solid var(--vv-rojo);
+}
+[data-plantilla="velvet"] .et-pie a:hover { color: var(--vv-rojo-vivo); }
+
+/* ── Movimiento ──────────────────────────────────────────────────────────── */
+@keyframes vv-sube {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes vv-baja {
+  from { opacity: 0; transform: translateY(-100%); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes vv-descubre {
+  from { opacity: 0; transform: translateY(.35em) skewY(3deg); clip-path: inset(100% 0 0 0); }
+  to   { opacity: 1; transform: none; clip-path: inset(-20% -5% -20% -5%); }
+}
+@keyframes vv-cinta {
+  from { opacity: 0; transform: skewX(-14deg) translateX(30%); }
+  to   { opacity: .9; transform: skewX(-14deg); }
+}
+@keyframes vv-foto {
+  from { opacity: 0; transform: translateY(18px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes vv-late {
+  0%   { transform: scale(.85); }
+  100% { transform: none; }
+}
+
+/* Quien pidió menos movimiento ve la página entera desde el principio. */
+@media (prefers-reduced-motion: reduce) {
+  [data-plantilla="velvet"] .et *,
+  [data-plantilla="velvet"] .et *::before,
+  [data-plantilla="velvet"] .et-top,
+  [data-plantilla="velvet"] .et-hero::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}

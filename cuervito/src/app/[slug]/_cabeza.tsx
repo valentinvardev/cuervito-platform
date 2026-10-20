@@ -9,6 +9,8 @@ import "~/styles/tienda-encontrate.css";
 // Las cinco plantillas con tema: la misma página de encontrate con otra piel,
 // activada por el atributo data-plantilla.
 import "~/styles/tienda-temas.css";
+// Velvet, otra piel de la misma familia, en su hoja: va después para pisar.
+import "~/styles/tienda-velvet.css";
 
 import { Suspense } from "react";
 

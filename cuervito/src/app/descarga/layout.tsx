@@ -4,6 +4,7 @@ import "~/styles/prototype/descarga.css";
 import "~/styles/prototype/lightbox.css";
 import "~/styles/tienda-encontrate.css";
 import "~/styles/tienda-temas.css";
+import "~/styles/tienda-velvet.css";
 import "~/styles/entrega-encontrate.css";
 
 import { type Metadata } from "next";

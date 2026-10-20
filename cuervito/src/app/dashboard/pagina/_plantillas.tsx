@@ -42,7 +42,7 @@ export type Colores = { color: string; color2: string | null };
    no esté nombrado va al final, para que una plantilla nueva no quede
    escondida por olvido. */
 const ORDEN: readonly string[] = [
-  "encontrate", "pista", "podio", "noche", "cancha", "tablero", "dark", "light", "sport", "feed",
+  "encontrate", "pista", "podio", "noche", "cancha", "tablero", "velvet", "dark", "light", "sport", "feed",
 ];
 const LISTA: readonly StorefrontTemplate[] = [
   ...ORDEN.flatMap((id) => TEMPLATES.filter((t) => t.id === id)),
@@ -249,6 +249,20 @@ export function Miniatura({
           <i />
           <i />
         </i>
+      </span>
+    );
+  }
+
+  if (t.id === "velvet") {
+    return (
+      <span className="mn" data-f="velvet" style={estilo} aria-hidden="true">
+        <i className="mn-top">
+          <i className="mn-marca" />
+        </i>
+        <i className="mn-cinta" />
+        <i className="mn-nombre" />
+        <i className="mn-cta" />
+        <i className="mn-grid">{tarjetas}</i>
       </span>
     );
   }
