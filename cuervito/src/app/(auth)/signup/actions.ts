@@ -45,6 +45,15 @@ export async function signupAction(
 
   const { name, email, password } = parsed.data;
 
+  // A dónde volver después: sólo un camino propio, que es lo que puede
+  // mandar una invitación. Una dirección completa de otro sitio no, que es
+  // la forma clásica de usar un registro para llevar a alguien a otro lado.
+  const pedido = formData.get("callbackUrl");
+  const callbackUrl =
+    typeof pedido === "string" && pedido.startsWith("/") && !pedido.startsWith("//")
+      ? pedido
+      : "/dashboard";
+
   const existing = await db.user.findUnique({ where: { email }, select: { id: true } });
   if (existing) {
     return { error: "Ya hay una cuenta con ese email." };
@@ -96,7 +105,7 @@ export async function signupAction(
     await signIn("credentials", {
       email,
       password,
-      redirectTo: "/dashboard",
+      redirectTo: callbackUrl,
     });
     return { error: null };
   } catch (err) {

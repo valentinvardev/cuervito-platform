@@ -4,7 +4,7 @@ import { z } from "zod";
 import { env } from "~/env";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
-import { canUploadToEvent } from "~/server/event-access";
+import { puedeSubirAlEvento } from "~/server/acceso-evento";
 import { getPresignedUploadUrl, PRESIGN_SUBIDA_TTL_S } from "~/server/s3";
 
 /**
@@ -50,7 +50,7 @@ export async function POST(
   }
 
   const { id: eventId, photoId } = await ctx.params;
-  const acceso = await canUploadToEvent(eventId, session.user.id);
+  const acceso = await puedeSubirAlEvento(eventId, session.user);
   if (!acceso) {
     return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
   }

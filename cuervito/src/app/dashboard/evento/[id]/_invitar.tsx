@@ -27,9 +27,13 @@ type Alcance = "NONE" | "OWN" | "ALL";
 export function Invitar({
   eventId,
   precio,
+  comision,
 }: {
   eventId: string;
   precio: number;
+  /** La comisión de la plataforma en este evento, en %: la cuenta de abajo
+   *  parte de lo que queda después de ella, igual que el devengo. */
+  comision: number;
 }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
@@ -41,7 +45,9 @@ export function Invitar({
   const [listo, setListo] = useState(false);
   const campo = useRef<HTMLInputElement>(null);
 
-  const porFoto = Math.round((precio * pct) / 100);
+  // Sobre el neto, no sobre el precio: así se devenga (server/commissions.ts).
+  // Decía "sobre lo que te queda" y calculaba sobre el bruto.
+  const porFoto = Math.round((precio * (1 - comision / 100) * pct) / 100);
 
   useEffect(() => {
     if (!abierto) return;
@@ -195,7 +201,7 @@ export function Invitar({
                   <div className="pista">
                     Sobre una foto de ${precio.toLocaleString("es-AR")}, le quedan{" "}
                     <b>${porFoto.toLocaleString("es-AR")}</b>. Se calcula sobre lo que te queda a
-                    vos, después de la comisión de encontrate.
+                    vos, después del {comision}% de encontrate.
                   </div>
                 </div>
               )}

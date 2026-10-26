@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "~/server/auth";
 import { despertar } from "~/server/cola-fotos";
 import { db } from "~/server/db";
-import { canUploadToEvent } from "~/server/event-access";
+import { puedeSubirAlEvento } from "~/server/acceso-evento";
 import { deleteS3Objects, headObject } from "~/server/s3";
 
 /**
@@ -46,7 +46,7 @@ export async function POST(
   // El commit lo hace quien subió: puede ser el dueño o un colaborador,
   // así que se valida contra el acceso al evento y no contra photo.ownerId
   // (que siempre apunta al dueño).
-  const access = await canUploadToEvent(eventId, session.user.id);
+  const access = await puedeSubirAlEvento(eventId, session.user);
   if (!photo || !access || photo.eventId !== eventId) {
     return NextResponse.json({ error: "Foto no encontrada" }, { status: 404 });
   }

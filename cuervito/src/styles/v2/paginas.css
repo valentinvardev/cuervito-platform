@@ -79,6 +79,18 @@
    distinguir un borrador de uno publicado. Ahora en grilla se posiciona sobre
    la portada y en lista es una columna más. */
 .ec > .pill { position: absolute; top: 9px; left: 9px; z-index: 1; }
+/* El evento de otro, donde se colabora: se dice en la tarjeta, con el
+   dueño, y no al abrirlo. */
+.ec-de {
+  position: absolute; top: 9px; right: 9px; z-index: 1;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px; border-radius: 999px;
+  background: rgba(10, 9, 8, .62); color: #fff;
+  font-size: 11.5px; font-weight: 500; letter-spacing: 0;
+  backdrop-filter: blur(6px);
+}
+.ec-de svg { width: 12px; height: 12px; }
+.ec-st b.nom { font-size: 14px; font-weight: 500; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Sin portada: no se disimula con un gris, se dice y se ofrece el arreglo.
    Un evento sin portada vende bastante menos, así que callarlo no ayuda. */
@@ -515,14 +527,17 @@
 @media (max-width: 620px) { .panel-s .fg { grid-template-columns: repeat(2, 1fr); } }
 
 /* ── Equipo ──────────────────────────────────────────────────────────────────
-   Un evento grande lo cubren varios fotógrafos. Cada uno sube lo suyo y cobra
-   lo suyo: la plata no se reparte por porcentaje sino por autoría, que es lo
-   que evita la discusión de "yo saqué más que vos". La tabla lo muestra así,
-   con fotos y recaudado por persona. */
+   Un evento grande lo cubren varios fotógrafos. La venta entra entera en el
+   Mercado Pago del dueño, y lo que le toca a cada colaborador queda anotado
+   como lo que se le debe. La tabla muestra eso: fotos, vendidas y deuda por
+   persona, para el dueño; para el colaborador, sólo quiénes y cuántas fotos,
+   que lo suyo está arriba en las cifras. */
 .inv { display: flex; gap: var(--s-2); align-items: flex-start; flex-wrap: wrap; }
 .inv .campo { flex: 1; min-width: 240px; }
 
-.col-f { grid-template-columns: 34px minmax(0, 1fr) 96px 104px auto; }
+.col-f { grid-template-columns: 34px minmax(0, 1fr) 72px auto; }
+/* Con plata: dos columnas más, vendidas y lo que se le debe. */
+.col-f[data-plata] { grid-template-columns: 34px minmax(0, 1fr) 72px 84px 100px auto; }
 .col-av {
   width: 34px; height: 34px; border-radius: 50%;
   display: grid; place-items: center;
@@ -532,8 +547,19 @@
 .col-av.yo { background: var(--cta-bg); color: var(--cta-fg); }
 .col-t { min-width: 0; line-height: 1.35; }
 .col-t b { display: block; font-size: 13.5px; font-weight: 500; }
+.col-t b .vos { color: var(--ink-3); font-weight: 400; }
 .col-t span { display: block; font-size: 12px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .col-f .num { font-size: 13px; }
+/* La deuda es el número que importa en la fila: con peso cuando hay. */
+.col-f .c-debe.debe { color: var(--ink); font-weight: 500; }
+
+/* Las acciones de la fila: el rol, copiar el link, quitar. Y la pregunta de
+   confirmación en el mismo lugar, sin diálogo. */
+.col-acc { display: inline-flex; align-items: center; gap: 4px; justify-self: end; }
+.col-acc .btn-icon { width: 30px; height: 30px; color: var(--ink-3); }
+.col-acc .btn-icon:hover { color: var(--ink); }
+.col-acc .btn-icon svg { width: 15px; height: 15px; }
+.col-q { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; margin-right: 4px; }
 
 /* La fila pendiente se apaga entera, no sólo el rol: alguien que todavía no
    aceptó no aportó nada, y sus columnas en cero al mismo peso que las de los
@@ -545,13 +571,9 @@
    colores distintos en una columna angosta compiten con los nombres y los
    números, que es lo que la tabla vino a mostrar. Acá el rol es texto: el
    ícono hace de ancla para reconocerlo sin leer, y el color hace el resto.
-
-   Los cuatro estados no son lo mismo y por eso no pesan igual. "Sin cobrar" es
-   el único que pide hacer algo, así que es el único en rojo; "invitado" es una
-   espera normal y va apagado, no en amarillo de alerta. */
+   "Invitado" es una espera normal y va apagado, no en amarillo de alerta. */
 .rol {
   display: inline-flex; align-items: center; gap: 7px;
-  justify-self: end;
   font-size: 12.5px; font-weight: 500;
   white-space: nowrap;
   color: var(--ink-2);
@@ -559,7 +581,6 @@
 .rol svg { width: 14px; height: 14px; flex-shrink: 0; }
 .rol.duenio { color: var(--acento-txt); }
 .rol.activo { color: var(--ok-txt); }
-.rol.sincobrar { color: var(--bad-txt); }
 .rol.espera { color: var(--ink-3); font-weight: 400; }
 
 .reparto {
@@ -571,7 +592,12 @@
 
 @media (max-width: 760px) {
   .col-f { grid-template-columns: 34px minmax(0, 1fr) auto; }
-  .col-f .c-fotos { display: none; }
+  /* Angosto: queda lo que se le debe, que es lo que se viene a mirar. */
+  .col-f[data-plata] { grid-template-columns: 34px minmax(0, 1fr) 84px auto; }
+  .col-f .c-fotos, .col-f .c-vend { display: none; }
+  .col-q { display: none; }
+  /* Con los botones al lado, el rol queda en su ícono: el color ya lo dice. */
+  .col-f[data-plata] .rol span { display: none; }
 }
 
 /* Lo que le queda al colaborador, dentro del diálogo. El número va resuelto y
@@ -2144,6 +2170,82 @@
 }
 .gu .mas svg { width: 13px; height: 13px; transition: transform 180ms cubic-bezier(.2, .8, .3, 1); }
 .gu:hover .mas svg { transform: translateX(3px); }
+/* Es un botón, no un link: abre el diálogo. Que no se note. */
+button.gu { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+button.gu:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* ── La guía abierta ─────────────────────────────────────────────────────────
+   Un diálogo para leer, no para decidir: más ancho que el de confirmar, con
+   un cuerpo tipográfico —títulos, pasos numerados, puntos, un consejo— y el
+   fondo desenfocado de verdad, para que lo único nítido sea lo que se lee. */
+.modal.vidrio::before {
+  background: color-mix(in srgb, var(--ink) 26%, transparent);
+  backdrop-filter: blur(14px) saturate(.85);
+  -webkit-backdrop-filter: blur(14px) saturate(.85);
+}
+.modal-caja.guia { max-width: 680px; }
+.guia-h { align-items: center; border-bottom: 1px solid var(--line-soft); padding-bottom: var(--s-4); }
+.guia-h-t { display: flex; align-items: center; gap: var(--s-3); min-width: 0; }
+.guia-h-t .gu-i { width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; background: var(--cta-bg); color: var(--cta-fg); }
+.guia-h-t .gu-i svg { width: 18px; height: 18px; }
+.guia-sobre { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 3px; }
+.guia-h h2 { font-size: 20px; }
+
+.guia-cuerpo { padding-top: var(--s-4); gap: var(--s-5); }
+.guia-lede { font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+.guia-cuerpo section { display: grid; gap: var(--s-3); }
+.guia-cuerpo h3 {
+  font-family: var(--sans); font-size: 14.5px; font-weight: 600;
+  letter-spacing: -0.01em; color: var(--ink);
+}
+.guia-cuerpo p { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); }
+
+/* Los pasos, con el número grande a la izquierda: se recorren con el ojo sin
+   leer, que es como se usa una guía mientras se hace la cosa. */
+.guia-pasos { list-style: none; counter-reset: paso; display: grid; gap: var(--s-3); margin: 0; padding: 0; }
+.guia-pasos li {
+  counter-increment: paso;
+  display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: var(--s-3); row-gap: 2px;
+  align-items: start;
+}
+.guia-pasos li::before {
+  content: counter(paso);
+  grid-row: 1 / span 2;
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--paper-3); color: var(--ink);
+  font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.guia-pasos li b { font-size: 13.5px; font-weight: 600; line-height: 30px; }
+.guia-pasos li span { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); }
+
+.guia-puntos { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.guia-puntos li {
+  position: relative; padding-left: 18px;
+  font-size: 13.5px; line-height: 1.6; color: var(--ink-2);
+}
+.guia-puntos li::before {
+  content: ""; position: absolute; left: 4px; top: .72em;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3);
+}
+
+.guia-tip {
+  padding: 12px 14px; border-left: 3px solid var(--acento, var(--ink));
+  background: var(--paper-3); border-radius: 0 var(--r-2) var(--r-2) 0;
+  font-size: 13px; line-height: 1.6; color: var(--ink-2);
+}
+
+.guia-f { align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-3); }
+.guia-duda { font-size: 12.5px; color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px; }
+.guia-duda:hover { color: var(--ink); }
+.guia-nav { display: flex; gap: var(--s-2); margin-left: auto; }
+
+@media (max-width: 640px) {
+  .guia-h h2 { font-size: 17px; }
+  .guia-nav { width: 100%; }
+  .guia-nav .btn { flex: 1; justify-content: center; }
+  .guia-nav .btn:first-child:not(:last-child) { flex: 0 0 auto; }
+}
 
 /* ── Preguntas ───────────────────────────────────────────────────────────────
    Misma mecánica de altura que en la landing: grid-template-rows de 0fr a 1fr

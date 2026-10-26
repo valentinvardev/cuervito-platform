@@ -103,12 +103,18 @@ export default async function V2Page() {
           _count: { select: { items: true } },
         },
       }),
+      // Los propios y donde se colabora, como en "Mis eventos".
       db.event.findMany({
-        where: { ownerId: userId, NOT: { status: "ARCHIVED" } },
+        where: {
+          NOT: { status: "ARCHIVED" },
+          OR: [{ ownerId: userId }, { collaborators: { some: { userId, status: "ACCEPTED" } } }],
+        },
         orderBy: { eventDate: "desc" },
         take: 4,
         select: {
           id: true,
+          ownerId: true,
+          owner: { select: { name: true } },
           name: true,
           eventDate: true,
           coverUrl: true,
@@ -166,25 +172,28 @@ export default async function V2Page() {
       urgente: true,
     });
   }
-  for (const e of eventos) {
+  // Los avisos son sobre lo propio: la portada y el borrador de un evento
+  // ajeno los arregla su dueño.
+  const propios = eventos.filter((e) => e.ownerId === userId);
+  for (const e of propios) {
     if (e.isPublished && !e.coverUrl) {
       avisos.push({
         icono: <ImageOff />,
         titulo: `${e.name} sin portada`,
         detalle: "Los eventos sin portada venden bastante menos",
-        href: `/dashboard/events/${e.id}`,
+        href: `/dashboard/evento/${e.id}`,
         urgente: true,
       });
     }
   }
-  for (const e of eventos) {
+  for (const e of propios) {
     const dias = Math.round((Date.now() - e.createdAt.getTime()) / 86400000);
     if (!e.isPublished && e._count.photos > 0 && dias >= 3) {
       avisos.push({
         icono: <CalendarDays />,
         titulo: `${e.name} sigue en borrador`,
         detalle: `${e._count.photos.toLocaleString("es-AR")} fotos subidas hace ${dias} días, nadie las puede ver`,
-        href: `/dashboard/events/${e.id}`,
+        href: `/dashboard/evento/${e.id}`,
       });
     }
   }
@@ -369,7 +378,11 @@ export default async function V2Page() {
                           </span>
                         </span>
                         <span className="num soft">{e._count.photos.toLocaleString("es-AR")}</span>
-                        <span className="num tnum">{vendido > 0 ? pesos(vendido) : "—"}</span>
+                        {e.ownerId !== userId ? (
+                          <span className="num soft">con {(e.owner.name ?? "otro").split(" ")[0]}</span>
+                        ) : (
+                          <span className="num tnum">{vendido > 0 ? pesos(vendido) : "—"}</span>
+                        )}
                         {e.isPublished ? (
                           <span className="pill">
                             <i /> Publicado

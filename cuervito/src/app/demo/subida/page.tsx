@@ -6,6 +6,7 @@ import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
 
 import { pesos, sesionPanel } from "~/app/dashboard/_components/sesion";
+import type { Colaborador } from "~/app/dashboard/evento/[id]/_equipo";
 import { Subida } from "./_subida";
 
 /**
@@ -70,9 +71,12 @@ export default async function DemoSubida() {
       sales: { where: { status: "PAID" }, select: { sellerNetCents: true } },
       collaborators: {
         select: {
+          id: true,
           invitedEmail: true,
           status: true,
-          user: { select: { id: true, name: true, mpConnectedAt: true } },
+          commissionScope: true,
+          commissionPct: true,
+          user: { select: { id: true, name: true } },
         },
       },
     },
@@ -117,20 +121,28 @@ export default async function DemoSubida() {
     })),
   );
 
-  const colaboradores = await Promise.all(
+  // Por quién la subió, como en la pantalla real. Las fotos de antes de que
+  // existiera ese dato son del dueño.
+  const colaboradores: Colaborador[] = await Promise.all(
     e.collaborators.map(async (c) => ({
+      id: c.id,
       nombre: c.user?.name ?? c.invitedEmail.split("@")[0]!,
       email: c.invitedEmail,
       estado: c.status,
+      alcance: c.commissionScope,
+      pct: c.commissionPct,
+      soyYo: false,
       fotos: c.user
-        ? await db.photo.count({ where: { eventId: e.id, ownerId: c.user.id, deletedAt: null } })
+        ? await db.photo.count({ where: { eventId: e.id, uploadedById: c.user.id, deletedAt: null } })
         : 0,
-      cobra: !!c.user?.mpConnectedAt,
+      vendidas: null,
+      comision: null,
+      link: null,
     })),
   );
 
   const fotosDelDueno = await db.photo.count({
-    where: { eventId: e.id, ownerId: userId, deletedAt: null },
+    where: { eventId: e.id, deletedAt: null, OR: [{ uploadedById: userId }, { uploadedById: null }] },
   });
 
   const cover = e.coverUrl

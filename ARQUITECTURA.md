@@ -181,29 +181,42 @@ colección tiene 50 o 50.000 caras.
 ```
 Host invita (email + scope + %)
    └── EventCollaborator PENDING + inviteToken → email
+       (y el link queda en la solapa Equipo, por si el mail no llega)
           ↓
    /invitacion/[token]
-     ├── sin sesión        → login/signup precargado
+     ├── sin sesión        → login/signup precargados, con vuelta acá
      ├── otro email        → error explícito
-     ├── sin Mercado Pago  → onboarding primero
-     └── acepta            → ACCEPTED + userId
+     └── acepta            → ACCEPTED + userId → /dashboard/evento/[id]
           ↓
-   Ya puede subir fotos al evento (uploadedById = él)
+   En el panel: el evento le aparece en la lista ("con <dueño>") y lo abre
+   con la vista de colaborador: sube fotos (uploadedById = él), ve y borra
+   SÓLO las suyas, ve cuántas vendió y cuánto le corresponde. No ve el precio
+   ni las ventas de los demás, ni puede publicar, invitar, descontar o borrar.
           ↓
    Al pagarse una venta: accrueCommissionsForSale()
      · ALL → % sobre todo el neto
      · OWN → % sobre la parte del neto de las fotos que él subió,
              prorrateada por precio de cada ítem
+          ↓
+   El dueño ve en Equipo cuántas subió y vendió cada uno y cuánto le debe.
 ```
 
 > **Es contabilidad, no un split de pago.** Mercado Pago acredita la venta
 > completa al dueño; la comisión queda anotada como deuda entre fotógrafos. Un
 > split real necesita múltiples receptores en una preferencia, que MP no soporta.
-> La UI lo dice explícitamente.
+> La UI lo dice explícitamente, y por eso al colaborador NO se le pide Mercado
+> Pago para aceptar.
 
 `SaleCommission` congela `scope`, `pct` y monto al momento del pago: cambiar los
 parámetros del colaborador después no reescribe la historia. Hay una guardia que
 descarta el registro si la suma de comisiones supera el neto.
+
+Quién puede qué sobre un evento vive en UN módulo, `src/server/acceso-evento.ts`:
+`accesoEvento` responde dueño, colaborador o admin; `puedeSubirAlEvento` deja
+afuera al admin (sus fotos quedarían a su nombre); `filtroFotosPropias` es el
+`where` que limita al colaborador a lo que subió. Las pantallas y las rutas
+preguntan ahí y no comparan `ownerId` por su cuenta: la pantalla del evento se
+reescribió una vez con "¿dueño o admin?" y el colaborador quedó en un 404.
 
 ---
 

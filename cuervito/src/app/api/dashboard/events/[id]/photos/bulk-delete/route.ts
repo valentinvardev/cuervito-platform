@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { puedeEditarEvento } from "~/server/acceso-evento";
+import { accesoEvento, filtroFotosPropias } from "~/server/acceso-evento";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 
@@ -14,6 +14,11 @@ const bodySchema = z.object({
  * storefront stops listing them. Buyers who already purchased can still
  * download them — the daily cron (/api/cron/cleanup) hard-deletes anything
  * older than PHOTO_RETENTION_DAYS.
+ *
+ * Quién puede: el dueño y un admin moderando, cualquier foto del evento; un
+ * colaborador, sólo las que subió él. Antes el filtro era `ownerId`, que en
+ * Photo es siempre el dueño del evento: el colaborador borraba cero fotos sin
+ * ningún error, y el comentario de arriba decía lo contrario de lo que hacía.
  */
 export async function POST(
   req: NextRequest,
@@ -40,20 +45,16 @@ export async function POST(
     );
   }
 
-  /* Cada uno borra las suyas: un colaborador no le borra fotos al dueño ni
-     el dueño a un colaborador. La excepción es un admin moderando, que puede
-     sacar cualquier foto del evento (ver acceso-evento.ts). */
-  let deCualquiera = false;
-  if (session.user.role === "ADMIN") {
-    const ev = await db.event.findUnique({ where: { id: eventId }, select: { ownerId: true } });
-    deCualquiera = puedeEditarEvento(ev?.ownerId, session.user);
+  const acceso = await accesoEvento(eventId, session.user);
+  if (!acceso) {
+    return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
   }
 
   const result = await db.photo.updateMany({
     where: {
       id: { in: parsed.data.photoIds },
       eventId,
-      ...(deCualquiera ? {} : { ownerId: session.user.id }),
+      ...filtroFotosPropias(acceso, session.user.id),
       deletedAt: null,
     },
     data: { deletedAt: new Date() },

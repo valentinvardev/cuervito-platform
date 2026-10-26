@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, ImageOff, Plus } from "lucide-react";
+import { CalendarDays, ImageOff, Plus, Users } from "lucide-react";
 
 import { db } from "~/server/db";
 import { resolveMediaUrl } from "~/server/media";
@@ -22,12 +22,22 @@ export default async function V2Eventos() {
   // eventos es lo que lo permite, y da igual: el checkout graba la venta con
   // sellerId = event.ownerId, así que para los eventos de este usuario son
   // exactamente las mismas filas.
+  //
+  // Los propios y aquellos donde se colabora: el colaborador que aceptó una
+  // invitación tiene que encontrar el evento en algún lado, y este es el
+  // lado. Lo recaudado de esos no es suyo, y la tarjeta lo dice en vez de
+  // mostrar un cero.
   const [eventos, recaudado] = await Promise.all([
     db.event.findMany({
-      where: { ownerId: userId, NOT: { status: "ARCHIVED" } },
+      where: {
+        NOT: { status: "ARCHIVED" },
+        OR: [{ ownerId: userId }, { collaborators: { some: { userId, status: "ACCEPTED" } } }],
+      },
       orderBy: { eventDate: "desc" },
       select: {
         id: true,
+        ownerId: true,
+        owner: { select: { name: true } },
         name: true,
         location: true,
         eventDate: true,
@@ -107,6 +117,13 @@ export default async function V2Eventos() {
                       </span>
                     )}
 
+                    {/* De otro: se dice en la tarjeta, no al abrirlo. */}
+                    {e.ownerId !== userId && (
+                      <span className="ec-de">
+                        <Users /> con {(e.owner.name ?? "otro fotógrafo").split(" ")[0]}
+                      </span>
+                    )}
+
                     <div className="ec-b">
                       <h3>{e.name}</h3>
                       <div className="ec-meta">
@@ -126,14 +143,21 @@ export default async function V2Eventos() {
                         <span>Fotos</span>
                         <b className="tnum">{e._count.photos.toLocaleString("es-AR")}</b>
                       </div>
-                      <div>
-                        <span>Vendido</span>
-                        {vendido > 0 ? (
-                          <b className="tnum">{pesos(vendido)}</b>
-                        ) : (
-                          <b className="pale">—</b>
-                        )}
-                      </div>
+                      {e.ownerId !== userId ? (
+                        <div>
+                          <span>Dueño</span>
+                          <b className="pale nom">{e.owner.name ?? "Otro fotógrafo"}</b>
+                        </div>
+                      ) : (
+                        <div>
+                          <span>Vendido</span>
+                          {vendido > 0 ? (
+                            <b className="tnum">{pesos(vendido)}</b>
+                          ) : (
+                            <b className="pale">—</b>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </Link>
                 );

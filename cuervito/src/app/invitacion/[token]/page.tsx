@@ -1,6 +1,5 @@
 import { type Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
@@ -9,6 +8,14 @@ import { acceptCollaboratorInvite } from "./actions";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
+/**
+ * Aceptar una invitación a cubrir un evento.
+ *
+ * Ya no pide Mercado Pago. La venta entra siempre en la cuenta del dueño del
+ * evento y el colaborador cobra de él, así que pedirle que conecte la suya
+ * era un resto del modelo anterior: una puerta cerrada para alguien que
+ * viene a subir fotos, y una promesa falsa de que iba a cobrar por ahí.
+ */
 export default async function InvitationPage(props: {
   params: Promise<{ token: string }>;
 }) {
@@ -66,14 +73,14 @@ export default async function InvitationPage(props: {
             Ya sos colaborador de {invite.event.name}.
           </div>
         </div>
-        <Link href="/dashboard/eventos" className="btn btn-primary">
-          Ir al panel
+        <Link href={`/dashboard/evento/${invite.eventId}`} className="btn btn-primary">
+          Ir al evento
         </Link>
       </main>
     );
   }
 
-  // No hay sesión: mandar a login/signup con callbackUrl al accept.
+  // No hay sesión: a entrar o a crear la cuenta, y de ahí de vuelta acá.
   if (!session?.user?.id) {
     const callback = `/invitacion/${token}`;
     return (
@@ -122,15 +129,6 @@ export default async function InvitationPage(props: {
     );
   }
 
-  // Verifica que tenga MP conectado.
-  const me = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { mpConnectedAt: true },
-  });
-  if (!me?.mpConnectedAt) {
-    redirect(`/onboarding/mp?callbackUrl=${encodeURIComponent(`/invitacion/${token}`)}`);
-  }
-
   return (
     <main className="wrap-narrower">
       <div className="head">
@@ -165,6 +163,12 @@ export default async function InvitationPage(props: {
                 : invite.commissionScope === "OWN"
                   ? `${invite.commissionPct}% sobre las ventas de las fotos que subas.`
                   : `${invite.commissionPct}% sobre todas las ventas del evento.`}
+            </div>
+            {/* Dicho acá y no descubierto al cobrar: la plata entra en la
+                cuenta de quien invita, y de ahí se la pasa. */}
+            <div style={{ color: "var(--text-secondary)", fontSize: 13, marginTop: 8 }}>
+              Las ventas entran en el Mercado Pago de {invite.invitedBy.name ?? "quien te invita"}.
+              Lo tuyo queda anotado en el panel y te lo pasa esa persona.
             </div>
           </div>
         </div>

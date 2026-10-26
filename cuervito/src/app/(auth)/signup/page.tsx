@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
-import { useActionState } from "react";
+import { Suspense, useActionState } from "react";
 
 import { Aviso, CampoClave, GoogleG, Marco } from "../_piezas";
 import { loginWithGoogleAction } from "../login/actions";
@@ -17,8 +18,18 @@ import { signupAction, type SignupState } from "./actions";
  * Google manda a /onboarding y no al tablero: la cuenta recién creada todavía
  * no tiene perfil ni Mercado Pago, y el panel sin eso es una pantalla vacía con
  * un botón de subir fotos que no se pueden vender.
+ *
+ * Con email, la cuenta nace con el perfil hecho y va directo a donde la
+ * llamaron: el callbackUrl, que es cómo una invitación a colaborar vuelve a
+ * la invitación después de crear la cuenta en vez de dejar a la persona en
+ * el tablero buscando el mail de nuevo. El email llega precargado por lo
+ * mismo: la invitación es para ESE email.
  */
-export default function SignupPage() {
+function Formulario() {
+  const params = useSearchParams();
+  const callbackUrl = params.get("callbackUrl") ?? "/dashboard";
+  const email = params.get("email") ?? "";
+
   const [state, formAction, pending] = useActionState<SignupState, FormData>(signupAction, {
     error: null,
   });
@@ -56,6 +67,8 @@ export default function SignupPage() {
       {state.error && <Aviso>{state.error}</Aviso>}
 
       <form action={formAction} className="form">
+        <input type="hidden" name="callbackUrl" value={callbackUrl} />
+
         <div className="field">
           <div className="field-top">
             <label htmlFor="nom">Nombre y apellido</label>
@@ -84,6 +97,7 @@ export default function SignupPage() {
             inputMode="email"
             autoComplete="email"
             placeholder="vos@estudio.com"
+            defaultValue={email}
             required
           />
         </div>
@@ -107,5 +121,13 @@ export default function SignupPage() {
         ¿Ya tenés cuenta? <Link href="/login">Entrá</Link>
       </p>
     </Marco>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <Formulario />
+    </Suspense>
   );
 }

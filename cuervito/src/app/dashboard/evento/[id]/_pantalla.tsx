@@ -5,15 +5,12 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Check,
-  CircleAlert,
-  CircleCheck,
-  Clock,
   Copy,
-  Crown,
   ExternalLink,
   Image as ImagenIcono,
   Info,
   ListFilter,
+  Percent,
   ScanFace,
   ScanSearch,
   ShieldCheck,
@@ -29,7 +26,6 @@ import { DISCIPLINAS } from "~/lib/disciplinas";
 
 import { Desplegable } from "../../_components/desplegable";
 import { Fecha } from "../../_components/fecha";
-import { iniciales as siglas } from "../../_components/formato";
 import {
   borrarEventoAction,
   guardarDatosAction,
@@ -37,7 +33,7 @@ import {
   publicarAction,
 } from "./acciones";
 import { Descuentos } from "./_descuentos";
-import { Invitar } from "./_invitar";
+import { type Colaborador, Equipo } from "./_equipo";
 import { Soltador } from "./_soltador";
 import { Visor } from "./_visor";
 
@@ -50,7 +46,14 @@ type Foto = {
   caras: number;
   reconocida: boolean;
 };
-type Colaborador = { nombre: string; email: string; estado: string; fotos: number; cobra: boolean };
+/** Lo del colaborador que mira: sus fotos, sus ventas y lo que le toca. */
+type MiParte = {
+  fotos: number;
+  vendidas: number;
+  comision: string;
+  pct: number;
+  alcance: "NONE" | "OWN" | "ALL";
+};
 
 const POR_PAG = 20;
 
@@ -85,6 +88,11 @@ export function Pantalla({
   publico,
   yo,
   fotosDelDueno,
+  vendidasDelDueno = null,
+  totalEvento = 0,
+  deudaTotal = null,
+  comoColaborador = null,
+  miParte = null,
   simulado = false,
   historias = false,
   dorsalInicial = "",
@@ -125,6 +133,12 @@ export function Pantalla({
   publico: string | null;
   yo: string;
   fotosDelDueno: number;
+  /** Cuántas vendió el dueño. Null cuando quien mira no lo ve. */
+  vendidasDelDueno?: number | null;
+  /** Las fotos de todo el evento, para el colaborador, que ve sólo las suyas. */
+  totalEvento?: number;
+  /** Lo que el dueño debe entre todos, formateado. */
+  deudaTotal?: string | null;
   /**
    * Modo demo. Lo usa /demo/subida para grabar esta misma pantalla subiendo
    * un álbum sin tocar la red ni crear fotos de verdad.
@@ -140,8 +154,15 @@ export function Pantalla({
    * subir fotos, descuentos, invitar y borrar el evento.
    */
   comoAdmin?: string | null;
+  /**
+   * El nombre del dueño, cuando el que mira es un colaborador. Sube fotos y
+   * ve las suyas; el precio, la portada, publicar, invitar y borrar son del
+   * dueño, y las ventas de los demás no las ve.
+   */
+  comoColaborador?: string | null;
+  /** Lo suyo, cuando mira un colaborador. */
+  miParte?: MiParte | null;
 }) {
-  const sinCobrar = colaboradores.filter((c) => c.estado !== "PENDING" && !c.cobra);
   const [publicando, empezarPub] = useTransition();
 
   // La portada se podía poner al crear el evento y después nunca más. El que
@@ -347,6 +368,16 @@ export function Pantalla({
           </div>
         )}
 
+        {comoColaborador && (
+          <div className="porque">
+            <Users />
+            <span>
+              Colaborás en el evento de <b>{comoColaborador}</b>. Subís tus fotos y ves cómo se
+              venden; el precio, la portada y publicar son de {comoColaborador.split(" ")[0]}.
+            </span>
+          </div>
+        )}
+
         <section
           className="banda"
           style={
@@ -380,6 +411,8 @@ export function Pantalla({
             {/* Publicar es la acción de la pantalla, así que va en la banda y
                 no adentro de una solapa. Antes acá había un link que se iba al
                 panel viejo. */}
+            {/* Portada y publicar son del dueño, o de un admin. */}
+            {!comoColaborador && (
             <div className="banda-acc">
               {(avisoPub ?? errorPortada) && (
                 <span className="btn btn-vidrio">{avisoPub ?? errorPortada}</span>
@@ -448,6 +481,7 @@ export function Pantalla({
                     : "Publicar evento"}
               </button>
             </div>
+            )}
           </div>
         </section>
 
@@ -473,6 +507,55 @@ export function Pantalla({
           </div>
         )}
 
+        {miParte ? (
+          <section className="cifras">
+            <div className="card cifra">
+              <div className="c-top">
+                <span>Tus fotos</span>
+                <ImagenIcono />
+              </div>
+              <b className="tnum">{miParte.fotos.toLocaleString("es-AR")}</b>
+              <div className="nota-c">De {totalEvento.toLocaleString("es-AR")} en el evento</div>
+            </div>
+            <div className="card cifra">
+              <div className="c-top">
+                <span>Buscables</span>
+                <ScanSearch />
+              </div>
+              <b className="tnum">{evento.reconocidas.toLocaleString("es-AR")}</b>
+              <div className={`nota-c${faltan > 0 ? " alerta" : ""}`}>
+                {faltan > 0 ? `${faltan.toLocaleString("es-AR")} todavía procesando` : "Todas listas"}
+              </div>
+            </div>
+            <div className="card cifra">
+              <div className="c-top">
+                <span>Vendidas</span>
+                <ShoppingBag />
+              </div>
+              <b className="tnum">{miParte.vendidas.toLocaleString("es-AR")}</b>
+              <div className="nota-c">De tus fotos</div>
+            </div>
+            {/* Lo que le toca, con la regla al pie: es la pregunta que se
+                hace antes de aceptar y la que se vuelve a hacer con cada
+                venta. */}
+            <div className="card cifra">
+              <div className="c-top">
+                <span>Te corresponde</span>
+                <Percent />
+              </div>
+              <b className="tnum">
+                {miParte.alcance === "NONE" || miParte.pct === 0 ? "—" : miParte.comision}
+              </b>
+              <div className="nota-c">
+                {miParte.alcance === "NONE" || miParte.pct === 0
+                  ? "Sin comisión pactada"
+                  : miParte.alcance === "OWN"
+                    ? `${miParte.pct}% de lo que venden las tuyas`
+                    : `${miParte.pct}% de todas las ventas`}
+              </div>
+            </div>
+          </section>
+        ) : (
         <section className="cifras">
           <div className="card cifra">
             <div className="c-top">
@@ -512,6 +595,7 @@ export function Pantalla({
             <div className="nota-c">Tu parte, ya cobrada</div>
           </div>
         </section>
+        )}
 
         {/* Subir y reconocer tardan muy distinto. Mostrar una sola barra hace
             que después de subir parezca que el sistema se colgó, cuando en
@@ -547,14 +631,16 @@ export function Pantalla({
           >
             <ImagenIcono /> Fotos <span className="n">{evento.total.toLocaleString("es-AR")}</span>
           </button>
-          <button
-            className="solapa"
-            role="tab"
-            aria-selected={solapa === "precio"}
-            onClick={() => setSolapa("precio")}
-          >
-            <Tag /> Precio
-          </button>
+          {!comoColaborador && (
+            <button
+              className="solapa"
+              role="tab"
+              aria-selected={solapa === "precio"}
+              onClick={() => setSolapa("precio")}
+            >
+              <Tag /> Precio
+            </button>
+          )}
           <button
             className="solapa"
             role="tab"
@@ -811,7 +897,9 @@ export function Pantalla({
                     que hacer ahí es subir fotos, y el soltador está arriba. */}
                 <h3>
                   {fotos.length === 0
-                    ? "Todavía no hay fotos en este evento"
+                    ? comoColaborador
+                      ? "Todavía no subiste fotos a este evento"
+                      : "Todavía no hay fotos en este evento"
                     : buscado
                       ? "Ninguna foto con ese dorsal"
                       : "No hay fotos con ese filtro"}
@@ -870,7 +958,7 @@ export function Pantalla({
           </section>
         )}
 
-        {solapa === "precio" && (
+        {solapa === "precio" && !comoColaborador && (
           <section className="panel-s" data-activo="1">
             <Precio
               eventoId={evento.id}
@@ -992,99 +1080,24 @@ export function Pantalla({
 
         {solapa === "equipo" && (
           <section className="panel-s" data-activo="1">
-            <div className="card">
-              <div className="card-h">
-                <div>
-                  <h2>Quiénes cubren este evento</h2>
-                  <div className="sub">{colaboradores.length + 1} fotógrafos</div>
-                </div>
-                {!comoAdmin && <Invitar eventId={evento.id} precio={evento.precio} />}
-              </div>
-
-              {/* El dueño va en la tabla y no sólo en la cuenta del encabezado.
-                  Decía "4 fotógrafos" y listaba tres, porque el cuarto era el
-                  que estaba mirando. */}
-              <div className="row col-f">
-                <span className="col-av yo">{siglas(yo)}</span>
-                <span className="col-t">
-                  <b>{yo}</b>
-                  <span>Vos, dueño del evento</span>
-                </span>
-                <span className="num soft c-fotos tnum">
-                  {fotosDelDueno > 0 ? fotosDelDueno.toLocaleString("es-AR") : "—"}
-                </span>
-                <Rol clase="duenio" icono={<Crown />} texto="Dueño" />
-              </div>
-
-              {colaboradores.map((c) => (
-                <div className={`row col-f ${c.estado === "PENDING" ? "espera" : ""}`} key={c.email}>
-                  <span className="col-av">{siglas(c.nombre)}</span>
-                  <span className="col-t">
-                    <b>{c.nombre}</b>
-                    <span>{c.email}</span>
-                  </span>
-                  <span className="num soft c-fotos tnum">
-                    {c.fotos > 0 ? c.fotos.toLocaleString("es-AR") : "—"}
-                  </span>
-                  {c.estado === "PENDING" ? (
-                    <Rol clase="espera" icono={<Clock />} texto="Invitado" />
-                  ) : c.cobra ? (
-                    <Rol clase="activo" icono={<CircleCheck />} texto="Activo" />
-                  ) : (
-                    // El estado que más duele: aceptó, subió fotos, la gente
-                    // las encuentra y no las puede comprar porque no hay
-                    // dónde depositarle.
-                    <Rol clase="sincobrar" icono={<CircleAlert />} texto="Sin cobrar" />
-                  )}
-                </div>
-              ))}
-
-              {colaboradores.length === 0 && (
-                <div className="empty" style={{ padding: "var(--s-6) var(--s-4)" }}>
-                  <p>Todavía no invitaste a nadie más a cubrir este evento.</p>
-                </div>
-              )}
-
-              {/* El aviso sólo aparece cuando hay alguien trabado, porque es el
-                  caso en el que el dueño se entera tarde: el atleta encuentra
-                  las fotos, no las puede pagar y le escribe a él. */}
-              {sinCobrar.length > 0 && (
-                <div className="porque" style={{ marginTop: "var(--s-4)" }}>
-                  <CircleAlert />
-                  <span>
-                    {sinCobrar.length === 1 ? (
-                      <>
-                        <b>Las fotos de {sinCobrar[0]!.nombre.split(" ")[0]} no se pueden comprar.</b>{" "}
-                        Todavía no conectó Mercado Pago, así que no hay dónde depositarle.
-                      </>
-                    ) : (
-                      <>
-                        <b>Hay {sinCobrar.length} fotógrafos sin Mercado Pago.</b> Sus fotos aparecen
-                        en las búsquedas pero no se pueden comprar.
-                      </>
-                    )}
-                  </span>
-                </div>
-              )}
-
-              {/* Lo que pasa de verdad, no lo que decía el laboratorio. La
-                  venta entra entera en el Mercado Pago del dueño; la comisión
-                  del colaborador queda anotada como deuda y se la pasa él.
-                  Decirlo al revés le prometía a un tercero una plata que el
-                  sistema no le iba a devengar nunca. */}
-              <div className="reparto">
-                Todas las ventas entran en <b>tu</b> Mercado Pago, también las de las fotos que
-                suban ellos. Lo que le toca a cada uno queda registrado como lo que les debés, y se
-                lo pasás vos.
-              </div>
-            </div>
+            <Equipo
+              eventoId={evento.id}
+              precio={evento.precio}
+              comision={evento.comision}
+              modo={comoAdmin ? "admin" : comoColaborador ? "colaborador" : "duenio"}
+              duenio={{ nombre: yo, fotos: fotosDelDueno, vendidas: vendidasDelDueno }}
+              colaboradores={colaboradores}
+              deudaTotal={deudaTotal}
+            />
           </section>
         )}
 
         {solapa === "info" && (
           <section className="panel-s" data-activo="1">
-            <Datos evento={evento} />
-            {!comoAdmin && <Borrar eventoId={evento.id} nombre={evento.nombre} fotos={evento.total} />}
+            {comoColaborador ? <DatosLectura evento={evento} /> : <Datos evento={evento} />}
+            {!comoAdmin && !comoColaborador && (
+              <Borrar eventoId={evento.id} nombre={evento.nombre} fotos={evento.total} />
+            )}
           </section>
         )}
       </div>
@@ -1313,18 +1326,52 @@ function Borrar({ eventoId, nombre, fotos }: { eventoId: string; nombre: string;
 }
 
 /**
- * El rol de cada fotógrafo, como texto.
- *
- * Antes eran píldoras. Una píldora es una caja con fondo, y cuatro cajas de
- * colores distintos en una columna angosta compiten con los nombres y los
- * números, que es lo que la tabla vino a mostrar. Como texto con ícono, el rol
- * se reconoce igual de rápido y deja de pelear por atención.
+ * Los datos del evento para quien no los puede cambiar: el colaborador. La
+ * misma ficha sin los campos, con el precio al pie, que es lo que necesita
+ * para saber de qué habla cuando habla con el dueño.
  */
-function Rol({ clase, icono, texto }: { clase: string; icono: React.ReactNode; texto: string }) {
+function DatosLectura({
+  evento,
+}: {
+  evento: {
+    nombre: string;
+    fecha: string | null;
+    lugar: string | null;
+    disciplina: string | null;
+    descripcion: string | null;
+    precio: number;
+  };
+}) {
+  const filas: [string, string][] = [
+    ["Nombre", evento.nombre],
+    ["Fecha", evento.fecha ?? "Sin fecha"],
+    ["Lugar", evento.lugar ?? "—"],
+    ["Disciplina", evento.disciplina ?? "—"],
+    ["Precio por foto", evento.precio > 0 ? `$${evento.precio.toLocaleString("es-AR")}` : "Gratis"],
+  ];
   return (
-    <span className={`rol ${clase}`}>
-      {icono} {texto}
-    </span>
+    <div className="card blq">
+      <h2>Datos del evento</h2>
+      <p className="ayuda">Los cambia el dueño del evento.</p>
+      <div className="blq-b" style={{ gap: 0 }}>
+        {filas.map(([k, v]) => (
+          <div className="aj" key={k}>
+            <div className="aj-t">
+              <b>{k}</b>
+            </div>
+            <span>{v}</span>
+          </div>
+        ))}
+        {evento.descripcion && (
+          <div className="aj">
+            <div className="aj-t">
+              <b>Descripción</b>
+              <span>{evento.descripcion}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

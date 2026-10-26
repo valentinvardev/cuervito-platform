@@ -5,7 +5,7 @@ existir: una vez es un descuido, dos es una tendencia.
 
 ## La misma regla escrita en N lugares
 - Primera vez: 2026-09-06 (registrado; las apariciones son anteriores)
-- Ocurrencias: 5 (fórmula de descuentos, tipografía por layout, `status !== "PAID"`, candado ADMIN de la vista previa /v2 — 2026-09-08; slugs reservados — 2026-10-07)
+- Ocurrencias: 6 (fórmula de descuentos, tipografía por layout, `status !== "PAID"`, candado ADMIN de la vista previa /v2 — 2026-09-08; slugs reservados — 2026-10-07; acceso al evento en dos módulos — 2026-10-26)
 - Qué pasa: una decisión —cómo se calcula un descuento, qué fuente usa el
   panel, quién puede bajar las fotos— queda expresada como una línea repetida
   en cada lugar que la necesita, en vez de como un módulo con nombre.
@@ -92,7 +92,15 @@ existir: una vez es un descuido, dos es una tendencia.
   tema en un solo inyector (`_estilo-plantilla.tsx`) que usan la cabeza de
   la tienda, la previa del panel y la entrega. Las cinco plantillas nuevas
   son CSS sobre los mismos componentes de encontrate, no cinco copias del
-  carrito: es la misma decisión que `plantillas/comun.tsx` en Portfolio.
+  carrito: es la misma deci- 2026-10-26, la sexta, y esta vez con dos copias que se CONTRADECÍAN:
+  `event-access.ts` sabía del colaborador y `acceso-evento.ts` no. Las rutas
+  de subir preguntaban al primero; la pantalla del evento y las de borrar, al
+  segundo. Resultado: un colaborador podía subir por la API pero no abrir el
+  evento, y no podía borrar lo que había subido. Quedó un módulo, con el rol y
+  los filtros derivados de él. La señal para la próxima: si dos archivos
+  responden la misma pregunta con distinta lista de casos, uno está mal, y no
+  se sabe cuál hasta que un usuario del caso que falta escribe.
+sión que `plantillas/comun.tsx` en Portfolio.
 - Estado: activo
 
 ## Clave fija más invalidación, en vez de una URL nueva
@@ -118,8 +126,9 @@ existir: una vez es un descuido, dos es una tendencia.
 
 ## Trabajo en vuelo que nadie gobierna
 - Primera vez: 2026-09-20 (registrado; la primera aparición fue anterior)
-- Ocurrencias: 2 (el `void (async …)` del commit, que moría con el proceso;
-  el `Promise.race` del tope, que abandona pero no corta)
+- Ocurrencias: 4 (el `void (async …)` del commit, que moría con el proceso;
+  el `Promise.race` del tope, que abandona pero no corta; el aviso del chat;
+  el mail de entrega de una compra)
 - Qué pasa: se lanza trabajo pesado y después se deja de mirarlo. La primera
   vez se dejó de mirarlo porque no se esperaba; la segunda porque se cansó de
   esperar. En los dos casos el trabajo siguió existiendo, consumiendo memoria
@@ -143,6 +152,15 @@ existir: una vez es un descuido, dos es una tendencia.
   «al menos una vez» para no mandar dos mails, pero no hay nada que liste
   los avisos marcados y no enviados. Si aparece un aviso perdido, el arreglo
   es guardar el id de Resend como hace EmailEnvio y borrar la marca si no hay.
+- 2026-10-26, la cuarta, y la más vieja del código: el mail de entrega de
+  una compra (`mp/webhook` → `void sendDeliveryEmailForSale`) sale con
+  `void` y, si falla, `console.error` y nada más. Ni marca, ni id de
+  Resend, ni reintento. Se descubrió al investigar una compra paga con cero
+  descargas: desde la base no hay forma de saber si el mail salió. Y el
+  agujero sigue en cadena: la visita a /descarga tampoco se registra, y la
+  descarga en iOS tiene una rama de error que no muestra ni reporta nada.
+  Tres eslabones y ninguno deja huella: cuando falla, se reconstruye a mano
+  con nginx y pm2.
 - Estado: activo
 
 ## Estado derivado que se calcula una vez y nunca se reconcilia
@@ -166,11 +184,15 @@ existir: una vez es un descuido, dos es una tendencia.
 
 ## Se rompe sólo para quien no somos nosotros
 - Primera vez: 2026-10-14 (registrado; la primera aparición fue el candado de /v2)
-- Ocurrencias: 2 (el candado `role !== "ADMIN"` en /api/v2/buscar, que dejaba
+- Ocurrencias: 3 (el candado `role !== "ADMIN"` en /api/v2/buscar, que dejaba
   el panel en blanco a todo fotógrafo real durante semanas — 2026-09-08; los
   dominios propios, con la ruta del mapa en una carpeta `_internal` que el
   App Router no sirve: 404 en producción desde mayo, y nadie lo vio porque
-  nunca hubo un cliente con dominio — 2026-10-14)
+  nunca hubo un cliente con dominio — 2026-10-14; los colaboradores: la API
+  deja subir a un colaborador aceptado, pero el panel nuevo lo manda a 404 al
+  abrir el evento y no le lista el evento. La pantalla se reescribió con la
+  pregunta «¿es el dueño o un admin?» y el tercer rol quedó afuera. El único
+  intento real, el 2026-10-20, terminó con cero fotos — 2026-10-26)
 - Qué pasa: una función se prueba desde adentro —con sesión de admin, en
   localhost, en el dominio nuestro— y queda «andando». Falla únicamente en
   la situación del usuario real: otro rol, otro host, otro navegador.

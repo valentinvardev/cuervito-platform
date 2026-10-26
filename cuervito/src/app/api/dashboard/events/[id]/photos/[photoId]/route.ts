@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { accesoEvento, filtroFotosPropias } from "~/server/acceso-evento";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 
@@ -8,6 +9,9 @@ import { db } from "~/server/db";
  * in S3) so anyone who already bought it can still download from their
  * /descarga/{token} page. The daily /api/cron/cleanup job removes
  * photos whose `deletedAt` is older than PHOTO_RETENTION_DAYS.
+ *
+ * Quién puede: el dueño y un admin, cualquier foto del evento; un
+ * colaborador, sólo las que subió él (ver acceso-evento.ts).
  */
 export async function DELETE(
   _req: NextRequest,
@@ -19,15 +23,16 @@ export async function DELETE(
   }
 
   const { id: eventId, photoId } = await ctx.params;
-  const photo = await db.photo.findUnique({
-    where: { id: photoId },
-    select: {
-      ownerId: true,
-      eventId: true,
-      deletedAt: true,
-    },
+  const acceso = await accesoEvento(eventId, session.user);
+  if (!acceso) {
+    return NextResponse.json({ error: "Foto no encontrada" }, { status: 404 });
+  }
+
+  const photo = await db.photo.findFirst({
+    where: { id: photoId, eventId, ...filtroFotosPropias(acceso, session.user.id) },
+    select: { deletedAt: true },
   });
-  if (!photo || photo.ownerId !== session.user.id || photo.eventId !== eventId) {
+  if (!photo) {
     return NextResponse.json({ error: "Foto no encontrada" }, { status: 404 });
   }
 
