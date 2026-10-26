@@ -1,31 +1,13 @@
-import Link from "next/link";
-import { ArrowRight, LifeBuoy, ScanFace, Upload, Wallet } from "lucide-react";
+import { LifeBuoy } from "lucide-react";
 
 import { whatsappUrl } from "~/lib/support";
 
 import { GlifoWhatsapp } from "../_components/glifo-whatsapp";
 import { sesionPanel } from "../_components/sesion";
 import { Faq } from "./_faq";
+import { Guias } from "./_guias";
 
 export const dynamic = "force-dynamic";
-
-const GUIAS = [
-  {
-    icono: Upload,
-    titulo: "Subir un evento",
-    texto: "De crear el evento a publicarlo, con los tamaños y formatos que conviene usar.",
-  },
-  {
-    icono: ScanFace,
-    titulo: "Cómo funciona el reconocimiento",
-    texto: "Qué detectamos, por qué a veces falla y cómo mejorar los resultados.",
-  },
-  {
-    icono: Wallet,
-    titulo: "Métodos de pago",
-    texto: "Cómo conectás tu cuenta, cuándo entra la plata y qué comisión se descuenta.",
-  },
-];
 
 export default async function V2Ayuda() {
   await sesionPanel();
@@ -74,20 +56,9 @@ export default async function V2Ayuda() {
               <h2>Guías</h2>
             </div>
           </div>
-          <div className="guias">
-            {GUIAS.map((g) => (
-              <Link href="/dashboard/ayuda" className="gu" key={g.titulo}>
-                <span className="gu-i">
-                  <g.icono />
-                </span>
-                <b>{g.titulo}</b>
-                <p>{g.texto}</p>
-                <span className="mas">
-                  Leer <ArrowRight />
-                </span>
-              </Link>
-            ))}
-          </div>
+          {/* Cada guía abre en un diálogo. Antes eran links a esta misma
+              página: se tocaban y no pasaba nada. */}
+          <Guias />
         </section>
 
         <section className="card">
