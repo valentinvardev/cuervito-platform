@@ -62,6 +62,7 @@ export async function POST(req: Request) {
         select: {
           name: true,
           eventDate: true,
+      recognition: true,
           location: true,
           discipline: true,
           pricePerPhoto: true,

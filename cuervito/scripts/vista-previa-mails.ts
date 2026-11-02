@@ -35,6 +35,7 @@ const mails: Record<string, string> = {
     eventId: "evento-ejemplo",
     fotos: 846,
     tienda: "https://encontrate.app/sofiarios/medio-maraton",
+    conBusqueda: true,
     bajaUrl: d.bajaUrl,
     prueba: true,
   }).html,

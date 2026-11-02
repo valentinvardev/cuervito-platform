@@ -28,6 +28,9 @@ export type DatosHistoria = {
   precio: string;
   /** La dirección de la tienda, sin el protocolo. */
   direccion: string;
+  /** Si el evento reconoce caras y dorsales. Sin eso, la pieza no manda a
+      buscar un dorsal que nadie va a leer. */
+  conBusqueda: boolean;
   /** El logo del fotógrafo como data URI, o null si no subió ninguno. */
   logo: string | null;
   /** El color de marca, en hex. */
@@ -160,7 +163,7 @@ function Pie({ d, tinta, escala }: { d: DatosHistoria; tinta: string; escala: nu
       {d.logo && <img src={d.logo} alt="" height={52 * escala} style={{ objectFit: "contain" }} />}
       {!d.logo && (
         <div style={{ display: "flex", fontFamily: "Outfit", fontSize: 26 * escala, color: tenue }}>
-          Buscá tu dorsal
+          {d.conBusqueda ? "Buscá tu dorsal" : "Encontrá tus fotos"}
         </div>
       )}
     </div>

@@ -5,7 +5,7 @@ existir: una vez es un descuido, dos es una tendencia.
 
 ## La misma regla escrita en N lugares
 - Primera vez: 2026-09-06 (registrado; las apariciones son anteriores)
-- Ocurrencias: 6 (fórmula de descuentos, tipografía por layout, `status !== "PAID"`, candado ADMIN de la vista previa /v2 — 2026-09-08; slugs reservados — 2026-10-07; acceso al evento en dos módulos — 2026-10-26)
+- Ocurrencias: 8 (fórmula de descuentos, tipografía por layout, `status !== "PAID"`, candado ADMIN de la vista previa /v2 — 2026-09-08; slugs reservados — 2026-10-07; el menú en cinco plantillas — 2026-10-11; los velos en CSS — 2026-10-12; acceso al evento en dos módulos — 2026-10-26)
 - Qué pasa: una decisión —cómo se calcula un descuento, qué fuente usa el
   panel, quién puede bajar las fotos— queda expresada como una línea repetida
   en cada lugar que la necesita, en vez de como un módulo con nombre.
@@ -92,7 +92,8 @@ existir: una vez es un descuido, dos es una tendencia.
   tema en un solo inyector (`_estilo-plantilla.tsx`) que usan la cabeza de
   la tienda, la previa del panel y la entrega. Las cinco plantillas nuevas
   son CSS sobre los mismos componentes de encontrate, no cinco copias del
-  carrito: es la misma deci- 2026-10-26, la sexta, y esta vez con dos copias que se CONTRADECÍAN:
+  carrito: es la misma decisión que `plantillas/comun.tsx` en Portfolio.
+- 2026-10-26, la octava, y esta vez con dos copias que se CONTRADECÍAN:
   `event-access.ts` sabía del colaborador y `acceso-evento.ts` no. Las rutas
   de subir preguntaban al primero; la pantalla del evento y las de borrar, al
   segundo. Resultado: un colaborador podía subir por la API pero no abrir el
@@ -100,7 +101,6 @@ existir: una vez es un descuido, dos es una tendencia.
   los filtros derivados de él. La señal para la próxima: si dos archivos
   responden la misma pregunta con distinta lista de casos, uno está mal, y no
   se sabe cuál hasta que un usuario del caso que falta escribe.
-sión que `plantillas/comun.tsx` en Portfolio.
 - Estado: activo
 
 ## Clave fija más invalidación, en vez de una URL nueva
@@ -203,4 +203,25 @@ sión que `plantillas/comun.tsx` en Portfolio.
   «como el otro» (rol fotógrafo, Host ajeno, sin sesión), la función no está
   probada. Para dominios propios, la pasada es un `curl -H "Host: …"` contra
   el servidor, que hoy tarda un minuto y en mayo habría encontrado el 404.
+- Estado: activo
+
+## El sistema de diseño se carga por layout, y la ruta nueva no lo hereda
+- Primera vez: 2026-11-02 (registrado; la primera aparición fue anterior)
+- Ocurrencias: 2 (el panel de administración renderizó semanas en la fuente
+  del sistema porque no copió las tipografías de los otros layouts; la página
+  de la invitación a colaborar se vio sin estilos desde que existe)
+- Qué pasa: tokens.css y base.css no están en el layout raíz sino repetidos
+  en cada grupo de rutas que los necesita. Una ruta que nace afuera de esos
+  grupos —`/invitacion`, hasta hoy— cae en el layout raíz, que sólo carga
+  globals.css, y se pinta con clases que ningún CSS define. En desarrollo
+  nadie lo ve: la pantalla se prueba desde el panel, que sí las tiene.
+- Por qué importa: es un bug que sólo ve el usuario de afuera, y en la
+  pantalla que más confianza tiene que dar (un mail que invita a cobrar).
+  La invitación quedó así desde su primer commit hasta que el dueño del
+  producto la abrió desde el mail.
+- Señal temprana: una carpeta nueva directamente bajo `src/app` sin
+  `layout.tsx` propio ni paréntesis de grupo. Si usa `.btn` o `var(--ink)`,
+  va adentro de un grupo. El arreglo de fondo es cargar tokens y base en el
+  raíz, que hoy no se puede porque las rutas del prototipo (onboarding,
+  pago, descarga) todavía traen el CSS viejo y chocarían.
 - Estado: activo

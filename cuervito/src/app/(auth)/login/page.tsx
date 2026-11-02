@@ -19,6 +19,8 @@ import { loginAction, loginWithGoogleAction, type LoginState } from "./actions";
 function Formulario() {
   const params = useSearchParams();
   const callbackUrl = params.get("callbackUrl") ?? "/dashboard";
+  // La invitación a colaborar llega con el mail puesto: es para ESE mail.
+  const email = params.get("email") ?? "";
 
   const [state, formAction, pending] = useActionState<LoginState, FormData>(loginAction, {
     error: null,
@@ -74,6 +76,7 @@ function Formulario() {
             type="email"
             inputMode="email"
             autoComplete="email"
+            defaultValue={email}
             placeholder="vos@estudio.com"
             required
             autoFocus

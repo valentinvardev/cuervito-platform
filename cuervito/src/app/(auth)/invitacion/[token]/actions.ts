@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { auth } from "~/server/auth";
+import { auth, signOut } from "~/server/auth";
 import { db } from "~/server/db";
 
 /**
@@ -17,7 +17,7 @@ export async function acceptCollaboratorInvite(formData: FormData) {
 
   const session = await auth();
   if (!session?.user?.id || !session.user.email) {
-    redirect(`/login?callbackUrl=/invitacion/${token}`);
+    redirect(`/login?callbackUrl=${encodeURIComponent(`/invitacion/${token}`)}`);
   }
 
   const invite = await db.eventCollaborator.findUnique({
@@ -52,4 +52,23 @@ export async function acceptCollaboratorInvite(formData: FormData) {
   revalidatePath("/dashboard/eventos");
   revalidatePath("/dashboard");
   redirect(`/dashboard/evento/${invite.eventId}`);
+}
+
+/**
+ * Cerrar la sesión que no es la invitada y volver a entrar con el mail de la
+ * invitación ya puesto. Antes la pantalla decía «cerrá sesión y volvé a
+ * entrar» y no daba cómo: quien llegaba desde el mail tenía que encontrar el
+ * botón de salir en un panel que no conocía.
+ */
+export async function cambiarDeCuenta(formData: FormData) {
+  const token = formData.get("token");
+  if (typeof token !== "string" || !token) return;
+
+  const invite = await db.eventCollaborator.findUnique({
+    where: { inviteToken: token },
+    select: { invitedEmail: true },
+  });
+  const callback = encodeURIComponent(`/invitacion/${token}`);
+  const email = invite ? `&email=${encodeURIComponent(invite.invitedEmail)}` : "";
+  await signOut({ redirectTo: `/login?callbackUrl=${callback}${email}` });
 }

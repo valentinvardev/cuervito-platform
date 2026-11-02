@@ -185,7 +185,7 @@ Host invita (email + scope + %)
           ↓
    /invitacion/[token]
      ├── sin sesión        → login/signup precargados, con vuelta acá
-     ├── otro email        → error explícito
+     ├── otro email        → «cambiar de cuenta»: cierra sesión y vuelve al login con el mail puesto
      └── acepta            → ACCEPTED + userId → /dashboard/evento/[id]
           ↓
    En el panel: el evento le aparece en la lista ("con <dueño>") y lo abre

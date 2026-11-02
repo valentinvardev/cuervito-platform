@@ -20,6 +20,7 @@ export async function datosDePieza(
     location: string | null;
     discipline: string | null;
     pricePerPhoto: unknown;
+    recognition: boolean;
     /** Cuántas fotos tiene, ya contadas por quien llama. */
     fotos: number;
   },
@@ -48,6 +49,7 @@ export async function datosDePieza(
     fotos: ev.fotos,
     precio: `$${Number(ev.pricePerPhoto).toLocaleString("es-AR")}`,
     direccion: `encontrate.app/${dueno?.slug ?? ""}`,
+    conBusqueda: ev.recognition,
     logo,
     color: dueno?.storefrontBrandColor ?? "#F0410F",
   };

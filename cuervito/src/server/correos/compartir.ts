@@ -116,6 +116,7 @@ type Candidato = {
   evento: string;
   fotos: number;
   tienda: string;
+  conBusqueda: boolean;
   dueno: { id: string; email: string; name: string | null; historiasEnabled: boolean; role: string };
 };
 
@@ -163,6 +164,7 @@ async function candidatos(limite: number, ahora: Date): Promise<Candidato[]> {
       id: true,
       name: true,
       slug: true,
+      recognition: true,
       owner: {
         select: { id: true, email: true, name: true, slug: true, historiasEnabled: true, role: true },
       },
@@ -194,6 +196,7 @@ async function candidatos(limite: number, ahora: Date): Promise<Candidato[]> {
       evento: e.name,
       fotos: e._count.photos,
       tienda: `${BASE}/${e.owner.slug}/${e.slug}`,
+      conBusqueda: e.recognition,
       dueno: {
         id: e.owner.id,
         email: e.owner.email,
@@ -219,6 +222,9 @@ export type DatosCompartir = {
   eventId: string;
   fotos: number;
   tienda: string;
+  /** Si el evento reconoce caras y dorsales. Sin eso, al atleta no se le
+      dice que se busque con una selfie: recorre la galería. */
+  conBusqueda: boolean;
   bajaUrl: string;
   /** Mail de prueba: las respuestas no se anotan. */
   prueba?: boolean;
@@ -226,7 +232,12 @@ export type DatosCompartir = {
 
 /** El mensaje que el fotógrafo manda al grupo, ya escrito. */
 function mensajeWhatsapp(d: DatosCompartir): string {
-  return `Ya están las fotos de ${d.evento}. Buscá las tuyas con una selfie o con tu número de dorsal: ${d.tienda}`;
+  // Lo que se le promete al atleta depende del evento: en uno sin
+  // reconocimiento —el de la comisión chica— no hay selfie ni dorsal que
+  // valga, y prometerlo es mandarlo a buscar un botón que no existe.
+  return d.conBusqueda
+    ? `Ya están las fotos de ${d.evento}. Buscá las tuyas con una selfie o con tu número de dorsal: ${d.tienda}`
+    : `Ya están las fotos de ${d.evento}. Entrá y elegí las tuyas: ${d.tienda}`;
 }
 
 export function mailCompartir(d: DatosCompartir): { asunto: string; html: string; texto: string } {
@@ -331,6 +342,7 @@ export async function enviarCompartir(
         eventId: c.eventId,
         fotos: c.fotos,
         tienda: c.tienda,
+        conBusqueda: c.conBusqueda,
         bajaUrl: bajaUrl(c.dueno.id),
       });
       const r = await sendEmail({ to: c.dueno.email, subject: mail.asunto, html: mail.html, text: mail.texto });
@@ -369,7 +381,7 @@ export async function enviarPruebaCompartir(
     isPublished: true,
     photos: { some: { deletedAt: null, previewCleanKey: { not: null } } },
   };
-  const elegir = { name: true, id: true, slug: true, owner: { select: { slug: true } } } as const;
+  const elegir = { name: true, id: true, slug: true, recognition: true, owner: { select: { slug: true } } } as const;
   const ev =
     (await db.event.findFirst({ where: { ...conFotos, ownerId: userId }, orderBy: { createdAt: "desc" }, select: elegir })) ??
     (await db.event.findFirst({ where: conFotos, orderBy: { createdAt: "desc" }, select: elegir }));
@@ -382,6 +394,7 @@ export async function enviarPruebaCompartir(
     eventId: ev.id,
     fotos,
     tienda: `${BASE}/${ev.owner.slug ?? ""}/${ev.slug}`,
+    conBusqueda: ev.recognition,
     bajaUrl: `${BASE}/correos/baja?prueba=1`,
     prueba: true,
   });

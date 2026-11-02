@@ -52,6 +52,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ evento: string
         select: {
           name: true,
           eventDate: true,
+      recognition: true,
           location: true,
           discipline: true,
           pricePerPhoto: true,
