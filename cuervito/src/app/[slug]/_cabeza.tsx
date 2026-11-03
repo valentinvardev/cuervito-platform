@@ -16,6 +16,7 @@ import { Suspense } from "react";
 
 import { ExternalStylesheets } from "~/app/_components/external-stylesheets";
 import { StorefrontTheme } from "~/app/_components/storefront-theme";
+import { VeloCaptura } from "~/app/_components/velo-captura";
 import { VisitorTracker } from "~/app/_components/visitor-tracker";
 import { getTemplate } from "~/lib/storefront-templates";
 import { SCRIPT_TEMA_TIENDA } from "~/lib/tema-tienda";
@@ -75,6 +76,10 @@ export function CabezaTienda({
       )}
       <ExternalStylesheets />
       <EstiloPlantilla plantilla={plantilla} color={color} color2={color2} />
+      {/* Desenfoca las fotos en venta mientras se aprieta Ctrl o la pestaña
+          pierde el foco. Va acá porque la grilla, el visor y el carrito son
+          árboles distintos y el velo es uno solo. */}
+      <VeloCaptura />
     </>
   );
 }

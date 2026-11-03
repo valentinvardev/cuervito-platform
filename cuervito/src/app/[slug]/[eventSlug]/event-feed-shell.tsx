@@ -675,6 +675,7 @@ function FeedInner({
                 >
                   <button
                     type="button"
+                    className="feed-foto"
                     onClick={() => setLightboxIdx(i)}
                     aria-label="Ver foto en grande"
                     style={{

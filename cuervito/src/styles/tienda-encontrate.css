@@ -397,7 +397,7 @@
 }
 .et-foto img {
   width: 100%; height: 100%; object-fit: cover;
-  transition: transform 420ms cubic-bezier(.2, .8, .3, 1);
+  transition: transform 420ms cubic-bezier(.2, .8, .3, 1), filter 140ms ease;
 }
 .et-foto:hover img { transform: scale(1.035); }
 
@@ -934,3 +934,34 @@
   --et-linea-fuerte: rgba(244, 243, 239, .2);
   --et-tenue: rgba(244, 243, 239, .55);
 }
+
+/* ═══════════════════════════ EL VELO DE CAPTURA ═══════════════════════════
+   Mientras <html> lleva data-velo —Ctrl, Cmd o Impr Pant apretadas, o la
+   pestaña sin foco; lo pone VeloCaptura— las fotos en venta se desenfocan:
+   la grilla, el visor y las miniaturas del carrito, en los tres diseños de
+   tienda. No impide la captura: la deja sin foto. La portada, el avatar y el
+   logo no se tocan: son de la marca, no se venden. */
+.et-visor-marco img, .et-linea-mini img { transition: filter 140ms ease; }
+:root[data-velo] .et-foto img,
+:root[data-velo] .et-visor-marco img,
+:root[data-velo] .et-linea-mini img,
+:root[data-velo] .photo-cell,
+:root[data-velo] .feed-foto,
+:root[data-velo] .lb-img {
+  filter: blur(26px) saturate(.6);
+}
+
+/* El aviso de por qué se nubló todo. Abajo y chico: tiene que explicar, no
+   tapar. Por encima del visor y del carrito, que son fijos también. */
+.velo-aviso {
+  position: fixed; left: 50%; bottom: 22px; z-index: 1200;
+  transform: translate(-50%, 8px);
+  padding: 9px 14px; border-radius: 999px;
+  background: rgba(13, 13, 12, .86); color: #F4F3EF;
+  font-size: 13px; font-weight: 500; letter-spacing: .005em; white-space: nowrap;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .35);
+  backdrop-filter: blur(8px);
+  opacity: 0; pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+:root[data-velo] .velo-aviso { opacity: 1; transform: translate(-50%, 0); }
