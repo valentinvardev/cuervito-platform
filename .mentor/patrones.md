@@ -101,6 +101,10 @@ existir: una vez es un descuido, dos es una tendencia.
   los filtros derivados de él. La señal para la próxima: si dos archivos
   responden la misma pregunta con distinta lista de casos, uno está mal, y no
   se sabe cuál hasta que un usuario del caso que falta escribe.
+- 2026-11-02, evitado desde el diseño: la filigrana de la marca de agua
+  entró como una capa más en `marca-agua-capa.ts`, el módulo que ya
+  comparten el VPS y la Lambda, y `probar.mjs` la compara byte a byte. La
+  tentación era dibujarla en el procesador y «después» en la Lambda.
 - Estado: activo
 
 ## Clave fija más invalidación, en vez de una URL nueva

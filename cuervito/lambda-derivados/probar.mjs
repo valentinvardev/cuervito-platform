@@ -80,4 +80,34 @@ assert.equal(rota.ok, false);
 assert.equal(rota.motivo, "imagen");
 console.log("una imagen rota vuelve como 'imagen'");
 
+// Con filigrana: una línea sintética (un rectángulo bajo y ancho), repetida en
+// filas. La grande la lleva, la miniatura no, y la Lambda da lo mismo que el
+// núcleo usado como lo usa el VPS.
+const cfgF = { ...cfg, filigrana: { activa: true, modo: "fijo", texto: "PRUEBA", escala: 0.016, opacidad: 0.22, rotacion: -20, separacion: 2.5 } };
+const filigranaPng = await sharp({
+  create: { width: 600, height: 38, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 0.9 } },
+})
+  .png()
+  .toBuffer();
+const pedidoF = { ...pedido, cfg: cfgF, filigrana: { png: filigranaPng.toString("base64"), ancho: 600, alto: 38 } };
+t = Date.now();
+const rf = await derivadosDe(grande, pedidoF);
+console.log(`con filigrana en ${Date.now() - t} ms`);
+assert.equal(rf.ok, true);
+assert.equal(rf.derivados.filigrana, true, "tiene que decir que la puso");
+assert.ok(!rf.derivados.marcada.equals(r.derivados.marcada), "la grande con filigrana tiene que cambiar");
+assert.equal((await sharp(rf.derivados.miniatura).metadata()).width, 560);
+const { rasterizarFiligrana } = require("./build/nucleo.js");
+const unidadF = { png: filigranaPng, ancho: 600, alto: 38 };
+const vpsF = await hacerDerivados(grande, async (ancho, alto) => ({
+  marca: superponer(await rasterizarCapa({ anchoFoto: ancho, altoFoto: alto, unidad, cfg: cfgF })),
+  filigrana: superponer(await rasterizarFiligrana({ anchoFoto: ancho, altoFoto: alto, unidad: unidadF, cfg: cfgF.filigrana })),
+}));
+assert.ok(vpsF.marcada.equals(rf.derivados.marcada), "la grande con filigrana tiene que ser idéntica a la del VPS");
+assert.ok(vpsF.miniatura.equals(rf.derivados.miniatura), "la miniatura con filigrana tiene que ser idéntica a la del VPS");
+// La miniatura no lleva la filigrana: es la de la marca sola, achicada desde
+// el crudo, así que no es byte a byte la de antes (que venía del webp), pero
+// tiene que parecerse mucho más a ésa que la grande a la grande.
+console.log("con filigrana, idéntico al núcleo compartido, byte a byte");
+
 console.log("TODO BIEN");

@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
-import { armarUnidad, capaParaFoto, esquemaConfig } from "~/server/marca-agua";
+import { armarUnidad, capaParaFoto, esquemaConfig, filigranaParaFoto, textoFiligrana } from "~/server/marca-agua";
 import { getS3ObjectBytes } from "~/server/s3";
 import { loadPlatformWatermark } from "~/server/watermark";
 
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
   if (!photoId) return NextResponse.json({ error: "Falta la foto." }, { status: 400 });
   const foto = await db.photo.findFirst({
     where: { id: photoId, deletedAt: null, previewCleanKey: { not: null } },
-    select: { previewCleanKey: true },
+    select: { previewCleanKey: true, event: { select: { name: true } }, owner: { select: { name: true } } },
   });
   if (!foto?.previewCleanKey) {
     return NextResponse.json({ error: "No encontramos esa foto." }, { status: 404 });
@@ -75,14 +75,18 @@ export async function POST(req: Request) {
     .resize({ width: ANCHO, withoutEnlargement: true })
     .toBuffer();
   const meta = await sharp(base).metadata();
-  const capa = await capaParaFoto({
-    anchoFoto: meta.width ?? ANCHO,
-    altoFoto: meta.height ?? Math.round(ANCHO * 0.66),
-    imagen,
-    cfg,
-    conTexto: true,
+  const anchoFoto = meta.width ?? ANCHO;
+  const altoFoto = meta.height ?? Math.round(ANCHO * 0.66);
+  const capas = [await capaParaFoto({ anchoFoto, altoFoto, imagen, cfg, conTexto: true })];
+  // La filigrana con el evento y el fotógrafo de ESTA foto, debajo de la
+  // marca, como va a salir.
+  const texto = textoFiligrana(cfg, {
+    evento: foto.event?.name ?? null,
+    fotografo: foto.owner?.name ?? null,
+    conPlataforma: true,
   });
-  const jpeg = await sharp(base).composite([capa]).jpeg({ quality: 82 }).toBuffer();
+  if (texto) capas.unshift(await filigranaParaFoto({ anchoFoto, altoFoto, texto, cfg }));
+  const jpeg = await sharp(base).composite(capas).jpeg({ quality: 82 }).toBuffer();
 
   return new NextResponse(new Uint8Array(jpeg), {
     headers: {

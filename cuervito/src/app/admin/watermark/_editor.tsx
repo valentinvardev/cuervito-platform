@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
   CONFIG_POR_DEFECTO,
   PATRONES_LISTA,
+  type ConfigFiligrana,
   type ConfigMarca,
 } from "~/server/marca-agua-config";
 
@@ -66,6 +67,8 @@ export function Editor({
   const sucia = JSON.stringify(cfg) !== JSON.stringify(guardada);
   const set = <K extends keyof ConfigMarca>(k: K, v: ConfigMarca[K]) =>
     setCfg((c) => ({ ...c, [k]: v }));
+  const setF = <K extends keyof ConfigFiligrana>(k: K, v: ConfigFiligrana[K]) =>
+    setCfg((c) => ({ ...c, filigrana: { ...c.filigrana, [k]: v } }));
 
   // ── La foto con la marca ──────────────────────────────────────────────────
   const pedirFoto = useCallback(async () => {
@@ -212,6 +215,7 @@ export function Editor({
 
   const pct = (n: number) => `${Math.round(n * 100)} %`;
   const unica = cfg.patron === "centro" || cfg.patron === "esquina";
+  const sinFiligrana = cfg.filigrana.activa ? undefined : "1";
   const fotoSel = fotos.find((f) => f.id === fotoId);
 
   return (
@@ -425,6 +429,117 @@ export function Editor({
                   aria-label="Margen al borde"
                 />
                 <b>{pct(cfg.margen)}</b>
+              </div>
+            </div>
+          </section>
+
+          {/* ── La filigrana ── */}
+          <section className="card">
+            <div className="hist-tit">
+              <b>La filigrana</b>
+              <span>Texto fino en filas, sobre toda la foto</span>
+            </div>
+            <div className="seg" role="group" aria-label="Filigrana">
+              <button type="button" aria-pressed={!cfg.filigrana.activa} onClick={() => setF("activa", false)}>
+                Apagada
+              </button>
+              <button type="button" aria-pressed={cfg.filigrana.activa} onClick={() => setF("activa", true)}>
+                Prendida
+              </button>
+            </div>
+            <p className="ma-nota" style={{ marginTop: "var(--s-3)" }}>
+              Va debajo de la marca y no entra en la miniatura. Lo que cuesta borrar con un pincel no es
+              el logo del medio, que se tapa de un trazo: son cientos de letras finas cruzando caras y
+              remeras.
+            </p>
+
+            <div style={{ marginTop: "var(--s-3)" }}>
+              <div className="ma-r" data-off={sinFiligrana}>
+                <span>Qué dice</span>
+                <div className="seg" role="group" aria-label="Texto de la filigrana" style={{ justifySelf: "start" }}>
+                  <button
+                    type="button"
+                    aria-pressed={cfg.filigrana.modo === "evento"}
+                    onClick={() => setF("modo", "evento")}
+                  >
+                    Evento y fotógrafo
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={cfg.filigrana.modo === "fijo"}
+                    onClick={() => setF("modo", "fijo")}
+                  >
+                    Texto fijo
+                  </button>
+                </div>
+                <b />
+              </div>
+              {cfg.filigrana.modo === "fijo" ? (
+                <div className="ma-campo" data-off={sinFiligrana}>
+                  <label htmlFor="ma-filigrana">Texto</label>
+                  <input
+                    id="ma-filigrana"
+                    className="inp"
+                    value={cfg.filigrana.texto}
+                    maxLength={80}
+                    placeholder="Lo que se repite en cada fila"
+                    onChange={(e) => setF("texto", e.target.value)}
+                  />
+                </div>
+              ) : (
+                <p className="ma-nota">
+                  «Nombre del evento · Fotógrafo · encontrate.app», distinto en cada foto. Con marca
+                  propia, sin el encontrate.app.
+                </p>
+              )}
+              <div className="ma-r" data-off={sinFiligrana}>
+                <span>Tamaño</span>
+                <input
+                  type="range"
+                  min={8}
+                  max={50}
+                  value={Math.round(cfg.filigrana.escala * 1000)}
+                  onChange={(e) => setF("escala", Number(e.target.value) / 1000)}
+                  aria-label="Tamaño de la letra"
+                />
+                <b>{(cfg.filigrana.escala * 100).toFixed(1)} %</b>
+              </div>
+              <div className="ma-r" data-off={sinFiligrana}>
+                <span>Opacidad</span>
+                <input
+                  type="range"
+                  min={3}
+                  max={60}
+                  value={Math.round(cfg.filigrana.opacidad * 100)}
+                  onChange={(e) => setF("opacidad", Number(e.target.value) / 100)}
+                  aria-label="Opacidad de la filigrana"
+                />
+                <b>{pct(cfg.filigrana.opacidad)}</b>
+              </div>
+              <div className="ma-r" data-off={sinFiligrana}>
+                <span>Rotación</span>
+                <input
+                  type="range"
+                  min={-60}
+                  max={60}
+                  value={cfg.filigrana.rotacion}
+                  onChange={(e) => setF("rotacion", Number(e.target.value))}
+                  aria-label="Rotación de la filigrana"
+                />
+                <b>{cfg.filigrana.rotacion}°</b>
+              </div>
+              <div className="ma-r" data-off={sinFiligrana}>
+                <span>Entre filas</span>
+                <input
+                  type="range"
+                  min={100}
+                  max={600}
+                  step={10}
+                  value={Math.round(cfg.filigrana.separacion * 100)}
+                  onChange={(e) => setF("separacion", Number(e.target.value) / 100)}
+                  aria-label="Separación entre filas"
+                />
+                <b>{cfg.filigrana.separacion.toFixed(1)}×</b>
               </div>
             </div>
           </section>

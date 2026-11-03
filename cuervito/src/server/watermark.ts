@@ -6,12 +6,22 @@ import { env } from "~/env";
 import {
   hacerDerivados,
   PREVIEW_MAX_WIDTH,
+  type Capas,
   type PedidoDerivados,
 } from "~/server/derivados";
 import { contarLocal, derivadosEnLambda, lambdaConfigurada } from "~/server/derivados-lambda";
 import { cronometro } from "~/server/diagnostico";
 import { db } from "~/server/db";
-import { capaParaFoto, leerConfigMarca, unidadParaFoto, type ConfigMarca, type Unidad } from "~/server/marca-agua";
+import {
+  armarFiligrana,
+  capaParaFoto,
+  filigranaParaFoto,
+  leerConfigMarca,
+  textoFiligrana,
+  unidadParaFoto,
+  type ConfigMarca,
+  type Unidad,
+} from "~/server/marca-agua";
 import {
   deleteS3Objects,
   getS3ObjectBytes,
@@ -145,11 +155,21 @@ export function invalidateUserWatermarkCache(userId: string) {
 async function buildComposite(
   imageWidth: number,
   imageHeight: number,
-  ownerId?: string,
-): Promise<sharp.OverlayOptions> {
-  const { imagen, cfg, conTexto } = await elegirMarca(ownerId);
-  return capaParaFoto({ anchoFoto: imageWidth, altoFoto: imageHeight, imagen, cfg, conTexto });
+  ownerId: string,
+  nombres: Nombres,
+): Promise<Capas> {
+  const { imagen, cfg, conTexto, filigrana } = await elegirMarca(ownerId, nombres);
+  const marca = await capaParaFoto({ anchoFoto: imageWidth, altoFoto: imageHeight, imagen, cfg, conTexto });
+  return {
+    marca,
+    filigrana: filigrana
+      ? await filigranaParaFoto({ anchoFoto: imageWidth, altoFoto: imageHeight, texto: filigrana, cfg })
+      : null,
+  };
 }
+
+/** El evento y el fotógrafo de la foto, para la filigrana. */
+type Nombres = { evento: string | null; fotografo: string | null };
 
 /**
  * Qué marca lleva una foto de este fotógrafo. Una sola función para el camino
@@ -158,12 +178,19 @@ async function buildComposite(
  * marcadas distinto según quién las procesó.
  */
 async function elegirMarca(
-  ownerId?: string,
-): Promise<{ imagen: Buffer | null; cfg: ConfigMarca; conTexto: boolean }> {
+  ownerId: string | undefined,
+  nombres: Nombres,
+): Promise<{ imagen: Buffer | null; cfg: ConfigMarca; conTexto: boolean; filigrana: string | null }> {
   const propia = ownerId ? await loadUserWatermark(ownerId) : null;
   const cfg = await leerConfigMarca();
   const imagen = propia ?? (cfg.fuente === "subida" ? await loadPlatformWatermark() : null);
-  return { imagen, cfg, conTexto: !propia };
+  // La filigrana sigue la regla del texto: con marca propia, sin «encontrate.app».
+  return {
+    imagen,
+    cfg,
+    conTexto: !propia,
+    filigrana: textoFiligrana(cfg, { ...nombres, conPlataforma: !propia }),
+  };
 }
 
 /**
@@ -174,10 +201,15 @@ async function elegirMarca(
 async function unidadDeLaMarca(
   ownerId: string,
   anchoFoto: number,
-): Promise<{ unidad: Unidad; cfg: ConfigMarca }> {
-  const { imagen, cfg, conTexto } = await elegirMarca(ownerId);
+  nombres: Nombres,
+): Promise<{ unidad: Unidad; cfg: ConfigMarca; filigrana: Unidad | null }> {
+  const { imagen, cfg, conTexto, filigrana } = await elegirMarca(ownerId, nombres);
   const unidad = await unidadParaFoto({ anchoFoto, imagen, cfg, conTexto });
-  return { unidad, cfg };
+  return {
+    unidad,
+    cfg,
+    filigrana: filigrana ? await armarFiligrana({ texto: filigrana, anchoFoto, cfg }) : null,
+  };
 }
 
 /**
@@ -247,6 +279,9 @@ async function _generatePreview(
       previewKey: true,
       previewCleanKey: true,
       thumbKey: true,
+      // Para la filigrana: qué evento es y de quién.
+      event: { select: { name: true } },
+      owner: { select: { name: true } },
     },
   });
   if (!photo) {
@@ -257,6 +292,7 @@ async function _generatePreview(
     };
   }
 
+  const nombres: Nombres = { evento: photo.event?.name ?? null, fotografo: photo.owner?.name ?? null };
   const reloj = cronometro();
   reloj.marca("base");
   if (signal?.aborted) return ABORTADO;
@@ -276,7 +312,7 @@ async function _generatePreview(
   // VPS por diseño y no cuenta como que la Lambda falló.
   let porQueLocal: string | null = null;
   if (lambdaConfigurada()) {
-    const intento = await enLambda(photo, claves, viejas, reloj, signal);
+    const intento = await enLambda(photo, nombres, claves, viejas, reloj, signal);
     if (typeof intento !== "string") return intento;
     porQueLocal = intento;
     if (signal?.aborted) {
@@ -335,7 +371,7 @@ async function _generatePreview(
 
     // Sin el JPEG para Rekognition: nadie lo usaba, y el reconocimiento
     // baja la vista previa limpia por su cuenta.
-    const d = await hacerDerivados(buf, (ancho, alto) => buildComposite(ancho, alto, photo.ownerId), {
+    const d = await hacerDerivados(buf, (ancho, alto) => buildComposite(ancho, alto, photo.ownerId, nombres), {
       reloj,
     });
     // El trabajo de imagen terminó: lo que sigue es red y base, sin turno.
@@ -392,6 +428,19 @@ async function _generatePreview(
 
 type Claves = { marcada: string; limpia: string; miniatura: string };
 
+/* Una Lambda anterior a la filigrana ignora el campo y devuelve la foto sin
+   ella, sin error: la grande sale sólo con la marca. Se avisa en el log cada
+   tanto, no por foto, para que el deploy pendiente (lambda-derivados/
+   desplegar.sh) no pase inadvertido. */
+let avisadoSinFiligranaEn = 0;
+function avisarLambdaSinFiligrana(): void {
+  if (Date.now() - avisadoSinFiligranaEn < 10 * 60_000) return;
+  avisadoSinFiligranaEn = Date.now();
+  console.warn(
+    "[watermark] la Lambda de derivados no aplicó la filigrana: hay que volver a desplegarla (lambda-derivados/desplegar.sh)",
+  );
+}
+
 /**
  * Los mismos derivados, hechos por la Lambda. Si hay que hacerlos acá, el
  * porqué: no está configurada, está en pausa, falló, o la foto es de un ancho
@@ -399,6 +448,7 @@ type Claves = { marcada: string; limpia: string; miniatura: string };
  */
 async function enLambda(
   photo: { id: string; ownerId: string; storageKey: string },
+  nombres: Nombres,
   claves: Claves,
   viejas: string[],
   reloj: ReturnType<typeof cronometro>,
@@ -407,7 +457,7 @@ async function enLambda(
   if (!env.AWS_S3_BUCKET) return "sin-bucket";
   let pedido: PedidoDerivados;
   try {
-    const { unidad, cfg } = await unidadDeLaMarca(photo.ownerId, PREVIEW_MAX_WIDTH);
+    const { unidad, cfg, filigrana } = await unidadDeLaMarca(photo.ownerId, PREVIEW_MAX_WIDTH, nombres);
     pedido = {
       bucket: env.AWS_S3_BUCKET,
       original: photo.storageKey,
@@ -416,6 +466,9 @@ async function enLambda(
       anchoEsperado: PREVIEW_MAX_WIDTH,
       unidad: { png: unidad.png.toString("base64"), ancho: unidad.ancho, alto: unidad.alto },
       cfg,
+      filigrana: filigrana
+        ? { png: filigrana.png.toString("base64"), ancho: filigrana.ancho, alto: filigrana.alto }
+        : null,
       cacheControl: CACHE_MOSTRAR,
     };
   } catch (e) {
@@ -433,6 +486,7 @@ async function enLambda(
     return resultado.por;
   }
   const r = resultado.respuesta;
+  if (pedido.filigrana && !r.filigrana) avisarLambdaSinFiligrana();
   // Las etapas de adentro de la Lambda con su prefijo —la descarga de ahí no
   // es la del VPS, que es la que vigila el MCP—, y lo que costó ir y volver
   // como "lambda".

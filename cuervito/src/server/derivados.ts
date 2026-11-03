@@ -42,6 +42,8 @@ export type Derivados = {
   paraRekognition: Buffer | null;
   ancho: number;
   alto: number;
+  /** Si la grande lleva la filigrana. */
+  filigrana: boolean;
 };
 
 /** Anota cuánto tardó cada etapa. Opcional. */
@@ -66,25 +68,41 @@ export type PedidoDerivados = {
   /** La unidad en PNG, en base64. */
   unidad: { png: string; ancho: number; alto: number };
   cfg: ConfigMarca;
+  /** La línea de la filigrana, armada para `anchoEsperado`. Sólo si está
+      prendida y esta foto tiene texto. Una Lambda anterior la ignora. */
+  filigrana?: { png: string; ancho: number; alto: number } | null;
   cacheControl: string;
 };
 
 export type RespuestaDerivados =
-  | { ok: true; ancho: number; alto: number; bytes: number; etapas: Record<string, number> }
+  | {
+      ok: true;
+      ancho: number;
+      alto: number;
+      bytes: number;
+      etapas: Record<string, number>;
+      /** Si puso la filigrana que se le mandó. Una Lambda anterior no la
+          conoce, y el VPS lo nota por la ausencia de este campo. */
+      filigrana?: boolean;
+    }
   /** angosta: le toca al VPS. imagen: el original no se pudo abrir (el VPS
    *  lo vuelve a intentar y decide si es permanente). error: la Lambda falló. */
   | { ok: false; motivo: "angosta" | "imagen" | "error"; mensaje?: string };
+
+/** Las capas que se apoyan sobre la foto: la marca siempre, la filigrana si hay. */
+export type Capas = { marca: sharp.OverlayOptions; filigrana: sharp.OverlayOptions | null };
 
 /**
  * Del original a los tres derivados.
  *
  * `capaPara` recibe el tamaño final de la foto y devuelve la capa de la marca
- * para ese tamaño: la calcula quien llama, porque de dónde sale la marca (la
- * configuración, la imagen, la caché) es cosa suya.
+ * para ese tamaño —o las dos capas, si hay filigrana—: la calcula quien
+ * llama, porque de dónde sale la marca (la configuración, la imagen, la
+ * caché) es cosa suya.
  */
 export async function hacerDerivados(
   original: Buffer,
-  capaPara: (ancho: number, alto: number) => Promise<sharp.OverlayOptions>,
+  capaPara: (ancho: number, alto: number) => Promise<sharp.OverlayOptions | Capas>,
   opts: { reloj?: Reloj; conJpegRekognition?: boolean } = {},
 ): Promise<Derivados> {
   const reloj = opts.reloj ?? { marca: () => undefined };
@@ -113,10 +131,13 @@ export async function hacerDerivados(
   // La marcada PRIMERO, para que la imagen pública esté bien antes que nada.
   // Cada pipeline toma su propia copia de `resized` para que el estado interno
   // de sharp no se cruce entre las salidas.
-  const capa = await capaPara(ancho, alto);
+  const pedidas = await capaPara(ancho, alto);
+  const capas: Capas = "marca" in pedidas ? pedidas : { marca: pedidas, filigrana: null };
   reloj.marca("capa-marca");
+  // La filigrana va DEBAJO de la marca: las letras finas no tienen que cruzar
+  // el logo, que es lo que se tiene que leer entero.
   const marcada = await sharp(Buffer.from(resized), OPC_SHARP)
-    .composite([capa])
+    .composite(capas.filigrana ? [capas.filigrana, capas.marca] : [capas.marca])
     .webp({ quality: PREVIEW_QUALITY })
     .toBuffer();
   reloj.marca("estampar");
@@ -132,8 +153,24 @@ export async function hacerDerivados(
      Si se compusiera la marca sobre una imagen de 560px habría que escalar
      también la marca, y dos caminos que dibujan la misma marca a tamaños
      distintos se separan en la primera corrección que se hace en uno solo.
-     Achicando la marcada, la marca queda igual, sólo que más chica. */
-  const miniatura = await sharp(Buffer.from(marcada), OPC_SHARP)
+     Achicando la marcada, la marca queda igual, sólo que más chica.
+
+     Con filigrana, la miniatura NO la lleva: a 560 píxeles una línea de 38
+     se vuelve una mancha gris sobre toda la grilla, y lo que se roba no es
+     la miniatura. Se estampa la marca sola sobre la foto grande, en crudo, y
+     de ahí se achica: un composite más por foto, sólo con la filigrana
+     prendida. */
+  let baseMini: sharp.Sharp;
+  if (capas.filigrana) {
+    const b = await sharp(Buffer.from(resized), OPC_SHARP)
+      .composite([capas.marca])
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    baseMini = sharp(b.data, { raw: { width: b.info.width, height: b.info.height, channels: b.info.channels } });
+  } else {
+    baseMini = sharp(Buffer.from(marcada), OPC_SHARP);
+  }
+  const miniatura = await baseMini
     .resize({ width: THUMB_WIDTH, withoutEnlargement: true })
     .webp({ quality: THUMB_QUALITY })
     .toBuffer();
@@ -147,5 +184,5 @@ export async function hacerDerivados(
     reloj.marca("jpeg-rek");
   }
 
-  return { marcada, limpia, miniatura, paraRekognition, ancho, alto };
+  return { marcada, limpia, miniatura, paraRekognition, ancho, alto, filigrana: Boolean(capas.filigrana) };
 }

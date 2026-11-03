@@ -1,6 +1,6 @@
 import sharp from "sharp";
 
-import type { ConfigMarca } from "~/server/marca-agua-config";
+import type { ConfigFiligrana, ConfigMarca } from "~/server/marca-agua-config";
 
 /**
  * La capa de marca de agua, sin nada del servidor: ni base, ni archivos, ni
@@ -110,4 +110,58 @@ export async function rasterizarCapa(opts: {
 /** La capa rasterizada, como se la pasa a composite(). */
 export function superponer(capa: Capa): sharp.OverlayOptions {
   return { input: capa.datos, raw: { width: capa.ancho, height: capa.alto, channels: 4 }, blend: "over" };
+}
+
+/* ── La filigrana ──────────────────────────────────────────────────────── */
+
+/**
+ * La capa de la filigrana: la línea de texto repetida en filas por toda la
+ * foto, las filas corridas medio paso como ladrillos y la trama entera
+ * rotada. Es la mecánica del patrón diagonal con otra unidad: una línea de
+ * texto, armada por quien tiene las fuentes (marca-agua.ts) y recortada al
+ * cuadro de las letras, así el paso sale de lo que mide el texto.
+ */
+export function capaFiligrana(opts: {
+  anchoFoto: number;
+  altoFoto: number;
+  unidad: Unidad;
+  cfg: ConfigFiligrana;
+}): sharp.OverlayOptions {
+  const { anchoFoto: W, altoFoto: H, unidad: u, cfg } = opts;
+  const href = `data:image/png;base64,${u.png.toString("base64")}`;
+  const n = (x: number) => Math.round(x * 100) / 100;
+  const img = (x: number, y: number) =>
+    `<image href="${href}" xlink:href="${href}" x="${n(x)}" y="${n(y)}" width="${u.ancho}" height="${u.alto}" />`;
+
+  // Entre repeticiones de una misma fila, dos altos de letra de aire; entre
+  // filas, lo que diga la separación.
+  const cw = Math.ceil(u.ancho + u.alto * 2);
+  const ch = Math.ceil(u.alto * cfg.separacion);
+  const y = (ch - u.alto) / 2;
+  const defs =
+    `<pattern id="f" patternUnits="userSpaceOnUse" width="${cw}" height="${ch * 2}" patternTransform="rotate(${cfg.rotacion})">` +
+    img(0, y) +
+    img(cw / 2, y + ch) +
+    img(-cw / 2, y + ch) +
+    `</pattern>`;
+  // El rect se agranda para que la trama rotada cubra las esquinas.
+  const d = Math.ceil(Math.hypot(W, H));
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">` +
+    `<defs>${defs}</defs>` +
+    `<g opacity="${cfg.opacidad}"><rect x="${n((W - d) / 2)}" y="${n((H - d) / 2)}" width="${d}" height="${d}" fill="url(#f)" /></g></svg>`;
+
+  return { input: Buffer.from(svg), blend: "over" };
+}
+
+/** La filigrana rasterizada una vez, a píxeles crudos, como la capa de la marca. */
+export async function rasterizarFiligrana(opts: {
+  anchoFoto: number;
+  altoFoto: number;
+  unidad: Unidad;
+  cfg: ConfigFiligrana;
+}): Promise<Capa> {
+  const svg = capaFiligrana(opts);
+  const datos = await sharp(svg.input as Buffer).ensureAlpha().raw().toBuffer();
+  return { datos, ancho: opts.anchoFoto, alto: opts.altoFoto };
 }

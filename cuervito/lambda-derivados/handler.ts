@@ -9,7 +9,7 @@ import {
   type PedidoDerivados,
   type RespuestaDerivados,
 } from "../src/server/derivados";
-import { rasterizarCapa, superponer, type Capa, type Unidad } from "../src/server/marca-agua-capa";
+import { rasterizarCapa, rasterizarFiligrana, superponer, type Capa, type Unidad } from "../src/server/marca-agua-capa";
 
 /**
  * Los derivados de una foto, al lado de S3.
@@ -32,7 +32,8 @@ sharp.cache({ memory: 64, files: 0, items: 50 });
    verticales del mismo tamaño: la primera de cada forma paga el rasterizado y
    el resto del lote, mientras el contenedor siga vivo, no paga nada. */
 const capas = new Map<string, Capa>();
-const CAPAS_MAX = 2;
+// Dos formas (apaisada y vertical) por dos capas (la marca y la filigrana).
+const CAPAS_MAX = 4;
 
 class Angosta extends Error {}
 
@@ -109,7 +110,7 @@ export async function handler(pedido: PedidoDerivados): Promise<RespuestaDerivad
     return { ok: false, motivo: "error", mensaje: `subida: ${mensaje(e)}` };
   }
 
-  return { ok: true, ancho: d.ancho, alto: d.alto, bytes: original.length, etapas };
+  return { ok: true, ancho: d.ancho, alto: d.alto, bytes: original.length, etapas, filigrana: d.filigrana };
 }
 
 /**
@@ -118,7 +119,7 @@ export async function handler(pedido: PedidoDerivados): Promise<RespuestaDerivad
  */
 export async function derivadosDe(
   original: Buffer,
-  pedido: Pick<PedidoDerivados, "anchoEsperado" | "unidad" | "cfg">,
+  pedido: Pick<PedidoDerivados, "anchoEsperado" | "unidad" | "cfg" | "filigrana">,
   marca: (nombre: string) => void = () => undefined,
 ): Promise<{ ok: true; derivados: Derivados } | Extract<RespuestaDerivados, { ok: false }>> {
   const unidad: Unidad = {
@@ -126,7 +127,25 @@ export async function derivadosDe(
     ancho: pedido.unidad.ancho,
     alto: pedido.unidad.alto,
   };
+  // La filigrana, si el VPS la mandó y la configuración la conoce: un VPS
+  // anterior a ella no manda ninguna de las dos cosas.
+  const cfgF = pedido.cfg.filigrana;
+  const filigrana: Unidad | null =
+    pedido.filigrana && cfgF
+      ? { png: Buffer.from(pedido.filigrana.png, "base64"), ancho: pedido.filigrana.ancho, alto: pedido.filigrana.alto }
+      : null;
   const huella = createHash("sha1").update(pedido.unidad.png).update(JSON.stringify(pedido.cfg)).digest("hex");
+  const huellaF =
+    pedido.filigrana && cfgF
+      ? createHash("sha1").update(pedido.filigrana.png).update(JSON.stringify(cfgF)).digest("hex")
+      : null;
+  const guardar = (clave: string, capa: Capa) => {
+    if (capas.size >= CAPAS_MAX) {
+      const vieja = capas.keys().next().value;
+      if (vieja !== undefined) capas.delete(vieja);
+    }
+    capas.set(clave, capa);
+  };
   try {
     const derivados = await hacerDerivados(
       original,
@@ -137,13 +156,18 @@ export async function derivadosDe(
         let capa = capas.get(clave);
         if (!capa) {
           capa = await rasterizarCapa({ anchoFoto: ancho, altoFoto: alto, unidad, cfg: pedido.cfg });
-          if (capas.size >= CAPAS_MAX) {
-            const vieja = capas.keys().next().value;
-            if (vieja !== undefined) capas.delete(vieja);
-          }
-          capas.set(clave, capa);
+          guardar(clave, capa);
         }
-        return superponer(capa);
+        let capaF: Capa | null = null;
+        if (filigrana && huellaF && cfgF) {
+          const claveF = `f|${huellaF}|${ancho}x${alto}`;
+          capaF = capas.get(claveF) ?? null;
+          if (!capaF) {
+            capaF = await rasterizarFiligrana({ anchoFoto: ancho, altoFoto: alto, unidad: filigrana, cfg: cfgF });
+            guardar(claveF, capaF);
+          }
+        }
+        return { marca: superponer(capa), filigrana: capaF ? superponer(capaF) : null };
       },
       { reloj: { marca } },
     );

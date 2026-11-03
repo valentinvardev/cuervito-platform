@@ -10,7 +10,7 @@ import sharp from "sharp";
 
 import { db } from "~/server/db";
 import { fuentesSatori } from "~/server/historias/fuentes";
-import { rasterizarCapa, superponer, type Capa, type Unidad } from "~/server/marca-agua-capa";
+import { rasterizarCapa, rasterizarFiligrana, superponer, type Capa, type Unidad } from "~/server/marca-agua-capa";
 import { CONFIG_POR_DEFECTO, esquemaConfig, type ConfigMarca } from "~/server/marca-agua-config";
 
 // El patrón y la capa viven en un módulo sin servidor, que comparte la Lambda.
@@ -41,8 +41,11 @@ export { capaMarca, type Capa, type Unidad } from "~/server/marca-agua-capa";
 export {
   CONFIG_POR_DEFECTO,
   esquemaConfig,
+  FILIGRANA_POR_DEFECTO,
   PATRONES,
   PATRONES_LISTA,
+  textoFiligrana,
+  type ConfigFiligrana,
   type ConfigMarca,
   type Patron,
 } from "~/server/marca-agua-config";
@@ -63,6 +66,9 @@ declare global {
         cfg: { valor: ConfigMarca; leidaEn: number } | null;
         unidades: Map<string, Unidad>;
         capas: Map<string, Capa>;
+        /** Las filigranas rasterizadas, por (texto, tamaño). Opcional en el
+            tipo porque el global puede venir de una versión anterior. */
+        filigranas?: Map<string, Capa>;
       }
     | undefined;
 }
@@ -70,7 +76,9 @@ const estado = (globalThis.__cuervito_marca__ ??= {
   cfg: null,
   unidades: new Map<string, Unidad>(),
   capas: new Map<string, Capa>(),
+  filigranas: new Map<string, Capa>(),
 });
+const filigranas = (estado.filigranas ??= new Map<string, Capa>());
 const CFG_TTL_MS = 15_000;
 
 export function analizarConfig(crudo: unknown): ConfigMarca {
@@ -106,12 +114,14 @@ export async function guardarConfigMarca(cfg: ConfigMarca): Promise<void> {
   estado.cfg = null;
   estado.unidades.clear();
   estado.capas.clear();
+  filigranas.clear();
 }
 
 export function vaciarCacheMarca(): void {
   estado.cfg = null;
   estado.unidades.clear();
   estado.capas.clear();
+  filigranas.clear();
 }
 
 /* ── La unidad ──────────────────────────────────────────────────────────── */
@@ -284,4 +294,98 @@ export async function unidadParaFoto(opts: {
     ancho: Math.round(opts.anchoFoto * opts.cfg.escala),
     conTexto: opts.conTexto,
   });
+}
+
+/* ── La filigrana ──────────────────────────────────────────────────────── */
+
+/**
+ * La línea de la filigrana, en PNG: el texto a la altura que le toca a una
+ * foto de este ancho, con la fuente del repo, recortado al cuadro exacto de
+ * las letras. El recorte importa: el paso de la trama sale de lo que mide el
+ * texto, y con aire transparente alrededor las filas quedarían más separadas
+ * de lo que dice la configuración.
+ */
+export async function armarFiligrana(opts: { texto: string; anchoFoto: number; cfg: ConfigMarca }): Promise<Unidad> {
+  const f = opts.cfg.filigrana;
+  const texto = opts.texto.trim();
+  const tam = Math.max(8, Math.round(opts.anchoFoto * f.escala));
+  const color = opts.cfg.color === "tinta" ? "#12110F" : "#FFFFFF";
+  const clave = createHash("sha1").update(`filigrana|${tam}|${color}|${texto}`).digest("hex");
+
+  const hecha = estado.unidades.get(clave);
+  if (hecha) return hecha;
+
+  // Un lienzo de sobra: lo que no usen las letras se recorta después.
+  const ancho = Math.min(opts.anchoFoto * 2, Math.round(texto.length * tam * 0.75) + tam * 2);
+  const alto = Math.round(tam * 1.5);
+  const svg = await satori(
+    createElement(
+      "div",
+      {
+        style: {
+          display: "flex",
+          alignItems: "center",
+          width: ancho,
+          height: alto,
+          paddingLeft: Math.round(tam / 2),
+          fontFamily: "Outfit",
+          fontWeight: 400,
+          fontSize: tam,
+          letterSpacing: "0.08em",
+          color,
+          whiteSpace: "nowrap",
+        },
+      },
+      texto,
+    ),
+    { width: ancho, height: alto, fonts: await fuentesSatori() },
+  );
+  let png: Buffer;
+  try {
+    png = await sharp(Buffer.from(svg)).trim({ threshold: 1 }).png().toBuffer();
+  } catch {
+    // Sin nada que recortar (o nada dibujado): se usa el lienzo entero.
+    png = await sharp(Buffer.from(svg)).png().toBuffer();
+  }
+  const m = await sharp(png).metadata();
+  const unidad: Unidad = { png, ancho: m.width ?? ancho, alto: m.height ?? alto };
+
+  if (estado.unidades.size > 64) estado.unidades.clear();
+  estado.unidades.set(clave, unidad);
+  return unidad;
+}
+
+/**
+ * La capa de la filigrana para una foto de este tamaño, lista para apoyar.
+ *
+ * Rasterizada una vez por (texto, tamaño) y guardada en crudo, como la capa
+ * de la marca y por la misma razón. El texto cambia por evento, así que un
+ * lote de un evento paga una vez por forma de foto.
+ */
+export async function filigranaParaFoto(opts: {
+  anchoFoto: number;
+  altoFoto: number;
+  texto: string;
+  cfg: ConfigMarca;
+}): Promise<sharp.OverlayOptions> {
+  const clave = createHash("sha1")
+    .update(`${opts.anchoFoto}x${opts.altoFoto}|${opts.cfg.color}|${opts.texto}|`)
+    .update(JSON.stringify(opts.cfg.filigrana))
+    .digest("hex");
+  const guardada = filigranas.get(clave);
+  if (guardada) return superponer(guardada);
+
+  const unidad = await armarFiligrana({ texto: opts.texto, anchoFoto: opts.anchoFoto, cfg: opts.cfg });
+  const capa = await rasterizarFiligrana({
+    anchoFoto: opts.anchoFoto,
+    altoFoto: opts.altoFoto,
+    unidad,
+    cfg: opts.cfg.filigrana,
+  });
+  if (filigranas.size >= CAPAS_MAX) {
+    const vieja = filigranas.keys().next().value;
+    if (vieja !== undefined) filigranas.delete(vieja);
+  }
+  filigranas.set(clave, capa);
+  return superponer(capa);
 }

@@ -331,6 +331,17 @@ patrón de la plataforma pero sin el texto. La config se lee con un TTL de 15 s
 en memoria y no con `unstable_cache`: la pide el procesador fuera de cualquier
 request, donde `unstable_cache` no tiene dónde guardar.
 
+**La filigrana** (opcional, apagada de fábrica) es una tercera capa: una línea
+de texto fina a baja opacidad, repetida en filas con la trama rotada por toda
+la foto, DEBAJO de la marca. Dice «evento · fotógrafo · encontrate.app» foto
+por foto (o un texto fijo), y con marca propia va sin el «encontrate.app».
+La línea la arma el VPS con satori (`armarFiligrana`), recortada al cuadro de
+las letras; la capa (`capaFiligrana` en `marca-agua-capa.ts`) la comparten el
+VPS y la Lambda, que la recibe armada en `PedidoDerivados.filigrana`. La
+miniatura NO la lleva: se estampa la marca sola otra vez sobre la grande y se
+achica. Una Lambda anterior ignora el campo y contesta sin `filigrana: true`;
+el VPS lo avisa en el log hasta que se vuelva a desplegar.
+
 Cambiarla vale desde la próxima foto. Lo ya procesado se regenera desde la
 misma pantalla (`/api/admin/watermark/regenerate`, por cursor, de a 20) y al
 terminar se invalida CloudFront con `/*`: las claves de las vistas previas no
