@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 
+import type { ModoBarrido } from "~/lib/barrido";
 import { EventCoverageShell } from "./event-coverage-shell";
 import { EventFeedShell } from "./event-feed-shell";
 import { useFotos, type Foto } from "./usar-fotos";
@@ -51,7 +52,7 @@ export function GaleriaProgresiva({
   conReconocimiento?: boolean;
   buscaPorDorsal?: boolean;
   resumen?: string;
-  barrido?: boolean;
+  barrido?: ModoBarrido;
 }) {
   const { fotos, hayMas, trayendoMas, cargarMas } = useFotos({
     eventId: props.event.id,

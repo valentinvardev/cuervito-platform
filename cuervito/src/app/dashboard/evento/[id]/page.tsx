@@ -6,6 +6,7 @@ import { dondeApartadaPreview } from "~/server/cola-fotos";
 import { db } from "~/server/db";
 import { puedeUsarHistorias } from "~/server/historias/acceso";
 import { resolveMediaUrl } from "~/server/media";
+import { HEREDAR } from "~/lib/barrido";
 
 import { pesos, sesionPanel } from "../../_components/sesion";
 import type { Colaborador } from "./_equipo";
@@ -54,11 +55,12 @@ export default async function V2Evento({
       platformFeePct: true,
       recognition: true,
       bibDetection: true,
+      sweep: true,
       ownerId: true,
       // Si esta cuenta puede regalar. Es lo que decide qué significa poner el
       // precio en cero: entregar gratis, o dejar el evento sin poder cobrarse.
       // El nombre y la dirección, para cuando lo abre otro que no es el dueño.
-      owner: { select: { giftEnabled: true, name: true, slug: true } },
+      owner: { select: { giftEnabled: true, name: true, slug: true, storefrontSweep: true } },
       sales: { where: { status: "PAID" }, select: { sellerNetCents: true } },
       collaborators: {
         orderBy: { invitedAt: "asc" },
@@ -258,6 +260,8 @@ export default async function V2Evento({
         puedeRegalar,
         reconocimiento: e.recognition,
         leeDorsales: e.bibDetection,
+        barrido: e.sweep ?? HEREDAR,
+        barridoFotografo: e.owner.storefrontSweep,
         maxFoto: env.QUOTA_MAX_PHOTO_BYTES,
         descripcion: e.description,
         total,

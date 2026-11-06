@@ -228,3 +228,36 @@
   .vf-ayuda { display: none; }
   .vf-datos .vf-precio { display: none; }
 }
+
+/* ── El barrido en la grilla ────────────────────────────────────────────────
+   Modo «todo» (src/lib/barrido.ts): cada foto de la grilla va borrosa con una
+   banda diagonal nítida FIJA, corrida por índice (--fase). Sin animación: son
+   sesenta a la vez. Las variables --foto y --foto-pos las pone cada plantilla
+   en la propia foto. Las dos copias van en pseudo-elementos con z-index
+   negativo dentro de un contexto propio, así el dorsal y el botón del carrito
+   siguen arriba. */
+.feed-foto[data-barrido], .photo-cell[data-barrido], .et-foto[data-barrido] { isolation: isolate; overflow: hidden; }
+.feed-foto[data-barrido], .photo-cell[data-barrido] { background-image: none !important; }
+.feed-foto[data-barrido]::before, .photo-cell[data-barrido]::before,
+.feed-foto[data-barrido]::after, .photo-cell[data-barrido]::after,
+.et-foto[data-barrido]::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: var(--foto); background-size: cover; background-position: var(--foto-pos, center);
+}
+.feed-foto[data-barrido]::before, .photo-cell[data-barrido]::before {
+  z-index: -2; filter: blur(12px) saturate(.85); transform: scale(1.1);
+}
+.et-foto[data-barrido] img {
+  position: relative; z-index: -2; filter: blur(12px) saturate(.85); transform: scale(1.1) !important;
+}
+.feed-foto[data-barrido]::after, .photo-cell[data-barrido]::after, .et-foto[data-barrido]::after {
+  z-index: -1;
+  -webkit-mask-image: linear-gradient(115deg, transparent 0 calc(var(--fase, 50%) - 15%), #000 calc(var(--fase, 50%) - 9%) calc(var(--fase, 50%) + 9%), transparent calc(var(--fase, 50%) + 15%) 100%);
+  mask-image: linear-gradient(115deg, transparent 0 calc(var(--fase, 50%) - 15%), #000 calc(var(--fase, 50%) - 9%) calc(var(--fase, 50%) + 9%), transparent calc(var(--fase, 50%) + 15%) 100%);
+}
+/* El velo tapa también la banda nítida. */
+:root[data-velo] .feed-foto[data-barrido]::after,
+:root[data-velo] .photo-cell[data-barrido]::after,
+:root[data-velo] .et-foto[data-barrido]::after {
+  filter: blur(26px) saturate(.6);
+}

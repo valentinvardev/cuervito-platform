@@ -435,7 +435,7 @@ export function Editor({
                 <b>Barrido en la foto grande</b>
                 <span>
                   La foto se ve borrosa y una banda nítida la recorre: se ve entera, pero nunca entera a la
-                  vez. Una captura de pantalla se lleva una franja.
+                  vez. Vale para todos tus eventos, salvo los que digan otra cosa en su Info.
                 </span>
               </div>
               <button

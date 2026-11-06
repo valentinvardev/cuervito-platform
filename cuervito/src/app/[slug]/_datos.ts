@@ -82,6 +82,7 @@ export const traerEvento = cache((ownerId: string, eventSlug: string) =>
       // mandar a escribir un número que no va a encontrar nada es peor que no
       // ofrecerlo.
       bibDetection: true,
+      sweep: true,
     },
   }),
 );

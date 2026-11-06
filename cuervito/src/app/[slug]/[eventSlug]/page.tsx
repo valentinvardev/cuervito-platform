@@ -15,6 +15,7 @@ import { resolveMediaUrl } from "~/server/media";
 import { getMpTestMode } from "~/server/settings";
 
 import { relacionadosDe } from "~/server/eventos-relacionados";
+import { barridoDe } from "~/lib/barrido";
 
 import { estaALaVenta, traerEvento, traerFotografo } from "../_datos";
 import { EventoCerrado } from "./cerrado/evento-cerrado";
@@ -326,8 +327,8 @@ export default async function PublicEventPage(props: {
       photosCount: totalFotos,
     },
     photos,
-    // El barrido del visor es del fotógrafo, no del evento: vale para todos los suyos.
-    barrido: photographer.storefrontSweep,
+    // El barrido: lo que diga el evento o, si no dice nada, el fotógrafo en Mi página.
+    barrido: barridoDe(event.sweep, photographer.storefrontSweep),
     cursorInicial,
     discounts: activeDiscounts,
     testMode,

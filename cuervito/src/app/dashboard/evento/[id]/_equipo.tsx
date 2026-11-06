@@ -112,16 +112,21 @@ export function Equipo({
 
       {/* Los títulos de las columnas, sólo cuando hay números que leer:
           tres cifras sin rótulo en una fila son tres adivinanzas. */}
-      {conPlata && colaboradores.length > 0 && (
-        <div className="row row-h col-f" data-plata="1">
-          <span />
-          <span>Fotógrafo</span>
-          <span className="num soft c-fotos">Fotos</span>
-          <span className="num soft c-vend">Vendidas</span>
-          <span className="num soft c-debe">Le debés</span>
-          <span />
-        </div>
-      )}
+      {/* Siempre, con las mismas columnas que las filas: la fila del dueño ya
+          trae cifras aunque no haya nadie más, y una cifra sin rótulo es una
+          adivinanza. */}
+      <div className="row row-h col-f" data-plata={conPlata ? "1" : undefined}>
+        <span />
+        <span>Fotógrafo</span>
+        <span className="num soft c-fotos">Fotos</span>
+        {conPlata && (
+          <>
+            <span className="num soft c-vend">Vendidas</span>
+            <span className="num soft c-debe">Le debés</span>
+          </>
+        )}
+        <span />
+      </div>
 
       {/* El dueño va en la tabla y no sólo en la cuenta del encabezado.
           Decía "4 fotógrafos" y listaba tres, porque el cuarto era el que
@@ -248,7 +253,9 @@ export function Equipo({
 
       {colaboradores.length === 0 && (
         <div className="empty" style={{ padding: "var(--s-6) var(--s-4)" }}>
-          <Users style={{ width: 18, height: 18, color: "var(--ink-3)" }} />
+          <div className="empty-i">
+            <Users />
+          </div>
           <p>
             {modo === "duenio"
               ? "Todavía no invitaste a nadie más a cubrir este evento."

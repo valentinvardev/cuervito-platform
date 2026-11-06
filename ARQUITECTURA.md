@@ -442,10 +442,13 @@ sigue al mouse; pellizco y doble toque sin mouse; `+`, `-` y `0` por teclado.
 Deslizar sin zoom pasa de foto; con zoom, mueve la foto. El clic derecho sobre
 la foto no abre el menú.
 
-**El barrido** (`User.storefrontSweep`, se prende en Mi página → Protección):
-la foto borrosa y una banda diagonal nítida que va y vuelve, hecha con una
-máscara CSS animada sobre una segunda copia de la imagen. Se ve entera, pero
-nunca entera a la vez. El velo de captura (Ctrl) desenfoca también la copia
+**El barrido** (`Event.sweep`, por evento en Info → Protección; si el evento no
+dice nada rige `User.storefrontSweep`, el interruptor de Mi página; los nombres
+viven en `src/lib/barrido.ts`): la foto borrosa y una banda diagonal nítida que
+va y vuelve, hecha con una máscara CSS animada sobre una segunda copia de la
+imagen. Se ve entera, pero nunca entera a la vez. En el modo «todo» cada foto de
+la grilla va borrosa con una banda fija, puesta por índice, sin animación: son
+sesenta a la vez. El velo de captura (Ctrl) desenfoca también la copia
 nítida y la lupa.
 
 ---

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { varsBarrido, type ModoBarrido } from "~/lib/barrido";
 import { CartProvider, useCart } from "./cart-context";
 import { CartSheet } from "./cart-sheet";
 import { PublicLightbox } from "./public-lightbox";
@@ -73,8 +74,8 @@ export function EventFeedShell(props: {
   buscaPorDorsal?: boolean;
   /** Qué es esta página, en una oración: lo lee el visitante y lo lee Google. */
   resumen?: string;
-  /** Opción del fotógrafo: en el visor, la foto borrosa con una banda nítida que la recorre. */
-  barrido?: boolean;
+  /** El barrido (src/lib/barrido.ts): apagado, sólo en la foto grande, o también en la grilla. */
+  barrido?: ModoBarrido;
 }) {
   return (
     <CartProvider
@@ -97,7 +98,7 @@ function FeedInner({
   conReconocimiento = true,
   buscaPorDorsal = true,
   resumen,
-  barrido = false,
+  barrido = "apagado",
 }: {
   photographer: Photographer;
   event: EventInfo;
@@ -115,8 +116,8 @@ function FeedInner({
   buscaPorDorsal?: boolean;
   /** Qué es esta página, en una oración: lo lee el visitante y lo lee Google. */
   resumen?: string;
-  /** Opción del fotógrafo: en el visor, la foto borrosa con una banda nítida que la recorre. */
-  barrido?: boolean;
+  /** El barrido (src/lib/barrido.ts): apagado, sólo en la foto grande, o también en la grilla. */
+  barrido?: ModoBarrido;
 }) {
   const { items, openCart, isInCart, add, remove, subtotalCents } = useCart();
   const [shown, setShown] = useState(PAGE_SIZE);
@@ -683,9 +684,11 @@ function FeedInner({
                   <button
                     type="button"
                     className="feed-foto"
+                    data-barrido={barrido === "todo" ? "1" : undefined}
                     onClick={() => setLightboxIdx(i)}
                     aria-label="Ver foto en grande"
                     style={{
+                      ...varsBarrido(p.previewUrl, i, p.width && p.height && p.width > p.height ? "center" : "top"),
                       position: "relative",
                       aspectRatio: "4/3",
                       backgroundImage: `url(${p.previewUrl})`,
@@ -869,7 +872,7 @@ function FeedInner({
           pricePerPhoto={event.pricePerPhoto}
           evento={event.name}
           regalo={regalo}
-          barrido={barrido}
+          barrido={barrido !== "apagado"}
           onClose={() => setLightboxIdx(null)}
         />
       )}

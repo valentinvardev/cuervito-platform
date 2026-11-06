@@ -18,6 +18,7 @@ import { usuarioInstagram } from "~/lib/instagram";
 import { NOMBRE, SITIO } from "~/lib/marca";
 import type { TonoLogo } from "~/lib/tema-tienda";
 import type { Edicion } from "~/server/eventos-relacionados";
+import { varsBarrido, type ModoBarrido } from "~/lib/barrido";
 
 import { BotonTemaTienda } from "../../encontrate/boton-tema";
 import { PillInstagram } from "../../encontrate/pill-instagram";
@@ -132,8 +133,8 @@ export function EncontrateShell(props: {
   resumen?: string;
   /** La misma carrera en otros años o por otros fotógrafos. */
   ediciones?: Edicion[];
-  /** Opción del fotógrafo: en el visor, la foto borrosa con una banda nítida que la recorre. */
-  barrido?: boolean;
+  /** El barrido (src/lib/barrido.ts): apagado, sólo en la foto grande, o también en la grilla. */
+  barrido?: ModoBarrido;
 }) {
   return (
     <CartProvider
@@ -158,7 +159,7 @@ function Adentro({
   conReconocimiento = true,
   resumen,
   ediciones = [],
-  barrido = false,
+  barrido = "apagado",
 }: {
   photographer: Photographer;
   event: EventInfo;
@@ -173,8 +174,8 @@ function Adentro({
   resumen?: string;
   /** La misma carrera en otros años o por otros fotógrafos. */
   ediciones?: Edicion[];
-  /** Opción del fotógrafo: en el visor, la foto borrosa con una banda nítida que la recorre. */
-  barrido?: boolean;
+  /** El barrido (src/lib/barrido.ts): apagado, sólo en la foto grande, o también en la grilla. */
+  barrido?: ModoBarrido;
 }) {
   const { items, add, remove, isInCart, open, openCart } = useCart();
 
@@ -480,6 +481,8 @@ function Adentro({
               <div
                 className={`et-foto ${puesta ? "et-elegida" : ""}`}
                 key={f.id}
+                data-barrido={barrido === "todo" ? "1" : undefined}
+                style={varsBarrido(f.previewUrl, i, "center")}
                 role="button"
                 tabIndex={0}
                 onClick={() => setViendo(i)}
@@ -606,7 +609,7 @@ function Adentro({
           alCerrar={() => setViendo(null)}
           alIr={setViendo}
           alAlternar={(f) => alternar(f as Photo)}
-          barrido={barrido}
+          barrido={barrido !== "apagado"}
         />
       )}
 

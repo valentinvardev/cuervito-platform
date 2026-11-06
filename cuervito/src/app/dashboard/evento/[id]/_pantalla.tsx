@@ -22,12 +22,14 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
+import { HEREDAR, MODOS_BARRIDO_LISTA } from "~/lib/barrido";
 import { DISCIPLINAS } from "~/lib/disciplinas";
 
 import { Desplegable } from "../../_components/desplegable";
 import { Fecha } from "../../_components/fecha";
 import {
   borrarEventoAction,
+  guardarBarridoAction,
   guardarDatosAction,
   guardarPrecioAction,
   publicarAction,
@@ -115,6 +117,10 @@ export function Pantalla({
     comision: number;
     reconocimiento: boolean;
     leeDorsales: boolean;
+    /** Lo elegido en Info para este evento: un modo de src/lib/barrido.ts, o «heredar». */
+    barrido: string;
+    /** Lo que rige al heredar: el interruptor de Mi página. */
+    barridoFotografo: boolean;
     /** Tope por foto, para avisar antes de mandar y no después. */
     maxFoto: number;
     descripcion: string | null;
@@ -1095,6 +1101,9 @@ export function Pantalla({
         {solapa === "info" && (
           <section className="panel-s" data-activo="1">
             {comoColaborador ? <DatosLectura evento={evento} /> : <Datos evento={evento} />}
+            {!comoColaborador && (
+              <Proteccion eventoId={evento.id} inicial={evento.barrido} fotografo={evento.barridoFotografo} />
+            )}
             {!comoAdmin && !comoColaborador && (
               <Borrar eventoId={evento.id} nombre={evento.nombre} fotos={evento.total} />
             )}
@@ -1513,6 +1522,79 @@ function Precio({
 
         {aviso && (
           <div style={{ fontSize: 13, color: error ? "var(--bad)" : "var(--ok)" }}>{aviso}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * El barrido, por evento.
+ *
+ * Si no se elige nada rige lo de Mi página, y la opción de heredar dice en el
+ * acto qué significa hoy, para que nadie tenga que ir a mirar a otra pantalla.
+ * Se guarda al elegir, sin botón: es una sola opción y volver atrás es elegir
+ * otra vez.
+ */
+function Proteccion({
+  eventoId,
+  inicial,
+  fotografo,
+}: {
+  eventoId: string;
+  /** Un modo de src/lib/barrido.ts, o «heredar». */
+  inicial: string;
+  /** Lo que rige al heredar: el interruptor de Mi página. */
+  fotografo: boolean;
+}) {
+  const [modo, setModo] = useState(inicial);
+  const [guardando, empezar] = useTransition();
+  const [aviso, setAviso] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  const opciones = [
+    { valor: HEREDAR, texto: `Como en Mi página (hoy: ${fotografo ? "en la foto grande" : "apagado"})` },
+    ...MODOS_BARRIDO_LISTA.map((m) => ({ valor: m.id, texto: m.nombre })),
+  ];
+  const detalle =
+    MODOS_BARRIDO_LISTA.find((m) => m.id === modo)?.detalle ??
+    "Lo que tengas puesto en Mi página, para todos tus eventos.";
+
+  function elegir(v: string) {
+    const antes = modo;
+    setModo(v);
+    empezar(async () => {
+      const r = await guardarBarridoAction(eventoId, v);
+      setError(Boolean(r.error));
+      setAviso(r.error ?? "Guardado");
+      if (r.error) setModo(antes);
+      setTimeout(() => setAviso(null), 2400);
+    });
+  }
+
+  return (
+    <div className="card blq">
+      <h2>Protección</h2>
+      <p className="ayuda">
+        La marca de agua va siempre. El barrido es un extra: la foto borrosa y una banda nítida que
+        la recorre, para que una captura de pantalla se lleve una franja y no la foto.
+      </p>
+      <div className="blq-b">
+        <div className="campo">
+          <label htmlFor="barrido">Barrido</label>
+          <Desplegable
+            id="barrido"
+            opciones={opciones}
+            valor={modo}
+            alCambiar={elegir}
+            permiteVacio={false}
+          />
+          <div className="pista">{detalle}</div>
+        </div>
+        {(guardando || aviso) && (
+          <span style={{ fontSize: 13, color: error ? "var(--bad)" : "var(--ok)" }}>
+            {guardando ? "Guardando…" : aviso}
+          </span>
         )}
       </div>
     </div>

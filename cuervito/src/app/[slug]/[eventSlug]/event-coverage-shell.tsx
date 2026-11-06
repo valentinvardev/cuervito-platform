@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { varsBarrido, type ModoBarrido } from "~/lib/barrido";
 import { CartProvider, useCart } from "./cart-context";
 import { CartSheet } from "./cart-sheet";
 import { PublicLightbox } from "./public-lightbox";
@@ -80,8 +81,8 @@ export function EventCoverageShell(props: {
   buscaPorDorsal?: boolean;
   /** Qué es esta página, en una oración: lo lee el visitante y lo lee Google. */
   resumen?: string;
-  /** Opción del fotógrafo: en el visor, la foto borrosa con una banda nítida que la recorre. */
-  barrido?: boolean;
+  /** El barrido (src/lib/barrido.ts): apagado, sólo en la foto grande, o también en la grilla. */
+  barrido?: ModoBarrido;
 }) {
   return (
     <CartProvider
@@ -104,7 +105,7 @@ function ShellInner({
   conReconocimiento = true,
   buscaPorDorsal = true,
   resumen,
-  barrido = false,
+  barrido = "apagado",
 }: {
   photographer: Photographer;
   event: EventInfo;
@@ -122,8 +123,8 @@ function ShellInner({
   buscaPorDorsal?: boolean;
   /** Qué es esta página, en una oración: lo lee el visitante y lo lee Google. */
   resumen?: string;
-  /** Opción del fotógrafo: en el visor, la foto borrosa con una banda nítida que la recorre. */
-  barrido?: boolean;
+  /** El barrido (src/lib/barrido.ts): apagado, sólo en la foto grande, o también en la grilla. */
+  barrido?: ModoBarrido;
 }) {
   const { items, openCart, isInCart, add, remove } = useCart();
   const [shown, setShown] = useState(PAGE_SIZE);
@@ -371,7 +372,9 @@ function ShellInner({
               <div
                 key={p.id}
                 className={`photo-cell ${inCart ? "in-cart" : ""}`}
+                data-barrido={barrido === "todo" ? "1" : undefined}
                 style={{
+                  ...varsBarrido(p.previewUrl, i, p.width && p.height && p.width > p.height ? "center" : "top"),
                   backgroundImage: `url(${p.previewUrl})`,
                   backgroundSize: "cover",
                   backgroundPosition:
@@ -445,7 +448,7 @@ function ShellInner({
           pricePerPhoto={event.pricePerPhoto}
           evento={event.name}
           regalo={regalo}
-          barrido={barrido}
+          barrido={barrido !== "apagado"}
           onClose={() => setLightboxIdx(null)}
         />
       )}
