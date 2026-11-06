@@ -51,6 +51,7 @@ export function GaleriaProgresiva({
   conReconocimiento?: boolean;
   buscaPorDorsal?: boolean;
   resumen?: string;
+  barrido?: boolean;
 }) {
   const { fotos, hayMas, trayendoMas, cargarMas } = useFotos({
     eventId: props.event.id,

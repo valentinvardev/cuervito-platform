@@ -6,6 +6,8 @@ import "~/styles/prototype/lightbox.css";
 // la tienda lo arma el layout, y las clases .et- las usa también el carrito,
 // que se monta por fuera del árbol de la grilla.
 import "~/styles/tienda-encontrate.css";
+// El visor de la foto en grande, uno para las tres plantillas.
+import "~/styles/visor-foto.css";
 // Las cinco plantillas con tema: la misma página de encontrate con otra piel,
 // activada por el atributo data-plantilla.
 import "~/styles/tienda-temas.css";

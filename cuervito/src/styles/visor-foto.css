@@ -1,0 +1,230 @@
+/* ═══════════════════════════ EL VISOR DE LA TIENDA ═══════════════════════════
+   Una sola foto en grande, para las tres plantillas y los tres tamaños de
+   pantalla (visor-foto.tsx). Antes había dos visores —uno para feed y
+   cobertura, otro para encontrate— con dos reglas distintas de tamaño, y en
+   uno de ellos la foto era la miniatura de 560: en un iPad quedaba chica y
+   no llegaba al borde.
+
+   Tres bandas: arriba el evento y cerrar; en el medio el escenario, que mide
+   lo mismo para todas las fotos y donde la foto entra con object-fit:
+   contain; abajo el dorsal, el zoom y la compra. Nada se dibuja sobre la
+   foto, así el zoom nunca pisa un botón. Es oscuro siempre: va sobre fotos.
+
+   Las flechas existen dos veces en el HTML, en las canaletas y en la banda
+   de abajo; el CSS muestra unas u otras según el ancho. */
+
+.vf {
+  position: fixed; inset: 0; z-index: 110;
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+  background: #0A0908;
+  color: #F3EFE6;
+  font-family: inherit;
+  animation: vf-entra 180ms ease;
+  user-select: none; -webkit-user-select: none;
+}
+.vf[data-cerrando="1"] { animation: vf-sale 150ms ease forwards; }
+@keyframes vf-entra { from { opacity: 0; } to { opacity: 1; } }
+@keyframes vf-sale { to { opacity: 0; } }
+
+/* ── Las bandas ─────────────────────────────────────────────────────────── */
+.vf-arriba, .vf-abajo {
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 24px 0 32px;
+}
+.vf-arriba { height: 64px; justify-content: space-between; }
+.vf-abajo { height: 88px; padding: 0 32px; justify-content: space-between; }
+
+.vf-titulo { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
+.vf-evento {
+  font-size: 18px; font-weight: 600; letter-spacing: -0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.vf-etiqueta {
+  font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #A39B90; white-space: nowrap;
+}
+
+.vf-datos { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.vf-dorsal { font-size: 15px; font-weight: 600; line-height: 20px; }
+.vf-nota { font-size: 13px; line-height: 18px; color: #A39B90; }
+.vf-precio { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.vf-compra { display: flex; align-items: center; gap: 18px; }
+
+/* ── Botones ────────────────────────────────────────────────────────────── */
+.vf-boton {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 48px; min-width: 48px; padding: 0; border-radius: 999px;
+  background: #171412; border: 1px solid #2A2622; color: #F3EFE6;
+  font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: background 120ms ease, transform 120ms ease, opacity 120ms ease;
+}
+.vf-boton:hover { background: #2A2622; }
+.vf-boton:active { transform: scale(.96); }
+.vf-boton:disabled { opacity: .35; cursor: default; }
+.vf-boton:disabled:hover { background: #171412; }
+.vf-boton svg { width: 20px; height: 20px; stroke-width: 2.4; }
+.vf-chico { height: 40px; min-width: 40px; }
+.vf-chico svg { width: 16px; height: 16px; }
+.vf-cerrar { margin-left: auto; }
+
+.vf-agregar {
+  padding: 0 20px 0 18px;
+  background: var(--accent, #F0410F); border-color: transparent;
+  color: var(--text-on-accent, #FFFFFF);
+}
+.vf-agregar:hover { background: var(--accent, #F0410F); filter: brightness(1.08); }
+.vf-agregar[data-puesta="1"] { background: #2A2622; color: #F3EFE6; }
+.vf-agregar svg { width: 18px; height: 18px; stroke-width: 2.2; }
+
+/* La pastilla del zoom: − / 100 % / + / Ajustar. */
+.vf-zoom {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px; border-radius: 999px;
+  background: #171412; border: 1px solid #2A2622;
+}
+.vf-zoom .vf-boton { height: 36px; min-width: 36px; background: transparent; border-color: transparent; }
+.vf-zoom .vf-boton:hover { background: #2A2622; }
+.vf-zoom .vf-boton svg { width: 16px; height: 16px; stroke-width: 2.2; }
+.vf-pct { width: 52px; text-align: center; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.vf-ajustar { padding: 0 14px; font-size: 13px; font-weight: 500; background: #2A2622 !important; }
+
+/* ── El escenario ───────────────────────────────────────────────────────── */
+.vf-escenario {
+  display: grid; grid-template-columns: 96px minmax(0, 1fr) 96px;
+  align-items: center; min-height: 0;
+}
+.vf-canaleta { display: grid; place-items: center; }
+.vf-marco {
+  position: relative; width: 100%; height: 100%; min-height: 0;
+  overflow: hidden;
+  /* Los gestos son nuestros: el navegador no hace zoom de página ni scroll. */
+  touch-action: none; overscroll-behavior: contain;
+  cursor: zoom-in;
+}
+.vf-marco[data-zoom="1"] { cursor: grab; }
+.vf-marco[data-zoom="1"]:active { cursor: grabbing; }
+
+/* La capa que se mueve y se agranda. Adentro, la foto (y con el barrido, una
+   segunda copia nítida encima). El transform va en la capa y no en la foto
+   para que las dos copias se muevan juntas. */
+.vf-capa { position: absolute; inset: 0; transform-origin: center center; will-change: transform; }
+.vf-img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; display: block;
+  -webkit-user-drag: none; pointer-events: none;
+  transition: filter 140ms ease;
+}
+/* La miniatura mientras llega la de 2400: ya ocupa el lugar exacto. */
+.vf-previa { filter: blur(8px); }
+.vf-img[data-cargada="0"] { opacity: 0; }
+
+/* ── El barrido ─────────────────────────────────────────────────────────────
+   Opción por fotógrafo: la foto desenfocada y una banda diagonal nítida que
+   la recorre sin parar. Se ve entera, pero nunca entera a la vez: una
+   captura de pantalla se lleva una franja. La copia nítida va encima de la
+   borrosa con una máscara que se desplaza. */
+.vf-marco[data-barrido="1"] .vf-img { filter: blur(16px) saturate(.85); }
+.vf-nitida {
+  filter: none !important;
+  -webkit-mask-image: linear-gradient(115deg, transparent 0 43%, #000 45.5% 54.5%, transparent 57% 100%);
+  mask-image: linear-gradient(115deg, transparent 0 43%, #000 45.5% 54.5%, transparent 57% 100%);
+  -webkit-mask-size: 180% 100%; mask-size: 180% 100%;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  /* Va y vuelve: con una sola dirección la banda salía de la foto y la
+     dejaba toda borrosa un tercio del tiempo. */
+  animation: vf-barre 6s linear infinite alternate;
+}
+@keyframes vf-barre {
+  from { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
+  to   { -webkit-mask-position: 0% 0;   mask-position: 0% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vf-nitida { animation-duration: 12s; }
+}
+
+/* ── La lupa (sólo con mouse) ───────────────────────────────────────────── */
+.vf-lupa {
+  position: absolute; width: 240px; height: 240px; border-radius: 999px;
+  border: 2px solid #F3EFE6; box-shadow: 0 12px 40px rgba(0, 0, 0, .55);
+  background-repeat: no-repeat; background-color: #0A0908;
+  pointer-events: none;
+}
+
+/* ── La pista y la carga ────────────────────────────────────────────────── */
+.vf-pista {
+  position: absolute; top: 16px; right: 16px;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 32px; padding: 0 12px; border-radius: 999px;
+  background: rgba(23, 20, 18, .85); border: 1px solid #2A2622;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.02em; white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+.vf-pista svg { width: 14px; height: 14px; stroke-width: 2.2; }
+.vf-marco[data-zoom="1"] .vf-pista, .vf-marco[data-pista="0"] .vf-pista { opacity: 0; }
+
+.vf-cargando {
+  position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
+}
+.vf-cargando span {
+  width: 28px; height: 28px; border-radius: 999px;
+  border: 3px solid rgba(243, 239, 230, .2); border-top-color: #F3EFE6;
+  animation: vf-gira 800ms linear infinite;
+}
+@keyframes vf-gira { to { transform: rotate(360deg); } }
+
+/* ── El velo de captura ─────────────────────────────────────────────────────
+   Mientras <html> lleva data-velo (Ctrl, Cmd, Impr Pant o la pestaña sin
+   foco; lo pone VeloCaptura) la foto se desenfoca, también la copia nítida
+   del barrido y la lupa. Misma regla que la grilla y el carrito. */
+:root[data-velo] .vf-img, :root[data-velo] .vf-nitida, :root[data-velo] .vf-lupa {
+  filter: blur(26px) saturate(.6) !important;
+}
+
+/* ── Lo que cambia sin mouse o en una pantalla angosta ──────────────────── */
+.vf-largo { display: inline; }
+.vf-nav-abajo { display: none; }
+
+@media (max-width: 899px) {
+  .vf-arriba { height: 56px; padding: 0 12px; }
+  .vf-titulo { flex-direction: column; align-items: center; gap: 2px; text-align: center; flex: 1; }
+  .vf-evento { font-size: 15px; }
+  .vf-cerrar { margin-left: 0; order: -1; }
+  .vf-arriba::after { content: ""; width: 40px; flex-shrink: 0; } /* equilibra el cerrar */
+
+  /* De borde a borde: sin canaletas, las flechas pasan abajo. */
+  .vf-escenario { grid-template-columns: minmax(0, 1fr); }
+  .vf-canaleta { display: none; }
+  .vf-nav-abajo { display: inline-flex; }
+
+  .vf-abajo {
+    height: auto; flex-wrap: wrap; row-gap: 8px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  .vf-datos { margin-right: 0; flex: 1; }
+  .vf-dorsal { font-size: 13px; line-height: 16px; }
+  .vf-nota { display: none; }
+  .vf-precio { font-size: 17px; line-height: 20px; }
+  .vf-compra { gap: 10px; }
+  .vf-compra .vf-precio { display: none; } /* va en los datos */
+  .vf-agregar { height: 44px; padding: 0 16px 0 14px; }
+  .vf-largo { display: none; }
+  .vf-boton { height: 44px; min-width: 44px; }
+
+  /* Sin mouse no hay − y +: pellizco y doble toque. Queda «Ajustar», y sólo
+     cuando hace falta. */
+  .vf-zoom { display: none; order: 10; width: 100%; justify-content: center; background: transparent; border: 0; padding: 0; }
+  .vf[data-zoom="1"] .vf-zoom { display: flex; }
+  .vf-zoom .vf-menos, .vf-zoom .vf-mas, .vf-zoom .vf-pct { display: none; }
+  .vf-ayuda { order: 11; width: 100%; text-align: center; font-size: 12px; color: #A39B90; }
+
+  /* La pista va debajo de la foto, no en la esquina del escenario. */
+  .vf-pista {
+    top: calc(var(--vf-foto-abajo, 50%) + 12px); right: auto; left: 50%; transform: translateX(-50%);
+  }
+  .vf-lupa { display: none; }
+}
+@media (min-width: 900px) {
+  .vf-ayuda { display: none; }
+  .vf-datos .vf-precio { display: none; }
+}

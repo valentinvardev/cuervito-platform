@@ -148,6 +148,8 @@ model User {
     /// El secundario, para las plantillas de dos colores (Cancha). Null = el de fábrica de la plantilla.
     storefrontBrandColor2 String?
     storefrontTemplate   String?  // template id from frontend catalog
+    /// El barrido del visor: la foto en grande borrosa, con una banda diagonal nítida que la recorre. Opción del fotógrafo.
+    storefrontSweep      Boolean  @default(false)
     storefrontDomain     String?  @unique // custom domain
     storefrontPublished  Boolean  @default(false)
     watermarkKey         String?  // S3 key for per-user watermark PNG; null = use platform default

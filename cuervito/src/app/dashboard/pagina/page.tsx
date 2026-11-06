@@ -23,6 +23,7 @@ export default async function V2Pagina() {
       storefrontBrandColor: true,
       storefrontBrandColor2: true,
       storefrontTemplate: true,
+      storefrontSweep: true,
       logoKey: true,
     },
   });
@@ -55,6 +56,7 @@ export default async function V2Pagina() {
           colorInicial={u?.storefrontBrandColor ?? null}
           color2Inicial={u?.storefrontBrandColor2 ?? null}
           plantillaInicial={u?.storefrontTemplate ?? PLANTILLA_POR_DEFECTO}
+          barridoInicial={u?.storefrontSweep ?? false}
           logoInicial={u?.logoKey ? await resolveMediaUrl(u.logoKey) : null}
         />
       </div>

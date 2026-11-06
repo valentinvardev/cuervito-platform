@@ -76,3 +76,16 @@ export async function saveTemplateAction(
   revalidatePath("/dashboard/pagina");
   return { error: null };
 }
+
+/**
+ * El barrido del visor: la foto en grande borrosa, con una banda diagonal
+ * nítida que la recorre. Se ve entera, pero nunca entera a la vez. Es una
+ * opción del fotógrafo, apagada de fábrica, y vale para todos sus eventos.
+ */
+export async function saveSweepAction(activo: boolean): Promise<{ error: string | null }> {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "Sesión expirada." };
+  await db.user.update({ where: { id: session.user.id }, data: { storefrontSweep: activo === true } });
+  revalidatePath("/dashboard/pagina");
+  return { error: null };
+}

@@ -412,7 +412,7 @@ tokens bajo `:root[data-theme="light"]`.
 | Landing, dashboard, admin | Sigue el toggle |
 | `/descarga`, `/pago` | Sigue el toggle |
 | Storefront `/[slug]` | **Siempre oscuro** — es la página de marca del fotógrafo |
-| Lightbox | Siempre oscuro (va sobre imágenes) |
+| Visor de la tienda (`visor-foto.tsx`) | Siempre oscuro (va sobre fotos) |
 
 El storefront se fija cambiando el **atributo**, no con CSS
 (`src/app/_components/storefront-theme.tsx`): script para la carga inicial y
@@ -427,6 +427,26 @@ salir.
 | `<Select />` | Dropdown canónico (`.cs-*`). Reemplaza los `<select>` nativos |
 | `<DateInput />` | Calendario propio; hoy marcado pero no seleccionado |
 | `<Tooltip />` | Versión envolvente, para casos con contenido JSX |
+
+### El visor de la tienda
+
+`src/app/[slug]/[eventSlug]/visor-foto.tsx` + `src/styles/visor-foto.css`: UNO para
+las tres plantillas. Feed y cobertura lo montan por `public-lightbox.tsx`, que le
+conecta el carrito; encontrate lo monta directo. Tres bandas: arriba el evento y
+cerrar; en el medio el escenario, que mide lo mismo para todas las fotos del
+dispositivo y donde la foto entra con `object-fit: contain`; abajo el dorsal, el
+zoom y la compra. Nada se dibuja sobre la foto, así el zoom no pisa un botón.
+Siempre muestra la vista previa de 2400 (`fullUrl`); la miniatura de la grilla
+sólo tapa el hueco mientras carga. Zoom: rueda, doble clic y una lupa 2× que
+sigue al mouse; pellizco y doble toque sin mouse; `+`, `-` y `0` por teclado.
+Deslizar sin zoom pasa de foto; con zoom, mueve la foto. El clic derecho sobre
+la foto no abre el menú.
+
+**El barrido** (`User.storefrontSweep`, se prende en Mi página → Protección):
+la foto borrosa y una banda diagonal nítida que va y vuelve, hecha con una
+máscara CSS animada sobre una segunda copia de la imagen. Se ve entera, pero
+nunca entera a la vez. El velo de captura (Ctrl) desenfoca también la copia
+nítida y la lupa.
 
 ---
 

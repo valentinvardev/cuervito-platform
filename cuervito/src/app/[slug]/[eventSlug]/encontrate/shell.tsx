@@ -24,10 +24,10 @@ import { PillInstagram } from "../../encontrate/pill-instagram";
 
 import { useBusquedaSelfie } from "../selfie-search";
 import { useFotos, type Modo } from "../usar-fotos";
+import { VisorFoto } from "../visor-foto";
 import { Carrito } from "./carrito";
 import { CarritoMas } from "./icono-carrito";
 import { elegirPromo } from "./promo";
-import { Visor } from "./visor";
 
 // Las mismas formas que arma page.tsx y consumen las otras plantillas. Definir
 // unas propias acá haría que agregar un campo allá compile igual y llegue
@@ -132,6 +132,8 @@ export function EncontrateShell(props: {
   resumen?: string;
   /** La misma carrera en otros años o por otros fotógrafos. */
   ediciones?: Edicion[];
+  /** Opción del fotógrafo: en el visor, la foto borrosa con una banda nítida que la recorre. */
+  barrido?: boolean;
 }) {
   return (
     <CartProvider
@@ -156,6 +158,7 @@ function Adentro({
   conReconocimiento = true,
   resumen,
   ediciones = [],
+  barrido = false,
 }: {
   photographer: Photographer;
   event: EventInfo;
@@ -170,6 +173,8 @@ function Adentro({
   resumen?: string;
   /** La misma carrera en otros años o por otros fotógrafos. */
   ediciones?: Edicion[];
+  /** Opción del fotógrafo: en el visor, la foto borrosa con una banda nítida que la recorre. */
+  barrido?: boolean;
 }) {
   const { items, add, remove, isInCart, open, openCart } = useCart();
 
@@ -592,14 +597,16 @@ function Adentro({
       </footer>
 
       {viendo !== null && filtradas[viendo] && (
-        <Visor
+        <VisorFoto
           fotos={filtradas}
           indice={viendo}
+          evento={event.name}
           enCarrito={isInCart}
           precio={regalo ? "Gratis" : pesos(precioCent)}
           alCerrar={() => setViendo(null)}
           alIr={setViendo}
           alAlternar={(f) => alternar(f as Photo)}
+          barrido={barrido}
         />
       )}
 

@@ -471,120 +471,6 @@
 
 .et-mas-fotos { display: grid; justify-items: center; padding-bottom: 48px; }
 
-/* ── Visor ───────────────────────────────────────────────────────────────────
-   Acotado, igual que el del panel: a pantalla completa una foto apaisada se
-   estira y deja de leerse como una foto. */
-.et-visor {
-  position: fixed; inset: 0; z-index: 90;
-  display: grid; place-items: center;
-  padding: 16px;
-  background: rgba(10, 9, 8, .93);
-  backdrop-filter: blur(6px);
-  animation: et-visor-entra 200ms ease;
-}
-.et-visor[data-cerrando="1"] { animation: et-visor-sale 150ms ease forwards; }
-@keyframes et-visor-entra { from { opacity: 0; } to { opacity: 1; } }
-@keyframes et-visor-sale { to { opacity: 0; } }
-
-/* La caja se achica hasta el ancho de la foto.
-
-   Con un ancho fijo, una foto vertical se dibuja angosta y centrada adentro
-   de una caja de 860, y el pie queda como una barra larguísima abajo de una
-   foto flaca. fit-content la ajusta a lo que la foto realmente ocupa, y el
-   min-width evita que con una foto muy angosta el pie quede impracticable.
-
-   El alto máximo va en unidades de ventana y no en porcentaje: en
-   porcentaje depende del alto de la caja, que a su vez depende del alto de
-   la foto, y el navegador resuelve ese círculo dejando la foto en su tamaño
-   original. */
-.et-visor-caja {
-  display: grid; grid-template-rows: minmax(0, 1fr) auto;
-  gap: 12px;
-  width: fit-content;
-  max-width: min(100%, 900px);
-  min-width: min(100%, 300px);
-  /* En unidades de ventana y no 100%: el padre centra sin estirar, así que
-     el 100% se resuelve contra el alto del propio contenido y el navegador
-     lo trata como sin tope. Con eso, una foto vertical en un teléfono se
-     pasaba 52px abajo del borde. El 32 son los dos paddings del visor. */
-  max-height: calc(100dvh - 32px);
-}
-.et-visor-marco { display: grid; place-items: center; min-height: 0; }
-.et-visor-marco img {
-  max-width: 100%;
-  /* Deja lugar para el pie y los márgenes: 100dvh menos lo que ocupan. */
-  max-height: min(78dvh, 100%);
-  object-fit: contain; border-radius: var(--et-radio-chico);
-  animation: et-visor-foto 240ms cubic-bezier(.2, .8, .3, 1);
-}
-@keyframes et-visor-foto {
-  from { opacity: 0; transform: scale(.95); }
-  to   { opacity: 1; transform: none; }
-}
-.et-visor-pie {
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  padding: 11px 14px;
-  border-radius: var(--et-radio-chico);
-  background: rgba(255, 255, 255, .08);
-  color: #FFFFFF;
-}
-.et-visor-datos { margin-right: auto; font-size: 13px; }
-.et-visor-datos span { display: block; font-size: 11.5px; color: rgba(255, 255, 255, .6); }
-.et-visor .et-btn { border-color: rgba(255, 255, 255, .26); color: #FFFFFF; }
-.et-visor .et-btn:hover { background: rgba(255, 255, 255, .14); border-color: #FFFFFF; }
-.et-visor .et-btn-acento { border-color: var(--accent, #F0410F); }
-
-.et-visor-nav, .et-visor-x {
-  position: fixed;
-  display: grid; place-items: center;
-  border: 0; cursor: pointer; border-radius: 11px;
-  transition: background 140ms ease, transform 140ms ease;
-}
-
-/* La X va sobre el velo oscuro, que es parejo y no cambia: ahí un vidrio
-   apenas teñido alcanza y no le roba atención a la foto. */
-.et-visor-x {
-  top: 16px; right: 16px; width: 38px; height: 38px;
-  background: rgba(255, 255, 255, .12); color: #FFFFFF;
-  backdrop-filter: blur(8px);
-}
-.et-visor-x:hover { background: rgba(255, 255, 255, .24); }
-
-/* Los chevrones NO pueden ser de vidrio: van apoyados SOBRE la foto, y con
-   blanco al 12% desaparecían apenas la imagen era clara —el cielo, la nieve,
-   una remera blanca— justo en el borde, que es donde caen. Quedaba un visor
-   sin manera visible de pasar a la siguiente.
-
-   Sólidos y con sombra para despegarlos de cualquier fondo. Pasar de foto es
-   la acción principal del visor: es lo que hace que alguien mire las diez que
-   compró en vez de la primera. */
-.et-visor-nav {
-  top: 50%; transform: translateY(-50%);
-  width: 46px; height: 46px;
-  background: #FFFFFF; color: #12110F;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, .32);
-}
-.et-visor-nav:hover { transform: translateY(-50%) scale(1.06); }
-.et-visor-nav:disabled { opacity: .35; cursor: default; box-shadow: none; }
-.et-visor-nav.izq { left: 16px; }
-.et-visor-nav.der { right: 16px; }
-.et-visor-nav svg { width: 20px; height: 20px; stroke-width: 2.4; }
-.et-visor-x svg { width: 17px; height: 17px; }
-
-@media (max-width: 720px) {
-  /* Sin volver a poner max-height: el tope de ventana de arriba es el que evita
-     que una foto vertical se pase del borde, y pisarlo acá con 100% era
-     exactamente el bug. Tampoco width: 100%: la caja sigue al ancho de la foto
-     también en el teléfono. */
-  .et-visor-caja { max-width: 100%; }
-  .et-visor-nav { width: 36px; height: 36px; }
-  .et-visor-nav.izq { left: 6px; }
-  .et-visor-nav.der { right: 6px; }
-  .et-visor-x { top: 8px; right: 8px; width: 34px; height: 34px; }
-  .et-visor-datos { width: 100%; margin-right: 0; }
-  .et-visor-pie .et-btn { flex: 1; }
-}
-
 /* ── Carrito ─────────────────────────────────────────────────────────────────
    Cajón lateral en escritorio, hoja desde abajo en el teléfono, que es donde
    está el pulgar. Un cajón lateral en un teléfono deja el botón de pagar
@@ -938,12 +824,11 @@
 /* ═══════════════════════════ EL VELO DE CAPTURA ═══════════════════════════
    Mientras <html> lleva data-velo —Ctrl, Cmd o Impr Pant apretadas, o la
    pestaña sin foco; lo pone VeloCaptura— las fotos en venta se desenfocan:
-   la grilla, el visor y las miniaturas del carrito, en los tres diseños de
-   tienda. No impide la captura: la deja sin foto. La portada, el avatar y el
+   la grilla y las miniaturas del carrito, en los tres diseños de tienda (el
+   visor tiene su regla en visor-foto.css). No impide la captura: la deja sin foto. La portada, el avatar y el
    logo no se tocan: son de la marca, no se venden. */
-.et-visor-marco img, .et-linea-mini img { transition: filter 140ms ease; }
+.et-linea-mini img { transition: filter 140ms ease; }
 :root[data-velo] .et-foto img,
-:root[data-velo] .et-visor-marco img,
 :root[data-velo] .et-linea-mini img,
 :root[data-velo] .photo-cell,
 :root[data-velo] .feed-foto,

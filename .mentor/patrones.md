@@ -5,7 +5,7 @@ existir: una vez es un descuido, dos es una tendencia.
 
 ## La misma regla escrita en N lugares
 - Primera vez: 2026-09-06 (registrado; las apariciones son anteriores)
-- Ocurrencias: 8 (fórmula de descuentos, tipografía por layout, `status !== "PAID"`, candado ADMIN de la vista previa /v2 — 2026-09-08; slugs reservados — 2026-10-07; el menú en cinco plantillas — 2026-10-11; los velos en CSS — 2026-10-12; acceso al evento en dos módulos — 2026-10-26)
+- Ocurrencias: 9 (fórmula de descuentos, tipografía por layout, `status !== "PAID"`, candado ADMIN de la vista previa /v2 — 2026-09-08; slugs reservados — 2026-10-07; el menú en cinco plantillas — 2026-10-11; los velos en CSS — 2026-10-12; acceso al evento en dos módulos — 2026-10-26; dos visores de la tienda con distinta fuente de imagen y distinto tope de tamaño — 2026-11-05, resuelto ese mismo día con un solo visor-foto.tsx)
 - Qué pasa: una decisión —cómo se calcula un descuento, qué fuente usa el
   panel, quién puede bajar las fotos— queda expresada como una línea repetida
   en cada lugar que la necesita, en vez de como un módulo con nombre.

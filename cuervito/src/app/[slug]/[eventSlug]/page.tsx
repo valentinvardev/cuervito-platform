@@ -326,6 +326,8 @@ export default async function PublicEventPage(props: {
       photosCount: totalFotos,
     },
     photos,
+    // El barrido del visor es del fotógrafo, no del evento: vale para todos los suyos.
+    barrido: photographer.storefrontSweep,
     cursorInicial,
     discounts: activeDiscounts,
     testMode,

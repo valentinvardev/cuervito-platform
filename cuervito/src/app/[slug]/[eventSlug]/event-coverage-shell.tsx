@@ -54,6 +54,8 @@ export type PublicDiscount = {
 type Photo = {
   id: string;
   previewUrl: string;
+  /** La de 2400, para el visor. */
+  fullUrl: string;
   bibNumbers: string | null;
   width: number | null;
   height: number | null;
@@ -78,6 +80,8 @@ export function EventCoverageShell(props: {
   buscaPorDorsal?: boolean;
   /** Qué es esta página, en una oración: lo lee el visitante y lo lee Google. */
   resumen?: string;
+  /** Opción del fotógrafo: en el visor, la foto borrosa con una banda nítida que la recorre. */
+  barrido?: boolean;
 }) {
   return (
     <CartProvider
@@ -100,6 +104,7 @@ function ShellInner({
   conReconocimiento = true,
   buscaPorDorsal = true,
   resumen,
+  barrido = false,
 }: {
   photographer: Photographer;
   event: EventInfo;
@@ -117,6 +122,8 @@ function ShellInner({
   buscaPorDorsal?: boolean;
   /** Qué es esta página, en una oración: lo lee el visitante y lo lee Google. */
   resumen?: string;
+  /** Opción del fotógrafo: en el visor, la foto borrosa con una banda nítida que la recorre. */
+  barrido?: boolean;
 }) {
   const { items, openCart, isInCart, add, remove } = useCart();
   const [shown, setShown] = useState(PAGE_SIZE);
@@ -436,6 +443,9 @@ function ShellInner({
           photos={filterByBib(visiblePhotos, query)}
           startIndex={lightboxIdx}
           pricePerPhoto={event.pricePerPhoto}
+          evento={event.name}
+          regalo={regalo}
+          barrido={barrido}
           onClose={() => setLightboxIdx(null)}
         />
       )}

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 
 import { savePerfilAction } from "~/app/dashboard/perfil/actions";
-import { saveBrandColorAction, saveTemplateAction } from "~/app/dashboard/pagina/actions";
+import { saveBrandColorAction, saveSweepAction, saveTemplateAction } from "~/app/dashboard/pagina/actions";
 import { acento2De, acentoDe, getTemplate } from "~/lib/storefront-templates";
 
 import { Dominio } from "./_dominio";
@@ -46,6 +46,7 @@ export function Editor({
   colorInicial,
   color2Inicial,
   plantillaInicial,
+  barridoInicial,
   logoInicial,
 }: {
   perfil: { name: string; slug: string; bio: string; instagramUrl: string; websiteUrl: string };
@@ -55,12 +56,15 @@ export function Editor({
   /** El secundario guardado, para las plantillas de dos colores. */
   color2Inicial: string | null;
   plantillaInicial: string;
+  /** El barrido del visor, como está guardado. */
+  barridoInicial: boolean;
   /** El logo que ya subió, resuelto a URL. Null si no tiene. */
   logoInicial: string | null;
 }) {
   const [color, setColor] = useState<string | null>(colorInicial);
   const [color2, setColor2] = useState<string | null>(color2Inicial);
   const [plantilla, setPlantilla] = useState(plantillaInicial);
+  const [barrido, setBarrido] = useState(barridoInicial);
   const router = useRouter();
   const [telefono, setTelefono] = useState(false);
 
@@ -152,6 +156,20 @@ export function Editor({
 
   function recargarPrevia() {
     setVersion((v) => v + 1);
+  }
+
+  function alternarBarrido() {
+    const nuevo = !barrido;
+    setBarrido(nuevo);
+    empezar(async () => {
+      const r = await saveSweepAction(nuevo);
+      if (r.error) {
+        setBarrido(!nuevo);
+        avisar(r.error);
+      } else {
+        avisar("Guardado");
+      }
+    });
   }
 
   function elegirColor(c: string, cual: 1 | 2 = 1) {
@@ -404,6 +422,32 @@ export function Editor({
               </span>
             </div>
           )}
+        </section>
+
+        <section className="card blq">
+          <h2>Protección</h2>
+          <p className="ayuda">
+            En la foto en grande. La marca de agua va siempre; esto es un extra para quien quiera más.
+          </p>
+          <div className="blq-b">
+            <div className="aj">
+              <div className="aj-t">
+                <b>Barrido en la foto grande</b>
+                <span>
+                  La foto se ve borrosa y una banda nítida la recorre: se ve entera, pero nunca entera a la
+                  vez. Una captura de pantalla se lleva una franja.
+                </span>
+              </div>
+              <button
+                type="button"
+                className="sw"
+                role="switch"
+                aria-checked={barrido}
+                aria-label="Barrido en la foto grande"
+                onClick={alternarBarrido}
+              />
+            </div>
+          </div>
         </section>
       </div>
 
