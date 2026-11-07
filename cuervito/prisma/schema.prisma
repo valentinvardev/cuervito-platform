@@ -388,9 +388,10 @@ model Event {
     /// la evaluación corra UNA vez y no en cada foto que termina.
     bibCheckedAt DateTime?
 
-    /// El barrido en la tienda de ESTE evento: "apagado", "visor" (sólo la foto
-    /// grande) o "todo" (también la grilla). Null = como diga el fotógrafo en
-    /// Mi página (User.storefrontSweep). Los nombres viven en src/lib/barrido.ts.
+    /// El barrido en la tienda de ESTE evento: "apagado" o "todo" (la grilla y
+    /// la foto grande), lo que escribe el interruptor de Precio; "visor" (sólo
+    /// la foto grande) se entiende pero no se escribe. Null = como diga el
+    /// fotógrafo en Mi página (User.storefrontSweep). Nombres: src/lib/barrido.ts.
     sweep String?
 
     // AWS Rekognition collection for this event (created on first photo)

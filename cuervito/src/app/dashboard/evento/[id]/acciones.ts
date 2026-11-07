@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { esModoBarrido, HEREDAR } from "~/lib/barrido";
+import { BARRIDO_APAGADO, BARRIDO_PRENDIDO } from "~/lib/barrido";
 import {
   busUserDashboardCache,
   purgarEvento,
@@ -199,18 +199,21 @@ export async function borrarEventoAction(eventId: string): Promise<{ error?: str
 }
 
 /**
- * El barrido de este evento. «heredar» borra la elección y vuelve a regir lo
- * de Mi página; cualquier otro valor tiene que ser un modo conocido.
+ * El barrido de este evento, prendido o apagado. Siempre queda escrito en el
+ * evento: el interruptor muestra lo que rige (que puede venir de Mi página) y
+ * tocarlo tiene que cambiar eso, no volver a heredar.
  */
-export async function guardarBarridoAction(eventId: string, modo: string): Promise<{ error?: string }> {
+export async function guardarBarridoAction(eventId: string, activo: boolean): Promise<{ error?: string }> {
   const session = await auth();
   if (!session?.user?.id) return { error: "Iniciá sesión de nuevo." };
 
   const ev = await db.event.findUnique({ where: { id: eventId }, select: { ownerId: true } });
   if (!ev || !puedeEditarEvento(ev.ownerId, session.user)) return { error: "Evento no encontrado." };
-  if (modo !== HEREDAR && !esModoBarrido(modo)) return { error: "Opción inválida." };
 
-  await db.event.update({ where: { id: eventId }, data: { sweep: modo === HEREDAR ? null : modo } });
+  await db.event.update({
+    where: { id: eventId },
+    data: { sweep: activo === true ? BARRIDO_PRENDIDO : BARRIDO_APAGADO },
+  });
   revalidatePath(`/dashboard/evento/${eventId}`);
   return {};
 }

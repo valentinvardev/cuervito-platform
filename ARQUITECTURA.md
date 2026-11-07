@@ -442,14 +442,16 @@ sigue al mouse; pellizco y doble toque sin mouse; `+`, `-` y `0` por teclado.
 Deslizar sin zoom pasa de foto; con zoom, mueve la foto. El clic derecho sobre
 la foto no abre el menú.
 
-**El barrido** (`Event.sweep`, por evento en Info → Protección; si el evento no
-dice nada rige `User.storefrontSweep`, el interruptor de Mi página; los nombres
+**El barrido** (un interruptor en Mi página, `User.storefrontSweep`, para todos
+los eventos, y otro en Precio de cada evento, `Event.sweep`, que manda sobre
+aquél; el del evento muestra lo que rige y al tocarlo queda escrito; los nombres
 viven en `src/lib/barrido.ts`): la foto borrosa y una banda diagonal nítida que
 va y vuelve, hecha con una máscara CSS animada sobre una segunda copia de la
-imagen. Se ve entera, pero nunca entera a la vez. En el modo «todo» cada foto de
-la grilla va borrosa con una banda fija, puesta por índice, sin animación: son
-sesenta a la vez. El velo de captura (Ctrl) desenfoca también la copia
-nítida y la lupa.
+imagen. Se ve entera, pero nunca entera a la vez. Prendido vale para la grilla
+también: cada foto va borrosa con una banda fija, puesta por índice, sin
+animación, porque son sesenta a la vez. La tienda entiende además un grado
+intermedio, «visor», sólo la foto grande, que hoy ningún interruptor escribe.
+El velo de captura (Ctrl) desenfoca también la copia nítida y la lupa.
 
 ---
 

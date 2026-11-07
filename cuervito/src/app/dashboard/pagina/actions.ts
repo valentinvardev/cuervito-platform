@@ -78,9 +78,10 @@ export async function saveTemplateAction(
 }
 
 /**
- * El barrido del visor: la foto en grande borrosa, con una banda diagonal
- * nítida que la recorre. Se ve entera, pero nunca entera a la vez. Es una
- * opción del fotógrafo, apagada de fábrica, y vale para todos sus eventos.
+ * El barrido de la tienda: las fotos borrosas, con una banda diagonal nítida
+ * que las recorre, en la grilla y en la foto grande. Es una opción del
+ * fotógrafo, apagada de fábrica, y vale para todos sus eventos salvo los que
+ * eligieron lo suyo (Event.sweep).
  */
 export async function saveSweepAction(activo: boolean): Promise<{ error: string | null }> {
   const session = await auth();

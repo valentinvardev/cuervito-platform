@@ -174,8 +174,8 @@ export default async function DemoSubida() {
         comision: e.platformFeePct !== null ? Number(e.platformFeePct) : env.PLATFORM_FEE_PERCENT,
         reconocimiento: e.recognition,
         leeDorsales: e.bibDetection,
-        barrido: "heredar",
-        barridoFotografo: false,
+        barrido: false,
+        barridoHeredado: true,
         maxFoto: env.QUOTA_MAX_PHOTO_BYTES,
         descripcion: e.description,
         // Los tres conteos los maneja el guion: arrancan en cero y suben a

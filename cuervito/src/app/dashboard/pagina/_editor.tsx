@@ -56,7 +56,7 @@ export function Editor({
   /** El secundario guardado, para las plantillas de dos colores. */
   color2Inicial: string | null;
   plantillaInicial: string;
-  /** El barrido del visor, como está guardado. */
+  /** El barrido de la tienda, como está guardado. */
   barridoInicial: boolean;
   /** El logo que ya subió, resuelto a URL. Null si no tiene. */
   logoInicial: string | null;
@@ -426,16 +426,15 @@ export function Editor({
 
         <section className="card blq">
           <h2>Protección</h2>
-          <p className="ayuda">
-            En la foto en grande. La marca de agua va siempre; esto es un extra para quien quiera más.
-          </p>
+          <p className="ayuda">La marca de agua va siempre; esto es un extra para quien quiera más.</p>
           <div className="blq-b">
             <div className="aj">
               <div className="aj-t">
-                <b>Barrido en la foto grande</b>
+                <b>Barrido</b>
                 <span>
-                  La foto se ve borrosa y una banda nítida la recorre: se ve entera, pero nunca entera a la
-                  vez. Vale para todos tus eventos, salvo los que digan otra cosa en su Info.
+                  Las fotos se ven borrosas y una banda nítida las recorre, en la grilla y en la foto
+                  grande: se ve todo, pero nunca todo a la vez. Vale para todos tus eventos, salvo los
+                  que digan otra cosa en su Precio.
                 </span>
               </div>
               <button
@@ -443,7 +442,7 @@ export function Editor({
                 className="sw"
                 role="switch"
                 aria-checked={barrido}
-                aria-label="Barrido en la foto grande"
+                aria-label="Barrido"
                 onClick={alternarBarrido}
               />
             </div>

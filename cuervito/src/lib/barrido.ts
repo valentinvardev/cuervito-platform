@@ -7,29 +7,18 @@ import type { CSSProperties } from "react";
  * el panel y la acción que lo guarda, y los tres tienen que conocer los mismos
  * nombres. Dos listas del mismo dato terminan distintas.
  *
- * Se decide por evento (Event.sweep). Si el evento no dice nada, rige lo que
- * el fotógrafo puso en Mi página (User.storefrontSweep), que es sólo prendido
- * o apagado para la foto grande.
+ * Para el fotógrafo es un interruptor, prendido o apagado, en Mi página para
+ * todos sus eventos (User.storefrontSweep) y en Precio de cada evento
+ * (Event.sweep) para ese evento. Prendido es «todo»: la grilla y la foto
+ * grande. «visor» (sólo la foto grande) la tienda lo entiende y queda como
+ * grado intermedio, pero hoy ningún interruptor lo escribe.
  */
 export const MODOS_BARRIDO = ["apagado", "visor", "todo"] as const;
 export type ModoBarrido = (typeof MODOS_BARRIDO)[number];
 
-/** Lo que elige el fotógrafo en Info del evento: los tres modos, o heredar. */
-export const HEREDAR = "heredar";
-
-export const MODOS_BARRIDO_LISTA: { id: ModoBarrido; nombre: string; detalle: string }[] = [
-  { id: "apagado", nombre: "Apagado", detalle: "Sólo la marca de agua." },
-  {
-    id: "visor",
-    nombre: "En la foto grande",
-    detalle: "Al abrir una foto se ve borrosa y una banda nítida la recorre. La grilla queda igual.",
-  },
-  {
-    id: "todo",
-    nombre: "En la grilla y en la foto grande",
-    detalle: "También cada foto de la grilla, con una banda fija. Cuesta más reconocerse mirando.",
-  },
-];
+/** El modo que escribe un interruptor: prendido o apagado. */
+export const BARRIDO_PRENDIDO: ModoBarrido = "todo";
+export const BARRIDO_APAGADO: ModoBarrido = "apagado";
 
 export function esModoBarrido(v: unknown): v is ModoBarrido {
   return typeof v === "string" && (MODOS_BARRIDO as readonly string[]).includes(v);
@@ -38,7 +27,7 @@ export function esModoBarrido(v: unknown): v is ModoBarrido {
 /** Lo que rige para un evento: lo suyo o, si no dijo nada, lo del fotógrafo. */
 export function barridoDe(evento: string | null | undefined, fotografo: boolean): ModoBarrido {
   if (esModoBarrido(evento)) return evento;
-  return fotografo ? "visor" : "apagado";
+  return fotografo ? BARRIDO_PRENDIDO : BARRIDO_APAGADO;
 }
 
 /**

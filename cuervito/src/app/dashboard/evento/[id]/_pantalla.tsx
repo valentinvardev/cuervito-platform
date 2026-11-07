@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
-import { HEREDAR, MODOS_BARRIDO_LISTA } from "~/lib/barrido";
 import { DISCIPLINAS } from "~/lib/disciplinas";
 
 import { Desplegable } from "../../_components/desplegable";
@@ -117,10 +116,10 @@ export function Pantalla({
     comision: number;
     reconocimiento: boolean;
     leeDorsales: boolean;
-    /** Lo elegido en Info para este evento: un modo de src/lib/barrido.ts, o «heredar». */
-    barrido: string;
-    /** Lo que rige al heredar: el interruptor de Mi página. */
-    barridoFotografo: boolean;
+    /** Si el barrido rige en este evento: lo suyo o, si no eligió, lo de Mi página. */
+    barrido: boolean;
+    /** Si todavía no eligió nada acá y está siguiendo a Mi página. */
+    barridoHeredado: boolean;
     /** Tope por foto, para avisar antes de mandar y no después. */
     maxFoto: number;
     descripcion: string | null;
@@ -975,6 +974,8 @@ export function Pantalla({
 
             {!comoAdmin && <Descuentos eventId={evento.id} precio={evento.precio} />}
 
+            <Proteccion eventoId={evento.id} inicial={evento.barrido} heredado={evento.barridoHeredado} />
+
             {/* En el laboratorio esto eran tres interruptores: por cara, por
                 dorsal y marca de agua. No los porté porque no hay ninguna
                 columna atrás: el reconocimiento corre igual para todos los
@@ -1101,9 +1102,6 @@ export function Pantalla({
         {solapa === "info" && (
           <section className="panel-s" data-activo="1">
             {comoColaborador ? <DatosLectura evento={evento} /> : <Datos evento={evento} />}
-            {!comoColaborador && (
-              <Proteccion eventoId={evento.id} inicial={evento.barrido} fotografo={evento.barridoFotografo} />
-            )}
             {!comoAdmin && !comoColaborador && (
               <Borrar eventoId={evento.id} nombre={evento.nombre} fotos={evento.total} />
             )}
@@ -1529,45 +1527,42 @@ function Precio({
 }
 
 /**
- * El barrido, por evento.
+ * El barrido, por evento: un interruptor, el mismo de Mi página.
  *
- * Si no se elige nada rige lo de Mi página, y la opción de heredar dice en el
- * acto qué significa hoy, para que nadie tenga que ir a mirar a otra pantalla.
- * Se guarda al elegir, sin botón: es una sola opción y volver atrás es elegir
- * otra vez.
+ * Muestra lo que rige, que hasta que el fotógrafo toca algo es lo de Mi
+ * página; por eso un evento nuevo puede aparecer prendido. Al tocarlo queda
+ * escrito en el evento y deja de seguir a Mi página, y la leyenda lo dice.
+ * Se guarda al tocar, optimista: si falla vuelve atrás y avisa.
  */
 function Proteccion({
   eventoId,
   inicial,
-  fotografo,
+  heredado: heredadoInicial,
 }: {
   eventoId: string;
-  /** Un modo de src/lib/barrido.ts, o «heredar». */
-  inicial: string;
-  /** Lo que rige al heredar: el interruptor de Mi página. */
-  fotografo: boolean;
+  /** Si rige hoy, venga de donde venga. */
+  inicial: boolean;
+  /** Si todavía sigue a Mi página. */
+  heredado: boolean;
 }) {
-  const [modo, setModo] = useState(inicial);
-  const [guardando, empezar] = useTransition();
+  const [activo, setActivo] = useState(inicial);
+  const [heredado, setHeredado] = useState(heredadoInicial);
+  const [, empezar] = useTransition();
   const [aviso, setAviso] = useState<string | null>(null);
   const [error, setError] = useState(false);
 
-  const opciones = [
-    { valor: HEREDAR, texto: `Como en Mi página (hoy: ${fotografo ? "en la foto grande" : "apagado"})` },
-    ...MODOS_BARRIDO_LISTA.map((m) => ({ valor: m.id, texto: m.nombre })),
-  ];
-  const detalle =
-    MODOS_BARRIDO_LISTA.find((m) => m.id === modo)?.detalle ??
-    "Lo que tengas puesto en Mi página, para todos tus eventos.";
-
-  function elegir(v: string) {
-    const antes = modo;
-    setModo(v);
+  function alternar() {
+    const nuevo = !activo;
+    setActivo(nuevo);
+    setHeredado(false);
     empezar(async () => {
-      const r = await guardarBarridoAction(eventoId, v);
+      const r = await guardarBarridoAction(eventoId, nuevo);
       setError(Boolean(r.error));
       setAviso(r.error ?? "Guardado");
-      if (r.error) setModo(antes);
+      if (r.error) {
+        setActivo(!nuevo);
+        setHeredado(heredadoInicial);
+      }
       setTimeout(() => setAviso(null), 2400);
     });
   }
@@ -1575,26 +1570,28 @@ function Proteccion({
   return (
     <div className="card blq">
       <h2>Protección</h2>
-      <p className="ayuda">
-        La marca de agua va siempre. El barrido es un extra: la foto borrosa y una banda nítida que
-        la recorre, para que una captura de pantalla se lleve una franja y no la foto.
-      </p>
-      <div className="blq-b">
-        <div className="campo">
-          <label htmlFor="barrido">Barrido</label>
-          <Desplegable
-            id="barrido"
-            opciones={opciones}
-            valor={modo}
-            alCambiar={elegir}
-            permiteVacio={false}
+      <p className="ayuda">La marca de agua va siempre. El barrido es un extra para quien quiera más.</p>
+      <div className="blq-b" style={{ gap: 0 }}>
+        <div className="aj">
+          <div className="aj-t">
+            <b>Barrido</b>
+            <span>
+              Las fotos se ven borrosas y una banda nítida las recorre, en la grilla y en la foto
+              grande: una captura de pantalla se lleva una franja, no la foto.{" "}
+              {heredado ? "Hoy sigue lo que pusiste en Mi página." : "Elegido para este evento."}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="sw"
+            role="switch"
+            aria-checked={activo}
+            aria-label="Barrido"
+            onClick={alternar}
           />
-          <div className="pista">{detalle}</div>
         </div>
-        {(guardando || aviso) && (
-          <span style={{ fontSize: 13, color: error ? "var(--bad)" : "var(--ok)" }}>
-            {guardando ? "Guardando…" : aviso}
-          </span>
+        {aviso && (
+          <span style={{ fontSize: 13, color: error ? "var(--bad)" : "var(--ok)" }}>{aviso}</span>
         )}
       </div>
     </div>

@@ -6,7 +6,7 @@ import { dondeApartadaPreview } from "~/server/cola-fotos";
 import { db } from "~/server/db";
 import { puedeUsarHistorias } from "~/server/historias/acceso";
 import { resolveMediaUrl } from "~/server/media";
-import { HEREDAR } from "~/lib/barrido";
+import { barridoDe } from "~/lib/barrido";
 
 import { pesos, sesionPanel } from "../../_components/sesion";
 import type { Colaborador } from "./_equipo";
@@ -260,8 +260,8 @@ export default async function V2Evento({
         puedeRegalar,
         reconocimiento: e.recognition,
         leeDorsales: e.bibDetection,
-        barrido: e.sweep ?? HEREDAR,
-        barridoFotografo: e.owner.storefrontSweep,
+        barrido: barridoDe(e.sweep, e.owner.storefrontSweep) !== "apagado",
+        barridoHeredado: e.sweep === null,
         maxFoto: env.QUOTA_MAX_PHOTO_BYTES,
         descripcion: e.description,
         total,
