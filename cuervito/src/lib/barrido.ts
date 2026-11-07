@@ -30,15 +30,22 @@ export function barridoDe(evento: string | null | undefined, fotografo: boolean)
   return fotografo ? BARRIDO_PRENDIDO : BARRIDO_APAGADO;
 }
 
+/** Lo que dura un viaje de la banda en la grilla, en segundos. Lo lee el CSS. */
+export const BARRIDO_GRILLA_S = 8;
+
 /**
  * Las variables que necesita el CSS del barrido en una foto de la grilla: la
- * imagen (para la copia nítida), dónde cae la banda y cómo se encuadra. La
- * fase sale del índice y no del azar para que no cambie en cada render.
+ * imagen (para la copia nítida), cómo se encuadra y en qué punto del viaje
+ * arranca la banda. El retraso sale del índice y no del azar para que no
+ * cambie en cada render, y es negativo para que cada foto empiece ya en
+ * marcha: sesenta bandas en fase se verían como una persiana.
  */
 export function varsBarrido(previewUrl: string, indice: number, posicion: "center" | "top"): CSSProperties {
+  const vuelta = BARRIDO_GRILLA_S * 2; // ida y vuelta
+  const retraso = (((indice * 37) % 41) / 41) * vuelta;
   return {
     "--foto": `url("${previewUrl}")`,
-    "--fase": `${30 + ((indice * 37) % 41)}%`,
+    "--retraso": `-${retraso.toFixed(1)}s`,
     "--foto-pos": posicion,
   } as CSSProperties;
 }

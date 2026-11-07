@@ -229,3 +229,10 @@ existir: una vez es un descuido, dos es una tendencia.
   raíz, que hoy no se puede porque las rutas del prototipo (onboarding,
   pago, descarga) todavía traen el CSS viejo y chocarían.
 - Estado: activo
+
+## La restricción técnica se vuelve decisión de producto sin avisar
+- Primera vez: 2026-11-06
+- Ocurrencias: 2 (el barrido por evento salió como desplegable de cuatro modos porque el modelo de datos los permitía — 2026-11-06, el usuario pidió un interruptor; la banda de la grilla salió fija «porque son sesenta a la vez» — 2026-11-07, el usuario la vio como rota y la pidió animada)
+- Qué pasa: una limitación o una preferencia técnica (rendimiento, simplicidad del esquema) se resuelve en silencio del lado del código y aparece en la interfaz como si fuera lo pedido.
+- Por qué importa: el usuario descubre la decisión en producción y hay que rehacer la tarea. La alternativa cuesta una línea: nombrar el trade-off en la entrega («la dejé fija por rendimiento; animarla se puede, cuesta X») y dejar que decida quien es dueño del producto.
+- Estado: activo

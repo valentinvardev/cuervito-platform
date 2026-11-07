@@ -448,8 +448,9 @@ aquél; el del evento muestra lo que rige y al tocarlo queda escrito; los nombre
 viven en `src/lib/barrido.ts`): la foto borrosa y una banda diagonal nítida que
 va y vuelve, hecha con una máscara CSS animada sobre una segunda copia de la
 imagen. Se ve entera, pero nunca entera a la vez. Prendido vale para la grilla
-también: cada foto va borrosa con una banda fija, puesta por índice, sin
-animación, porque son sesenta a la vez. La tienda entiende además un grado
+también: cada foto va borrosa y la misma banda la recorre, más despacio y
+fuera de fase por índice, con la copia nítida en una capa propia para que
+sesenta bandas no repinten sesenta desenfoques. La tienda entiende además un grado
 intermedio, «visor», sólo la foto grande, que hoy ningún interruptor escribe.
 El velo de captura (Ctrl) desenfoca también la copia nítida y la lupa.
 
