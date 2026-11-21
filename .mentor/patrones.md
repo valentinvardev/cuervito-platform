@@ -236,3 +236,19 @@ existir: una vez es un descuido, dos es una tendencia.
 - Qué pasa: una limitación o una preferencia técnica (rendimiento, simplicidad del esquema) se resuelve en silencio del lado del código y aparece en la interfaz como si fuera lo pedido.
 - Por qué importa: el usuario descubre la decisión en producción y hay que rehacer la tarea. La alternativa cuesta una línea: nombrar el trade-off en la entrega («la dejé fija por rendimiento; animarla se puede, cuesta X») y dejar que decida quien es dueño del producto.
 - Estado: activo
+
+## El número del panel promete más que el dato que lo sostiene
+- Primera vez: 2026-11-06
+- Ocurrencias: 2 («Visitas que compran» cuenta búsquedas por selfie con resultado, no visitas — 2026-11-06; `Sale.paidAt` es la hora en que se procesó la última notificación de Mercado Pago, no la del pago: en una cuenta real, la mayoría de las ventas quedaron fechadas días o semanas después de la compra, en tandas, y «Ventas del mes» las cuenta en el mes equivocado — 2026-11-11)
+- Qué pasa: el nombre de la métrica o del campo describe lo que debería medir, y lo que hay abajo mide otra cosa. En el webhook, la idempotencia quedó a medias: los efectos ruidosos (mails, comisiones) se guardan con «sólo si pasa a PAID», pero la escritura silenciosa `paidAt: new Date()` corre en cada reenvío.
+- Por qué importa: el fotógrafo toma decisiones con ese número (qué mes fue bueno, si la tienda convierte) y nadie se entera de que está corrido: no falla nada, sólo miente. Se descubrió de casualidad, armando un reporte con otra fecha.
+- Señal temprana: si un campo se escribe en un handler que puede llegar dos veces, cada escritura tiene que estar bajo la misma guarda que los efectos, o tomar el valor de la fuente (`date_approved` de MP) y no del reloj.
+- Estado: activo
+
+## El camino feo está escrito pero no conectado
+- Primera vez: 2026-11-15
+- Ocurrencias: 5. Las primeras cuatro, encontradas el mismo día en el mismo módulo (la renovación completa ya estaba escrita el 2026-10-11 y quedó en un stash «falta db push» que nunca se aplicó; `refreshAccessToken` existía desde mayo y nadie la llamaba; `mpTokenExpiresAt` se guardaba en cada conexión y nadie la leía; el `console.error` del checkout era la única alarma de un pago que no arranca, en un log que nadie mira). 2026-11-19: el arreglo mismo (renovación + alertas) lleva cuatro días escrito y probado, sin commit ni deploy; la misma forma del stash de octubre)
+- Qué pasa: la parte del camino bueno se termina y la del caso malo queda como función exportada, columna guardada o comentario que describe algo que el sistema todavía no hace. Pasa la revisión porque el código está; nadie verifica que algo lo use.
+- Por qué importa: la credencial de Mercado Pago de un fotógrafo con ventas todos los días venció a los 180 días exactos, cada compra de su tienda falló con un 401, y se supo porque él avisó. Lo que faltaba eran veinte líneas entre dos cosas ya escritas (`mp-token.ts`), más alguien a quien avisarle (`alertas.ts`).
+- Señal temprana: una función exportada cuyo único resultado en `grep -rn` es su definición; un campo con escrituras y ninguna lectura; un comentario en el esquema que promete algo que ningún módulo implementa. Y para cada integración externa, la pregunta «¿qué pasa el día que esto deje de funcionar, y quién se entera?».
+- Estado: activo

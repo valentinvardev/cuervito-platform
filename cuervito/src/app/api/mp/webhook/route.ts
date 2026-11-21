@@ -3,11 +3,14 @@ import { revalidateTag } from "next/cache";
 import { randomBytes } from "node:crypto";
 
 import { env } from "~/env";
+import { alertar } from "~/server/alertas";
 import { db } from "~/server/db";
 import { accrueCommissionsForSale } from "~/server/commissions";
+import { BASE } from "~/server/correos/diseno";
 import { mailDeEntrega } from "~/server/correos/entrega";
 import { sendEmail } from "~/server/email";
 import { fetchPayment } from "~/server/mp";
+import { tokenDeVendedor, vencida } from "~/server/mp-token";
 import { recordPendingAndMaybeNotify } from "~/server/sale-notifier";
 import { publishSale } from "~/server/sales-bus";
 
@@ -57,7 +60,7 @@ async function handlePayment(paymentId: string) {
   // pre-index by user_id from the webhook payload itself.
   const sellers = await db.user.findMany({
     where: { mpAccessToken: { not: null } },
-    select: { id: true, mpAccessToken: true },
+    select: { id: true, mpAccessToken: true, mpTokenExpiresAt: true },
     take: 50,
     orderBy: { mpConnectedAt: "desc" },
   });
@@ -71,11 +74,16 @@ async function handlePayment(paymentId: string) {
   let payment: Awaited<ReturnType<typeof fetchPayment>> | null = null;
   for (const s of sellers) {
     if (!s.mpAccessToken) continue;
+    /* Una credencial vencida no identifica a nadie: Mercado Pago contesta 401
+       igual que si el pago fuera de otro vendedor, y el pago de ESE vendedor
+       quedaría sin leer para siempre. Se renueva antes de probar (mp-token.ts);
+       si no se puede, se saltea. */
+    const token = vencida(s.mpTokenExpiresAt)
+      ? await tokenDeVendedor(s.id).catch(() => null)
+      : s.mpAccessToken;
+    if (!token) continue;
     try {
-      payment = await fetchPayment({
-        paymentId,
-        sellerAccessToken: s.mpAccessToken,
-      });
+      payment = await fetchPayment({ paymentId, sellerAccessToken: token });
       if (payment) break;
     } catch {
       // Not this seller — try next
@@ -84,6 +92,17 @@ async function handlePayment(paymentId: string) {
 
   if (!payment) {
     console.warn("[mp webhook] could not fetch payment", paymentId);
+    // Si alguien pagó, su venta sigue en PENDING y no recibió las fotos: eso
+    // lo tiene que saber una persona, no sólo el log.
+    void alertar({
+      clave: "webhook:pago-ilegible",
+      asunto: "Mercado Pago avisó un pago que no se pudo leer",
+      lineas: [
+        `Llegó la notificación del pago ${paymentId} y ninguna de las ${sellers.length} credenciales conectadas pudo consultarlo.`,
+        "Si alguien pagó, su venta sigue en PENDING y no recibió las fotos. Mercado Pago reintenta la notificación durante un día; si el problema es una credencial vencida, el vigía la renueva y el próximo reintento entra.",
+      ],
+      link: { texto: "Ver ventas", url: `${BASE}/admin/sales` },
+    });
     return;
   }
 

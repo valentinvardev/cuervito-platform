@@ -387,6 +387,30 @@ estado (pendientes, en vuelo, enfriándose, venenosas). Acepta además
   https://encontrate.app/api/cron/procesador >> /var/log/cuervito-procesador.log 2>&1
 ```
 
+`POST /api/cron/pagos` (mismo secreto): el **vigía de pagos**
+(`src/server/vigia-pagos.ts`). Como los otros dos, corre solo desde
+`instrumentation.ts`, cada seis horas; el endpoint es la mirilla (`GET`: cada
+credencial de Mercado Pago, cuándo vence) y el empujón. Mercado Pago vence la
+credencial de cada fotógrafo a los 180 días de la conexión, y el refresh token
+es de un solo uso: `mp-token.ts` renueva las que vencen en menos de 15 días con
+un `updateMany` condicionado al refresh token viejo, para que dos pedidos a la
+vez no lo gasten dos veces. El checkout pide la credencial por ahí y no de la
+fila, y ante un 401 renueva a la fuerza y reintenta una vez. Si la renovación
+falla y la credencial ya venció, el fotógrafo tiene que volver a autorizar desde
+Métodos de pago, que lo dice con una pill «Vencida».
+
+### Alertas
+
+`src/server/alertas.ts` manda un mail a `ALERTAS_EMAIL` cuando algo necesita
+que una persona haga algo hoy: una compra que no pudo iniciar el pago (con el
+error de Mercado Pago y cuántas fallaron en 24 h), una credencial que no se pudo
+renovar o ya venció, un pago que el webhook no pudo leer con ninguna
+credencial. La misma clave no vuelve a sonar hasta que pase su ventana (una
+hora; un día para las credenciales): la marca vive en `Setting`
+(`alerta:<clave>:ultima`) y se escribe antes de mandar. Sin `ALERTAS_EMAIL`
+queda sólo el log, que es como en noviembre de 2026 venció la credencial de un
+fotógrafo y sus compras fallaron durante días sin que nadie lo supiera. `POST /api/cron/pagos?accion=prueba` manda un aviso de prueba.
+
 ---
 
 ## 6. Sistema de diseño
@@ -673,9 +697,10 @@ Cuando el build aborta por cualquier motivo, `.next/` queda con el bundle viejo
 
 **Variables de entorno:** ~36. Las críticas son `DATABASE_URL` (usar la URL del
 pooler de Supabase, no la directa — es IPv6 y el VPS puede no alcanzarla),
-`AUTH_SECRET`, las de AWS, `MP_CLIENT_ID`/`MP_CLIENT_SECRET`, `RESEND_API_KEY` y
-`CRON_SECRET`. La lista completa está en `src/env.js`, validada con Zod al
-arrancar.
+`AUTH_SECRET`, las de AWS, `MP_CLIENT_ID`/`MP_CLIENT_SECRET`, `RESEND_API_KEY`,
+`CRON_SECRET` y `ALERTAS_EMAIL` (a dónde avisar cuando los pagos fallan; sin
+ella, nadie se entera). La lista completa está en `src/env.js`, validada con Zod
+al arrancar.
 
 ---
 

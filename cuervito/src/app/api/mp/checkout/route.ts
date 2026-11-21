@@ -5,11 +5,13 @@ import { z } from "zod";
 
 import { env } from "~/env";
 import { calcular } from "~/lib/descuentos";
+import { alertar } from "~/server/alertas";
 import { db } from "~/server/db";
 import { accrueCommissionsForSale } from "~/server/commissions";
 import { mailDeEntrega } from "~/server/correos/entrega";
 import { sendEmail } from "~/server/email";
-import { createPreference, isMpConfigured } from "~/server/mp";
+import { MpApiError, createPreference, isMpConfigured } from "~/server/mp";
+import { MpSinCredencial, tokenDeVendedor } from "~/server/mp-token";
 import { recordPendingAndMaybeNotify } from "~/server/sale-notifier";
 import { publishSale } from "~/server/sales-bus";
 import { getMpTestMode } from "~/server/settings";
@@ -60,6 +62,8 @@ export async function POST(req: NextRequest) {
       owner: {
         select: {
           id: true,
+          // Para el aviso al equipo cuando el cobro falla: de quién es la tienda.
+          name: true,
           mpAccessToken: true,
           mpConnectedAt: true,
           status: true,
@@ -399,24 +403,39 @@ export async function POST(req: NextRequest) {
   const pendingUrl = `${base}/pago/pendiente?sale=${sale.id}`;
   const notificationUrl = `${base}/api/mp/webhook`;
 
-  try {
-    const pref = await createPreference({
-      sellerAccessToken: event.owner.mpAccessToken!,
+  const cobrar = (token: string) =>
+    createPreference({
+      sellerAccessToken: token,
       items: [
         {
-          title: `${photos.length} ${photos.length === 1 ? "foto" : "fotos"} · ${event.name}`,
+          title: `${photos.length} ${photos.length === 1 ? "foto" : "fotos"} · ${evento.name}`,
           quantity: 1,
           unitPriceCents: totalCents,
         },
       ],
       marketplaceFeeCents: platformFeeCents,
-      buyerEmail: parsed.data.buyerEmail,
+      buyerEmail: datos.buyerEmail,
       externalReference: sale.id,
       successUrl,
       failureUrl,
       pendingUrl,
       notificationUrl,
     });
+
+  try {
+    /* La credencial del vendedor se pide acá y no se lee de la fila: la que
+       está en la fila puede estar vencida —Mercado Pago las vence a los 180
+       días— y tokenDeVendedor la renueva si hace falta (mp-token.ts). Si
+       Mercado Pago igual contesta 401, la credencial cambió por fuera de lo
+       que sabemos: se renueva a la fuerza y se intenta UNA vez más. Cualquier
+       otro error es del pedido, y repetirlo es repetir el error. */
+    let pref: Awaited<ReturnType<typeof createPreference>>;
+    try {
+      pref = await cobrar(await tokenDeVendedor(evento.ownerId));
+    } catch (e) {
+      if (!(e instanceof MpApiError && e.credencialInvalida)) throw e;
+      pref = await cobrar(await tokenDeVendedor(evento.ownerId, { forzar: true }));
+    }
 
     await db.sale.update({
       where: { id: sale.id },
@@ -429,14 +448,57 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ saleId: sale.id, initPoint });
   } catch (err) {
-    // Mark sale as failed so we don't leave it dangling
+    /* La venta queda FAILED con el porqué en sus notas, el log lo registra y
+       el equipo recibe un aviso (alertas.ts). Hasta el 15 de noviembre de 2026
+       el aviso era sólo el log: la credencial de un fotógrafo venció y sus
+       compras fallaron durante días sin que nadie lo supiera. */
+    const detalle = err instanceof Error ? err.message : String(err);
+    const credencial =
+      err instanceof MpSinCredencial || (err instanceof MpApiError && err.credencialInvalida);
     await db.sale
-      .update({ where: { id: sale.id }, data: { status: "FAILED" } })
+      .update({
+        where: { id: sale.id },
+        data: {
+          status: "FAILED",
+          notes: `No se pudo iniciar el pago en Mercado Pago: ${detalle.slice(0, 300)}`,
+        },
+      })
       .catch(() => undefined);
     console.error("[mp checkout] preference failed:", err);
+
+    void (async () => {
+      const fallidas = await db.sale.count({
+        where: {
+          sellerId: evento.ownerId,
+          status: "FAILED",
+          createdAt: { gte: new Date(Date.now() - 24 * 3_600_000) },
+        },
+      });
+      await alertar({
+        clave: `checkout:${evento.ownerId}`,
+        asunto: credencial
+          ? "Una tienda no puede cobrar: Mercado Pago rechaza la credencial del fotógrafo"
+          : "Una compra no pudo iniciar el pago en Mercado Pago",
+        lineas: [
+          `Tienda de ${evento.owner.name ?? evento.ownerId}, evento «${evento.name}»: ${photos.length} ${photos.length === 1 ? "foto" : "fotos"} por $${Math.round(totalCents / 100).toLocaleString("es-AR")}.`,
+          `Es la compra fallida número ${fallidas} de las últimas 24 horas en esta tienda.`,
+          credencial
+            ? "La credencial de Mercado Pago del fotógrafo ya no sirve y no se pudo renovar: tiene que volver a conectar su cuenta desde Métodos de pago. Hasta entonces, todas las compras de su tienda fallan al iniciar el pago."
+            : "Mercado Pago no aceptó la preferencia. El detalle de abajo dice por qué; si se repite, el aviso vuelve en una hora.",
+        ],
+        detalle,
+        link: { texto: "Ver ventas", url: `${base}/admin/sales` },
+      });
+    })().catch((e: unknown) => console.error("[mp checkout] alerta falló:", e));
+
+    /* Al comprador no le sirve el JSON de Mercado Pago, y le cuenta de más. */
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Checkout falló" },
-      { status: 502 },
+      {
+        error: credencial
+          ? "El fotógrafo tiene que volver a conectar Mercado Pago para poder cobrar. Probá de nuevo más tarde."
+          : "No pudimos iniciar el pago. Probá de nuevo en unos minutos.",
+      },
+      { status: credencial ? 503 : 502 },
     );
   }
 }

@@ -94,6 +94,13 @@ export const env = createEnv({
     RESEND_API_KEY: z.string().optional(),
     RESEND_FROM_EMAIL: z.string().default("Cuervito <hola@cuervito.app>"),
 
+    /* A dónde van los avisos de que algo dejó de funcionar (alertas.ts): una
+       credencial de Mercado Pago que venció y no se pudo renovar, una compra
+       que no pudo iniciar el pago, un pago que el webhook no pudo leer. Sin
+       esto los avisos quedan sólo en el log, que es como se perdieron dos
+       días de ventas en noviembre de 2026. */
+    ALERTAS_EMAIL: z.string().email().optional(),
+
     // Cloudflare for SaaS (custom hostnames for /dashboard/tienda)
     CLOUDFRONT_DOMAIN: z.string().optional(),
     CLOUDFRONT_DISTRIBUTION_ID: z.string().optional(),
@@ -172,6 +179,7 @@ export const env = createEnv({
 
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
+    ALERTAS_EMAIL: process.env.ALERTAS_EMAIL,
 
     CLOUDFRONT_DOMAIN: process.env.CLOUDFRONT_DOMAIN,
     CLOUDFRONT_DISTRIBUTION_ID: process.env.CLOUDFRONT_DISTRIBUTION_ID,

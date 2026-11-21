@@ -22,5 +22,8 @@ export async function register() {
     arrancarCorreos();
     const { arrancarPortfolioFotos } = await import("~/server/portfolio-fotos");
     arrancarPortfolioFotos();
+    // Renueva las credenciales de Mercado Pago antes de que venzan y avisa si no puede.
+    const { arrancarVigiaPagos } = await import("~/server/vigia-pagos");
+    arrancarVigiaPagos();
   }
 }

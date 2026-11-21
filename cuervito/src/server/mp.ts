@@ -12,10 +12,36 @@ import { env } from "~/env";
  *    photographer's access_token and add `marketplace_fee` to retain 10%.
  *  - The funds go directly to the photographer's MP account; our cut is
  *    automatically routed to our app's account.
+ *
+ * La credencial del fotógrafo dura 180 días. Quién la renueva y cuándo está en
+ * mp-token.ts; acá sólo las llamadas a la API, tal cual.
  */
 
 const MP_API = "https://api.mercadopago.com";
 const MP_OAUTH_URL = "https://auth.mercadopago.com.ar/authorization";
+
+/**
+ * Una respuesta de Mercado Pago que no fue 2xx, con el código a mano.
+ *
+ * Antes era un Error con el código metido en el texto. Quien cobra necesita
+ * distinguir un 401 —la credencial del vendedor ya no sirve: se renueva y se
+ * reintenta— de un 400 —el pedido está mal, y reintentarlo es repetir el error.
+ */
+export class MpApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly operacion: string,
+    public readonly cuerpo: string,
+  ) {
+    super(`MP ${operacion} failed: ${status} ${cuerpo}`);
+    this.name = "MpApiError";
+  }
+
+  /** La credencial no sirve: vencida, revocada o de otra cuenta. */
+  get credencialInvalida(): boolean {
+    return this.status === 401 || this.status === 403;
+  }
+}
 
 export function isMpConfigured(): boolean {
   return !!env.MP_CLIENT_ID && !!env.MP_CLIENT_SECRET;
@@ -61,7 +87,7 @@ export async function exchangeOAuthCode(opts: {
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`MP OAuth exchange failed: ${res.status} ${text.slice(0, 200)}`);
+    throw new MpApiError(res.status, "OAuth exchange", text.slice(0, 200));
   }
 
   const data = (await res.json()) as {
@@ -83,7 +109,13 @@ export async function exchangeOAuthCode(opts: {
   };
 }
 
-/** Refresh a seller's tokens using the saved refresh_token. */
+/**
+ * Refresh a seller's tokens using the saved refresh_token.
+ *
+ * El refresh token es de un solo uso: la respuesta trae uno nuevo que hay que
+ * guardar en el mismo movimiento (mp-token.ts lo hace con un updateMany
+ * condicionado al viejo).
+ */
 export async function refreshAccessToken(refreshToken: string): Promise<{
   accessToken: string;
   refreshToken: string;
@@ -104,7 +136,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`MP token refresh failed: ${res.status} ${text.slice(0, 200)}`);
+    throw new MpApiError(res.status, "token refresh", text.slice(0, 200));
   }
 
   const data = (await res.json()) as {
@@ -177,7 +209,7 @@ export async function createPreference(opts: {
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`MP preference creation failed: ${res.status} ${text.slice(0, 400)}`);
+    throw new MpApiError(res.status, "preference creation", text.slice(0, 400));
   }
 
   const data = (await res.json()) as {
@@ -210,7 +242,7 @@ export async function fetchPayment(opts: {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`MP fetch payment failed: ${res.status} ${text.slice(0, 200)}`);
+    throw new MpApiError(res.status, "fetch payment", text.slice(0, 200));
   }
   const data = (await res.json()) as {
     id: number;

@@ -39,6 +39,9 @@ export async function sesionPanel() {
       instagramUrl: true,
       websiteUrl: true,
       mpConnectedAt: true,
+      // Para que Métodos de pago diga «vencida» cuando Mercado Pago cortó la
+      // conexión y hay que volver a autorizar.
+      mpTokenExpiresAt: true,
       // Para puedeUsarHistorias, sin una consulta más en el layout.
       historiasEnabled: true,
     },

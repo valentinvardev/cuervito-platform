@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CircleCheck, Info } from "lucide-react";
+import { CircleCheck, Info, TriangleAlert } from "lucide-react";
 
 import { db } from "~/server/db";
 
@@ -23,6 +23,12 @@ export default async function V2Pagos() {
   const comision = mes._sum.platformFeeCents ?? 0;
   const neto = mes._sum.sellerNetCents ?? 0;
   const conectada = !!yo?.mpConnectedAt;
+  /* Mercado Pago vence la conexión a los 180 días. El vigía la renueva antes
+     (vigia-pagos.ts); si igual llegó a vencer, hasta que no la vuelva a
+     autorizar nadie puede pagarle, y eso lo tiene que decir esta pantalla, no
+     el carrito de un comprador. */
+  const vencida =
+    conectada && !!yo?.mpTokenExpiresAt && yo.mpTokenExpiresAt.getTime() <= Date.now();
 
   return (
     <main className="canvas">
@@ -41,7 +47,11 @@ export default async function V2Pagos() {
         <section className="metodo">
           <div className="metodo-h">
             <span className="mp-marca ancha" role="img" aria-label="Mercado Pago" />
-            {conectada ? (
+            {vencida ? (
+              <span className="pill bad">
+                <i /> Vencida
+              </span>
+            ) : conectada ? (
               <span className="pill live">
                 <i /> Conectada
               </span>
@@ -55,7 +65,13 @@ export default async function V2Pagos() {
           <dl className="metodo-d">
             <div>
               <dt>Cuenta</dt>
-              <dd>{conectada ? "Vinculada a Mercado Pago" : "Todavía no vinculaste ninguna"}</dd>
+              <dd>
+                {vencida
+                  ? "Vinculada, pero la autorización venció"
+                  : conectada
+                    ? "Vinculada a Mercado Pago"
+                    : "Todavía no vinculaste ninguna"}
+              </dd>
             </div>
             <div>
               <dt>Conectada</dt>
@@ -78,10 +94,13 @@ export default async function V2Pagos() {
           <div className="metodo-f">
             {/* Con Link, igual que en /onboarding/mp: el destino es el
                 handler que arranca el OAuth de Mercado Pago. */}
-            <Link href="/api/mp/oauth/start" className="btn btn-ghost btn-sm">
-              {conectada ? "Cambiar cuenta" : "Conectar Mercado Pago"}
+            <Link
+              href="/api/mp/oauth/start"
+              className={`btn btn-sm ${vencida ? "btn-accent" : "btn-ghost"}`}
+            >
+              {vencida ? "Volver a conectar" : conectada ? "Cambiar cuenta" : "Conectar Mercado Pago"}
             </Link>
-            {conectada && (
+            {conectada && !vencida && (
               <span className="mp-ok" style={{ marginLeft: "auto" }}>
                 <CircleCheck /> Activo
               </span>
@@ -89,15 +108,27 @@ export default async function V2Pagos() {
           </div>
         </section>
 
-        {/* Decirlo evita que el fotógrafo busque una segunda opción que no
-            existe y crea que le falta configurar algo. */}
-        <div className="porque">
-          <Info />
-          <span>
-            Hoy Mercado Pago es el único método. Es el que usa el atleta para pagar y el que te
-            deposita a vos, así que no hay una segunda cuenta que conectar.
-          </span>
-        </div>
+        {vencida ? (
+          <div className="porque">
+            <TriangleAlert />
+            <span>
+              <b>Tu autorización de Mercado Pago venció</b> y, hasta que no la vuelvas a dar, nadie
+              puede pagarte: cada compra en tu tienda falla al iniciar el pago. Mercado Pago la corta
+              cada 180 días; la renovamos solos antes de que pase, pero ésta llegó a vencer. Tocá
+              «Volver a conectar»: es la misma pantalla de Mercado Pago de la primera vez.
+            </span>
+          </div>
+        ) : (
+          /* Decirlo evita que el fotógrafo busque una segunda opción que no
+             existe y crea que le falta configurar algo. */
+          <div className="porque">
+            <Info />
+            <span>
+              Hoy Mercado Pago es el único método. Es el que usa el atleta para pagar y el que te
+              deposita a vos, así que no hay una segunda cuenta que conectar.
+            </span>
+          </div>
+        )}
 
         <div className="duo">
           <section className="card">
