@@ -61,6 +61,8 @@ export const getCachedQuotaUsage = async (userId: string) => {
           limitBytes: u.storage.limitBytes.toString(),
           pct: u.storage.pct,
           overrideActive: u.storage.overrideActive,
+          photoCount: u.storage.photoCount,
+          trashBytes: u.storage.trashBytes.toString(),
         },
         recognitions: u.recognitions,
       };
@@ -74,6 +76,8 @@ export const getCachedQuotaUsage = async (userId: string) => {
       limitBytes: BigInt(cached.storage.limitBytes),
       pct: cached.storage.pct,
       overrideActive: cached.storage.overrideActive,
+      photoCount: cached.storage.photoCount,
+      trashBytes: BigInt(cached.storage.trashBytes),
     },
     recognitions: cached.recognitions,
   };

@@ -411,6 +411,15 @@ hora; un día para las credenciales): la marca vive en `Setting`
 queda sólo el log, que es como en noviembre de 2026 venció la credencial de un
 fotógrafo y sus compras fallaron durante días sin que nadie lo supiera. `POST /api/cron/pagos?accion=prueba` manda un aviso de prueba.
 
+El espacio también avisa: cuando una subida deja la cuenta del dueño del evento
+por encima del 90 % de `storageQuotaBytes` (clave `espacio-poco:<id>`, una vez
+por semana) y cuando una subida rebota por la cuota (`espacio-lleno:<id>`, cada
+seis horas). Ampliarla es a mano, desde la tarjeta de cuotas en la ficha del
+usuario. El fotógrafo ve lo mismo abajo del riel (`uso-cuenta.tsx`): espacio y
+reconocimientos del mes contra sus cuotas, con la cuenta de cuántas fotos más
+entran. Los reconocimientos se miden en llamadas facturables del mes UTC, igual
+que el cortacircuitos de `quotas.ts`.
+
 ---
 
 ## 6. Sistema de diseño

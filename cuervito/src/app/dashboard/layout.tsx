@@ -6,6 +6,8 @@ import "~/styles/v2/paginas.css";
 /* La burbuja del chat de soporte. */
 import "~/styles/v2/chat.css";
 
+import { Suspense } from "react";
+
 import { TooltipProvider } from "~/app/_components/tooltip-provider";
 
 import { puedeUsarPortfolio } from "~/lib/portfolio-acceso";
@@ -13,6 +15,7 @@ import { puedeUsarHistorias } from "~/server/historias/acceso";
 
 import { Shell } from "./_components/shell";
 import { perfilDelRiel, sesionPanel } from "./_components/sesion";
+import { UsoCuenta } from "./_components/uso-cuenta";
 
 /**
  * Vista previa del panel rediseñado. Sólo para admins.
@@ -62,6 +65,14 @@ export default async function V2Layout({ children }: { children: React.ReactNode
         slug={slug}
         iniciales={iniciales}
         perfil={perfil}
+        // En su propio Suspense: suma el tamaño de todas las fotos de la
+        // cuenta, y eso no puede frenar el riel en cada pantalla. Si tarda,
+        // el riel sale igual y el medidor llega después.
+        uso={
+          <Suspense fallback={null}>
+            <UsoCuenta userId={userId} />
+          </Suspense>
+        }
       >
         {children}
       </Shell>

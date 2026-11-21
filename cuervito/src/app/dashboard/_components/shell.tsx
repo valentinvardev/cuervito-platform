@@ -169,6 +169,7 @@ export function Shell({
   slug,
   iniciales,
   perfil,
+  uso,
   children,
 }: {
   /** Si el usuario tiene la beta del estudio de historias. */
@@ -186,6 +187,10 @@ export function Shell({
   iniciales: string;
   /** Lo que muestra y edita el diálogo de perfil. */
   perfil: DatosPerfil;
+  /** Espacio y reconocimiento de la cuenta (uso-cuenta.tsx). Llega armado
+   *  desde el layout, que es de servidor: este componente es de cliente y no
+   *  puede leer la base. */
+  uso?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const ruta = usePathname();
@@ -332,6 +337,8 @@ export function Shell({
         )}
 
         <div className="rail-bot">
+          {!admin && uso}
+
           {/* Acá y no sólo dentro de Ayuda: cuando algo no funciona nadie busca
               la respuesta en una sección llamada Ayuda, busca a quién
               escribirle. Abre el chat del panel; WhatsApp sigue estando, pero

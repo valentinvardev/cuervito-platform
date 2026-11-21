@@ -4,6 +4,13 @@ export type QuotaUsage = {
     limitBytes: bigint;
     pct: number;
     overrideActive: boolean;
+    /** Fotos que ocupan lugar, borradas incluidas. Da el tamaño promedio con
+     *  el que se estima cuántas más entran. */
+    photoCount: number;
+    /** Lo que ocupan las fotos borradas que todavía no se purgaron. Cuentan
+     *  para la cuota porque siguen en S3: el que las compró las puede bajar
+     *  hasta que /api/cron/cleanup las borre de verdad. */
+    trashBytes: bigint;
   };
   recognitions: {
     used: number;
@@ -12,6 +19,10 @@ export type QuotaUsage = {
     overrideActive: boolean;
     year: number;
     month: number;
+    /** El desglose de `used`, en llamadas facturables. */
+    fotos: number;
+    selfies: number;
+    dorsales: number;
   };
 };
 

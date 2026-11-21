@@ -214,7 +214,7 @@ export default async function AdminUserDetail(props: {
             <div className="k-n tnum">{quota ? formatBytes(quota.storage.usedBytes) : "—"}</div>
             {quota && (
               <div className="k-sub">
-                {quota.storage.pct} % de {formatBytes(quota.storage.limitBytes)}
+                {quota.storage.pct.toLocaleString("es-AR")} % de {formatBytes(quota.storage.limitBytes)}
               </div>
             )}
           </div>
