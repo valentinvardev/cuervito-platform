@@ -234,6 +234,10 @@ export async function fetchPayment(opts: {
   status: string;
   statusDetail: string;
   externalReference: string | null;
+  /** Cuándo se aprobó el pago, según Mercado Pago. Null mientras no se aprobó.
+   *  Es la fecha de la venta: la notificación puede llegar horas o semanas
+   *  después, y repetida. */
+  dateApproved: string | null;
   amount: number;
   feeAmount: number;
 }> {
@@ -249,6 +253,7 @@ export async function fetchPayment(opts: {
     status: string;
     status_detail: string;
     external_reference: string | null;
+    date_approved?: string | null;
     transaction_amount: number;
     fee_details?: Array<{ amount: number }>;
   };
@@ -259,6 +264,7 @@ export async function fetchPayment(opts: {
     status: data.status,
     statusDetail: data.status_detail,
     externalReference: data.external_reference,
+    dateApproved: data.date_approved ?? null,
     amount: data.transaction_amount,
     feeAmount,
   };

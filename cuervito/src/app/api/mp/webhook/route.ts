@@ -117,6 +117,7 @@ async function handlePayment(paymentId: string) {
     select: {
       id: true,
       status: true,
+      mpPaymentId: true,
       downloadToken: true,
       sellerId: true,
       totalCents: true,
@@ -139,31 +140,67 @@ async function handlePayment(paymentId: string) {
           ? "REFUNDED"
           : "PENDING";
 
-  // Generate a download token only when transitioning to PAID for the first
-  // time. Token lives DOWNLOAD_TOKEN_RETENTION_DAYS days — the same window the
-  // photo files survive on S3 (see /api/cron/cleanup). After that the buyer
-  // would 404 anyway because the underlying photos are gone.
-  const willIssueToken = newStatus === "PAID" && !sale.downloadToken;
-  const tokenExpiresAt = willIssueToken
-    ? new Date(Date.now() + env.DOWNLOAD_TOKEN_RETENTION_DAYS * 24 * 60 * 60 * 1000)
-    : undefined;
+  const pagoId = String(payment.id);
 
-  await db.sale.update({
-    where: { id: sale.id },
-    data: {
-      status: newStatus,
-      mpPaymentId: String(payment.id),
-      paidAt: newStatus === "PAID" ? new Date() : undefined,
-      ...(willIssueToken
-        ? { downloadToken: downloadToken(), downloadTokenExpires: tokenExpiresAt }
-        : {}),
-    },
-  });
+  /* Una venta puede tener más de un pago: si la primera tarjeta rebota, el
+     comprador prueba con otra desde el mismo checkout y Mercado Pago crea un
+     pago nuevo con la misma referencia. La notificación del rechazado puede
+     llegar (o repetirse) después de la aprobada, y antes bajaba la venta a
+     FAILED: el comprador se quedaba sin descarga habiendo pagado. Una venta
+     cobrada sólo la mueve su propio pago (un reintegro, un contracargo). */
+  if (sale.status === "PAID" && newStatus !== "PAID" && sale.mpPaymentId && sale.mpPaymentId !== pagoId) {
+    console.log(`[mp webhook] sale=${sale.id} ya cobrada con ${sale.mpPaymentId}; se ignora ${pagoId} (${payment.status})`);
+    return;
+  }
+
+  let recienPagada = false;
+  let paidAt: Date | null = null;
+  if (newStatus === "PAID") {
+    /* paidAt es cuándo aprobó Mercado Pago, no cuándo llegó el aviso. Antes era
+       new Date() en cada notificación «approved», y Mercado Pago las repite
+       por tandas: la mayoría de las ventas quedaban fechadas días o semanas
+       después de la compra, y los números del mes del panel caían en el mes
+       equivocado. */
+    const aprobada = payment.dateApproved ? new Date(payment.dateApproved) : null;
+    paidAt = aprobada && !Number.isNaN(aprobada.getTime()) ? aprobada : new Date();
+
+    /* La transición se reclama en la base y no con el estado leído arriba.
+       Mercado Pago manda payment.created y payment.updated casi juntos: con
+       el if sobre lo leído, los dos veían PENDING y los dos mandaban el mail de
+       entrega y el aviso al fotógrafo. Con el where, sólo uno cambia la fila;
+       el otro cuenta 0 y no hace nada. Por la misma razón el token de descarga
+       va acá adentro: lo emite el que gana, una sola vez.
+
+       El token dura DOWNLOAD_TOKEN_RETENTION_DAYS, lo mismo que sobreviven las
+       fotos en S3 (ver /api/cron/cleanup): después daría 404 igual. */
+    const { count } = await db.sale.updateMany({
+      where: { id: sale.id, status: { not: "PAID" } },
+      data: {
+        status: "PAID",
+        mpPaymentId: pagoId,
+        paidAt,
+        ...(sale.downloadToken
+          ? {}
+          : {
+              downloadToken: downloadToken(),
+              downloadTokenExpires: new Date(
+                Date.now() + env.DOWNLOAD_TOKEN_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+              ),
+            }),
+      },
+    });
+    recienPagada = count === 1;
+  } else {
+    await db.sale.update({
+      where: { id: sale.id },
+      data: { status: newStatus, mpPaymentId: pagoId },
+    });
+  }
 
   // Real-time toast for the seller's dashboard + bust their cached counts.
   // Also send the buyer their download link, and queue the seller email
   // (which batches progressively — see sale-notifier.ts).
-  if (newStatus === "PAID" && sale.status !== "PAID") {
+  if (recienPagada && paidAt) {
     // Devengar comisiones de colaboradores. Es idempotente, así que un
     // reenvío del webhook no duplica.
     void accrueCommissionsForSale(sale.id).catch((err: unknown) =>
@@ -176,7 +213,7 @@ async function handlePayment(paymentId: string) {
       itemCount: sale._count.items,
       eventName: sale.event.name,
       buyerName: sale.buyerName,
-      paidAt: new Date().toISOString(),
+      paidAt: paidAt.toISOString(),
     });
     revalidateTag(`user:${sale.sellerId}:dashboard`);
 

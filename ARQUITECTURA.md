@@ -157,6 +157,15 @@ POST /api/mp/webhook  →  Sale = PAID
             └── publishSale() → toast en vivo en el dashboard
 ```
 
+Mercado Pago repite las notificaciones, a veces semanas después y por tandas,
+y manda `payment.created` y `payment.updated` casi juntos. Por eso el paso a
+PAID se reclama en la base (`updateMany` con `status != PAID`): sólo el aviso
+que cambia la fila dispara lo de abajo, y los repetidos no hacen nada.
+`paidAt` es el `date_approved` del pago, no la hora del aviso. Una venta ya
+cobrada sólo la mueve su propio pago: el aviso de una tarjeta rechazada antes
+de la que pasó no la baja a FAILED. Las ventas anteriores a este cambio se
+corrigen con `scripts/corregir-fecha-pago.mjs`.
+
 **Modo de prueba** (`testModeEnabled`, solo admins) saltea Mercado Pago: crea la
 venta ya pagada y dispara el mismo flujo posterior. El checkout **revalida el rol
 en vivo** antes de aplicar el bypass, así una degradación de permisos lo desactiva
